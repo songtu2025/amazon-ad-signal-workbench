@@ -1,0 +1,861 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Amazon 广告 AI 信号工作台 v2 原型</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --line: #d9e2ef;
+      --line-strong: #b8c7dc;
+      --text: #122033;
+      --muted: #607089;
+      --blue: #1769e0;
+      --blue-soft: #e8f1ff;
+      --green: #087f5b;
+      --green-soft: #e7f7ef;
+      --amber: #b76b00;
+      --amber-soft: #fff3d8;
+      --red: #c5392f;
+      --red-soft: #fff0ee;
+      --purple: #5b4abf;
+      --purple-soft: #f1efff;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .app {
+      width: 1600px;
+      height: 1080px;
+      margin: 0 auto;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    .topbar {
+      height: 64px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 360px;
+    }
+
+    .logo {
+      width: 50px;
+      height: 34px;
+      border-radius: 7px;
+      background: #173b78;
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .brand-subtitle {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .top-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .status-chip {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 8px 10px;
+      background: var(--surface-soft);
+      color: #304056;
+      font-weight: 600;
+    }
+
+    .primary-button {
+      border: 1px solid #0f62d8;
+      background: var(--blue);
+      color: #fff;
+      padding: 9px 14px;
+      border-radius: 7px;
+      font-weight: 700;
+    }
+
+    .context {
+      height: 106px;
+      padding: 16px 24px 14px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .context-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-soft);
+      padding: 12px 14px;
+    }
+
+    .context-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .context-value {
+      font-size: 17px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .context-note {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .main {
+      height: 910px;
+      display: grid;
+      grid-template-columns: 330px 1fr 332px;
+      gap: 14px;
+      padding: 14px 18px 18px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .panel-header {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-title {
+      font-size: 17px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-subtitle {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .path-list {
+      padding: 14px 14px 18px;
+    }
+
+    .path-step {
+      position: relative;
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 10px;
+      padding: 10px 0;
+    }
+
+    .path-step:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      top: 42px;
+      bottom: -6px;
+      width: 1px;
+      background: var(--line);
+    }
+
+    .step-index {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--blue-soft);
+      border: 1px solid #8fb9f5;
+      color: var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      z-index: 1;
+    }
+
+    .step-index.warning {
+      background: var(--amber-soft);
+      color: var(--amber);
+      border-color: #f2c56b;
+    }
+
+    .step-index.ready {
+      background: var(--green-soft);
+      color: var(--green);
+      border-color: #7dcfaf;
+    }
+
+    .step-box {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    .step-box.active {
+      border-color: #8fb9f5;
+      background: var(--blue-soft);
+    }
+
+    .step-title {
+      font-weight: 800;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .step-desc {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .tag-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .tag {
+      border-radius: 999px;
+      padding: 3px 7px;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      color: #435066;
+    }
+
+    .tag.blue {
+      background: var(--blue-soft);
+      color: var(--blue);
+      border-color: #bed5ff;
+    }
+
+    .tag.green {
+      background: var(--green-soft);
+      color: var(--green);
+      border-color: #a8ddc3;
+    }
+
+    .tag.amber {
+      background: var(--amber-soft);
+      color: var(--amber);
+      border-color: #f1cd85;
+    }
+
+    .tag.red {
+      background: var(--red-soft);
+      color: var(--red);
+      border-color: #f3b5af;
+    }
+
+    .center {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .object-header {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px 20px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .object-title {
+      font-size: 24px;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .breadcrumb {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .scope-warning {
+      border: 1px solid #f1cd85;
+      background: var(--amber-soft);
+      color: #6f4300;
+      border-radius: 8px;
+      padding: 12px 14px;
+      width: 280px;
+      font-weight: 700;
+    }
+
+    .audit-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .audit-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px 14px;
+    }
+
+    .audit-title {
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .audit-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .diagnosis {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-height: 0;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .diagnosis-body {
+      padding: 14px 18px 16px;
+      overflow: hidden;
+    }
+
+    .matrix {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .matrix th {
+      text-align: left;
+      background: #f2f6fb;
+      color: #42526a;
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 800;
+    }
+
+    .matrix td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #edf2f7;
+      vertical-align: top;
+    }
+
+    .matrix td:first-child {
+      font-weight: 800;
+      color: #1f2f46;
+      width: 150px;
+    }
+
+    .actionable {
+      color: var(--green);
+      font-weight: 800;
+    }
+
+    .limited {
+      color: var(--amber);
+      font-weight: 800;
+    }
+
+    .blocked {
+      color: var(--red);
+      font-weight: 800;
+    }
+
+    .signal-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .signal-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: var(--surface-soft);
+      min-height: 132px;
+    }
+
+    .signal-box.strong {
+      border-color: #8fb9f5;
+      background: #f6f9ff;
+    }
+
+    .signal-box h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    .check-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 5px 0;
+      border-bottom: 1px dashed #d5deeb;
+      font-size: 12px;
+    }
+
+    .check-row:last-child {
+      border-bottom: 0;
+    }
+
+    .bottom-flow {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+
+    .flow-title {
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+    }
+
+    .flow-step {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 12px;
+      text-align: center;
+      font-weight: 700;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .right-body {
+      padding: 14px 14px 18px;
+    }
+
+    .decision-box {
+      border: 1px solid #f1cd85;
+      background: var(--amber-soft);
+      border-radius: 8px;
+      padding: 13px 14px;
+      margin-bottom: 12px;
+    }
+
+    .decision-title {
+      font-size: 15px;
+      font-weight: 900;
+      color: #694000;
+      margin-bottom: 6px;
+    }
+
+    .decision-box p,
+    .right-card p {
+      margin: 0;
+      color: #5d6b80;
+      font-size: 12px;
+    }
+
+    .right-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px 14px;
+      margin-bottom: 12px;
+      background: var(--surface-soft);
+    }
+
+    .right-card h3 {
+      margin: 0 0 9px;
+      font-size: 15px;
+    }
+
+    .metric-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px dashed #d9e2ef;
+      padding-bottom: 7px;
+      font-size: 12px;
+    }
+
+    .metric-row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .ghost-button {
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      color: #20334d;
+      border-radius: 8px;
+      height: 42px;
+      font-weight: 800;
+    }
+
+    .ghost-button.disabled {
+      color: #9aa6b8;
+      background: #f4f6f9;
+    }
+
+    .review-box {
+      background: var(--green-soft);
+      border: 1px solid #a8ddc3;
+      color: #0b6047;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">JIJIA</div>
+        <div>
+          <div class="brand-title">Amazon 广告 AI 信号工作台 v2</div>
+          <div class="brand-subtitle">目标版原型：先诊断对象和证据，再输出可复盘信号</div>
+        </div>
+      </div>
+      <div class="top-status">
+        <div class="status-chip">API 快照：2026-06-16 12:04</div>
+        <div class="status-chip">ABA 导入：2026-06-16 17:35</div>
+        <div class="status-chip">口径审计：开启</div>
+        <button class="primary-button">人工拉取快照</button>
+      </div>
+    </header>
+
+    <section class="context">
+      <div class="context-item">
+        <div class="context-label">当前经营入口</div>
+        <div class="context-value">Parent ASIN B00K4W4AAA</div>
+        <div class="context-note">销售表现确认 12 个子 ASIN，广告覆盖 3 个 ASIN</div>
+      </div>
+      <div class="context-item">
+        <div class="context-label">店铺 / 站点</div>
+        <div class="context-value">rivbos / US</div>
+        <div class="context-note">market_id 1，同店铺上下文关联证据</div>
+      </div>
+      <div class="context-item">
+        <div class="context-label">分析周期</div>
+        <div class="context-value">近 30 天</div>
+        <div class="context-note">2026-05-18 至 2026-06-16</div>
+      </div>
+      <div class="context-item">
+        <div class="context-label">数据口径状态</div>
+        <div class="context-value">需分层解释</div>
+        <div class="context-note">SalesProduct 不能等同 AdvertisedProduct</div>
+      </div>
+      <div class="context-item">
+        <div class="context-label">当前页面任务</div>
+        <div class="context-value">诊断路径优先</div>
+        <div class="context-note">不把所有信息包装成机会或建议</div>
+      </div>
+    </section>
+
+    <main class="main">
+      <aside class="panel">
+        <div class="panel-header">
+          <div class="panel-title">广告诊断路径</div>
+          <div class="panel-subtitle">从经营对象进入，逐层确认广告证据是否足以行动</div>
+        </div>
+        <div class="path-list">
+          <div class="path-step">
+            <div class="step-index ready">1</div>
+            <div class="step-box active">
+              <div class="step-title">Parent ASIN 经营盘 <span class="tag green">入口</span></div>
+              <div class="step-desc">先看整体销售、子 ASIN、广告覆盖，不直接给广告动作。</div>
+              <div class="tag-row">
+                <span class="tag">12 子 ASIN</span>
+                <span class="tag">3 投放中</span>
+                <span class="tag amber">9 销售背景</span>
+              </div>
+            </div>
+          </div>
+          <div class="path-step">
+            <div class="step-index ready">2</div>
+            <div class="step-box">
+              <div class="step-title">广告 ASIN 覆盖 <span class="tag blue">可行动</span></div>
+              <div class="step-desc">只有存在广告商品证据的 ASIN 才进入广告诊断。</div>
+            </div>
+          </div>
+          <div class="path-step">
+            <div class="step-index warning">3</div>
+            <div class="step-box">
+              <div class="step-title">广告组结构 <span class="tag amber">容器</span></div>
+              <div class="step-desc">广告组可能多商品，不能把搜索词强行归到单个 ASIN。</div>
+            </div>
+          </div>
+          <div class="path-step">
+            <div class="step-index warning">4</div>
+            <div class="step-box">
+              <div class="step-title">广告位 / 投放词 <span class="tag amber">上下文</span></div>
+              <div class="step-desc">说明流量位置和投放来源，证据不足时只提示缺口。</div>
+            </div>
+          </div>
+          <div class="path-step">
+            <div class="step-index warning">5</div>
+            <div class="step-box">
+              <div class="step-title">搜索词 / ABA <span class="tag amber">证据</span></div>
+              <div class="step-desc">搜索词看广告表现，ABA 只做站点级市场背景。</div>
+            </div>
+          </div>
+          <div class="path-step">
+            <div class="step-index ready">6</div>
+            <div class="step-box">
+              <div class="step-title">AI 信号准入 <span class="tag blue">门禁</span></div>
+              <div class="step-desc">必须有主对象、问题类型、证据强度、归因边界和复盘指标。</div>
+            </div>
+          </div>
+          <div class="path-step">
+            <div class="step-index ready">7</div>
+            <div class="step-box">
+              <div class="step-title">人工确认 / 复盘 <span class="tag green">闭环</span></div>
+              <div class="step-desc">只记录人工动作，7/14 天后看花费、订单、ACOS、CVR。</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="center">
+        <div class="object-header">
+          <div>
+            <div class="breadcrumb">经营入口 / 广告覆盖 / 证据下钻</div>
+            <div class="object-title">B00K4W4AAA 广告诊断视图</div>
+            <div class="breadcrumb">当前不是“全量机会列表”，而是判断这个 Parent ASIN 下哪些广告对象值得处理。</div>
+          </div>
+          <div class="scope-warning">
+            当前 Parent 范围候选数为 0：展示经营诊断和证据缺口，不生成广告调整建议。
+          </div>
+        </div>
+
+        <div class="audit-grid">
+          <div class="audit-card">
+            <div class="audit-title">数据口径是否清晰？</div>
+            <p>每块数据必须显示来源、周期、粒度。销售表现是经营盘，广告商品才是广告对象。</p>
+          </div>
+          <div class="audit-card">
+            <div class="audit-title">数据关系是否清楚？</div>
+            <p>Parent ASIN → 广告 ASIN → 广告组 → 搜索词/广告位，逐层展示一对多和不可归因边界。</p>
+          </div>
+          <div class="audit-card">
+            <div class="audit-title">是否能落地业务？</div>
+            <p>只有能说清人工动作和 7/14 天复盘指标的对象，才允许进入建议处理区。</p>
+          </div>
+        </div>
+
+        <div class="diagnosis">
+          <div class="panel-header">
+            <div class="panel-title">对象证据矩阵</div>
+            <div class="panel-subtitle">先确认哪些数据能做经营判断，哪些只能做上下文或缺口说明</div>
+          </div>
+          <div class="diagnosis-body">
+            <table class="matrix">
+              <thead>
+                <tr>
+                  <th>对象层级</th>
+                  <th>来源 / 粒度</th>
+                  <th>本屏用途</th>
+                  <th>行动准入</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>SalesProduct</td>
+                  <td>销售表现，Parent / Child ASIN，近 30 天</td>
+                  <td>确认经营盘和广告覆盖缺口</td>
+                  <td><span class="limited">背景，不直接广告动作</span></td>
+                </tr>
+                <tr>
+                  <td>AdvertisedProduct</td>
+                  <td>SP 广告商品，ASIN / ad_id / ad_group_id</td>
+                  <td>判断广告 ASIN 的花费、订单、ACOS、CVR</td>
+                  <td><span class="actionable">可进入人工候选</span></td>
+                </tr>
+                <tr>
+                  <td>AdGroup</td>
+                  <td>SP 广告组，campaign_id / ad_group_id</td>
+                  <td>解释投放结构和多商品容器风险</td>
+                  <td><span class="limited">结构判断，需商品清单</span></td>
+                </tr>
+                <tr>
+                  <td>Placement</td>
+                  <td>SP 广告位，campaign / placement / date</td>
+                  <td>说明流量位置效率，不能归因到单个 ASIN</td>
+                  <td><span class="limited">上下文，需边界提示</span></td>
+                </tr>
+                <tr>
+                  <td>SearchTerm</td>
+                  <td>广告搜索词，campaign / ad_group / keyword 或 target</td>
+                  <td>判断花费浪费、低 CVR、有效词机会</td>
+                  <td><span class="actionable">样本足够才可行动</span></td>
+                </tr>
+                <tr>
+                  <td>ABA</td>
+                  <td>站点级导出，US / 周期 / normalized_query</td>
+                  <td>增强市场热度和竞品背景</td>
+                  <td><span class="blocked">不能替代广告证据</span></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="signal-section">
+              <div class="signal-box strong">
+                <h3>AI 信号准入门禁</h3>
+                <div class="check-row"><span>主对象是否为广告可处理对象</span><span class="actionable">是</span></div>
+                <div class="check-row"><span>是否有经营问题类型</span><span class="actionable">是</span></div>
+                <div class="check-row"><span>样本量是否足以行动</span><span class="limited">需检查</span></div>
+                <div class="check-row"><span>归因边界是否已说明</span><span class="actionable">是</span></div>
+                <div class="check-row"><span>是否有复盘指标</span><span class="actionable">是</span></div>
+              </div>
+              <div class="signal-box">
+                <h3>当前 Parent 范围结论</h3>
+                <div class="check-row"><span>AI 结论</span><span class="limited">暂无可行动候选</span></div>
+                <div class="check-row"><span>原因</span><span>能看到广告覆盖，但证据还不足以锁定动作对象</span></div>
+                <div class="check-row"><span>下一步</span><span>下钻 3 个广告 ASIN 和广告组</span></div>
+                <div class="check-row"><span>禁止</span><span class="blocked">不把销售背景 ASIN 包装成广告机会</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-flow">
+          <div class="flow-title">用户实际使用路径</div>
+          <div class="flow-steps">
+            <div class="flow-step">看 Parent ASIN 整体销售</div>
+            <div class="flow-step">找广告 ASIN 覆盖</div>
+            <div class="flow-step">进入广告组结构</div>
+            <div class="flow-step">核对广告位 / 搜索词</div>
+            <div class="flow-step">AI 给出可行动判断</div>
+            <div class="flow-step">人工留痕并 7/14 天复盘</div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <div class="panel-header">
+          <div class="panel-title">建议处理</div>
+          <div class="panel-subtitle">只展示人工可判断动作，不执行广告操作</div>
+        </div>
+        <div class="right-body">
+          <div class="decision-box">
+            <div class="decision-title">当前状态：不生成广告调整建议</div>
+            <p>Parent 范围内 candidate_count=0。系统只说明证据缺口和下一步下钻对象，避免输出无意义机会。</p>
+          </div>
+
+          <div class="right-card">
+            <h3>建议下一步</h3>
+            <div class="metric-list">
+              <div class="metric-row"><span>1. 选择广告 ASIN</span><strong>B016EXMW02 等 3 个</strong></div>
+              <div class="metric-row"><span>2. 检查广告组商品清单</span><strong>确认是否多商品</strong></div>
+              <div class="metric-row"><span>3. 对齐搜索词和广告位</span><strong>只做上下文解释</strong></div>
+              <div class="metric-row"><span>4. 补主推款策略</span><strong>避免误判集中消耗</strong></div>
+            </div>
+          </div>
+
+          <div class="right-card">
+            <h3>人工动作</h3>
+            <p>没有明确动作对象时，允许记录观察；处理和复盘需要先锁定广告对象。</p>
+            <div class="button-grid">
+              <button class="ghost-button">记录观察</button>
+              <button class="ghost-button disabled">标记已处理</button>
+              <button class="ghost-button disabled">加入复盘</button>
+              <button class="ghost-button">忽略本次</button>
+            </div>
+          </div>
+
+          <div class="right-card">
+            <h3>复盘口径</h3>
+            <div class="metric-list">
+              <div class="metric-row"><span>稳定对象 ID</span><strong>ad_asin / search_term</strong></div>
+              <div class="metric-row"><span>处理前窗口</span><strong>7 天 / 14 天</strong></div>
+              <div class="metric-row"><span>处理后指标</span><strong>花费、订单、ACOS、CVR</strong></div>
+              <div class="metric-row"><span>复盘结论</span><strong>ready 后人工保存</strong></div>
+            </div>
+          </div>
+
+          <div class="review-box">
+            设计原则：没有证据链、归因边界和复盘指标的“机会”，默认降级为背景或观察，不进入处理建议。
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+</body>
+</html>

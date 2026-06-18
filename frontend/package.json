@@ -1,0 +1,24 @@
+{
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -b && vite build",
+    "test:snapshot-ui": "tsc --module commonjs --target es2020 --moduleResolution node --esModuleInterop --skipLibCheck --outDir ../tmp/frontend-tests tests/snapshotUi.test.ts && node ../tmp/frontend-tests/tests/snapshotUi.test.js",
+    "test:workbench-structure": "tsc --module commonjs --target es2020 --moduleResolution node --esModuleInterop --skipLibCheck --outDir ../tmp/frontend-tests tests/signalWorkbenchStructure.test.ts && node ../tmp/frontend-tests/signalWorkbenchStructure.test.js",
+    "test:signal-ui": "tsc --module commonjs --target es2020 --moduleResolution node --esModuleInterop --skipLibCheck --outDir ../tmp/frontend-tests tests/signalUi.test.ts && node ../tmp/frontend-tests/tests/signalUi.test.js",
+    "test:signal-scan-summary-ui": "tsc --module commonjs --target es2020 --moduleResolution node --esModuleInterop --skipLibCheck --outDir ../tmp/frontend-tests tests/signalScanSummaryUi.test.ts && node ../tmp/frontend-tests/tests/signalScanSummaryUi.test.js",
+    "test:review-ui": "tsc --module commonjs --target es2020 --moduleResolution node --esModuleInterop --skipLibCheck --outDir ../tmp/frontend-tests tests/reviewUi.test.ts && node ../tmp/frontend-tests/tests/reviewUi.test.js",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.5",
+    "typescript": "^5.7.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "lucide-react": "^0.468.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.2"
+  }
+}

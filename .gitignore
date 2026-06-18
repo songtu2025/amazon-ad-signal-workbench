@@ -1,0 +1,17 @@
+.env
+.codegraph/
+.pytest_cache/
+__pycache__/
+*.pyc
+
+tmp/
+data/api_snapshots/
+data/aba_snapshots/
+data/parent_asin_snapshots/
+data/runtime/
+
+frontend/node_modules/
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
+*.xlsx
+*.xls

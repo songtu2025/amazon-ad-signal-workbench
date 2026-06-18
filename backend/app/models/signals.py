@@ -1,0 +1,167 @@
+from enum import Enum
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+
+class SignalType(str, Enum):
+    ANOMALY = "anomaly"
+    OPPORTUNITY = "opportunity"
+
+
+class ObjectType(str, Enum):
+    AD_GROUP = "ad_group"
+    SALES_PRODUCT = "sales_product"
+    ADVERTISED_PRODUCT = "advertised_product"
+    SEARCH_TERM = "search_term"
+    PLACEMENT = "placement"
+    SEARCH_INTENT = "search_intent"
+    CROSS = "cross"
+
+
+class SignalStatus(str, Enum):
+    PENDING = "pending"
+    ADOPTED = "adopted"
+    OBSERVING = "observing"
+    IGNORED = "ignored"
+    FALSE_POSITIVE = "false_positive"
+
+
+class SignalPriority(str, Enum):
+    P0 = "P0"
+    P1 = "P1"
+    P2 = "P2"
+
+
+class ConfidenceLevel(str, Enum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class FreshnessStatus(str, Enum):
+    API_SNAPSHOT = "api_snapshot"
+    SAMPLE_DATA = "sample_data"
+    UNKNOWN = "unknown"
+    STALE = "stale"
+
+
+class MetricSnapshot(BaseModel):
+    impressions: int = 0
+    clicks: int = 0
+    cost: float = 0
+    orders: int = 0
+    sales: float = 0
+    acos: float | None = None
+    cvr: float | None = None
+    cpc: float | None = None
+
+
+class AdObjectRef(BaseModel):
+    object_type: ObjectType
+    object_id: str
+    label: str
+    campaign_name: str | None = None
+    ad_group_name: str | None = None
+    asin: str | None = None
+    sku: str | None = None
+    msku: str | None = None
+    placement: str | None = None
+    search_term: str | None = None
+    intent_label: str | None = None
+
+
+class EvidenceItem(BaseModel):
+    label: str
+    value: str
+    note: str | None = None
+    source_type: str | None = None
+    source_name: str | None = None
+    metric_name: str | None = None
+    metric_value: str | None = None
+    comparison_value: str | None = None
+    time_range: str | None = None
+    object_type: str | None = None
+    object_id: str | None = None
+    explanation: str | None = None
+
+
+class DataSourceRef(BaseModel):
+    source_type: str
+    source_name: str
+    snapshot_id: str | None = None
+    api_name: str | None = None
+    source_table: str | None = None
+    source_record_id: str | None = None
+    source_file: str | None = None
+    market_id: int | None = None
+    start_date: str | None = None
+    end_date: str | None = None
+
+
+class EvidencePackage(BaseModel):
+    period_days: int
+    primary_object: AdObjectRef
+    metrics: MetricSnapshot
+    comparison: list[EvidenceItem] = Field(default_factory=list)
+    facts: list[EvidenceItem] = Field(default_factory=list)
+    source_rows: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class SuggestedAction(BaseModel):
+    action_type: str
+    title: str
+    description: str
+    requires_manual_confirmation: bool = True
+
+
+class AiSignal(BaseModel):
+    id: str
+    signal_type: SignalType
+    signal_category: str
+    priority: SignalPriority
+    confidence: ConfidenceLevel
+    shop_id: str
+    shop_name: str | None = None
+    market_id: int | None = None
+    marketplace: str | None = None
+    country: str | None = None
+    object_type: ObjectType
+    severity: int = Field(ge=1, le=5)
+    summary: str
+    why: str
+    evidence: EvidencePackage
+    evidence_count: int = 0
+    data_sources: list[DataSourceRef] = Field(default_factory=list)
+    freshness_status: FreshnessStatus = FreshnessStatus.UNKNOWN
+    detected_at: str
+    uncertainty: str
+    suggested_action: SuggestedAction
+    risk: str
+    status: SignalStatus = SignalStatus.PENDING
+    manual_status: SignalStatus = SignalStatus.PENDING
+    review_result: str | None = None
+    tags: list[str] = Field(default_factory=list)
+
+
+class SearchIntentTopTerm(BaseModel):
+    search_term: str
+    normalized_query: str | None = None
+    clicks: int = 0
+    cost: float = 0
+    orders: int = 0
+    sales: float = 0
+    acos: float | None = None
+    aba_rank: int | None = None
+    aba_period: str | None = None
+    source_row_count: int = 0
+
+
+class SearchIntentSummary(BaseModel):
+    intent_label: str
+    search_terms: list[str]
+    metrics: MetricSnapshot
+    insight: str
+    semantic_source: str = "未知"
+    aba_match_count: int = 0
+    top_search_terms: list[SearchIntentTopTerm] = Field(default_factory=list)

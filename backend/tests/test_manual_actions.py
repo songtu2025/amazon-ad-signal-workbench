@@ -1,0 +1,1739 @@
+import json
+from datetime import UTC, datetime
+from pathlib import Path
+
+from fastapi.testclient import TestClient
+
+from app.api import routes
+from app.main import app
+from app.models.signals import (
+    AdObjectRef,
+    AiSignal,
+    ConfidenceLevel,
+    DataSourceRef,
+    EvidencePackage,
+    FreshnessStatus,
+    MetricSnapshot,
+    ObjectType,
+    SignalPriority,
+    SignalStatus,
+    SignalType,
+    SuggestedAction,
+)
+from app.services import manual_actions
+from app.services.manual_actions import build_review_todos, load_manual_actions, save_manual_action
+
+
+def minimal_evidence_snapshot(label: str = "广告商品覆盖") -> list[dict[str, str]]:
+    return [
+        {
+            "label": label,
+            "value": "覆盖 raw 投放行 2/2 / 证据行 2 条",
+            "detail": "用于验证复盘类人工动作必须携带点击时证据快照。",
+            "source": "test_evidence",
+        }
+    ]
+
+
+def route_preflight_payload(
+    *,
+    object_type: str,
+    object_id: str,
+    action_type: str,
+    evidence_snapshot: list[dict[str, str]],
+) -> dict:
+    return {
+        "status": "ready_for_explicit_manual_write",
+        "target": {"object_type": object_type, "object_id": object_id, "action_type": action_type},
+        "evidence_snapshot_preview": {
+            "status": "ready",
+            "will_write": False,
+            "will_save_on_authorized_write": True,
+            "item_count": len(evidence_snapshot),
+            "items": evidence_snapshot,
+        },
+        "blockers": [],
+    }
+
+
+def make_signal(signal_id: str = "sig-test-manual-action") -> AiSignal:
+    return AiSignal(
+        id=signal_id,
+        signal_type=SignalType.ANOMALY,
+        signal_category="search_term_waste",
+        priority=SignalPriority.P1,
+        confidence=ConfidenceLevel.MEDIUM,
+        shop_id="shop-rivbos",
+        shop_name="rivbos",
+        market_id=1,
+        marketplace="US",
+        object_type=ObjectType.SEARCH_TERM,
+        severity=4,
+        summary="测试信号",
+        why="用于验证人工处理留痕",
+        evidence=EvidencePackage(
+            period_days=7,
+            primary_object=AdObjectRef(object_type=ObjectType.SEARCH_TERM, object_id="kids sunglasses", label="kids sunglasses"),
+            metrics=MetricSnapshot(cost=10, orders=0),
+        ),
+        evidence_count=1,
+        data_sources=[
+            DataSourceRef(
+                source_type="积加API",
+                source_name="积加API快照",
+                snapshot_id="snapshot-1",
+                market_id=1,
+                source_table="ad_search_term_daily_metrics",
+            )
+        ],
+        freshness_status=FreshnessStatus.API_SNAPSHOT,
+        detected_at="2026-06-14T10:00:00+08:00",
+        uncertainty="测试不确定性",
+        suggested_action=SuggestedAction(action_type="manual_review", title="人工复核", description="人工处理"),
+        risk="测试风险",
+    )
+
+
+def make_advertised_product_signal(signal_id: str = "sig-ad-product-manual-action") -> AiSignal:
+    return AiSignal(
+        id=signal_id,
+        signal_type=SignalType.OPPORTUNITY,
+        signal_category="advertised_product_opportunity",
+        priority=SignalPriority.P1,
+        confidence=ConfidenceLevel.MEDIUM,
+        shop_id="shop-rivbos",
+        shop_name="rivbos",
+        market_id=1,
+        marketplace="US",
+        object_type=ObjectType.ADVERTISED_PRODUCT,
+        severity=3,
+        summary="B016EXMW02 advertising product opportunity",
+        why="used to verify advertised product manual action identity",
+        evidence=EvidencePackage(
+            period_days=7,
+            primary_object=AdObjectRef(
+                object_type=ObjectType.ADVERTISED_PRODUCT,
+                object_id="snapshot-1:ad-product:1:28792336180945",
+                label="B016EXMW02",
+                asin="B016EXMW02",
+            ),
+            metrics=MetricSnapshot(cost=10, orders=2),
+        ),
+        evidence_count=1,
+        data_sources=[
+            DataSourceRef(
+                source_type="api",
+                source_name="snapshot",
+                snapshot_id="snapshot-1",
+                market_id=1,
+                source_table="advertised_products",
+            )
+        ],
+        freshness_status=FreshnessStatus.API_SNAPSHOT,
+        detected_at="2026-06-14T10:00:00+08:00",
+        uncertainty="test uncertainty",
+        suggested_action=SuggestedAction(action_type="manual_review", title="manual review", description="manual action"),
+        risk="test risk",
+    )
+
+
+def make_sales_product_signal(signal_id: str = "sig-sales-product-manual-action") -> AiSignal:
+    return AiSignal(
+        id=signal_id,
+        signal_type=SignalType.OPPORTUNITY,
+        signal_category="sales_product_opportunity",
+        priority=SignalPriority.P0,
+        confidence=ConfidenceLevel.MEDIUM,
+        shop_id="shop-rivbos",
+        shop_name="rivbos",
+        market_id=1,
+        marketplace="US",
+        object_type=ObjectType.SALES_PRODUCT,
+        severity=4,
+        summary="B06VW5SQ97 sales product opportunity",
+        why="used to verify sales product manual action identity",
+        evidence=EvidencePackage(
+            period_days=30,
+            primary_object=AdObjectRef(
+                object_type=ObjectType.SALES_PRODUCT,
+                object_id="snapshot-1:sales:1:826-Dark Blue:2026-05-17:2026-06-15",
+                label="RBK004-RBK004-2 深蓝",
+                asin="B06VW5SQ97",
+                msku="RBK004-RBK004-2",
+            ),
+            metrics=MetricSnapshot(cost=0, orders=12, sales=120),
+        ),
+        evidence_count=1,
+        data_sources=[
+            DataSourceRef(
+                source_type="api",
+                source_name="snapshot",
+                snapshot_id="snapshot-1",
+                market_id=1,
+                source_table="sales_product_daily_metrics",
+            )
+        ],
+        freshness_status=FreshnessStatus.API_SNAPSHOT,
+        detected_at="2026-06-15T10:00:00+08:00",
+        uncertainty="test uncertainty",
+        suggested_action=SuggestedAction(action_type="manual_review", title="manual review", description="manual action"),
+        risk="test risk",
+    )
+
+
+def test_manual_action_store_appends_jsonl_records(tmp_path: Path) -> None:
+    record = save_manual_action(
+        signal_id="sig-test-manual-action",
+        action_type="observe",
+        action_note="先观察 7 天",
+        operator_name="本地运营",
+        snapshot_id="snapshot-1",
+        shop_id="shop-rivbos",
+        market_id=1,
+        object_type="search_term",
+        object_id="kids sunglasses",
+        object_label="kids sunglasses",
+        evidence_snapshot=[
+            {
+                "label": "广告商品覆盖",
+                "value": "覆盖 raw 投放行 2/2 / 证据行 2 条",
+                "detail": "覆盖率 100.0%",
+                "source": "advertised_products",
+            }
+        ],
+        action_root=tmp_path,
+    )
+
+    records = load_manual_actions("sig-test-manual-action", action_root=tmp_path)
+
+    assert record.signal_id == "sig-test-manual-action"
+    assert record.action_type == "observe"
+    assert record.manual_status == SignalStatus.OBSERVING
+    assert record.object_type == "search_term"
+    assert record.object_id == "kids sunglasses"
+    assert record.object_label == "kids sunglasses"
+    assert record.evidence_snapshot[0].label == "广告商品覆盖"
+    assert record.evidence_snapshot[0].source == "advertised_products"
+    assert records[0].evidence_snapshot[0].value == "覆盖 raw 投放行 2/2 / 证据行 2 条"
+    todos = build_review_todos("sig-test-manual-action", action_root=tmp_path)
+    assert {todo.review_window for todo in todos} == {"7d", "14d"}
+    assert {todo.evidence_snapshot[0].label for todo in todos} == {"广告商品覆盖"}
+    assert {todo.evidence_snapshot[0].value for todo in todos} == {"覆盖 raw 投放行 2/2 / 证据行 2 条"}
+    assert records == [record]
+    assert (tmp_path / "manual_actions.jsonl").exists()
+
+
+def test_review_todos_extract_search_intent_and_aba_context(tmp_path: Path) -> None:
+    action_payloads = [
+        {
+            "id": "manual-action-beach-old",
+            "signal_id": "sig-long-tail-beach-old",
+            "action_type": "observe",
+            "operator_name": "本地运营",
+            "acted_at": "2026-06-01T00:00:00+00:00",
+            "manual_status": "observing",
+            "snapshot_id": "snapshot-old",
+            "shop_id": "market:1",
+            "market_id": 1,
+            "object_type": "search_term",
+            "object_id": "beach essentials for kids",
+            "object_label": "beach essentials for kids",
+            "evidence_snapshot": [
+                {"label": "语义组", "value": "规则语义：海滩出行用品", "source": "规则语义"},
+                {"label": "搜索词", "value": "beach essentials for kids", "source": "积加API"},
+                {"label": "ABA排名", "value": "208 / 2026-06-07 至 2026-06-13", "source": "ABA导出"},
+            ],
+        },
+        {
+            "id": "manual-action-beach-current",
+            "signal_id": "sig-long-tail-beach-current",
+            "action_type": "add_to_review",
+            "operator_name": "本地运营",
+            "acted_at": "2026-06-03T00:00:00+00:00",
+            "manual_status": "pending",
+            "snapshot_id": "snapshot-current",
+            "shop_id": "market:1",
+            "market_id": 1,
+            "object_type": "search_term",
+            "object_id": "beach essentials for toddlers 1-3",
+            "object_label": "beach essentials for toddlers 1-3",
+            "evidence_snapshot": [
+                {"label": "语义组", "value": "规则语义：海滩出行用品", "source": "规则语义"},
+                {"label": "搜索词", "value": "beach essentials for toddlers 1-3", "source": "积加API"},
+                {"label": "ABA语义参考词", "value": "beach essentials", "source": "ABA导出"},
+                {"label": "ABA语义参考排名", "value": "208", "source": "ABA导出"},
+                {
+                    "label": "ABA匹配边界",
+                    "value": "短语包含匹配，仅作为语义组市场热度背景，不代表精确搜索词份额或本店广告归因。",
+                    "source": "ABA导出",
+                },
+            ],
+        },
+    ]
+    (tmp_path / "manual_actions.jsonl").write_text(
+        "\n".join(json.dumps(payload, ensure_ascii=False) for payload in action_payloads) + "\n",
+        encoding="utf-8",
+    )
+
+    todos = build_review_todos(
+        "sig-long-tail-beach-current",
+        action_root=tmp_path,
+        now=datetime(2026, 6, 10, tzinfo=UTC),
+    )
+
+    assert {todo.review_window for todo in todos} == {"7d", "14d"}
+    context = todos[0].review_context
+    assert context.search_intent_label == "规则语义：海滩出行用品"
+    assert context.search_term == "beach essentials for toddlers 1-3"
+    assert context.aba_reference_term == "beach essentials"
+    assert context.aba_reference_rank == "208"
+    assert "短语包含" in (context.aba_match_boundary or "")
+    assert context.repeat_search_intent_count == 2
+    assert context.repeat_aba_reference_count == 1
+    assert "同一语义组已有 2 次人工留痕" in context.repeat_summary
+    assert context.can_auto_change_rules is False
+    assert context.can_auto_execute_ads is False
+
+
+def test_review_todos_extract_manual_action_path_and_review_metrics(tmp_path: Path) -> None:
+    action_payload = {
+        "id": "manual-action-search-term-review-metrics",
+        "signal_id": "sig-search-term-review-metrics",
+        "action_type": "add_to_review",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-03T00:00:00+00:00",
+        "manual_status": "pending",
+        "snapshot_id": "snapshot-current",
+        "shop_id": "market:1",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "beach essentials",
+        "object_label": "beach essentials",
+        "evidence_snapshot": [
+            {
+                "label": "人工动作路径",
+                "value": "人工确认后加入精准关键词候选或小流量观察；本系统只记录处理和复盘，不自动新增关键词、不自动调价、不自动否词。",
+                "source": "积加API",
+            },
+            {
+                "label": "复盘指标",
+                "value": "7/14 天复盘点击、订单、ACOS、CVR、是否重复出现。",
+                "source": "积加API",
+            },
+        ],
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(
+        json.dumps(action_payload, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+    todos = build_review_todos(
+        "sig-search-term-review-metrics",
+        action_root=tmp_path,
+        now=datetime(2026, 6, 10, tzinfo=UTC),
+    )
+
+    assert {todo.review_window for todo in todos} == {"7d", "14d"}
+    context = todos[0].review_context
+    assert context.manual_action_path.startswith("人工确认后加入精准关键词候选")
+    assert "7/14 天复盘点击、订单、ACOS" in context.review_metrics
+    assert context.can_auto_change_rules is False
+    assert context.can_auto_execute_ads is False
+
+
+def test_latest_manual_status_does_not_cross_market(tmp_path: Path) -> None:
+    signal_market_1 = make_signal("sig-shared-data-quality")
+    signal_market_2 = make_signal("sig-shared-data-quality").model_copy(update={"market_id": 2, "shop_id": "shop-other"})
+    save_manual_action(
+        signal_id="sig-shared-data-quality",
+        action_type="observe",
+        operator_name="本地运营",
+        market_id=1,
+        action_root=tmp_path,
+    )
+
+    enriched = manual_actions.apply_latest_manual_actions([signal_market_1, signal_market_2], action_root=tmp_path)
+
+    assert enriched[0].status == SignalStatus.OBSERVING
+    assert enriched[1].status == SignalStatus.PENDING
+
+
+def test_latest_review_result_does_not_cross_market(tmp_path: Path) -> None:
+    signal_market_1 = make_signal("sig-shared-data-quality")
+    signal_market_2 = make_signal("sig-shared-data-quality").model_copy(update={"market_id": 2, "shop_id": "shop-other"})
+    review_payload = {
+        "id": "review-record-fixed",
+        "signal_id": "sig-shared-data-quality",
+        "action_id": "manual-action-fixed",
+        "action_type": "handled",
+        "acted_at": "2026-06-01T00:00:00+00:00",
+        "snapshot_id": "snapshot-1",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+        "review_window": "7d",
+        "before_metrics": {},
+        "after_metrics": {},
+        "result": "improved",
+        "review_note": "market 1 已改善",
+        "reviewer_name": "本地运营",
+        "reviewed_at": "2026-06-10T00:00:00+00:00",
+    }
+    (tmp_path / "review_records.jsonl").write_text(json.dumps(review_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    enriched = manual_actions.apply_latest_review_records([signal_market_1, signal_market_2], review_root=tmp_path)
+
+    assert enriched[0].review_result == "improved"
+    assert enriched[1].review_result is None
+
+
+def test_latest_review_result_matches_stable_object_when_signal_id_changes(tmp_path: Path) -> None:
+    previous_signal = make_advertised_product_signal("sig-ad-product-old")
+    current_signal = make_advertised_product_signal("sig-ad-product-new")
+    review_payload = {
+        "id": "review-record-stable-object",
+        "signal_id": previous_signal.id,
+        "action_id": "manual-action-stable-object",
+        "action_type": "add_to_review",
+        "acted_at": "2026-06-15T00:00:00+00:00",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "advertised_product",
+        "object_id": "B016EXMW02",
+        "object_label": "B016EXMW02",
+        "review_window": "7d",
+        "before_metrics": {"cost": 20, "orders": 2},
+        "after_metrics": {"cost": 18, "orders": 5},
+        "result": "improved",
+        "review_note": "同一广告 ASIN 已改善",
+        "reviewer_name": "本地运营",
+        "reviewed_at": "2026-06-23T00:00:00+00:00",
+    }
+    (tmp_path / "review_records.jsonl").write_text(json.dumps(review_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    records = manual_actions.load_review_records(
+        "sig-ad-product-new",
+        market_id=1,
+        object_type="advertised_product",
+        object_id="B016EXMW02",
+        review_root=tmp_path,
+    )
+    enriched = manual_actions.apply_latest_review_records([current_signal], review_root=tmp_path)
+
+    assert [record.id for record in records] == ["review-record-stable-object"]
+    assert enriched[0].review_result == "improved"
+
+
+def test_manual_action_load_hides_corrupted_question_mark_text(tmp_path: Path) -> None:
+    action_payload = {
+        "id": "manual-action-corrupted",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "observe",
+        "action_note": "????????????",
+        "operator_name": "????",
+        "acted_at": "2026-06-01T00:00:00+00:00",
+        "manual_status": "observing",
+        "snapshot_id": "snapshot-1",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    records = load_manual_actions("sig-test-manual-action", action_root=tmp_path)
+    todos = build_review_todos(
+        "sig-test-manual-action",
+        action_root=tmp_path,
+        now=datetime(2026, 6, 9, tzinfo=UTC),
+    )
+
+    assert records[0].operator_name == "本地运营"
+    assert records[0].action_note is None
+    assert todos[0].operator_name == "本地运营"
+    assert todos[0].action_note is None
+
+
+def test_signal_manual_routes_are_scoped_by_market_id(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path, raising=False)
+    action_payloads = [
+        {
+            "id": "manual-action-market-1",
+            "signal_id": "sig-shared-data-quality",
+            "action_type": "observe",
+            "action_note": "market 1 observe",
+            "operator_name": "本地运营",
+            "acted_at": "2026-06-01T00:00:00+00:00",
+            "manual_status": "observing",
+            "snapshot_id": "snapshot-market-1",
+            "shop_id": "shop-rivbos",
+            "market_id": 1,
+            "object_type": "cross",
+            "object_id": "aba_search_term_snapshot",
+            "object_label": "ABA 搜索词数据",
+        },
+        {
+            "id": "manual-action-market-2",
+            "signal_id": "sig-shared-data-quality",
+            "action_type": "handled",
+            "action_note": "market 2 handled",
+            "operator_name": "本地运营",
+            "acted_at": "2026-06-02T00:00:00+00:00",
+            "manual_status": "adopted",
+            "snapshot_id": "snapshot-market-2",
+            "shop_id": "shop-other",
+            "market_id": 2,
+            "object_type": "cross",
+            "object_id": "aba_search_term_snapshot",
+            "object_label": "ABA 搜索词数据",
+        },
+    ]
+    review_payloads = [
+        {
+            "id": "review-record-market-1",
+            "signal_id": "sig-shared-data-quality",
+            "action_id": "manual-action-market-1",
+            "action_type": "observe",
+            "acted_at": "2026-06-01T00:00:00+00:00",
+            "snapshot_id": "snapshot-market-1",
+            "shop_id": "shop-rivbos",
+            "market_id": 1,
+            "object_type": "cross",
+            "object_id": "aba_search_term_snapshot",
+            "object_label": "ABA 搜索词数据",
+            "review_window": "7d",
+            "before_metrics": {},
+            "after_metrics": {},
+            "result": "no_change",
+            "review_note": "market 1",
+            "reviewer_name": "本地运营",
+            "reviewed_at": "2026-06-10T00:00:00+00:00",
+        },
+        {
+            "id": "review-record-market-2",
+            "signal_id": "sig-shared-data-quality",
+            "action_id": "manual-action-market-2",
+            "action_type": "handled",
+            "acted_at": "2026-06-02T00:00:00+00:00",
+            "snapshot_id": "snapshot-market-2",
+            "shop_id": "shop-other",
+            "market_id": 2,
+            "object_type": "cross",
+            "object_id": "aba_search_term_snapshot",
+            "object_label": "ABA 搜索词数据",
+            "review_window": "7d",
+            "before_metrics": {},
+            "after_metrics": {},
+            "result": "improved",
+            "review_note": "market 2",
+            "reviewer_name": "本地运营",
+            "reviewed_at": "2026-06-11T00:00:00+00:00",
+        },
+    ]
+    (tmp_path / "manual_actions.jsonl").write_text(
+        "\n".join(json.dumps(payload, ensure_ascii=False) for payload in action_payloads) + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "review_records.jsonl").write_text(
+        "\n".join(json.dumps(payload, ensure_ascii=False) for payload in review_payloads) + "\n",
+        encoding="utf-8",
+    )
+
+    client = TestClient(app)
+    manual_response = client.get("/api/signals/sig-shared-data-quality/manual-actions?market_id=2")
+    todo_response = client.get("/api/signals/sig-shared-data-quality/review-todos?market_id=2")
+    review_response = client.get("/api/signals/sig-shared-data-quality/review-records?market_id=2")
+
+    assert [record["id"] for record in manual_response.json()] == ["manual-action-market-2"]
+    assert {todo["action_id"] for todo in todo_response.json()} == {"manual-action-market-2"}
+    assert [record["id"] for record in review_response.json()] == ["review-record-market-2"]
+
+
+def test_review_record_route_can_read_by_stable_object_when_signal_id_changes(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path, raising=False)
+    review_payload = {
+        "id": "review-record-stable-object",
+        "signal_id": "sig-ad-product-old",
+        "action_id": "manual-action-stable-object",
+        "action_type": "add_to_review",
+        "acted_at": "2026-06-15T00:00:00+00:00",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "advertised_product",
+        "object_id": "B016EXMW02",
+        "object_label": "B016EXMW02",
+        "review_window": "7d",
+        "before_metrics": {"cost": 20, "orders": 2},
+        "after_metrics": {"cost": 18, "orders": 5},
+        "result": "improved",
+        "review_note": "同一广告 ASIN 已改善",
+        "reviewer_name": "本地运营",
+        "reviewed_at": "2026-06-23T00:00:00+00:00",
+    }
+    (tmp_path / "review_records.jsonl").write_text(json.dumps(review_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    response = TestClient(app).get(
+        "/api/signals/sig-ad-product-new/review-records"
+        "?market_id=1&object_type=advertised_product&object_id=B016EXMW02"
+    )
+
+    assert response.status_code == 200
+    assert [record["id"] for record in response.json()] == ["review-record-stable-object"]
+
+
+def test_review_todos_are_derived_from_manual_action_time(tmp_path: Path) -> None:
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-01T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-1",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    todos = build_review_todos(
+        "sig-test-manual-action",
+        action_root=tmp_path,
+        now=datetime(2026, 6, 9, tzinfo=UTC),
+    )
+
+    assert [todo.review_window for todo in todos] == ["7d", "14d"]
+    assert todos[0].due_at == "2026-06-08T00:00:00+00:00"
+    assert todos[0].is_due is True
+    assert todos[0].days_since_action == 8
+    assert todos[0].object_type == "search_term"
+    assert todos[0].object_id == "kids sunglasses"
+    assert todos[0].object_label == "kids sunglasses"
+    assert todos[1].due_at == "2026-06-15T00:00:00+00:00"
+    assert todos[1].is_due is False
+
+
+def test_review_todos_follow_latest_manual_action_only(tmp_path: Path) -> None:
+    action_payloads = [
+        {
+            "id": "manual-action-old",
+            "signal_id": "sig-test-manual-action",
+            "action_type": "observe",
+            "action_note": "old observe",
+            "operator_name": "local operator",
+            "acted_at": "2026-06-01T00:00:00+00:00",
+            "manual_status": "observing",
+            "snapshot_id": "snapshot-old",
+            "shop_id": "shop-rivbos",
+            "market_id": 1,
+            "object_type": "search_term",
+            "object_id": "kids sunglasses",
+            "object_label": "kids sunglasses",
+        },
+        {
+            "id": "manual-action-new",
+            "signal_id": "sig-test-manual-action",
+            "action_type": "handled",
+            "action_note": "new handled",
+            "operator_name": "local operator",
+            "acted_at": "2026-06-03T00:00:00+00:00",
+            "manual_status": "adopted",
+            "snapshot_id": "snapshot-new",
+            "shop_id": "shop-rivbos",
+            "market_id": 1,
+            "object_type": "search_term",
+            "object_id": "kids sunglasses",
+            "object_label": "kids sunglasses",
+        },
+    ]
+    (tmp_path / "manual_actions.jsonl").write_text(
+        "\n".join(json.dumps(payload, ensure_ascii=False) for payload in action_payloads) + "\n",
+        encoding="utf-8",
+    )
+
+    todos = build_review_todos(
+        "sig-test-manual-action",
+        action_root=tmp_path,
+        now=datetime(2026, 6, 10, tzinfo=UTC),
+    )
+
+    assert [todo.review_window for todo in todos] == ["7d", "14d"]
+    assert {todo.action_id for todo in todos} == {"manual-action-new"}
+    assert todos[0].action_type == "handled"
+    assert todos[0].due_at == "2026-06-10T00:00:00+00:00"
+    assert todos[0].is_due is True
+    assert todos[0].days_since_action == 7
+
+
+def test_review_todos_skip_latest_ignored_action(tmp_path: Path) -> None:
+    action_payloads = [
+        {
+            "id": "manual-action-old",
+            "signal_id": "sig-test-manual-action",
+            "action_type": "handled",
+            "action_note": "old handled",
+            "operator_name": "local operator",
+            "acted_at": "2026-06-01T00:00:00+00:00",
+            "manual_status": "adopted",
+            "snapshot_id": "snapshot-old",
+            "shop_id": "shop-rivbos",
+            "market_id": 1,
+            "object_type": "search_term",
+            "object_id": "kids sunglasses",
+            "object_label": "kids sunglasses",
+        },
+        {
+            "id": "manual-action-ignore",
+            "signal_id": "sig-test-manual-action",
+            "action_type": "ignore",
+            "action_note": "ignore this round",
+            "operator_name": "local operator",
+            "acted_at": "2026-06-03T00:00:00+00:00",
+            "manual_status": "ignored",
+            "snapshot_id": "snapshot-new",
+            "shop_id": "shop-rivbos",
+            "market_id": 1,
+            "object_type": "search_term",
+            "object_id": "kids sunglasses",
+            "object_label": "kids sunglasses",
+        },
+    ]
+    (tmp_path / "manual_actions.jsonl").write_text(
+        "\n".join(json.dumps(payload, ensure_ascii=False) for payload in action_payloads) + "\n",
+        encoding="utf-8",
+    )
+
+    todos = build_review_todos(
+        "sig-test-manual-action",
+        action_root=tmp_path,
+        now=datetime(2026, 6, 10, tzinfo=UTC),
+    )
+
+    assert todos == []
+
+
+def test_review_effect_for_cross_signal_uses_data_quality_review_message(tmp_path: Path) -> None:
+    build_review_effect_result = getattr(manual_actions, "build_review_effect_result", None)
+    assert build_review_effect_result is not None
+    action_payload = {
+        "id": "manual-action-cross",
+        "signal_id": "sig-data-quality-aba-stale",
+        "action_type": "observe",
+        "action_note": "重新导入 ABA 后观察",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-14T00:00:00+00:00",
+        "manual_status": "observing",
+        "snapshot_id": "aba-snapshot-old",
+        "shop_id": "market:1",
+        "market_id": 1,
+        "object_type": "cross",
+        "object_id": "aba_search_term_snapshot",
+        "object_label": "ABA 搜索词数据",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    result = build_review_effect_result(
+        "sig-data-quality-aba-stale",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            }
+        ],
+        now=datetime(2026, 6, 22, tzinfo=UTC),
+    )
+
+    assert result.status == "not_ready"
+    assert result.result == "unclear"
+    assert result.message == "复盘效果暂不可计算：数据质量或交叉信号不适用广告指标前后对比，请复查数据是否补齐或更新"
+    assert result.action_id == "manual-action-cross"
+    assert result.object_type == "cross"
+    assert result.before_metrics == {}
+    assert result.after_metrics == {}
+
+
+def test_review_effect_waits_for_after_snapshot(tmp_path: Path) -> None:
+    build_review_effect_result = getattr(manual_actions, "build_review_effect_result", None)
+    assert build_review_effect_result is not None
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    result = build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "impressions": 1000,
+                "clicks": 50,
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            }
+        ],
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    assert result.status == "not_ready"
+    assert result.result == "unclear"
+    assert result.message == "复盘效果暂不可计算：缺少处理后 7 天快照"
+    assert result.before_metrics["cost"] == 80
+    assert result.after_metrics == {}
+
+
+def test_review_effect_for_advertised_product_ignores_sales_product_rows_with_same_asin(tmp_path: Path) -> None:
+    build_review_effect_result = getattr(manual_actions, "build_review_effect_result", None)
+    assert build_review_effect_result is not None
+    action_payload = {
+        "id": "manual-action-ad-product",
+        "signal_id": "sig-ad-product",
+        "action_type": "add_to_review",
+        "action_note": "加入复盘",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-15T00:00:00+00:00",
+        "manual_status": "pending",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "advertised_product",
+        "object_id": "B016EXMW02",
+        "object_label": "B016EXMW02",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    result = build_review_effect_result(
+        "sig-ad-product",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "object_type": "advertised_product",
+                "source_table": "advertised_products",
+                "asin": "B016EXMW02",
+                "start_date": "2026-06-08",
+                "end_date": "2026-06-14",
+                "impressions": 1000,
+                "clicks": 20,
+                "cost": 20,
+                "orders": 2,
+                "sales": 100,
+            },
+            {
+                "market_id": 1,
+                "object_type": "sales_product",
+                "source_table": "sales_product_daily_metrics",
+                "asin": "B016EXMW02",
+                "start_date": "2026-06-08",
+                "end_date": "2026-06-14",
+                "impressions": 0,
+                "clicks": 0,
+                "cost": -500,
+                "orders": 100,
+                "sales": 1000,
+            },
+        ],
+        now=datetime(2026, 6, 23, tzinfo=UTC),
+    )
+
+    assert result.status == "not_ready"
+    assert result.message == "复盘效果暂不可计算：缺少处理后 7 天快照"
+    assert result.before_metrics["cost"] == 20
+    assert result.before_metrics["orders"] == 2
+    assert result.before_metrics["sales"] == 100
+    assert result.before_metrics["cpc"] == 1
+
+
+def test_review_effect_uses_rows_inside_review_window_only(tmp_path: Path) -> None:
+    build_review_effect_result = getattr(manual_actions, "build_review_effect_result", None)
+    assert build_review_effect_result is not None
+    action_payload = {
+        "id": "manual-action-ad-product",
+        "signal_id": "sig-ad-product",
+        "action_type": "add_to_review",
+        "action_note": "加入复盘",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-15T00:00:00+00:00",
+        "manual_status": "pending",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "advertised_product",
+        "object_id": "B016EXMW02",
+        "object_label": "B016EXMW02",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    result = build_review_effect_result(
+        "sig-ad-product",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "object_type": "advertised_product",
+                "source_table": "advertised_products",
+                "asin": "B016EXMW02",
+                "start_date": "2026-05-17",
+                "end_date": "2026-06-15",
+                "impressions": 9000,
+                "clicks": 200,
+                "cost": 200,
+                "orders": 20,
+                "sales": 500,
+            },
+            {
+                "market_id": 1,
+                "object_type": "advertised_product",
+                "source_table": "advertised_products",
+                "asin": "B016EXMW02",
+                "start_date": "2026-06-08",
+                "end_date": "2026-06-14",
+                "impressions": 1000,
+                "clicks": 20,
+                "cost": 20,
+                "orders": 2,
+                "sales": 100,
+            },
+        ],
+        now=datetime(2026, 6, 23, tzinfo=UTC),
+    )
+
+    assert result.status == "not_ready"
+    assert result.message == "复盘效果暂不可计算：缺少处理后 7 天快照"
+    assert result.before_start_date == "2026-06-08"
+    assert result.before_end_date == "2026-06-14"
+    assert result.before_metrics["cost"] == 20
+    assert result.before_metrics["orders"] == 2
+    assert result.before_metrics["sales"] == 100
+
+
+def test_review_effect_requires_complete_before_window(tmp_path: Path) -> None:
+    build_review_effect_result = getattr(manual_actions, "build_review_effect_result", None)
+    assert build_review_effect_result is not None
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    result = build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-07",
+                "end_date": "2026-06-07",
+                "impressions": 200,
+                "clicks": 10,
+                "cost": 20,
+                "orders": 1,
+                "sales": 40,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "impressions": 900,
+                "clicks": 45,
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    assert result.status == "not_ready"
+    assert result.result == "unclear"
+    assert result.message == "复盘效果暂不可计算：处理前 7 天窗口不足"
+    assert result.before_start_date == "2026-06-07"
+    assert result.before_end_date == "2026-06-07"
+
+
+def test_review_effect_requires_complete_after_window_start(tmp_path: Path) -> None:
+    build_review_effect_result = getattr(manual_actions, "build_review_effect_result", None)
+    assert build_review_effect_result is not None
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    result = build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "impressions": 1000,
+                "clicks": 50,
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-12",
+                "end_date": "2026-06-15",
+                "impressions": 600,
+                "clicks": 30,
+                "cost": 45,
+                "orders": 4,
+                "sales": 160,
+            },
+        ],
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    assert result.status == "not_ready"
+    assert result.result == "unclear"
+    assert result.message == "复盘效果暂不可计算：处理后 7 天窗口不足"
+    assert result.after_start_date == "2026-06-12"
+    assert result.after_end_date == "2026-06-15"
+
+
+def test_review_effect_compares_before_and_after_metrics(tmp_path: Path) -> None:
+    build_review_effect_result = getattr(manual_actions, "build_review_effect_result", None)
+    assert build_review_effect_result is not None
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    result = build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "impressions": 1000,
+                "clicks": 50,
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "impressions": 900,
+                "clicks": 45,
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    assert result.status == "ready"
+    assert result.result == "improved"
+    assert result.message == "处理后 7 天订单改善，ACOS 下降"
+    assert result.before_metrics["cost"] == 80
+    assert result.before_metrics["orders"] == 1
+    assert result.before_metrics["acos"] == 1.6
+    assert result.after_metrics["cost"] == 60
+    assert result.after_metrics["orders"] == 5
+    assert result.after_metrics["acos"] == 0.3
+
+
+def test_review_effect_waits_until_review_window_due_even_when_rows_exist(tmp_path: Path) -> None:
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    effect = manual_actions.build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+        now=datetime(2026, 6, 14, tzinfo=UTC),
+    )
+
+    assert effect.status == "not_ready"
+    assert effect.result == "unclear"
+    assert effect.due_at == "2026-06-15T00:00:00+00:00"
+    assert effect.message == "复盘效果暂不可计算：7 天复盘窗口尚未到期，预计 2026-06-15 后复盘"
+    try:
+        manual_actions.save_review_record(effect, review_note="不能提前保存", reviewer_name="本地运营", review_root=tmp_path)
+    except ValueError as error:
+        assert str(error) == "review_effect_not_ready"
+    else:
+        raise AssertionError("复盘窗口未到期时不能保存 review_records")
+
+
+def test_review_record_persists_ready_effect_and_can_read_latest(tmp_path: Path) -> None:
+    build_review_effect_result = getattr(manual_actions, "build_review_effect_result", None)
+    save_review_record = getattr(manual_actions, "save_review_record", None)
+    load_review_records = getattr(manual_actions, "load_review_records", None)
+    latest_review_record = getattr(manual_actions, "latest_review_record", None)
+    assert build_review_effect_result is not None
+    assert save_review_record is not None
+    assert load_review_records is not None
+    assert latest_review_record is not None
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+    effect = build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    record = save_review_record(
+        effect,
+        review_note="确认处理有效，保留为成功复盘",
+        reviewer_name="本地运营",
+        expected_action_id="manual-action-fixed",
+        expected_object_type="search_term",
+        expected_object_id="kids sunglasses",
+        expected_review_window="7d",
+        review_root=tmp_path,
+    )
+    records = load_review_records("sig-test-manual-action", review_root=tmp_path)
+    latest = latest_review_record("sig-test-manual-action", review_root=tmp_path)
+
+    assert record.signal_id == "sig-test-manual-action"
+    assert record.result == "improved"
+    assert record.review_window == "7d"
+    assert record.review_note == "确认处理有效，保留为成功复盘"
+    assert record.shop_id == "shop-rivbos"
+    assert record.market_id == 1
+    assert record.object_type == "search_term"
+    assert record.object_id == "kids sunglasses"
+    assert record.object_label == "kids sunglasses"
+    assert record.before_metrics["cost"] == 80
+    assert record.after_metrics["orders"] == 5
+    assert records == [record]
+    assert latest == record
+    assert (tmp_path / "review_records.jsonl").exists()
+
+
+def test_review_record_rejects_not_ready_effect(tmp_path: Path) -> None:
+    save_review_record = getattr(manual_actions, "save_review_record", None)
+    assert save_review_record is not None
+    effect = manual_actions.build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[],
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    try:
+        save_review_record(effect, review_note="不能保存", reviewer_name="本地运营", review_root=tmp_path)
+    except ValueError as error:
+        assert str(error) == "review_effect_not_ready"
+    else:
+        raise AssertionError("not_ready 的复盘效果不能保存为复盘记录")
+
+
+def test_review_record_rejects_missing_preflight_expectation(tmp_path: Path) -> None:
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+    effect = manual_actions.build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    try:
+        manual_actions.save_review_record(effect, review_note="缺少预检期望", reviewer_name="本地运营", review_root=tmp_path)
+    except ValueError as error:
+        assert str(error) == "review_record_preflight_required"
+    else:
+        raise AssertionError("缺少复盘对象预检期望时不能保存 review_records")
+
+    assert not (tmp_path / "review_records.jsonl").exists()
+
+
+def test_manual_action_route_persists_and_applies_latest_status(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "load_signal_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(routes, "load_aba_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(routes, "detect_signals", lambda signal_rows, aba_rows=None, promotion_strategies=None: [make_signal()])
+    monkeypatch.setattr(routes, "detect_data_quality_signals", lambda *args, **kwargs: [])
+    evidence_snapshot = minimal_evidence_snapshot("搜索词浪费证据")
+    monkeypatch.setattr(
+        routes,
+        "build_manual_action_preflight_payload",
+        lambda **kwargs: route_preflight_payload(
+            object_type="search_term",
+            object_id="kids sunglasses",
+            action_type="handled",
+            evidence_snapshot=evidence_snapshot,
+        ),
+    )
+
+    response = TestClient(app).post(
+        "/api/signals/sig-test-manual-action/manual-actions",
+        json={
+            "action_type": "handled",
+            "action_note": "已人工处理",
+            "operator_name": "本地运营",
+            "expected_product_scope_id": "all",
+            "expected_object_type": "search_term",
+            "expected_object_id": "kids sunglasses",
+            "evidence_snapshot": evidence_snapshot,
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["signal_id"] == "sig-test-manual-action"
+    assert payload["action_type"] == "handled"
+    assert payload["manual_status"] == "adopted"
+    assert payload["snapshot_id"] == "snapshot-1"
+    assert payload["shop_id"] == "shop-rivbos"
+    assert payload["market_id"] == 1
+    assert payload["object_type"] == "search_term"
+    assert payload["object_id"] == "kids sunglasses"
+    assert payload["object_label"] == "kids sunglasses"
+
+    signals_response = TestClient(app).get("/api/signals?market_id=1")
+    signals = signals_response.json()
+
+    assert signals[0]["status"] == "adopted"
+    assert signals[0]["manual_status"] == "adopted"
+
+    actions_response = TestClient(app).get("/api/signals/sig-test-manual-action/manual-actions")
+    actions = actions_response.json()
+
+    assert len(actions) == 1
+    assert actions[0]["action_note"] == "已人工处理"
+
+    review_response = TestClient(app).get("/api/signals/sig-test-manual-action/review-todos")
+    review_todos = review_response.json()
+
+    assert review_response.status_code == 200
+    assert [todo["review_window"] for todo in review_todos] == ["7d", "14d"]
+    assert review_todos[0]["signal_id"] == "sig-test-manual-action"
+    assert review_todos[0]["action_type"] == "handled"
+    assert review_todos[0]["object_type"] == "search_term"
+    assert review_todos[0]["object_id"] == "kids sunglasses"
+
+
+def test_manual_action_route_rejects_preflight_object_mismatch(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "load_signal_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(routes, "load_aba_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(routes, "detect_signals", lambda signal_rows, aba_rows=None, promotion_strategies=None: [make_signal()])
+    monkeypatch.setattr(routes, "detect_data_quality_signals", lambda *args, **kwargs: [])
+
+    response = TestClient(app).post(
+        "/api/signals/sig-test-manual-action/manual-actions?market_id=1",
+        json={
+            "action_type": "handled",
+            "action_note": "已人工处理",
+            "operator_name": "本地运营",
+            "expected_object_type": "search_term",
+            "expected_object_id": "wrong search term",
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
+            "evidence_snapshot": minimal_evidence_snapshot("搜索词浪费证据"),
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "manual_action_preflight_mismatch"
+    assert load_manual_actions("sig-test-manual-action", action_root=tmp_path) == []
+
+    forbidden_response = TestClient(app).post(
+        "/api/signals/sig-test-manual-action/manual-actions?market_id=1",
+        json={
+            "action_type": "handled",
+            "expected_object_type": "search_term",
+            "expected_object_id": "kids sunglasses",
+            "expected_can_auto_change_rules": True,
+            "expected_can_auto_execute_ads": False,
+            "evidence_snapshot": minimal_evidence_snapshot("搜索词浪费证据"),
+        },
+    )
+
+    assert forbidden_response.status_code == 409
+    assert forbidden_response.json()["detail"] == "manual_action_forbidden_effect"
+    assert load_manual_actions("sig-test-manual-action", action_root=tmp_path) == []
+
+
+def test_manual_action_route_uses_asin_for_advertised_product_review_identity(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "load_signal_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(routes, "load_aba_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(routes, "detect_signals", lambda signal_rows, aba_rows=None, promotion_strategies=None: [make_advertised_product_signal()])
+    monkeypatch.setattr(routes, "detect_data_quality_signals", lambda *args, **kwargs: [])
+    evidence_snapshot = minimal_evidence_snapshot("广告商品覆盖")
+    monkeypatch.setattr(
+        routes,
+        "build_manual_action_preflight_payload",
+        lambda **kwargs: route_preflight_payload(
+            object_type="advertised_product",
+            object_id="B016EXMW02",
+            action_type="add_to_review",
+            evidence_snapshot=evidence_snapshot,
+        ),
+    )
+
+    response = TestClient(app).post(
+        "/api/signals/sig-ad-product-manual-action/manual-actions?market_id=1",
+        json={
+            "action_type": "add_to_review",
+            "action_note": "review B016EXMW02",
+            "operator_name": "local operator",
+            "expected_product_scope_id": "parent_asin:B00K4W4AAA",
+            "expected_object_type": "advertised_product",
+            "expected_object_id": "B016EXMW02",
+            "evidence_snapshot": evidence_snapshot,
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["object_type"] == "advertised_product"
+    assert payload["object_id"] == "B016EXMW02"
+    assert payload["object_label"] == "B016EXMW02"
+
+    review_response = TestClient(app).get("/api/signals/sig-ad-product-manual-action/review-todos?market_id=1")
+    review_todos = review_response.json()
+
+    assert review_response.status_code == 200
+    assert [todo["review_window"] for todo in review_todos] == ["7d", "14d"]
+    assert review_todos[0]["object_type"] == "advertised_product"
+    assert review_todos[0]["object_id"] == "B016EXMW02"
+    assert review_todos[0]["object_label"] == "B016EXMW02"
+
+
+def test_manual_action_route_uses_asin_for_sales_product_review_identity(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "load_signal_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(routes, "load_aba_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(routes, "detect_signals", lambda signal_rows, aba_rows=None, promotion_strategies=None: [make_sales_product_signal()])
+    monkeypatch.setattr(routes, "detect_data_quality_signals", lambda *args, **kwargs: [])
+    evidence_snapshot = minimal_evidence_snapshot("销售承接证据")
+    monkeypatch.setattr(
+        routes,
+        "build_manual_action_preflight_payload",
+        lambda **kwargs: route_preflight_payload(
+            object_type="sales_product",
+            object_id="B06VW5SQ97",
+            action_type="add_to_review",
+            evidence_snapshot=evidence_snapshot,
+        ),
+    )
+
+    response = TestClient(app).post(
+        "/api/signals/sig-sales-product-manual-action/manual-actions?market_id=1",
+        json={
+            "action_type": "add_to_review",
+            "action_note": "review B06VW5SQ97",
+            "operator_name": "local operator",
+            "expected_product_scope_id": "parent_asin:B00K4W4AAA",
+            "expected_object_type": "sales_product",
+            "expected_object_id": "B06VW5SQ97",
+            "evidence_snapshot": evidence_snapshot,
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["object_type"] == "sales_product"
+    assert payload["object_id"] == "B06VW5SQ97"
+    assert payload["object_label"] == "RBK004-RBK004-2 深蓝"
+
+    review_response = TestClient(app).get("/api/signals/sig-sales-product-manual-action/review-todos?market_id=1")
+    review_todos = review_response.json()
+
+    assert review_response.status_code == 200
+    assert [todo["review_window"] for todo in review_todos] == ["7d", "14d"]
+    assert review_todos[0]["object_type"] == "sales_product"
+    assert review_todos[0]["object_id"] == "B06VW5SQ97"
+    assert review_todos[0]["object_label"] == "RBK004-RBK004-2 深蓝"
+
+
+def test_review_effect_route_returns_not_ready_without_after_snapshot(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+    monkeypatch.setattr(
+        routes,
+        "load_signal_rows_from_success_snapshots",
+        lambda: [
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            }
+        ],
+        raising=False,
+    )
+
+    response = TestClient(app).get("/api/signals/sig-test-manual-action/review-effect?review_window=7d")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "not_ready"
+    assert payload["result"] == "unclear"
+    assert payload["message"] == "复盘效果暂不可计算：缺少处理后 7 天快照"
+
+
+def test_review_record_route_saves_ready_effect_and_signal_reads_latest_result(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "load_aba_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(routes, "detect_signals", lambda signal_rows, aba_rows=None, promotion_strategies=None: [make_signal()])
+    monkeypatch.setattr(routes, "detect_data_quality_signals", lambda *args, **kwargs: [])
+    monkeypatch.setattr(routes, "load_signal_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(
+        routes,
+        "load_signal_rows_from_success_snapshots",
+        lambda: [
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+    )
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    response = TestClient(app).post(
+        "/api/signals/sig-test-manual-action/review-records?review_window=7d",
+        json={
+            "review_note": "确认处理有效，保留为成功复盘",
+            "reviewer_name": "本地运营",
+            "expected_action_id": "manual-action-fixed",
+            "expected_object_type": "search_term",
+            "expected_object_id": "kids sunglasses",
+            "expected_review_window": "7d",
+        },
+    )
+    list_response = TestClient(app).get("/api/signals/sig-test-manual-action/review-records")
+    signal_response = TestClient(app).get("/api/signals/sig-test-manual-action?market_id=1")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["result"] == "improved"
+    assert payload["review_note"] == "确认处理有效，保留为成功复盘"
+    assert list_response.status_code == 200
+    assert len(list_response.json()) == 1
+    assert signal_response.json()["review_result"] == "improved"
+
+
+def test_review_record_route_rejects_mismatched_preflight_expectation(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(
+        routes,
+        "load_signal_rows_from_success_snapshots",
+        lambda: [
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+    )
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    response = TestClient(app).post(
+        "/api/signals/sig-test-manual-action/review-records?review_window=7d&market_id=1",
+        json={
+            "review_note": "对象不一致时不能保存",
+            "reviewer_name": "本地运营",
+            "expected_action_id": "manual-action-fixed",
+            "expected_object_type": "search_term",
+            "expected_object_id": "wrong search term",
+            "expected_review_window": "7d",
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "review_record_preflight_mismatch"
+    assert not (tmp_path / "review_records.jsonl").exists()
+
+
+def test_review_record_route_rejects_not_ready_effect(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "load_signal_rows_from_success_snapshots", lambda: [])
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    response = TestClient(app).post(
+        "/api/signals/sig-test-manual-action/review-records?review_window=7d",
+        json={"review_note": "不能保存", "reviewer_name": "本地运营"},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "review_effect_not_ready"
