@@ -162,6 +162,8 @@ export interface SearchIntentReviewCard {
   summary: string;
   sourceLabel: string;
   insight: string;
+  purpose: string;
+  boundary: string;
   topTerms: string[];
 }
 
@@ -5345,6 +5347,8 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       summary: `${metrics.orders} 单 / 花费 ${formatReviewNumber(metrics.cost)} / ACOS ${formatReviewPercent(metrics.acos)} / ABA 命中 ${abaMatchCount}`,
       sourceLabel: summary.semantic_source || "未知来源",
       insight: summary.insight,
+      purpose: "用途：聚焦当前诊断入口内同类广告搜索词，判断是否值得逐条进入人工复核。",
+      boundary: "边界：只筛 SearchTerm 机会；不改变诊断入口，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
       topTerms,
     };
   });

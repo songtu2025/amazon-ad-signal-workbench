@@ -1846,16 +1846,16 @@ export function SignalTriageWorkbench() {
           </div>
 
           {searchIntentReviewCards.length > 0 && (
-            <section className="searchIntentReviewPanel" aria-label="搜索词语义组复核">
+            <section className="searchIntentReviewPanel" aria-label="搜索词语义聚焦">
               <div className="searchIntentReviewHeader">
-                <strong>语义组复核</strong>
-                <span>当前诊断入口内的同类搜索词复核</span>
+                <strong>搜索词语义聚焦</strong>
+                <span>当前诊断入口内的 SearchTerm 机会聚合</span>
               </div>
               {selectedSearchIntentLabel && (
                 <div className="searchIntentActiveFilter" aria-label="当前语义组筛选">
                   <span>
                     已聚焦：{selectedSearchIntentLabel}
-                    <small>诊断入口保持不变，仅显示同组 SearchTerm 机会；ABA 只作站点级背景。</small>
+                    <small>诊断入口保持不变，仅显示同组 SearchTerm 机会；不做商品归因；ABA 只作站点级背景。</small>
                   </span>
                   <button type="button" onClick={() => setSelectedSearchIntentLabel(null)}>
                     清除
@@ -1877,7 +1877,9 @@ export function SignalTriageWorkbench() {
                       <span>{card.sourceLabel}</span>
                     </div>
                     <p>{card.summary}</p>
+                    <small>{card.purpose}</small>
                     <small>{card.insight}</small>
+                    <small>{card.boundary}</small>
                     {card.topTerms.length > 0 && (
                       <ul>
                         {card.topTerms.map((term) => (

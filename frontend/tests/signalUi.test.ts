@@ -5018,6 +5018,10 @@ assertEqual(searchIntentReviewCards.length, 1);
 assertEqual(searchIntentReviewCards[0].title, "规则语义：儿童太阳镜");
 assertEqual(searchIntentReviewCards[0].summary, "4 单 / 花费 9 / ACOS 12.86% / ABA 命中 1");
 assertEqual(searchIntentReviewCards[0].sourceLabel, "规则语义");
+assertIncludes(searchIntentReviewCards[0].purpose, "当前诊断入口内同类广告搜索词");
+assertIncludes(searchIntentReviewCards[0].boundary, "只筛 SearchTerm 机会");
+assertIncludes(searchIntentReviewCards[0].boundary, "不证明单个 ASIN 归因");
+assertIncludes(searchIntentReviewCards[0].boundary, "ABA 仅作站点级背景");
 assertEqual(searchIntentReviewCards[0].topTerms[0], "baby sunglasses：3 单 / 花费 7 / ACOS 14.00% / ABA 120");
 assertEqual(searchIntentReviewCards[0].intentLabel, "规则语义：儿童太阳镜");
 
