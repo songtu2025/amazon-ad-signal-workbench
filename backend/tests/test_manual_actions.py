@@ -35,6 +35,94 @@ def minimal_evidence_snapshot(label: str = "广告商品覆盖") -> list[dict[st
     ]
 
 
+def diagnosis_evidence_snapshot() -> list[dict[str, str]]:
+    return [
+        {
+            "label": "排查路径",
+            "value": "Parent 经营盘子 -> 广告 ASIN -> 广告组 -> 投放词 / 搜索词 / 广告位",
+            "detail": "保存复盘前必须回看原始广告诊断路径。",
+            "source": "business_rule",
+        },
+        {
+            "label": "AI 准入",
+            "value": "可进入人工确认 / ready_for_manual_confirmation / 候选 1 个 / 允许人工留痕",
+            "detail": "准入只证明允许人工留痕，不代表系统会自动执行广告动作。",
+            "source": "actionability_status",
+        },
+        {
+            "label": "搜索词边界",
+            "value": "搜索词只说明同广告组上下文，不能自动归因到单个广告 ASIN。",
+            "detail": "保存复盘前必须确认未自动加词、否词或调价。",
+            "source": "search_term_metrics",
+        },
+        {
+            "label": "广告位边界",
+            "value": "广告组级广告位 0 条 / 同广告活动广告位 4 条。",
+            "detail": "活动级广告位只能作背景，不能替代广告组级证据。",
+            "source": "placement_metrics",
+        },
+        {
+            "label": "广告组合流判断",
+            "value": "kids sunglasses 已串联广告组、投放词、搜索词和广告位边界。",
+            "detail": "不能自动归因到单个广告 ASIN，不能自动加词、否词、调价或调整广告位。",
+            "source": "diagnosis_contract",
+        },
+        {
+            "label": "投放词证据",
+            "value": "sunglasses for kids / 1 个",
+            "detail": "用于确认用户搜索词是否已有投放词承接。",
+            "source": "ad_search_term_daily_metrics",
+        },
+        {
+            "label": "ABA 背景",
+            "value": "未匹配 ABA Top1000",
+            "detail": "ABA 只能作为站点级市场背景。",
+            "source": "diagnosis_contract + ABA导出",
+        },
+        {
+            "label": "证据缺口",
+            "value": "缺少广告组级广告位证据和人工主推策略确认。",
+            "detail": "复盘时不能把当前证据扩展成自动归因依据。",
+            "source": "diagnosis_contract",
+        },
+        {
+            "label": "动作边界",
+            "value": "只允许记录观察、标记已处理、加入复盘或忽略本次。",
+            "detail": "不得自动加词、自动否词、自动调价、自动暂停或开启广告。",
+            "source": "business_rule",
+        },
+        *minimal_evidence_snapshot("广告商品覆盖"),
+    ]
+
+
+def diagnosis_without_ai_admission_snapshot() -> list[dict[str, str]]:
+    return [
+        {
+            "label": "排查路径",
+            "value": "Parent 经营盘子 -> 广告 ASIN -> 广告组 -> 投放词 / 搜索词 / 广告位",
+            "detail": "保存复盘前必须回看原始广告诊断路径。",
+            "source": "business_rule",
+        },
+        {
+            "label": "搜索词边界",
+            "value": "搜索词只说明同广告组上下文，不能自动归因到单个广告 ASIN。",
+            "detail": "保存复盘前必须确认未自动加词、否词或调价。",
+            "source": "search_term_metrics",
+        },
+        {
+            "label": "广告位边界",
+            "value": "广告组级广告位 0 条 / 同广告活动广告位 4 条。",
+            "detail": "活动级广告位只能作背景，不能替代广告组级证据。",
+            "source": "placement_metrics",
+        },
+        *minimal_evidence_snapshot("广告商品覆盖"),
+    ]
+
+
+def diagnosis_without_label_snapshot(label: str) -> list[dict[str, str]]:
+    return [item for item in diagnosis_evidence_snapshot() if item["label"] != label]
+
+
 def route_preflight_payload(
     *,
     object_type: str,
@@ -442,6 +530,7 @@ def test_manual_action_load_hides_corrupted_question_mark_text(tmp_path: Path) -
         "object_type": "search_term",
         "object_id": "kids sunglasses",
         "object_label": "kids sunglasses",
+        "evidence_snapshot": diagnosis_evidence_snapshot(),
     }
     (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -602,6 +691,7 @@ def test_review_todos_are_derived_from_manual_action_time(tmp_path: Path) -> Non
         "object_type": "search_term",
         "object_id": "kids sunglasses",
         "object_label": "kids sunglasses",
+        "evidence_snapshot": diagnosis_evidence_snapshot(),
     }
     (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -721,6 +811,102 @@ def test_review_todos_skip_latest_ignored_action(tmp_path: Path) -> None:
     assert todos == []
 
 
+def test_review_todo_decision_voids_one_legacy_window_without_deleting_action(tmp_path: Path) -> None:
+    action_payload = {
+        "id": "manual-action-legacy",
+        "signal_id": "sig-legacy-missing-evidence",
+        "action_type": "add_to_review",
+        "action_note": "legacy action without evidence snapshot",
+        "operator_name": "local operator",
+        "acted_at": "2026-06-01T00:00:00+00:00",
+        "manual_status": "pending",
+        "snapshot_id": "snapshot-old",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "beach essentials",
+        "object_label": "beach essentials",
+        "evidence_snapshot": [],
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    before = build_review_todos(
+        "sig-legacy-missing-evidence",
+        market_id=1,
+        action_root=tmp_path,
+        now=datetime(2026, 6, 10, tzinfo=UTC),
+    )
+    assert [todo.review_window for todo in before] == ["7d", "14d"]
+
+    decision = manual_actions.save_review_todo_decision(
+        action_id="manual-action-legacy",
+        signal_id="sig-legacy-missing-evidence",
+        review_window="7d",
+        reason="历史动作缺少 evidence_snapshot，7d 待办作废。",
+        operator_name="本地运营",
+        shop_id="shop-rivbos",
+        market_id=1,
+        object_type="search_term",
+        object_id="beach essentials",
+        object_label="beach essentials",
+        action_root=tmp_path,
+    )
+
+    after = build_review_todos(
+        "sig-legacy-missing-evidence",
+        market_id=1,
+        action_root=tmp_path,
+        now=datetime(2026, 6, 10, tzinfo=UTC),
+    )
+    actions = load_manual_actions("sig-legacy-missing-evidence", market_id=1, action_root=tmp_path)
+    decisions = manual_actions.load_review_todo_decisions(action_id="manual-action-legacy", market_id=1, action_root=tmp_path)
+
+    assert decision.decision_type == "void_legacy_missing_evidence"
+    assert decision.can_auto_change_rules is False
+    assert decision.can_auto_execute_ads is False
+    assert [todo.review_window for todo in after] == ["14d"]
+    assert [action.id for action in actions] == ["manual-action-legacy"]
+    assert [item.id for item in decisions] == [decision.id]
+
+
+def test_review_todo_decision_voids_all_windows_when_window_is_none(tmp_path: Path) -> None:
+    action_payload = {
+        "id": "manual-action-legacy-all",
+        "signal_id": "sig-legacy-all",
+        "action_type": "handled",
+        "operator_name": "local operator",
+        "acted_at": "2026-06-01T00:00:00+00:00",
+        "manual_status": "adopted",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "advertised_product",
+        "object_id": "B016EXMW02",
+        "object_label": "B016EXMW02",
+        "evidence_snapshot": [],
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    manual_actions.save_review_todo_decision(
+        action_id="manual-action-legacy-all",
+        signal_id="sig-legacy-all",
+        review_window=None,
+        reason="历史动作缺少 evidence_snapshot，全部待办作废。",
+        market_id=1,
+        object_type="advertised_product",
+        object_id="B016EXMW02",
+        action_root=tmp_path,
+    )
+
+    todos = build_review_todos(
+        "sig-legacy-all",
+        market_id=1,
+        action_root=tmp_path,
+        now=datetime(2026, 6, 10, tzinfo=UTC),
+    )
+
+    assert todos == []
+
+
 def test_review_effect_for_cross_signal_uses_data_quality_review_message(tmp_path: Path) -> None:
     build_review_effect_result = getattr(manual_actions, "build_review_effect_result", None)
     assert build_review_effect_result is not None
@@ -785,6 +971,7 @@ def test_review_effect_waits_for_after_snapshot(tmp_path: Path) -> None:
         "object_type": "search_term",
         "object_id": "kids sunglasses",
         "object_label": "kids sunglasses",
+        "evidence_snapshot": diagnosis_evidence_snapshot(),
     }
     (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -959,6 +1146,7 @@ def test_review_effect_requires_complete_before_window(tmp_path: Path) -> None:
         "object_type": "search_term",
         "object_id": "kids sunglasses",
         "object_label": "kids sunglasses",
+        "evidence_snapshot": diagnosis_evidence_snapshot(),
     }
     (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -1200,6 +1388,7 @@ def test_review_record_persists_ready_effect_and_can_read_latest(tmp_path: Path)
         "object_type": "search_term",
         "object_id": "kids sunglasses",
         "object_label": "kids sunglasses",
+        "evidence_snapshot": diagnosis_evidence_snapshot(),
     }
     (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
     effect = build_review_effect_result(
@@ -1229,6 +1418,9 @@ def test_review_record_persists_ready_effect_and_can_read_latest(tmp_path: Path)
         now=datetime(2026, 6, 16, tzinfo=UTC),
     )
 
+    assert effect.evidence_snapshot[0].label == "排查路径"
+    assert effect.evidence_snapshot[1].source == "actionability_status"
+
     record = save_review_record(
         effect,
         review_note="确认处理有效，保留为成功复盘",
@@ -1237,6 +1429,9 @@ def test_review_record_persists_ready_effect_and_can_read_latest(tmp_path: Path)
         expected_object_type="search_term",
         expected_object_id="kids sunglasses",
         expected_review_window="7d",
+        expected_evidence_snapshot=diagnosis_evidence_snapshot(),
+        expected_can_auto_change_rules=False,
+        expected_can_auto_execute_ads=False,
         review_root=tmp_path,
     )
     records = load_review_records("sig-test-manual-action", review_root=tmp_path)
@@ -1253,9 +1448,365 @@ def test_review_record_persists_ready_effect_and_can_read_latest(tmp_path: Path)
     assert record.object_label == "kids sunglasses"
     assert record.before_metrics["cost"] == 80
     assert record.after_metrics["orders"] == 5
+    assert record.evidence_snapshot[0].label == "排查路径"
+    assert record.evidence_snapshot[1].label == "AI 准入"
+    assert record.evidence_snapshot[1].source == "actionability_status"
     assert records == [record]
+    assert records[0].evidence_snapshot[0].value.startswith("Parent 经营盘子")
     assert latest == record
     assert (tmp_path / "review_records.jsonl").exists()
+
+
+def test_review_record_rejects_evidence_snapshot_not_inherited_from_effect(tmp_path: Path) -> None:
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+        "evidence_snapshot": diagnosis_evidence_snapshot(),
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+    effect = manual_actions.build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+    stale_snapshot = diagnosis_evidence_snapshot()
+    coverage_index = next(index for index, item in enumerate(stale_snapshot) if item["label"] == "广告商品覆盖")
+    stale_snapshot[coverage_index] = {
+        "label": "广告商品覆盖",
+        "value": "前端缓存里的旧证据",
+        "detail": "这不是当前人工动作继承下来的证据快照。",
+        "source": "stale_frontend",
+    }
+
+    try:
+        manual_actions.save_review_record(
+            effect,
+            review_note="证据快照不一致不能保存",
+            reviewer_name="本地运营",
+            expected_action_id="manual-action-fixed",
+            expected_object_type="search_term",
+            expected_object_id="kids sunglasses",
+            expected_review_window="7d",
+            expected_evidence_snapshot=stale_snapshot,
+            expected_can_auto_change_rules=False,
+            expected_can_auto_execute_ads=False,
+            review_root=tmp_path,
+        )
+    except ValueError as error:
+        assert str(error) == "review_record_evidence_snapshot_mismatch"
+    else:
+        raise AssertionError("ReviewRecord 不能保存非当前人工动作继承的证据快照")
+
+    assert not (tmp_path / "review_records.jsonl").exists()
+
+
+def test_review_record_rejects_search_term_snapshot_without_action_boundary_at_service_layer(tmp_path: Path) -> None:
+    evidence_snapshot = diagnosis_without_label_snapshot("动作边界")
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+        "evidence_snapshot": evidence_snapshot,
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+    effect = manual_actions.build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    try:
+        manual_actions.save_review_record(
+            effect,
+            review_note="缺少动作边界不能保存",
+            reviewer_name="本地运营",
+            expected_action_id="manual-action-fixed",
+            expected_object_type="search_term",
+            expected_object_id="kids sunglasses",
+            expected_review_window="7d",
+            expected_evidence_snapshot=evidence_snapshot,
+            expected_can_auto_change_rules=False,
+            expected_can_auto_execute_ads=False,
+            review_root=tmp_path,
+        )
+    except ValueError as error:
+        assert str(error) == "review_record_missing_action_boundary"
+    else:
+        raise AssertionError("搜索词复盘缺少动作边界时不能保存 ReviewRecord")
+
+    assert not (tmp_path / "review_records.jsonl").exists()
+
+
+def test_review_record_rejects_missing_diagnosis_path(tmp_path: Path) -> None:
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+        "evidence_snapshot": minimal_evidence_snapshot("广告商品覆盖"),
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+    effect = manual_actions.build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    try:
+        manual_actions.save_review_record(
+            effect,
+            review_note="缺少诊断路径",
+            reviewer_name="本地运营",
+            expected_action_id="manual-action-fixed",
+            expected_object_type="search_term",
+            expected_object_id="kids sunglasses",
+            expected_review_window="7d",
+            expected_evidence_snapshot=minimal_evidence_snapshot("广告商品覆盖"),
+            expected_can_auto_change_rules=False,
+            expected_can_auto_execute_ads=False,
+            review_root=tmp_path,
+        )
+    except ValueError as error:
+        assert str(error) == "review_record_missing_diagnosis_path"
+    else:
+        raise AssertionError("缺少排查路径时不能保存 ReviewRecord")
+
+    assert not (tmp_path / "review_records.jsonl").exists()
+
+
+def test_review_record_rejects_missing_ai_admission(tmp_path: Path) -> None:
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+        "evidence_snapshot": diagnosis_without_ai_admission_snapshot(),
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+    effect = manual_actions.build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    try:
+        manual_actions.save_review_record(
+            effect,
+            review_note="缺少 AI 准入理由",
+            reviewer_name="本地运营",
+            expected_action_id="manual-action-fixed",
+            expected_object_type="search_term",
+            expected_object_id="kids sunglasses",
+            expected_review_window="7d",
+            expected_evidence_snapshot=diagnosis_without_ai_admission_snapshot(),
+            expected_can_auto_change_rules=False,
+            expected_can_auto_execute_ads=False,
+            review_root=tmp_path,
+        )
+    except ValueError as error:
+        assert str(error) == "review_record_missing_ai_admission"
+    else:
+        raise AssertionError("缺少 AI 准入理由时不能保存 ReviewRecord")
+
+    assert not (tmp_path / "review_records.jsonl").exists()
+
+
+def test_review_record_rejects_missing_search_term_or_placement_boundary(tmp_path: Path) -> None:
+    cases = [
+        ("搜索词边界", "review_record_missing_search_term_boundary"),
+        ("广告位边界", "review_record_missing_placement_boundary"),
+    ]
+    for missing_label, expected_error in cases:
+        case_root = tmp_path / expected_error
+        case_root.mkdir()
+        evidence_snapshot = diagnosis_without_label_snapshot(missing_label)
+        action_payload = {
+            "id": "manual-action-fixed",
+            "signal_id": "sig-test-manual-action",
+            "action_type": "handled",
+            "action_note": "已人工处理",
+            "operator_name": "本地运营",
+            "acted_at": "2026-06-08T00:00:00+00:00",
+            "manual_status": "adopted",
+            "snapshot_id": "snapshot-before",
+            "shop_id": "shop-rivbos",
+            "market_id": 1,
+            "object_type": "search_term",
+            "object_id": "kids sunglasses",
+            "object_label": "kids sunglasses",
+            "evidence_snapshot": evidence_snapshot,
+        }
+        (case_root / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+        effect = manual_actions.build_review_effect_result(
+            "sig-test-manual-action",
+            review_window="7d",
+            action_root=case_root,
+            signal_rows=[
+                {
+                    "market_id": 1,
+                    "search_term": "kids sunglasses",
+                    "start_date": "2026-06-01",
+                    "end_date": "2026-06-07",
+                    "cost": 80,
+                    "orders": 1,
+                    "sales": 50,
+                },
+                {
+                    "market_id": 1,
+                    "search_term": "kids sunglasses",
+                    "start_date": "2026-06-09",
+                    "end_date": "2026-06-15",
+                    "cost": 60,
+                    "orders": 5,
+                    "sales": 200,
+                },
+            ],
+            now=datetime(2026, 6, 16, tzinfo=UTC),
+        )
+
+        try:
+            manual_actions.save_review_record(
+                effect,
+                review_note=f"缺少{missing_label}",
+                reviewer_name="本地运营",
+                expected_action_id="manual-action-fixed",
+                expected_object_type="search_term",
+                expected_object_id="kids sunglasses",
+                expected_review_window="7d",
+                expected_evidence_snapshot=evidence_snapshot,
+                expected_can_auto_change_rules=False,
+                expected_can_auto_execute_ads=False,
+                review_root=case_root,
+            )
+        except ValueError as error:
+            assert str(error) == expected_error
+        else:
+            raise AssertionError(f"缺少{missing_label}时不能保存 ReviewRecord")
+
+        assert not (case_root / "review_records.jsonl").exists()
 
 
 def test_review_record_rejects_not_ready_effect(tmp_path: Path) -> None:
@@ -1331,6 +1882,69 @@ def test_review_record_rejects_missing_preflight_expectation(tmp_path: Path) -> 
     assert not (tmp_path / "review_records.jsonl").exists()
 
 
+def test_review_record_rejects_missing_forbidden_effect_expectation(tmp_path: Path) -> None:
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+    effect = manual_actions.build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    try:
+        manual_actions.save_review_record(
+            effect,
+            review_note="缺少禁止自动动作声明",
+            reviewer_name="本地运营",
+            expected_action_id="manual-action-fixed",
+            expected_object_type="search_term",
+            expected_object_id="kids sunglasses",
+            expected_review_window="7d",
+            review_root=tmp_path,
+        )
+    except ValueError as error:
+        assert str(error) == "review_record_preflight_required"
+    else:
+        raise AssertionError("缺少禁止自动动作声明时不能保存 review_records")
+
+    assert not (tmp_path / "review_records.jsonl").exists()
+
+
 def test_manual_action_route_persists_and_applies_latest_status(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
     monkeypatch.setattr(routes, "load_signal_rows_from_latest_snapshot", lambda: [])
@@ -1358,6 +1972,8 @@ def test_manual_action_route_persists_and_applies_latest_status(tmp_path: Path, 
             "expected_product_scope_id": "all",
             "expected_object_type": "search_term",
             "expected_object_id": "kids sunglasses",
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
             "evidence_snapshot": evidence_snapshot,
         },
     )
@@ -1371,7 +1987,7 @@ def test_manual_action_route_persists_and_applies_latest_status(tmp_path: Path, 
     assert payload["shop_id"] == "shop-rivbos"
     assert payload["market_id"] == 1
     assert payload["object_type"] == "search_term"
-    assert payload["object_id"] == "kids sunglasses"
+    assert payload["object_id"] == "search_term:1:kids sunglasses"
     assert payload["object_label"] == "kids sunglasses"
 
     signals_response = TestClient(app).get("/api/signals?market_id=1")
@@ -1394,7 +2010,31 @@ def test_manual_action_route_persists_and_applies_latest_status(tmp_path: Path, 
     assert review_todos[0]["signal_id"] == "sig-test-manual-action"
     assert review_todos[0]["action_type"] == "handled"
     assert review_todos[0]["object_type"] == "search_term"
-    assert review_todos[0]["object_id"] == "kids sunglasses"
+    assert review_todos[0]["object_id"] == "search_term:1:kids sunglasses"
+
+
+def test_manual_action_route_rejects_missing_forbidden_effect_expectation(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "load_signal_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(routes, "load_aba_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(routes, "detect_signals", lambda signal_rows, aba_rows=None, promotion_strategies=None: [make_signal()])
+    monkeypatch.setattr(routes, "detect_data_quality_signals", lambda *args, **kwargs: [])
+
+    response = TestClient(app).post(
+        "/api/signals/sig-test-manual-action/manual-actions?market_id=1",
+        json={
+            "action_type": "handled",
+            "action_note": "已人工处理",
+            "operator_name": "本地运营",
+            "expected_object_type": "search_term",
+            "expected_object_id": "kids sunglasses",
+            "evidence_snapshot": minimal_evidence_snapshot("搜索词浪费证据"),
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "manual_action_preflight_required"
+    assert load_manual_actions("sig-test-manual-action", action_root=tmp_path) == []
 
 
 def test_manual_action_route_rejects_preflight_object_mismatch(tmp_path: Path, monkeypatch) -> None:
@@ -1466,6 +2106,8 @@ def test_manual_action_route_uses_asin_for_advertised_product_review_identity(tm
             "expected_product_scope_id": "parent_asin:B00K4W4AAA",
             "expected_object_type": "advertised_product",
             "expected_object_id": "B016EXMW02",
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
             "evidence_snapshot": evidence_snapshot,
         },
     )
@@ -1513,6 +2155,8 @@ def test_manual_action_route_uses_asin_for_sales_product_review_identity(tmp_pat
             "expected_product_scope_id": "parent_asin:B00K4W4AAA",
             "expected_object_type": "sales_product",
             "expected_object_id": "B06VW5SQ97",
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
             "evidence_snapshot": evidence_snapshot,
         },
     )
@@ -1622,6 +2266,7 @@ def test_review_record_route_saves_ready_effect_and_signal_reads_latest_result(t
         "object_type": "search_term",
         "object_id": "kids sunglasses",
         "object_label": "kids sunglasses",
+        "evidence_snapshot": diagnosis_evidence_snapshot(),
     }
     (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -1634,6 +2279,9 @@ def test_review_record_route_saves_ready_effect_and_signal_reads_latest_result(t
             "expected_object_type": "search_term",
             "expected_object_id": "kids sunglasses",
             "expected_review_window": "7d",
+            "expected_evidence_snapshot": diagnosis_evidence_snapshot(),
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
         },
     )
     list_response = TestClient(app).get("/api/signals/sig-test-manual-action/review-records")
@@ -1643,8 +2291,11 @@ def test_review_record_route_saves_ready_effect_and_signal_reads_latest_result(t
     payload = response.json()
     assert payload["result"] == "improved"
     assert payload["review_note"] == "确认处理有效，保留为成功复盘"
+    assert payload["evidence_snapshot"][0]["label"] == "排查路径"
+    assert payload["evidence_snapshot"][1]["label"] == "AI 准入"
     assert list_response.status_code == 200
     assert len(list_response.json()) == 1
+    assert list_response.json()[0]["evidence_snapshot"][1]["source"] == "actionability_status"
     assert signal_response.json()["review_result"] == "improved"
 
 
@@ -1689,6 +2340,7 @@ def test_review_record_route_rejects_mismatched_preflight_expectation(tmp_path: 
         "object_type": "search_term",
         "object_id": "kids sunglasses",
         "object_label": "kids sunglasses",
+        "evidence_snapshot": diagnosis_evidence_snapshot(),
     }
     (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -1701,11 +2353,215 @@ def test_review_record_route_rejects_mismatched_preflight_expectation(tmp_path: 
             "expected_object_type": "search_term",
             "expected_object_id": "wrong search term",
             "expected_review_window": "7d",
+            "expected_evidence_snapshot": diagnosis_evidence_snapshot(),
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
         },
     )
 
     assert response.status_code == 409
-    assert response.json()["detail"] == "review_record_preflight_mismatch"
+    assert response.json()["detail"] == "review_record_evidence_snapshot_object_mismatch"
+    assert not (tmp_path / "review_records.jsonl").exists()
+
+
+def test_review_record_route_rejects_missing_ai_admission(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(
+        routes,
+        "load_signal_rows_from_success_snapshots",
+        lambda: [
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+    )
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+        "evidence_snapshot": diagnosis_without_ai_admission_snapshot(),
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    response = TestClient(app).post(
+        "/api/signals/sig-test-manual-action/review-records?review_window=7d&market_id=1",
+        json={
+            "review_note": "缺少 AI 准入理由时不能保存",
+            "reviewer_name": "本地运营",
+            "expected_action_id": "manual-action-fixed",
+            "expected_object_type": "search_term",
+            "expected_object_id": "kids sunglasses",
+            "expected_review_window": "7d",
+            "expected_evidence_snapshot": diagnosis_without_ai_admission_snapshot(),
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "review_record_missing_ai_admission"
+    assert not (tmp_path / "review_records.jsonl").exists()
+
+
+def test_review_record_route_rejects_mismatched_evidence_snapshot(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(
+        routes,
+        "load_signal_rows_from_success_snapshots",
+        lambda: [
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+    )
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+        "evidence_snapshot": diagnosis_evidence_snapshot(),
+    }
+    stale_snapshot = diagnosis_evidence_snapshot()
+    coverage_index = next(index for index, item in enumerate(stale_snapshot) if item["label"] == "广告商品覆盖")
+    stale_snapshot[coverage_index] = {
+        "label": "广告商品覆盖",
+        "value": "前端缓存里的旧证据",
+        "detail": "这不是当前 ReviewTodo 的证据快照。",
+        "source": "stale_frontend",
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    response = TestClient(app).post(
+        "/api/signals/sig-test-manual-action/review-records?review_window=7d&market_id=1",
+        json={
+            "review_note": "证据快照不一致时不能保存",
+            "reviewer_name": "本地运营",
+            "expected_action_id": "manual-action-fixed",
+            "expected_object_type": "search_term",
+            "expected_object_id": "kids sunglasses",
+            "expected_review_window": "7d",
+            "expected_evidence_snapshot": stale_snapshot,
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "review_record_evidence_snapshot_mismatch"
+    assert not (tmp_path / "review_records.jsonl").exists()
+
+
+def test_review_record_route_rejects_missing_forbidden_effect_expectation(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(
+        routes,
+        "load_signal_rows_from_success_snapshots",
+        lambda: [
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+    )
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+        "evidence_snapshot": diagnosis_evidence_snapshot(),
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    response = TestClient(app).post(
+        "/api/signals/sig-test-manual-action/review-records?review_window=7d&market_id=1",
+        json={
+            "review_note": "缺少禁止自动动作声明",
+            "reviewer_name": "本地运营",
+            "expected_action_id": "manual-action-fixed",
+            "expected_object_type": "search_term",
+            "expected_object_id": "kids sunglasses",
+            "expected_review_window": "7d",
+            "expected_evidence_snapshot": diagnosis_evidence_snapshot(),
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "review_record_preflight_required"
     assert not (tmp_path / "review_records.jsonl").exists()
 
 

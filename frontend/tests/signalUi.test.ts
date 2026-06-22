@@ -27,8 +27,10 @@ import {
   buildDiagnosisContextSummary,
   buildDiagnosisPathSummary,
   buildProductScopeEvidenceMatrix,
+  buildProductScopeEvidenceRouteDecision,
   buildProductScopeEvidenceRouteGuide,
   buildManualActionCandidateAdGroupBridge,
+  buildManualActionDecisionFactItems,
   buildProductScopeQueueHeader,
   buildProductScopeSelectionSummary,
   buildProductScopeCandidateGapExplanation,
@@ -43,14 +45,22 @@ import {
   buildSignalOverview,
   buildSignalTriggerRationale,
   buildSignalTriageRationale,
+  buildSignalDiagnosisEvidenceSummary,
+  buildSignalMetricDecisionItems,
+  buildSearchTermOpportunityReviewChain,
+  buildManualConfirmationEvidenceItems,
   recommendedManualStatusText,
   recommendedEvidenceDrilldownText,
   nextUnhandledEvidenceDrilldownText,
+  manualActionReviewRouteSplitSummary,
+  manualActionQueueTargetSwitchSummary,
   signalTriageCompactItems,
   buildRuleFeedbackPrioritySummary,
+  buildReviewEvidenceRepairSummary,
   buildReviewReadinessGateSummary,
   signalTriageBlockerTexts,
   signalTriageBusinessEvidenceItems,
+  signalTriageDiagnosisContractItems,
   signalTriageDiagnosisPathItems,
   signalTriageDepthText,
   signalTriageLayerText,
@@ -73,6 +83,7 @@ import {
   signalImpactScope,
   signalCategoryLabel,
   signalQueueKind,
+  signalQueueKindLabel,
   recommendedManualActionCardCopy,
 } from "../src/pages/SignalTriageWorkbench/signalUi";
 import {
@@ -368,6 +379,51 @@ const advertisedProductOpportunitySignal = {
   severity: 3,
 } as const satisfies SignalForUi & { object_type: "advertised_product" };
 
+const manualActionDecisionFacts = buildManualActionDecisionFactItems(
+  {
+    ...searchTermSignal,
+    why: "后端摘要判断 beach essentials 有低花费高转化机会",
+    risk: "旧风险字段不应优先覆盖诊断合同",
+    uncertainty: "旧不确定性字段不应优先覆盖诊断合同",
+  },
+  [
+    {
+      sectionId: "search_term_opportunity",
+      title: "搜索词机会",
+      businessQuestion: "是否存在可人工复核的扩量机会",
+      objectGrain: "搜索词 + 广告组上下文",
+      metricText: "花费 $34.11 / 订单 21 / ACOS 17.66%",
+      currentJudgement: "可进入人工复核，但不能自动加词",
+      proves: "能证明该搜索词在当前广告上下文内有转化",
+      doesNotProve: "不能证明应该自动加词、自动调价、自动否词，也不能自动归因到单个 ASIN。",
+      evidenceGap: "缺少广告位明细和人工策略确认",
+      requiredEvidence: "需要补充广告位、投放词和 7/14 天复盘指标",
+      nextManualStep: "人工选择记录观察或加入复盘",
+    },
+  ],
+  "广告搜索词表现：beach essentials 花费 34.11 / 订单 21",
+);
+assertEqual(manualActionDecisionFacts.map((item) => item.label).join(" / "), "处理依据 / 风险 / 不确定性");
+assertIncludes(manualActionDecisionFacts[0].value, "业务问题：是否存在可人工复核的扩量机会");
+assertIncludes(manualActionDecisionFacts[0].value, "当前判断：可进入人工复核");
+assertIncludes(manualActionDecisionFacts[0].value, "证据摘要：");
+assertIncludes(manualActionDecisionFacts[0].value, "beach essentials");
+assertIncludes(manualActionDecisionFacts[0].value, "人工下一步：人工选择记录观察或加入复盘");
+assertIncludes(manualActionDecisionFacts[1].value, "不能证明应该自动加词");
+assertIncludes(manualActionDecisionFacts[1].value, "自动调价");
+assertIncludes(manualActionDecisionFacts[2].value, "证据缺口");
+assertIncludes(manualActionDecisionFacts[2].value, "需要补证");
+assertIncludes(manualActionDecisionFacts[2].value, "广告位");
+
+const fallbackManualActionDecisionFacts = buildManualActionDecisionFactItems({
+  ...advertisedProductSignal,
+  risk: "广告商品指标不能解释搜索词来源",
+  uncertainty: "缺少广告位证据",
+});
+assertIncludes(fallbackManualActionDecisionFacts[0].value, "广告商品可以承接广告指标");
+assertIncludes(fallbackManualActionDecisionFacts[1].value, "广告商品指标不能解释搜索词来源");
+assertIncludes(fallbackManualActionDecisionFacts[2].value, "缺少广告位证据");
+
 const advertisedProductEfficiencySignal = {
   ...advertisedProductSignal,
   id: "sig-ad-product-efficiency",
@@ -375,6 +431,16 @@ const advertisedProductEfficiencySignal = {
   signal_category: "advertised_product_efficiency",
   severity: 4,
 } as const satisfies SignalForUi & { object_type: "advertised_product" };
+
+const reviewSignal = {
+  id: "sig-review-effect",
+  signal_type: "opportunity",
+  signal_category: "review_effect",
+  severity: 2,
+  status: "pending",
+  freshness_status: "api_snapshot",
+  object_type: "cross",
+} as const satisfies SignalForUi & { object_type: "cross" };
 
 const adGroupSignalWithAdProducts = {
   ...adGroupSignal,
@@ -402,11 +468,20 @@ const dataQualitySignalWithAdRows = {
 
 assertEqual(signalCategoryLabel(dataQualitySignal), "数据质量");
 assertEqual(signalQueueKind(dataQualitySignal), "data_quality");
+assertEqual(signalQueueKindLabel(signalQueueKind(dataQualitySignal)), "数据质量");
 assertEqual(signalCategoryLabel(opportunitySignal), "市场机会");
 assertEqual(signalCategoryLabel({ ...opportunitySignal, signal_category: "search_term_opportunity", object_type: "search_term" }), "搜索词机会");
 assertEqual(signalCategoryLabel(advertisedProductOpportunitySignal), "广告商品机会");
 assertEqual(signalCategoryLabel({ ...opportunitySignal, signal_category: "aba_market_opportunity", object_type: "search_term" }), "ABA市场机会");
-assertEqual(signalQueueKind(opportunitySignal), "opportunity");
+assertEqual(signalQueueKind(opportunitySignal), "opportunity_expansion");
+assertEqual(signalQueueKindLabel(signalQueueKind(opportunitySignal)), "机会扩量");
+assertEqual(signalQueueKind(searchTermSignal), "spend_waste");
+assertEqual(signalQueueKindLabel(signalQueueKind(searchTermSignal)), "花费浪费");
+assertEqual(signalQueueKind(adGroupSignal), "structure_boundary");
+assertEqual(signalQueueKind(placementSignal), "structure_boundary");
+assertEqual(signalQueueKindLabel(signalQueueKind(adGroupSignal)), "投放结构");
+assertEqual(signalQueueKind(reviewSignal), "review");
+assertEqual(signalQueueKindLabel(signalQueueKind(reviewSignal)), "复盘");
 assertEqual(signalProductScopeIds(adGroupSignalWithAdProducts).join(","), "ad_asin:B000TEST01,ad_asin:B000TEST02");
 assertEqual(signalProductScopeIds(searchTermSignalWithoutAsin).length, 0);
 assertEqual(filterSignalsByProductScope([adGroupSignalWithAdProducts, searchTermSignalWithoutAsin], "ad_asin:B000TEST01").length, 1);
@@ -819,9 +894,84 @@ assertEqual(
     [noStrategyAdProductCandidateSignal, { ...noStrategyAdProductCandidateSignal, id: "sig-next-unhandled" }],
     handledRecommendedWithNextSummary,
   ),
-  "sig-ad-product-no-strategy",
+  "sig-next-unhandled",
+);
+assertEqual(
+  resolveSignalSelectionId(
+    "sig-ad-product-main-push",
+    [
+      mainPushAdProductCandidateSignal,
+      noStrategyAdProductCandidateSignal,
+      { ...noStrategyAdProductCandidateSignal, id: "sig-next-unhandled" },
+    ],
+    handledRecommendedWithNextSummary,
+  ),
+  "sig-ad-product-main-push",
 );
 assertEqual(manualActionPreviewForSelectedSignal("sig-ad-product-no-strategy", handledRecommendedWithNextSummary, noStrategyAdProductCandidateSignal), null);
+
+const mergedNextUnhandledFallbackSignals = mergeBackendTriageSignals<ProductScopedSignalForUi>([], [], handledRecommendedWithNextSummary);
+const mergedFallbackNextSignal = mergedNextUnhandledFallbackSignals.find((signal) => signal.id === "sig-next-unhandled");
+if (!mergedFallbackNextSignal) {
+  throw new Error("triage 下一候选缺少 /api/signals 同 ID 时，前端应合成最小可复核信号");
+}
+assertEqual(mergedFallbackNextSignal.signal_type, "opportunity");
+assertEqual(mergedFallbackNextSignal.signal_category, "product_ad_coverage");
+assertEqual(mergedFallbackNextSignal.object_type, "sales_product");
+assertEqual(mergedFallbackNextSignal.evidence?.primary_object?.asin, "B06VW5SQ97");
+assertEqual(resolveSignalSelectionId(null, mergedNextUnhandledFallbackSignals, handledRecommendedWithNextSummary), "sig-next-unhandled");
+const mergedFallbackNextCandidate = buildNextUnhandledManualActionCandidate(
+  mergedNextUnhandledFallbackSignals,
+  handledRecommendedWithNextSummary,
+);
+assertEqual(mergedFallbackNextCandidate?.objectLabel, handledRecommendedWithNextSummary.next_unhandled_candidate.object_label);
+assertEqual(mergedFallbackNextCandidate?.manualActionPreview.objectId, "B06VW5SQ97");
+assertEqual(
+  manualActionPreviewForSelectedSignal("sig-next-unhandled", handledRecommendedWithNextSummary, mergedFallbackNextSignal)?.objectId,
+  "B06VW5SQ97",
+);
+const selectedRecommendedTargetSwitch = manualActionQueueTargetSwitchSummary(
+  handledRecommendedWithNextSummary,
+  "sig-ad-product-no-strategy",
+);
+assertEqual(selectedRecommendedTargetSwitch?.tone, "blocked");
+assertIncludes(selectedRecommendedTargetSwitch?.primary ?? "", "B016EXMW02");
+assertIncludes(selectedRecommendedTargetSwitch?.primary ?? "", "已经有人工留痕");
+assertIncludes(selectedRecommendedTargetSwitch?.diagnosisObject ?? "", "B016EXMW02");
+assertIncludes(selectedRecommendedTargetSwitch?.writeTarget ?? "", "B06VW5SQ97");
+assertIncludes(selectedRecommendedTargetSwitch?.boundary ?? "", "推荐对象和可写候选必须分开处理");
+assertIncludes(selectedRecommendedTargetSwitch?.boundary ?? "", "不能把推荐对象的诊断证据写到另一个可写候选");
+
+const selectedNextTargetSwitch = manualActionQueueTargetSwitchSummary(handledRecommendedWithNextSummary, "sig-next-unhandled");
+assertEqual(selectedNextTargetSwitch?.tone, "ready");
+assertIncludes(selectedNextTargetSwitch?.primary ?? "", "RBK004-RBK004-2 深蓝");
+assertIncludes(selectedNextTargetSwitch?.primary ?? "", "下一个未留痕候选");
+const selectedNextRouteSplit = manualActionReviewRouteSplitSummary(handledRecommendedWithNextSummary, "sig-next-unhandled", {
+  tone: "ready",
+  target: "目标：sales_product / B06VW5SQ97 / RBK004-RBK004-2 深蓝",
+  currentState: "当前：ManualAction 0 条 / ReviewTodo 0 条",
+  authorizedResult: "授权后预期：ManualAction 1 条 / ReviewTodo 2 条 / 窗口 7d / 14d",
+  evidence: "证据快照：21 条，授权写入时会随 ManualAction 保存并继承到 ReviewTodo。",
+  boundary: "ready 只代表可人工确认，未授权前不写 manual_actions。",
+});
+assertEqual(selectedNextRouteSplit?.tone, "ready");
+assertIncludes(selectedNextRouteSplit?.primary ?? "", "B016EXMW02 已进入人工留痕轨道");
+assertIncludes(selectedNextRouteSplit?.primary ?? "", "RBK004-RBK004-2 深蓝 是待授权新轨道");
+const selectedNextRouteSplitText = JSON.stringify(selectedNextRouteSplit);
+assertIncludes(selectedNextRouteSplitText, "已留痕旧对象");
+assertIncludes(selectedNextRouteSplitText, "ManualAction 1 条 / ReviewTodo 2 条");
+assertIncludes(selectedNextRouteSplitText, "待授权新对象");
+assertIncludes(selectedNextRouteSplitText, "ManualAction 0 条 / ReviewTodo 0 条");
+assertIncludes(selectedNextRouteSplitText, "授权后预期：ManualAction 1 条 / ReviewTodo 2 条");
+assertIncludes(selectedNextRouteSplitText, "ready 只代表可人工确认");
+assertIncludes(selectedNextRouteSplitText, "不能互借证据");
+const selectedRecommendedRouteSplit = manualActionReviewRouteSplitSummary(
+  handledRecommendedWithNextSummary,
+  "sig-ad-product-no-strategy",
+  selectedNextRouteSplit?.rows[1] ? { tone: "ready" } : null,
+);
+assertEqual(selectedRecommendedRouteSplit?.tone, "blocked");
+assertIncludes(JSON.stringify(selectedRecommendedRouteSplit), "先切换候选");
 
 const selectedNextUnhandledPreview = manualActionPreviewForSelectedSignal("sig-next-unhandled", {
   next_unhandled_candidate: {
@@ -1007,26 +1157,25 @@ assertEqual(
   "B016EXMW02：已生成 2 条复盘待办，等待 7 天 / 14 天完整窗口后再判断效果。",
 );
 
-assertIncludes(
-  recommendedManualStatusText({
-    next_action:
-      "推荐对象已人工留痕并等待复盘；可继续人工确认下一个未留痕候选 RBK004-RBK004-2 深蓝 的 add_to_review；真实写入只能由人工按钮触发，不要自动执行广告动作。",
-    recommended_manual_status: {
-      will_write: false,
-      signal_id: "sig-ad-product-no-strategy",
-      object_id: "B016EXMW02",
-      object_label: "B016EXMW02",
-      has_manual_action: true,
-      manual_action_count: 1,
-      has_review_todo: true,
-      review_todo_count: 2,
-      ready_review_count: 0,
-      review_windows: ["7d", "14d"],
-      next_action: "推荐对象已人工留痕并生成复盘待办；等待 7 天 / 14 天完整窗口后再判断效果。",
-    },
-  }) ?? "",
-  "下一个未留痕候选 RBK004-RBK004-2 深蓝",
-);
+const separatedRecommendedManualStatus = recommendedManualStatusText({
+  next_action:
+    "推荐对象已人工留痕并等待复盘；可继续人工确认下一个未留痕候选 RBK004-RBK004-2 深蓝 的 add_to_review；真实写入只能由人工按钮触发，不要自动执行广告动作。",
+  recommended_manual_status: {
+    will_write: false,
+    signal_id: "sig-ad-product-no-strategy",
+    object_id: "B016EXMW02",
+    object_label: "B016EXMW02",
+    has_manual_action: true,
+    manual_action_count: 1,
+    has_review_todo: true,
+    review_todo_count: 2,
+    ready_review_count: 0,
+    review_windows: ["7d", "14d"],
+    next_action: "推荐对象已人工留痕并生成复盘待办；等待 7 天 / 14 天完整窗口后再判断效果。",
+  },
+});
+assertIncludes(separatedRecommendedManualStatus ?? "", "等待 7 天 / 14 天完整窗口");
+assertNotIncludes(separatedRecommendedManualStatus ?? "", "下一个未留痕候选 RBK004-RBK004-2 深蓝");
 
 const handledRecommendedCardCopy = recommendedManualActionCardCopy({
   recommended_manual_status: {
@@ -1227,8 +1376,28 @@ const parentDiagnosisSummary = {
         forbidden_actions: ["自动调价", "自动暂停广告", "自动否词", "自动新增关键词"],
         search_term_diagnosis: {
           term_summary: "有效搜索词 1 条 / 无订单花费词 1 条",
-          effective_terms: [{ search_term: "kids sunglasses", term_type: "regular", spend: 18, clicks: 42, orders: 9, sales: 120 }],
-          zero_order_terms: [{ search_term: "baby sunglasses", term_type: "regular", spend: 9, clicks: 20, orders: 0, sales: 0 }],
+          effective_terms: [
+            {
+              search_term: "kids sunglasses",
+              targeting_text: "kids sunglasses",
+              term_type: "regular",
+              spend: 18,
+              clicks: 42,
+              orders: 9,
+              sales: 120,
+            },
+          ],
+          zero_order_terms: [
+            {
+              search_term: "baby sunglasses",
+              targeting_text: "kids sunglasses",
+              term_type: "regular",
+              spend: 9,
+              clicks: 20,
+              orders: 0,
+              sales: 0,
+            },
+          ],
           term_boundary: "搜索词只说明同广告组上下文，不能自动归因到单个 ASIN；ASIN 型搜索词只能作为商品定向或自动投放上下文复核，不包装成关键词加词建议。",
           next_review_focus: "优先比较有效搜索词和无订单花费词；没有候选准入前只做诊断。",
           forbidden_actions: ["自动调价", "自动暂停广告", "自动否词", "自动新增关键词"],
@@ -1325,27 +1494,47 @@ assertIncludes(productScopeEvidenceMatrix.boundary, "不能自动归因");
 
 const productScopeEvidenceRouteGuide = buildProductScopeEvidenceRouteGuide(productScopeEvidenceMatrix);
 assertEqual(productScopeEvidenceRouteGuide.title, "广告证据链导览");
-assertIncludes(productScopeEvidenceRouteGuide.summary, "先看经营入口，再看广告 ASIN、广告组、搜索词/广告位和人工确认门禁");
-assertEqual(productScopeEvidenceRouteGuide.steps.length, 5);
+assertIncludes(productScopeEvidenceRouteGuide.summary, "先看经营入口，再看广告 ASIN、广告组、投放词/搜索词/广告位");
+assertIncludes(productScopeEvidenceRouteGuide.summary, "AI 信号诊断、人工确认和 7/14 天复盘");
+const productScopeEvidenceRouteDecision = buildProductScopeEvidenceRouteDecision(productScopeEvidenceMatrix);
+assertEqual(productScopeEvidenceRouteDecision.title, "路径可落地判断");
+assertEqual(productScopeEvidenceRouteDecision.statusLabel, "只能诊断");
+assertEqual(productScopeEvidenceRouteGuide.decision.statusLabel, productScopeEvidenceRouteDecision.statusLabel);
+assertIncludes(productScopeEvidenceRouteDecision.businessQuestion, "哪些广告对象真的有广告数据");
+assertIncludes(productScopeEvidenceRouteDecision.currentJudgement, "广告 ASIN B016EXMVZS");
+assertIncludes(productScopeEvidenceRouteDecision.currentJudgement, "候选 0 个");
+assertIncludes(productScopeEvidenceRouteDecision.proves, "有广告表现的对象");
+assertIncludes(productScopeEvidenceRouteDecision.doesNotProve, "未投放子 ASIN");
+assertIncludes(productScopeEvidenceRouteDecision.doesNotProve, "不能把搜索词、广告位或 ABA 市场热度自动归因到单个广告 ASIN");
+assertIncludes(productScopeEvidenceRouteDecision.nextManualStep, "只读诊断");
+assertEqual(productScopeEvidenceRouteGuide.steps.length, 7);
 assertIncludes(
   productScopeEvidenceRouteGuide.steps.map((step) => `${step.order} ${step.label} ${step.objectLabel} ${step.primaryEvidence} ${step.nextFocus}`).join(" / "),
-  "1 经营入口 Parent ASIN B00K4W4AAA",
+  "1 Parent ASIN 经营盘 Parent ASIN B00K4W4AAA",
 );
 assertIncludes(
   productScopeEvidenceRouteGuide.steps.map((step) => `${step.order} ${step.label} ${step.objectLabel} ${step.primaryEvidence} ${step.nextFocus}`).join(" / "),
-  "2 广告 ASIN B016EXMVZS",
+  "2 广告 ASIN 覆盖 B016EXMVZS",
 );
 assertIncludes(
   productScopeEvidenceRouteGuide.steps.map((step) => `${step.order} ${step.label} ${step.objectLabel} ${step.primaryEvidence} ${step.nextFocus}`).join(" / "),
-  "3 广告组 RBK004-kids sunglasses-广泛",
+  "3 广告组结构 RBK004-kids sunglasses-广泛",
 );
 assertIncludes(
   productScopeEvidenceRouteGuide.steps.map((step) => `${step.order} ${step.label} ${step.objectLabel} ${step.primaryEvidence} ${step.nextFocus}`).join(" / "),
-  "4 搜索词/广告位 搜索词 18 条 / 广告位 0 条",
+  "4 投放词 / 搜索词 / 广告位 搜索词 18 条 / 广告位 0 条",
 );
 assertIncludes(
   productScopeEvidenceRouteGuide.steps.map((step) => `${step.order} ${step.label} ${step.objectLabel} ${step.primaryEvidence} ${step.nextFocus}`).join(" / "),
-  "5 人工确认 只能诊断 / 候选 0 个",
+  "5 AI 信号诊断 只能诊断 / 候选 0 个",
+);
+assertIncludes(
+  productScopeEvidenceRouteGuide.steps.map((step) => `${step.order} ${step.label} ${step.objectLabel} ${step.primaryEvidence} ${step.nextFocus}`).join(" / "),
+  "6 人工确认 只能诊断 / 候选 0 个",
+);
+assertIncludes(
+  productScopeEvidenceRouteGuide.steps.map((step) => `${step.order} ${step.label} ${step.objectLabel} ${step.primaryEvidence} ${step.nextFocus}`).join(" / "),
+  "7 7/14 天复盘 等待人工留痕和 ReviewTodo",
 );
 assertIncludes(productScopeEvidenceRouteGuide.boundary, "不能自动归因");
 
@@ -1361,6 +1550,40 @@ assertIncludes(adGroupDiagnosisRows[0].trafficContext, "广告 ASIN 2 个");
 assertIncludes(adGroupDiagnosisRows[0].trafficContext, "搜索词 18 条");
 assertIncludes(adGroupDiagnosisRows[0].reason, "无订单花费词");
 assertIncludes(adGroupDiagnosisRows[0].advertisedAsins.join(" / "), "B016EXMW02");
+assertEqual(adGroupDiagnosisRows[0].ownershipDecision.statusLabel, "先归属到广告组容器");
+assertIncludes(adGroupDiagnosisRows[0].ownershipDecision.businessQuestion, "能不能归到单个广告 ASIN");
+assertIncludes(adGroupDiagnosisRows[0].ownershipDecision.currentJudgement, "广告 ASIN 2 个");
+assertIncludes(adGroupDiagnosisRows[0].ownershipDecision.issueOwner, "问题先归属到广告组容器和搜索词上下文");
+assertIncludes(adGroupDiagnosisRows[0].ownershipDecision.issueOwner, "不能拆到单个广告 ASIN");
+assertIncludes(adGroupDiagnosisRows[0].ownershipDecision.evidencePath, "广告 ASIN -> 广告组 RBK004-kids sunglasses-广泛");
+assertIncludes(adGroupDiagnosisRows[0].ownershipDecision.evidencePath, "有效 3 / 无订单 3");
+assertIncludes(adGroupDiagnosisRows[0].ownershipDecision.doesNotProve, "自动拆广告组");
+assertIncludes(adGroupDiagnosisRows[0].ownershipDecision.doesNotProve, "直接归因到单个广告 ASIN");
+assertIncludes(adGroupDiagnosisRows[0].ownershipDecision.nextManualStep, "只读诊断");
+assertIncludes(adGroupDiagnosisRows[0].ownershipDecision.nextManualStep, "不写人工动作");
+assertIncludes(adGroupDiagnosisRows[0].problemLocator.title, "问题先落到哪里");
+assertIncludes(adGroupDiagnosisRows[0].problemLocator.businessQuestion, "投放商品、搜索词分化、广告位缺口");
+assertIncludes(adGroupDiagnosisRows[0].problemLocator.currentJudgement, "广告 ASIN 2 个");
+assertIncludes(adGroupDiagnosisRows[0].problemLocator.problemLocation, "搜索词意图分化");
+assertIncludes(adGroupDiagnosisRows[0].problemLocator.splitReason, "广告组汇总会把 2 个广告 ASIN");
+assertIncludes(adGroupDiagnosisRows[0].problemLocator.doesNotProve, "自动拆广告组");
+assertIncludes(adGroupDiagnosisRows[0].problemLocator.doesNotProve, "不能把搜索词或广告位自动归因到单个广告 ASIN");
+assertIncludes(adGroupDiagnosisRows[0].problemLocator.nextManualStep, "不写人工动作");
+assertEqual(adGroupDiagnosisRows[0].evidenceSynthesis.title, "广告组证据合流判断：RBK004-kids sunglasses-广泛");
+assertEqual(adGroupDiagnosisRows[0].evidenceSynthesis.tone, "partial");
+assertEqual(adGroupDiagnosisRows[0].evidenceSynthesis.statusLabel, "证据合流：搜索词分化优先");
+assertIncludes(adGroupDiagnosisRows[0].evidenceSynthesis.businessQuestion, "广告商品、投放词、搜索词和广告位证据是否指向同一个");
+assertIncludes(adGroupDiagnosisRows[0].evidenceSynthesis.currentJudgement, "广告 ASIN 2 个");
+assertIncludes(adGroupDiagnosisRows[0].evidenceSynthesis.currentJudgement, "投放词 1 个");
+assertIncludes(adGroupDiagnosisRows[0].evidenceSynthesis.currentJudgement, "广告位 仅活动级 4 条");
+assertIncludes(adGroupDiagnosisRows[0].evidenceSynthesis.evidenceChain, "B016EXMVZS");
+assertIncludes(adGroupDiagnosisRows[0].evidenceSynthesis.evidenceChain, "投放词 1 个（kids sunglasses）");
+assertIncludes(adGroupDiagnosisRows[0].evidenceSynthesis.evidenceChain, "搜索词 18 条（有效 3 / 无订单 3）");
+assertIncludes(adGroupDiagnosisRows[0].evidenceSynthesis.proves, "搜索词表现");
+assertIncludes(adGroupDiagnosisRows[0].evidenceSynthesis.doesNotProve, "自动加词");
+assertIncludes(adGroupDiagnosisRows[0].evidenceSynthesis.doesNotProve, "单个广告 ASIN");
+assertIncludes(adGroupDiagnosisRows[0].evidenceSynthesis.evidenceGap, "广告组级广告位证据");
+assertIncludes(adGroupDiagnosisRows[0].evidenceSynthesis.nextManualStep, "不写人工动作");
 assertIncludes(adGroupDiagnosisRows[0].actionableReview.title, "优先复核 RBK004-kids sunglasses-广泛");
 assertIncludes(adGroupDiagnosisRows[0].actionableReview.evidence, "有效词 3 条 / 无订单花费词 3 条 / 广告 ASIN 2 个");
 assertIncludes(adGroupDiagnosisRows[0].actionableReview.decision, "广告组整体有转化");
@@ -1369,9 +1592,27 @@ assertIncludes(adGroupDiagnosisRows[0].actionableReview.manualGate, "候选 0 �
 assertIncludes(adGroupDiagnosisRows[0].actionableReview.manualGate, "只做诊断");
 assertIncludes(adGroupDiagnosisRows[0].boundary, "不能自动归因");
 assertIncludes(adGroupDiagnosisRows[0].forbiddenActions.join(" / "), "自动调价");
+assertIncludes(adGroupDiagnosisRows[0].placementDecision.businessQuestion, "流量位置问题");
+assertIncludes(adGroupDiagnosisRows[0].placementDecision.currentJudgement, "广告组级广告位 0 条");
+assertIncludes(adGroupDiagnosisRows[0].placementDecision.currentJudgement, "活动级广告位 4 条");
+assertIncludes(adGroupDiagnosisRows[0].placementDecision.evidenceLevel, "只有广告活动级广告位背景");
+assertIncludes(adGroupDiagnosisRows[0].placementDecision.proves, "同广告活动存在广告位背景");
+assertIncludes(adGroupDiagnosisRows[0].placementDecision.doesNotProve, "自动调整广告位加价");
+assertIncludes(adGroupDiagnosisRows[0].placementDecision.doesNotProve, "不能把广告位影响自动归因到单个搜索词或广告 ASIN");
+assertIncludes(adGroupDiagnosisRows[0].placementDecision.evidenceGap, "缺少当前广告组级广告位样本");
+assertIncludes(adGroupDiagnosisRows[0].placementDecision.nextManualStep, "不做广告位结论");
 assertEqual(adGroupDiagnosisRows[0].searchTermDiagnosis?.termSummary, "有效搜索词 1 条 / 无订单花费词 1 条");
 assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.effectiveTerms.map((term) => term.label).join(" / ") ?? "", "kids sunglasses");
 assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.zeroOrderTerms.map((term) => term.label).join(" / ") ?? "", "baby sunglasses");
+assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.businessQuestion ?? "", "放量机会、浪费风险");
+assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.currentJudgement ?? "", "投放词 1 个");
+assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.currentJudgement ?? "", "广告 ASIN 2 个");
+assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.targetingEvidence ?? "", "kids sunglasses");
+assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.proves ?? "", "搜索意图表现分化");
+assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.doesNotProve ?? "", "自动加词");
+assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.doesNotProve ?? "", "不能把搜索词归因到单个广告 ASIN");
+assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.nextManualStep ?? "", "优先比较有效搜索词和无订单花费词");
+assertEqual(adGroupDiagnosisRows[0].searchTermDiagnosis?.effectiveTerms[0]?.targetingText, "kids sunglasses");
 assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.termBoundary ?? "", "ASIN 型搜索词");
 
 const manualActionAdGroupBridge = buildManualActionCandidateAdGroupBridge(
@@ -1385,7 +1626,27 @@ assertEqual(manualActionAdGroupBridge.title, "人工候选与广告组关系");
 assertIncludes(manualActionAdGroupBridge.evidence, "B016EXMW02");
 assertIncludes(manualActionAdGroupBridge.evidence, "RBK004-kids sunglasses-广泛");
 assertIncludes(manualActionAdGroupBridge.evidence, "投放商品");
-assertIncludes(manualActionAdGroupBridge.decision, "沿用中间广告组判断");
+assertIncludes(manualActionAdGroupBridge.decision, "沿用中间广告组合流判断");
+assertIncludes(manualActionAdGroupBridge.decision, "证据合流：搜索词分化优先");
+assertIncludes(manualActionAdGroupBridge.synthesisStatus, "证据合流：搜索词分化优先");
+assertIncludes(manualActionAdGroupBridge.synthesisJudgement, "广告 ASIN 2 个");
+assertIncludes(manualActionAdGroupBridge.synthesisJudgement, "投放词 1 个");
+assertIncludes(manualActionAdGroupBridge.synthesisEvidenceChain, "投放词 1 个（kids sunglasses）");
+assertIncludes(manualActionAdGroupBridge.synthesisEvidenceChain, "搜索词 18 条（有效 3 / 无订单 3）");
+assertIncludes(manualActionAdGroupBridge.synthesisBoundary, "搜索词表现");
+assertIncludes(manualActionAdGroupBridge.synthesisBoundary, "自动加词");
+assertIncludes(manualActionAdGroupBridge.synthesisBoundary, "单个广告 ASIN");
+assertIncludes(manualActionAdGroupBridge.synthesisGap, "广告组级广告位证据");
+assertIncludes(manualActionAdGroupBridge.searchTermBoundary, "搜索词边界");
+assertIncludes(manualActionAdGroupBridge.searchTermBoundary, "搜索意图表现分化");
+assertIncludes(manualActionAdGroupBridge.searchTermBoundary, "不能把搜索词归因到单个广告 ASIN");
+assertIncludes(manualActionAdGroupBridge.placementBoundary, "广告位边界");
+assertIncludes(manualActionAdGroupBridge.placementBoundary, "只有广告活动级广告位背景");
+assertIncludes(manualActionAdGroupBridge.placementBoundary, "不能把广告位影响自动归因到单个搜索词或广告 ASIN");
+assertIncludes(manualActionAdGroupBridge.manualNextStep, "不写人工动作");
+assertIncludes(manualActionAdGroupBridge.manualNextStep, "优先比较有效搜索词和无订单花费词");
+assertIncludes(manualActionAdGroupBridge.manualNextStep, "不做广告位结论");
+assertIncludes(manualActionAdGroupBridge.manualNextStep, "不执行广告动作");
 assertIncludes(manualActionAdGroupBridge.boundary, "广告组是投放容器");
 assertIncludes(manualActionAdGroupBridge.boundary, "不自动执行广告动作");
 
@@ -1565,12 +1826,14 @@ const waitingReviewReadinessGate = buildReviewReadinessGateSummary({
   review_status: {
     manual_action_count: 17,
     review_record_count: 0,
-    ready_count: 0,
-    not_ready_count: 10,
-    review_wait_summary: {
-      earliest_due_date: "2026-06-22",
-      next_object_type: "advertised_product",
-      next_object_label: "B016EXMVZS",
+      ready_count: 0,
+      not_ready_count: 10,
+      review_wait_summary: {
+        status: "waiting_review_window",
+        earliest_due_date: "2026-06-22",
+        next_review_window: "7d",
+        next_object_type: "advertised_product",
+        next_object_label: "B016EXMVZS",
       message: "已有人工动作，但 7/14 天复盘窗口未到期。",
       next_step: "等到 2026-06-22 后再读取复盘窗口。",
       forbidden_actions: ["不拉取快照", "不保存复盘结论", "不自动改规则", "不自动执行广告动作"],
@@ -1583,11 +1846,18 @@ const waitingReviewReadinessGate = buildReviewReadinessGateSummary({
       missing_action_id_count: 0,
       missing_object_id_count: 0,
       missing_review_window_count: 0,
+      missing_evidence_snapshot_count: 0,
+      missing_diagnosis_path_count: 0,
+      missing_ai_admission_count: 0,
+      missing_search_term_boundary_count: 0,
+      missing_placement_boundary_count: 0,
       unstable_object_id_count: 0,
       ready_review_count: 0,
       can_save_review_records_now: false,
       earliest_due_date: "2026-06-21",
+      earliest_any_due_date: "2026-06-21",
       earliest_metric_due_date: "2026-06-22",
+      date_boundary: "earliest_due_date / earliest_any_due_date 包含数据质量和交叉待办；保存广告复盘记录时以 earliest_metric_due_date 为准。",
       issues: [],
       readback_keys: [],
     },
@@ -1597,30 +1867,531 @@ assertEqual(waitingReviewReadinessGate?.title, "复盘等待窗口");
 assertEqual(waitingReviewReadinessGate?.status, "waiting");
 assertIncludes(waitingReviewReadinessGate?.primary ?? "", "17 条人工留痕");
 assertIncludes(waitingReviewReadinessGate?.primary ?? "", "ready 复盘 0 个");
+assertIncludes(waitingReviewReadinessGate?.primary ?? "", "最早广告复盘");
 assertIncludes(waitingReviewReadinessGate?.primary ?? "", "2026-06-22");
 assertIncludes(waitingReviewReadinessGate?.detail ?? "", "B016EXMVZS");
 assertIncludes(waitingReviewReadinessGate?.boundary ?? "", "不保存复盘结论");
 assertIncludes(waitingReviewReadinessGate?.boundary ?? "", "不自动执行广告动作");
 assertEqual(waitingReviewReadinessGate?.items[0].label, "人工留痕");
 assertEqual(waitingReviewReadinessGate?.items[0].value, "17 条");
-assertEqual(waitingReviewReadinessGate?.items[2].label, "最早复盘");
+assertEqual(waitingReviewReadinessGate?.items[2].label, "最早广告复盘");
 assertEqual(waitingReviewReadinessGate?.items[2].value, "2026-06-22");
+assertEqual(waitingReviewReadinessGate?.items[3].label, "下一窗口");
+assertEqual(waitingReviewReadinessGate?.items[3].value, "7 天");
+assertEqual(waitingReviewReadinessGate?.items[4].label, "下一广告对象");
+assertEqual(waitingReviewReadinessGate?.items[4].value, "advertised_product / B016EXMVZS");
 assertEqual(waitingReviewReadinessGate?.nextSteps.length, 3);
 assertEqual(waitingReviewReadinessGate?.nextSteps[0].label, "现在");
 assertIncludes(waitingReviewReadinessGate?.nextSteps[0].detail ?? "", "查看当前人工留痕和复盘待办");
 assertIncludes(waitingReviewReadinessGate?.nextSteps[0].detail ?? "", "不拉取快照");
+assertIncludes(waitingReviewReadinessGate?.nextSteps[0].detail ?? "", "不自动执行广告动作");
 assertEqual(waitingReviewReadinessGate?.nextSteps[1].label, "到期后");
-assertIncludes(waitingReviewReadinessGate?.nextSteps[1].detail ?? "", "2026-06-22 后只读检查复盘效果");
+assertIncludes(waitingReviewReadinessGate?.nextSteps[1].detail ?? "", "2026-06-22 后只读检查 advertised_product / B016EXMVZS 的 7 天复盘效果");
 assertEqual(waitingReviewReadinessGate?.nextSteps[2].label, "ready 后");
 assertIncludes(waitingReviewReadinessGate?.nextSteps[2].detail ?? "", "人工确认后再保存 review_records");
 assertEqual(waitingReviewReadinessGate?.identityAudit?.title, "复盘读回身份门禁");
 assertIncludes(waitingReviewReadinessGate?.identityAudit?.summary ?? "", "读回身份可审计");
 assertIncludes(waitingReviewReadinessGate?.identityAudit?.summary ?? "", "缺失 action_id / object_id / review_window：0 / 0 / 0");
+assertIncludes(waitingReviewReadinessGate?.identityAudit?.summary ?? "", "证据快照缺口：0 / 排查路径 0 / AI 准入 0");
+assertIncludes(waitingReviewReadinessGate?.identityAudit?.summary ?? "", "搜索词边界 0 / 广告位边界 0");
 assertIncludes(waitingReviewReadinessGate?.identityAudit?.summary ?? "", "广告指标最早复盘：2026-06-22");
 assertEqual(waitingReviewReadinessGate?.identityAudit?.items[2].label, "历史对象 ID 风险");
 assertEqual(waitingReviewReadinessGate?.identityAudit?.items[2].value, "0");
+assertEqual(waitingReviewReadinessGate?.identityAudit?.items[4].label, "证据快照缺口");
+assertEqual(waitingReviewReadinessGate?.identityAudit?.items[4].value, "0");
 assertIncludes(waitingReviewReadinessGate?.identityAudit?.boundary ?? "", "当前不能保存复盘记录");
 assertIncludes(waitingReviewReadinessGate?.identityAudit?.boundary ?? "", "ready_for_readback 只表示可按原动作读回对象");
+assertIncludes(waitingReviewReadinessGate?.identityAudit?.boundary ?? "", "earliest_any_due_date 包含数据质量和交叉待办");
+assertIncludes(waitingReviewReadinessGate?.identityAudit?.boundary ?? "", "earliest_metric_due_date 为准");
+
+const separatedReviewQueueGate = buildReviewReadinessGateSummary({
+  next_unhandled_candidate: {
+    object_type: "search_term",
+    object_id: "search_term:1:boys sunglasses",
+    stable_object_id: "search_term:1:boys sunglasses",
+    object_label: "boys sunglasses",
+    problem_type: "opportunity",
+    evidence_strength: "medium",
+  },
+  review_status: {
+    manual_action_count: 18,
+    review_record_count: 0,
+    ready_count: 0,
+    not_ready_count: 2,
+    review_wait_summary: {
+      status: "waiting_review_window",
+      earliest_due_date: "2026-06-28",
+      next_review_window: "7d",
+      next_object_type: "search_term",
+      next_object_id: "search_term:1:beach essentials",
+      next_object_label: "beach essentials",
+      message: "已有人工动作，但 7/14 天复盘窗口未到期。",
+    },
+    review_identity_audit: {
+      status: "ready_for_readback",
+      manual_action_count: 18,
+      review_record_count: 0,
+      effect_count: 2,
+      missing_action_id_count: 0,
+      missing_object_id_count: 0,
+      missing_review_window_count: 0,
+      missing_evidence_snapshot_count: 0,
+      missing_diagnosis_path_count: 0,
+      missing_ai_admission_count: 0,
+      missing_search_term_boundary_count: 0,
+      missing_placement_boundary_count: 0,
+      unstable_object_id_count: 0,
+      ready_review_count: 0,
+      can_save_review_records_now: false,
+      earliest_metric_due_date: "2026-06-28",
+      readback_keys: [
+        {
+          object_type: "search_term",
+          object_id: "search_term:1:beach essentials",
+          object_label: "beach essentials",
+          review_window: "7d",
+          due_at: "2026-06-28T03:58:03.939315+00:00",
+          evidence_snapshot_count: 17,
+          has_diagnosis_path: true,
+          has_ai_admission: true,
+          has_search_term_boundary: true,
+          has_placement_boundary: true,
+          has_targeting_evidence: true,
+          has_ad_group_synthesis: true,
+          has_aba_context: true,
+          has_evidence_gap: true,
+          has_action_boundary: true,
+        },
+        {
+          object_type: "search_term",
+          object_id: "search_term:1:beach essentials",
+          object_label: "beach essentials",
+          review_window: "14d",
+          due_at: "2026-07-05T03:58:03.939315+00:00",
+          evidence_snapshot_count: 17,
+          has_diagnosis_path: true,
+          has_ai_admission: true,
+          has_search_term_boundary: true,
+          has_placement_boundary: true,
+          has_targeting_evidence: true,
+          has_ad_group_synthesis: true,
+          has_aba_context: true,
+          has_evidence_gap: true,
+          has_action_boundary: true,
+        },
+      ],
+    },
+  },
+});
+assertEqual(separatedReviewQueueGate?.queueSeparation?.title, "复盘对象与候选队列");
+assertIncludes(separatedReviewQueueGate?.queueSeparation?.primary ?? "", "beach essentials");
+assertIncludes(separatedReviewQueueGate?.queueSeparation?.primary ?? "", "boys sunglasses");
+assertEqual(separatedReviewQueueGate?.queueSeparation?.items[0].label, "已加入复盘");
+assertEqual(separatedReviewQueueGate?.queueSeparation?.items[0].value, "search_term / beach essentials");
+assertIncludes(separatedReviewQueueGate?.queueSeparation?.items[1].value ?? "", "7 天 2026-06-28");
+assertIncludes(separatedReviewQueueGate?.queueSeparation?.items[1].value ?? "", "14 天 2026-07-05");
+assertEqual(separatedReviewQueueGate?.queueSeparation?.items[2].value, "2 个待办 / 17 条证据 / 搜索词复核链齐全");
+assertEqual(separatedReviewQueueGate?.queueSeparation?.items[3].value, "search_term / boys sunglasses");
+assertEqual(separatedReviewQueueGate?.queueSeparation?.items[4].value, "不同对象，分开处理");
+assertIncludes(separatedReviewQueueGate?.queueSeparation?.boundary ?? "", "不能混合归因");
+assertIncludes(separatedReviewQueueGate?.queueSeparation?.boundary ?? "", "不能由页面自动加词、否词或调价");
+
+const blockedReviewIdentityAuditGate = buildReviewReadinessGateSummary({
+  review_status: {
+    manual_action_count: 17,
+    review_record_count: 0,
+    ready_count: 0,
+    not_ready_count: 10,
+    review_identity_audit: {
+      status: "blocked",
+      manual_action_count: 17,
+      review_record_count: 0,
+      effect_count: 10,
+      missing_action_id_count: 0,
+      missing_object_id_count: 0,
+      missing_review_window_count: 0,
+      missing_evidence_snapshot_count: 10,
+      missing_diagnosis_path_count: 10,
+      missing_ai_admission_count: 10,
+      missing_search_term_boundary_count: 10,
+      missing_placement_boundary_count: 10,
+      unstable_object_id_count: 0,
+      ready_review_count: 0,
+      can_save_review_records_now: false,
+      earliest_metric_due_date: "2026-06-22",
+      issues: [{ issue_type: "missing_evidence_snapshot", note: "历史复盘待办缺少人工点击时保存的 evidence_snapshot。" }],
+      readback_keys: [],
+    },
+  },
+});
+assertEqual(blockedReviewIdentityAuditGate?.identityAudit?.status, "blocked");
+assertIncludes(blockedReviewIdentityAuditGate?.identityAudit?.summary ?? "", "读回身份存在阻塞");
+assertIncludes(blockedReviewIdentityAuditGate?.identityAudit?.summary ?? "", "证据快照缺口：10 / 排查路径 10 / AI 准入 10");
+assertIncludes(blockedReviewIdentityAuditGate?.identityAudit?.summary ?? "", "搜索词边界 10 / 广告位边界 10");
+assertEqual(blockedReviewIdentityAuditGate?.identityAudit?.items[4].value, "50");
+
+const objectMismatchReviewIdentityAuditGate = buildReviewReadinessGateSummary({
+  review_status: {
+    status: "waiting_review_window",
+    ready_count: 0,
+    not_ready_count: 2,
+    review_identity_audit: {
+      status: "blocked",
+      effect_count: 2,
+      ready_review_count: 0,
+      missing_action_id_count: 0,
+      missing_object_id_count: 0,
+      missing_review_window_count: 0,
+      missing_evidence_snapshot_count: 0,
+      missing_diagnosis_path_count: 0,
+      missing_ai_admission_count: 0,
+      missing_search_term_boundary_count: 0,
+      missing_placement_boundary_count: 0,
+      missing_object_reference_count: 2,
+      unstable_object_id_count: 0,
+      can_save_review_records_now: false,
+      earliest_metric_due_date: "2026-06-28",
+      issues: [{ issue_type: "evidence_snapshot_object_mismatch" }],
+    },
+  },
+});
+
+assertEqual(objectMismatchReviewIdentityAuditGate?.identityAudit?.status, "blocked");
+assertIncludes(objectMismatchReviewIdentityAuditGate?.identityAudit?.summary ?? "", "对象引用 2");
+assertEqual(objectMismatchReviewIdentityAuditGate?.identityAudit?.items[4].value, "2");
+assertEqual(blockedReviewIdentityAuditGate?.title, "复盘证据门禁阻断");
+assertEqual(blockedReviewIdentityAuditGate?.status, "blocked");
+assertIncludes(blockedReviewIdentityAuditGate?.primary ?? "", "复盘读回门禁未通过");
+assertIncludes(blockedReviewIdentityAuditGate?.detail ?? "", "证据快照缺口：10");
+assertIncludes(blockedReviewIdentityAuditGate?.boundary ?? "", "不能把当前页面证据伪装成历史点击证据");
+assertIncludes(blockedReviewIdentityAuditGate?.boundary ?? "", "广告组合流判断");
+assertIncludes(blockedReviewIdentityAuditGate?.boundary ?? "", "动作边界");
+assertNotIncludes(blockedReviewIdentityAuditGate?.boundary ?? "", "不拉取快照");
+assertEqual(blockedReviewIdentityAuditGate?.items[4].value, "证据门禁阻断");
+assertIncludes(blockedReviewIdentityAuditGate?.nextSteps[1].detail ?? "", "完整证据快照");
+assertIncludes(blockedReviewIdentityAuditGate?.nextSteps[1].detail ?? "", "广告组合流判断");
+assertIncludes(blockedReviewIdentityAuditGate?.nextSteps[1].detail ?? "", "动作边界");
+
+const blockedReviewEvidenceRepair = buildReviewEvidenceRepairSummary({
+  status: "blocked_by_legacy_evidence_gap",
+  will_write: false,
+  requires_explicit_authorization: true,
+  counts: {
+    manual_actions: 17,
+    review_todos: 10,
+    repair_issue_count: 10,
+    legacy_action_gap_count: 5,
+    preview_rebuildable_count: 0,
+    recreatable_count: 0,
+  },
+  items: [
+    {
+      action_id: "manual-action-36ab1ca4680846e2899f747c43c0e800",
+      object_type: "advertised_product",
+      object_id: "B016EXMVZS",
+      object_label: "B016EXMVZS",
+      review_windows: ["7d", "14d"],
+      issue_types: ["missing_search_term_boundary", "missing_placement_boundary"],
+      current_preflight: {
+        status: "blocked_by_target_mismatch",
+        target_matches_legacy: false,
+        evidence_snapshot_item_count: 0,
+        has_diagnosis_path: false,
+        has_ai_admission: false,
+        has_search_term_boundary: false,
+        has_placement_boundary: false,
+        has_object_reference: false,
+        missing_required_labels: ["排查路径", "AI 准入", "搜索词边界", "广告位边界"],
+      },
+      can_patch_legacy_record: false,
+      can_rebuild_evidence_preview: false,
+      can_recreate_from_current_signal: false,
+      patch_policy:
+        "历史记录缺少点击当时保存的 evidence_snapshot；当前重建证据只能作为人工核对参考，不能静默写回旧记录；MVP 不提供补写历史 evidence_snapshot 的执行入口。",
+      void_plan: {
+        status: "dry_run_available",
+        action_id: "manual-action-36ab1ca4680846e2899f747c43c0e800",
+        review_window: null,
+        review_windows: ["7d", "14d"],
+        expected_object_type: "advertised_product",
+        expected_object_id: "B016EXMVZS",
+        required_authorization_code: "VOID_TODO:manual-action-36ab1ca4680846e2899f747c43c0e800:all",
+        dry_run_command:
+          'python scripts\\apply_review_todo_void_once.py --market-id 1 --action-id manual-action-36ab1ca4680846e2899f747c43c0e800 --expected-object-type advertised_product --expected-object-id B016EXMVZS --compact',
+        execute_command:
+          'python scripts\\apply_review_todo_void_once.py --market-id 1 --action-id manual-action-36ab1ca4680846e2899f747c43c0e800 --expected-object-type advertised_product --expected-object-id B016EXMVZS --execute --authorization-code VOID_TODO:manual-action-36ab1ca4680846e2899f747c43c0e800:all --compact',
+        boundary:
+          "先 dry-run 核对对象和窗口；execute 必须显式带授权码。该动作只写 review_todo_decisions，不修改 manual_actions，不保存 ReviewRecord，不执行广告动作。",
+      },
+      recommended_next_step: "当前预检目标不是这个历史待办对象，不能用当前信号证据修补历史。",
+      will_write: false,
+    },
+  ],
+  forbidden_effects: ["不保存 review_records", "不执行广告动作", "不把当前页面证据伪装成历史点击证据"],
+  next_action: "发现 5 个历史动作缺证据，当前信号不能直接重建同对象证据；先 dry-run 作废旧待办，后续重新人工留痕。",
+});
+assertEqual(blockedReviewEvidenceRepair?.title, "历史待办治理");
+assertEqual(blockedReviewEvidenceRepair?.status, "blocked");
+assertIncludes(blockedReviewEvidenceRepair?.primary ?? "", "5 个历史动作缺证据");
+assertIncludes(blockedReviewEvidenceRepair?.primary ?? "", "10 条复盘待办");
+assertIncludes(blockedReviewEvidenceRepair?.detail ?? "", "作废旧待办");
+assertIncludes(blockedReviewEvidenceRepair?.boundary ?? "", "will_write=false");
+assertIncludes(blockedReviewEvidenceRepair?.boundary ?? "", "不能补写历史 evidence_snapshot");
+assertIncludes(blockedReviewEvidenceRepair?.boundary ?? "", "不能自动执行广告动作");
+assertEqual(blockedReviewEvidenceRepair?.items[0].label, "历史缺口动作");
+assertEqual(blockedReviewEvidenceRepair?.items[0].value, "5 个");
+assertEqual(blockedReviewEvidenceRepair?.items[2].label, "可重建预览");
+assertEqual(blockedReviewEvidenceRepair?.items[2].value, "0 个");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "advertised_product / B016EXMVZS");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "缺搜索词边界");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "缺广告位边界");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "证据预览不可重建");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "对象引用错配");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "不可补写历史证据");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "不能用当前信号证据修补历史");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "dry-run 可预检");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "真实作废未执行");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "作废对象：advertised_product / B016EXMVZS");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "复盘窗口：7d / 14d");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "作废后：旧待办作废后仍不是复盘完成");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "重新留痕：重新点击人工动作时必须保存新的 ManualAction 和 7d / 14d ReviewTodo");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "VOID_TODO:manual-action-36ab1ca4680846e2899f747c43c0e800:all");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "apply_review_todo_void_once.py");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "只写 review_todo_decisions");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "不修改 manual_actions");
+assertIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "不保存 ReviewRecord");
+assertNotIncludes(blockedReviewEvidenceRepair?.sampleItems[0] ?? "", "--execute");
+assertEqual(blockedReviewEvidenceRepair?.voidPlanItems[0]?.statusText, "dry-run 可预检；真实作废未执行");
+assertEqual(blockedReviewEvidenceRepair?.voidPlanItems[0]?.objectText, "advertised_product / B016EXMVZS");
+assertEqual(blockedReviewEvidenceRepair?.voidPlanItems[0]?.reviewWindows, "7d / 14d");
+assertIncludes(blockedReviewEvidenceRepair?.voidPlanItems[0]?.afterVoidText ?? "", "旧待办作废后仍不是复盘完成");
+assertIncludes(blockedReviewEvidenceRepair?.voidPlanItems[0]?.recreateText ?? "", "保存新的 ManualAction 和 7d / 14d ReviewTodo");
+assertEqual(
+  blockedReviewEvidenceRepair?.voidPlanItems[0]?.authorizationCode,
+  "VOID_TODO:manual-action-36ab1ca4680846e2899f747c43c0e800:all",
+);
+assertIncludes(blockedReviewEvidenceRepair?.voidPlanItems[0]?.dryRunCommand ?? "", "apply_review_todo_void_once.py");
+assertNotIncludes(blockedReviewEvidenceRepair?.voidPlanItems[0]?.dryRunCommand ?? "", "--execute");
+assertIncludes(blockedReviewEvidenceRepair?.voidPlanItems[0]?.boundary ?? "", "只写 review_todo_decisions");
+assertIncludes(blockedReviewEvidenceRepair?.nextSteps[1].detail ?? "", "人工核对参考");
+assertIncludes(blockedReviewEvidenceRepair?.nextSteps[1].detail ?? "", "不提供补写历史 evidence_snapshot");
+assertIncludes(blockedReviewEvidenceRepair?.nextSteps[1].detail ?? "", "不能重复写入绕过门禁");
+assertIncludes(blockedReviewEvidenceRepair?.nextSteps[2].detail ?? "", "dry-run 命令");
+assertIncludes(blockedReviewEvidenceRepair?.nextSteps[2].detail ?? "", "不能静默补写历史 evidence_snapshot");
+assertIncludes(blockedReviewEvidenceRepair?.nextSteps[3].detail ?? "", "新的人工留痕生成带证据的 ReviewTodo");
+
+const previewOnlyReviewEvidenceRepair = buildReviewEvidenceRepairSummary({
+  status: "blocked_by_legacy_evidence_gap",
+  will_write: false,
+  requires_explicit_authorization: true,
+  counts: {
+    manual_actions: 18,
+    review_todos: 2,
+    repair_issue_count: 4,
+    legacy_action_gap_count: 1,
+    preview_rebuildable_count: 1,
+    recreatable_count: 0,
+  },
+  items: [
+    {
+      action_id: "manual-action-search-term",
+      object_type: "search_term",
+      object_id: "search_term:1:beach essentials",
+      object_label: "beach essentials",
+      review_windows: ["7d", "14d"],
+      issue_types: ["evidence_snapshot_object_mismatch"],
+      current_preflight: {
+        status: "blocked_by_existing_manual_trace",
+        target_matches_legacy: true,
+        evidence_snapshot_item_count: 17,
+        has_diagnosis_path: true,
+        has_ai_admission: true,
+        has_search_term_boundary: true,
+        has_placement_boundary: true,
+        has_targeting_evidence: true,
+        has_ad_group_synthesis: true,
+        has_aba_context: true,
+        has_evidence_gap: true,
+        has_action_boundary: true,
+        has_object_reference: true,
+        missing_required_labels: [],
+      },
+      can_patch_legacy_record: false,
+      can_rebuild_evidence_preview: true,
+      can_recreate_from_current_signal: false,
+      patch_policy:
+        "当前重建证据只能作为人工核对参考，不能静默写回旧记录；MVP 不提供补写历史 evidence_snapshot 的执行入口。",
+      recommended_next_step:
+        "当前能重建同一对象的证据预览，但真实写入仍被门禁挡住。当前可落地路径是先 dry-run 作废旧待办，再重新人工留痕生成新的 ReviewTodo；不能补写历史 evidence_snapshot。",
+      will_write: false,
+    },
+  ],
+  forbidden_effects: ["不保存 review_records", "不执行广告动作"],
+  next_action:
+    "发现 1 个历史动作缺证据，其中 1 个只能重建当前证据预览；预览不能写回历史 evidence_snapshot，当前可落地路径是先 dry-run 作废旧待办，再重新人工留痕。",
+});
+assertEqual(previewOnlyReviewEvidenceRepair?.status, "blocked");
+assertEqual(previewOnlyReviewEvidenceRepair?.items[2].value, "1 个");
+assertEqual(previewOnlyReviewEvidenceRepair?.items[3].value, "0 个");
+assertIncludes(previewOnlyReviewEvidenceRepair?.detail ?? "", "只能重建当前证据预览");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "search_term / beach essentials");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "证据快照对象不一致");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "可重建证据预览");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "当前不可重新留痕");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "不可补写历史证据");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "当前预览 17 条证据");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "有搜索词边界");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "有广告位边界");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "有投放词证据");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "有广告组合流判断");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "有 ABA 背景");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "有证据缺口");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "有动作边界");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "对象引用可回看");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "真实写入仍被门禁挡住");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "先 dry-run 作废旧待办");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "不能补写历史 evidence_snapshot");
+
+const missingSearchTermRepairEvidence = buildReviewEvidenceRepairSummary({
+  status: "blocked_by_legacy_evidence_gap",
+  will_write: false,
+  requires_explicit_authorization: true,
+  counts: {
+    manual_actions: 20,
+    review_todos: 2,
+    repair_issue_count: 5,
+    legacy_action_gap_count: 1,
+    preview_rebuildable_count: 0,
+    recreatable_count: 0,
+  },
+  items: [
+    {
+      action_id: "manual-action-search-term",
+      object_type: "search_term",
+      object_id: "search_term:1:beach essentials",
+      object_label: "beach essentials",
+      review_windows: ["7d", "14d"],
+      issue_types: [
+        "missing_targeting_evidence",
+        "missing_ad_group_synthesis",
+        "missing_aba_context",
+        "missing_evidence_gap",
+        "missing_action_boundary",
+      ],
+      current_preflight: {
+        status: "ready_for_explicit_manual_write",
+        target_matches_legacy: true,
+        evidence_snapshot_item_count: 17,
+        has_diagnosis_path: true,
+        has_ai_admission: true,
+        has_search_term_boundary: true,
+        has_placement_boundary: true,
+        has_targeting_evidence: false,
+        has_ad_group_synthesis: false,
+        has_aba_context: false,
+        has_evidence_gap: false,
+        has_action_boundary: false,
+        has_object_reference: true,
+        missing_required_labels: ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "动作边界"],
+      },
+      can_patch_legacy_record: false,
+      can_rebuild_evidence_preview: false,
+      can_recreate_from_current_signal: false,
+      patch_policy:
+        "当前重建证据只能作为人工核对参考，不能静默写回旧记录；MVP 不提供补写历史 evidence_snapshot 的执行入口。",
+      recommended_next_step: "当前预检目标匹配历史对象，但当前证据预览仍缺：投放词证据、广告组合流判断、ABA 背景、证据缺口、动作边界。",
+      will_write: false,
+    },
+  ],
+  forbidden_effects: ["不保存 review_records", "不执行广告动作"],
+  next_action: "发现 1 个历史动作缺证据，当前信号不能直接重建同对象证据；先 dry-run 作废旧待办，后续重新人工留痕。",
+});
+assertIncludes(missingSearchTermRepairEvidence?.sampleItems[0] ?? "", "缺投放词证据");
+assertIncludes(missingSearchTermRepairEvidence?.sampleItems[0] ?? "", "缺广告组合流判断");
+assertIncludes(missingSearchTermRepairEvidence?.sampleItems[0] ?? "", "缺 ABA 背景");
+assertIncludes(missingSearchTermRepairEvidence?.sampleItems[0] ?? "", "缺证据缺口");
+assertIncludes(missingSearchTermRepairEvidence?.sampleItems[0] ?? "", "缺动作边界");
+assertIncludes(
+  missingSearchTermRepairEvidence?.sampleItems[0] ?? "",
+  "当前预览仍缺：投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 动作边界",
+);
+
+const searchTermChainBlockedReviewEvidenceRepair = buildReviewEvidenceRepairSummary({
+  status: "ready_no_legacy_gap",
+  will_write: false,
+  readiness_status: "not_ready",
+  rule_improvement_status: "blocked_by_review_evidence_gap",
+  counts: {
+    manual_actions: 20,
+    review_todos: 2,
+    repair_issue_count: 0,
+    legacy_action_gap_count: 0,
+    preview_rebuildable_count: 0,
+    recreatable_count: 0,
+  },
+  items: [],
+  forbidden_effects: ["不保存 review_records", "不执行广告动作", "不把当前页面证据伪装成历史点击证据"],
+  next_action: "当前没有历史证据快照缺口；继续等待复盘窗口，未到期前不保存 ReviewRecord。",
+});
+assertEqual(searchTermChainBlockedReviewEvidenceRepair?.status, "blocked");
+assertIncludes(searchTermChainBlockedReviewEvidenceRepair?.primary ?? "", "搜索词复核链仍被复盘证据门禁阻断");
+assertIncludes(searchTermChainBlockedReviewEvidenceRepair?.detail ?? "", "旧快照缺少搜索词复核链标签");
+assertEqual(searchTermChainBlockedReviewEvidenceRepair?.items[0].value, "0 个");
+assertEqual(searchTermChainBlockedReviewEvidenceRepair?.items[2].label, "搜索词复核链");
+assertEqual(searchTermChainBlockedReviewEvidenceRepair?.items[2].value, "阻断");
+assertIncludes(searchTermChainBlockedReviewEvidenceRepair?.nextSteps[0].detail ?? "", "投放词证据");
+assertIncludes(searchTermChainBlockedReviewEvidenceRepair?.nextSteps[0].detail ?? "", "广告组合流判断");
+assertIncludes(searchTermChainBlockedReviewEvidenceRepair?.nextSteps[0].detail ?? "", "ABA 背景");
+assertIncludes(searchTermChainBlockedReviewEvidenceRepair?.nextSteps[1].detail ?? "", "不能静默补写历史 evidence_snapshot");
+assertIncludes(searchTermChainBlockedReviewEvidenceRepair?.nextSteps[2].detail ?? "", "不保存 ReviewRecord");
+
+const readyReviewEvidenceRepair = buildReviewEvidenceRepairSummary({
+  status: "ready_no_legacy_gap",
+  will_write: false,
+  counts: {
+    manual_actions: 17,
+    review_todos: 0,
+    repair_issue_count: 0,
+    legacy_action_gap_count: 0,
+    preview_rebuildable_count: 0,
+    recreatable_count: 0,
+  },
+  items: [],
+  forbidden_effects: ["不执行广告动作"],
+  next_action: "当前没有历史证据快照缺口，可以继续等待复盘窗口。",
+});
+assertEqual(readyReviewEvidenceRepair?.status, "ready");
+assertIncludes(readyReviewEvidenceRepair?.primary ?? "", "没有历史证据快照缺口");
+assertIncludes(readyReviewEvidenceRepair?.boundary ?? "", "不能自动执行广告动作");
+
+const blockedReviewReadinessGate = buildReviewReadinessGateSummary({
+  review_status: {
+    manual_action_count: 17,
+    review_record_count: 0,
+    ready_count: 0,
+    not_ready_count: 10,
+    review_wait_summary: {
+      status: "blocked_by_data_gap",
+      gap_reasons: ["复盘效果暂不可计算：缺少处理后 7 天快照"],
+      message: "当前没有 ready 复盘效果；复盘效果暂不可计算：缺少处理后 7 天快照",
+      next_step: "先补齐复盘所需数据。下一步：先查询积加 API 限流规则，再由人工触发低频快照。",
+      forbidden_actions: ["不保存复盘结论", "不自动改规则", "不自动执行广告动作"],
+    },
+  },
+});
+assertEqual(blockedReviewReadinessGate?.title, "复盘证据缺口");
+assertEqual(blockedReviewReadinessGate?.status, "blocked");
+assertIncludes(blockedReviewReadinessGate?.primary ?? "", "当前不能保存复盘结论");
+assertIncludes(blockedReviewReadinessGate?.detail ?? "", "缺少处理后 7 天快照");
+assertIncludes(blockedReviewReadinessGate?.boundary ?? "", "not_ready 只说明证据不足");
+assertIncludes(blockedReviewReadinessGate?.boundary ?? "", "不保存复盘结论");
+assertIncludes(blockedReviewReadinessGate?.boundary ?? "", "不自动执行广告动作");
+assertNotIncludes(blockedReviewReadinessGate?.boundary ?? "", "不拉取快照");
+assertEqual(blockedReviewReadinessGate?.items[4].label, "缺口状态");
+assertEqual(blockedReviewReadinessGate?.items[4].value, "证据不足");
+assertIncludes(blockedReviewReadinessGate?.nextSteps[0].detail ?? "", "先确认复盘缺口");
+assertIncludes(blockedReviewReadinessGate?.nextSteps[1].detail ?? "", "先查询积加 API 限流规则");
+assertIncludes(blockedReviewReadinessGate?.nextSteps[2].detail ?? "", "出现 ready 复盘后");
 
 const readyReviewReadinessGate = buildReviewReadinessGateSummary({
   review_status: {
@@ -1686,6 +2457,12 @@ const triageReviewFeedbackSummary = {
           evidence: "1 / 2 条样本带 review_record_id / action_id / 指标窗口",
         },
         {
+          check_id: "review_record_evidence_snapshot",
+          label: "复盘证据快照",
+          status: "partial",
+          evidence: "1 / 2 条样本带保存快照，1 / 2 条可回看 AI 准入",
+        },
+        {
           check_id: "action_boundary",
           label: "动作边界",
           status: "ready",
@@ -1708,6 +2485,19 @@ const triageReviewFeedbackSummary = {
             after: "2026-06-08 至 2026-06-14",
           },
           review_note: "建议没有改善",
+          evidence_snapshot_count: 2,
+          diagnosis_snapshot: {
+            label: "排查路径",
+            value: "Parent 经营盘子 -> 广告 ASIN -> 广告组 -> 投放词 / 搜索词 / 广告位",
+            detail: "保存复盘前必须回看原始广告诊断路径。",
+            source: "business_rule",
+          },
+          ai_admission_snapshot: {
+            label: "AI 准入",
+            value: "可进入人工确认 / ready_for_manual_confirmation / 候选 1 个 / 允许人工留痕",
+            detail: "准入只证明允许人工留痕，不代表系统会自动执行广告动作。",
+            source: "actionability_status",
+          },
           sort_reason: "排序依据：worse 优先，因为处理后效果变差，先复核阈值、证据来源和建议动作。",
           action_boundary: {
             result: "worse",
@@ -1717,6 +2507,16 @@ const triageReviewFeedbackSummary = {
           },
           evidence_drilldown: {
             summary: "广告商品投放行 0 条，覆盖广告活动 0 个 / 广告组 0 个；同广告组搜索词上下文 1 条、广告位上下文 0 条；搜索词和广告位只说明同广告组上下文，不能自动归因到该广告 ASIN。",
+          },
+          diagnosis_path: {
+            path: "搜索词 -> 广告活动 / 广告组 -> 投放词结构 -> 广告 ASIN 人工复核",
+            steps: [
+              { step_id: "search_term_metric_summary", label: "搜索词表现", value: "花费 28.50 / 订单 0 / 销售额 0.00" },
+              { step_id: "search_term_context", label: "投放上下文", value: "广告活动 1 个 / 广告组 1 个 / 搜索词表现行 1 条" },
+              { step_id: "targeting_context", label: "投放词结构", value: "1 个投放词 / 搜索词表现行 1 条" },
+            ],
+            boundary: "搜索词只能说明广告活动和广告组下的用户搜索表现，不能自动归因到单个广告 ASIN。",
+            next_manual_step: "只用于回看该复盘样本的原始诊断路径；继续人工复核，不自动改规则，不自动执行广告动作。",
           },
           evidence_groups: [
             { group_id: "product_metrics", label: "商品指标", value: "广告商品投放行 0 条" },
@@ -1743,12 +2543,19 @@ const triageReviewFeedbackSummary = {
           group_label: "规则语义：海滩出行用品",
           aba_reference_term: "beach essentials",
           aba_period: "2026-05-10 到 2026-05-16",
+          aba_match_boundary: "ABA 是站点级，只按站点 + 周期 + 搜索词匹配，不能当作店铺数据或广告归因。",
           total: 1,
           by_result: { worse: 1 },
           priority_result: "worse",
           sample_review_record_ids: ["review-record-worse-7d"],
           sample_action_ids: ["manual-action-worse"],
           recommendation: "worse 1：优先复核该语义组的阈值、证据来源和建议动作。",
+          action_boundary: {
+            result: "worse",
+            allowed_reviews: ["复核阈值", "复核证据来源", "复核建议动作"],
+            forbidden_actions: ["自动改规则", "自动调价", "自动暂停广告", "自动否词", "自动新增关键词"],
+            boundary: "worse 只能触发人工复核阈值、证据来源和建议动作；不自动改规则，不自动执行广告动作。",
+          },
           boundary: "候选只进入解释层和人工复核，不自动改规则，不自动执行广告动作。",
         },
       ],
@@ -1771,14 +2578,16 @@ assertIncludes(ruleFeedbackPrioritySummary?.sampleSort ?? "", "improved 只作�
 assertIncludes(ruleFeedbackPrioritySummary?.actionBoundary ?? "", "worse：复核阈值 / 复核证据来源 / 复核建议动作");
 assertIncludes(ruleFeedbackPrioritySummary?.actionBoundary ?? "", "不自动改规则");
 assertIncludes(ruleFeedbackPrioritySummary?.actionBoundary ?? "", "不自动执行广告动作");
-assertEqual(ruleFeedbackPrioritySummary?.closureChecklist.length, 5);
+assertEqual(ruleFeedbackPrioritySummary?.closureChecklist.length, 6);
 assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[0] ?? "", "复盘结果分布 ready");
 assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[0] ?? "", "worse 1");
 assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[2] ?? "", "证据追溯 partial");
 assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[2] ?? "", "1 / 2 条样本带证据分组");
 assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[3] ?? "", "复盘记录来源 partial");
 assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[3] ?? "", "review_record_id / action_id / 指标窗口");
-assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[4] ?? "", "不自动执行广告动作");
+assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[4] ?? "", "复盘证据快照 partial");
+assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[4] ?? "", "1 / 2 条可回看 AI 准入");
+assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[5] ?? "", "不自动执行广告动作");
 assertEqual(ruleFeedbackPrioritySummary?.records.length, 2);
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "worse / anomaly / search_term / 12 month sunglasses / 7d");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "复盘记录：review-record-worse-7d / action_id manual-action-worse");
@@ -1790,6 +2599,13 @@ assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "建议没有改�
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "排序依据：worse 优先");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "动作边界：复核阈值 / 复核证据来源 / 复核建议动作");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "不自动执行广告动作");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "保存快照：2 条");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "排查路径：Parent 经营盘子 -> 广告 ASIN -> 广告组");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "AI 准入：可进入人工确认");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "actionability_status");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "诊断路径：搜索词 -> 广告活动 / 广告组 -> 投放词结构 -> 广告 ASIN 人工复核");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "路径证据：搜索词表现：花费 28.50 / 订单 0 / 销售额 0.00");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "人工下一步：只用于回看该复盘样本的原始诊断路径");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "证据回看：广告商品投放行 0 条");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "搜索词上下文 1 条");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "证据分组：商品指标：广告商品投放行 0 条");
@@ -1797,10 +2613,15 @@ assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "搜索词上下�
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "广告位上下文：0 条");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "边界提示：搜索词和广告位只说明同广告组上下文");
 assertIncludes(ruleFeedbackPrioritySummary?.records[1] ?? "", "improved / opportunity / advertised_product / B016EXMW02 / 14d");
+assertIncludes(ruleFeedbackPrioritySummary?.records[1] ?? "", "保存快照：0 条");
+assertIncludes(ruleFeedbackPrioritySummary?.records[1] ?? "", "缺口：保存快照 / 排查路径 / AI 准入");
 assertEqual(ruleFeedbackPrioritySummary?.candidateGroups.length, 1);
 assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "规则语义：海滩出行用品");
 assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "worse 1");
 assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "beach essentials");
+assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "ABA边界");
+assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "不能当作店铺数据或广告归因");
+assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "动作边界：复核阈值 / 复核证据来源 / 复核建议动作");
 assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "不自动改规则");
 assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "不自动执行广告动作");
 assertIncludes(ruleFeedbackPrioritySummary?.boundary ?? "", "只进入解释层");
@@ -1836,14 +2657,24 @@ const triageWithoutSavedReviewFeedback = {
 assertEqual(signalTriageReviewFeedbackText(triageWithoutSavedReviewFeedback), null);
 assertEqual(signalTriageSummaryText(triageWithoutSavedReviewFeedback).includes("复盘反馈"), false);
 const blockedRuleFeedbackPrioritySummary = buildRuleFeedbackPrioritySummary(triageWithoutSavedReviewFeedback);
-assertEqual(blockedRuleFeedbackPrioritySummary?.title, "已保存复盘样本池");
-assertIncludes(blockedRuleFeedbackPrioritySummary?.basis ?? "", "复盘结果：待补齐");
+assertEqual(blockedRuleFeedbackPrioritySummary?.title, "复盘样本池门槛");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.basis ?? "", "暂无已保存 ReviewRecord");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.basis ?? "", "不形成规则反馈候选");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.priority ?? "", "未保存复盘结论前");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.priority ?? "", "不能判断规则有效");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.sampleSort ?? "", "保存 ReviewRecord 后启用");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.actionBoundary ?? "", "没有 ready 复盘前不保存复盘记录");
+assertNotIncludes(blockedRuleFeedbackPrioritySummary?.actionBoundary ?? "", "保存 ready 复盘记录");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.actionBoundary ?? "", "不自动执行广告动作");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[0] ?? "", "复盘结果分布 blocked");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[2] ?? "", "复盘输入证据 partial");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[2] ?? "", "证据快照 1 条");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[3] ?? "", "证据追溯 blocked");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[3] ?? "", "0 / 0 条样本带证据分组");
 assertEqual(blockedRuleFeedbackPrioritySummary?.records.length, 0);
+assertEqual(blockedRuleFeedbackPrioritySummary?.candidateGroups.length, 0);
+assertIncludes(blockedRuleFeedbackPrioritySummary?.boundary ?? "", "门槛检查");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.boundary ?? "", "不代表已有规则反馈样本池");
 
 const triageCompactItems = signalTriageCompactItems({
   signal_status: { signal_count: 137, candidate_count: 135 },
@@ -1867,8 +2698,11 @@ const compactQueueMeta = buildSignalQueueMeta({
   shop_name: "rivbos",
   marketplace: "US",
 });
-assertEqual(compactQueueMeta.primary.join(" / "), "广告商品 / 严重 4 / 置信 中");
+assertEqual(compactQueueMeta.primary.join(" / "), "经营问题 数据质量 / 广告商品 / 严重 4 / 置信 中");
 assertEqual(compactQueueMeta.secondary, "rivbos / US / 数据过期 / 待确认");
+const compactQueueDecision = (compactQueueMeta as { decision?: string }).decision ?? "";
+assertIncludes(compactQueueDecision, "数据已过期");
+assertIncludes(compactQueueDecision, "需要人工重新导入 ABA 文件");
 
 const duplicateAdProductSignals = [
   {
@@ -2257,6 +3091,283 @@ assertIncludes(visibleBusinessEvidenceItems[0].value, "订单 247");
 assertIncludes(visibleBusinessEvidenceItems[2].value, "3/12");
 assertIncludes(visibleBusinessEvidenceItems[3].detail ?? "", "低量长尾");
 assertIncludes(visibleBusinessEvidenceItems[4].detail ?? "", "不自动执行广告动作");
+
+const diagnosisContractItems = signalTriageDiagnosisContractItems({
+  diagnosis_contract: {
+    object_label: "beach essentials",
+    status: "ready_for_manual_confirmation",
+    sections: [
+      {
+        section_id: "search_term_opportunity",
+        title: "搜索词机会",
+        business_question: "是否存在可人工复核的扩量机会？",
+        object_grain: "SearchTerm + 同广告活动 / 广告组上下文",
+        metrics: [
+          {
+            name: "花费",
+            value: "$34.11",
+            purpose: "判断该机会不是零成本偶然样本。",
+          },
+          {
+            name: "订单",
+            value: "21",
+            purpose: "判断搜索词是否已经产生真实广告转化。",
+          },
+          {
+            name: "销售额",
+            value: "$193.20",
+            purpose: "判断扩量机会是否已有销售承接。",
+          },
+          {
+            name: "ACOS",
+            value: "17.7%",
+            purpose: "判断放量前的效率是否可接受。",
+          },
+        ],
+        current_judgement: "当前搜索词在 2 个投放上下文中转化稳定。",
+        proves: "能证明该搜索词在当前投放上下文中有转化。",
+        does_not_prove: "不能证明应该自动加词、自动调价或归因到单个 ASIN。",
+        evidence_gap: "缺少投放词是否已稳定维护、是否主推策略允许扩量的人工证据。",
+        required_evidence: "需要人工核对广告商品、投放词、广告组策略和 7/14 天复盘指标。",
+        next_manual_step: "人工复核广告商品和投放词后，记录观察或加入 7/14 天复盘。",
+      },
+    ],
+  },
+});
+
+assertEqual(diagnosisContractItems.length, 1);
+assertEqual(diagnosisContractItems[0].title, "搜索词机会");
+assertIncludes(diagnosisContractItems[0].metricText, "订单：21，用于判断搜索词是否已经产生真实广告转化");
+assertIncludes(diagnosisContractItems[0].proves, "能证明该搜索词");
+assertIncludes(diagnosisContractItems[0].doesNotProve, "不能证明应该自动加词");
+assertIncludes(diagnosisContractItems[0].evidenceGap, "缺少投放词");
+assertIncludes(diagnosisContractItems[0].requiredEvidence, "广告商品");
+assertIncludes(diagnosisContractItems[0].nextManualStep, "加入 7/14 天复盘");
+
+const searchTermOpportunityReviewChain = buildSearchTermOpportunityReviewChain(diagnosisContractItems, [
+  {
+    blockId: "targeting_context",
+    label: "投放词结构",
+    value: "优先广告组投放词 2 个：有效 beach essentials / 无订单 beach trip essentials",
+    detail: "不能自动加词、否词或调价。",
+    source: "ad_targeting",
+  },
+  {
+    blockId: "search_term_market_context",
+    label: "搜索词市场背景",
+    value: "优先广告组搜索词 2 条：有效 beach essentials / ABA Top1000 匹配 1 条",
+    detail: "ABA匹配词：beach essentials（花费 34.11，订单 21，ABA排名 208）",
+    source: "ad_search_term_daily_metrics / ABA导出",
+  },
+  {
+    blockId: "context_boundary",
+    label: "上下文边界",
+    value: "搜索词 2 条 / 广告位 0 条",
+    detail: "搜索词和广告位只说明同广告组上下文，不能自动归因到单个 ASIN。",
+    source: "business_rule",
+  },
+]);
+
+assertEqual(searchTermOpportunityReviewChain?.title, "搜索词机会");
+assertIncludes(searchTermOpportunityReviewChain?.objectGrain ?? "", "SearchTerm");
+assertIncludes(searchTermOpportunityReviewChain?.targetingEvidence ?? "", "投放词结构");
+assertIncludes(searchTermOpportunityReviewChain?.targetingEvidence ?? "", "beach essentials");
+assertIncludes(searchTermOpportunityReviewChain?.adGroupSynthesis ?? "", "搜索词不能自动归因到单个广告 ASIN");
+assertIncludes(searchTermOpportunityReviewChain?.marketContext ?? "", "搜索词市场背景");
+assertIncludes(searchTermOpportunityReviewChain?.marketContext ?? "", "ABA排名 208");
+assertIncludes(searchTermOpportunityReviewChain?.doesNotProve ?? "", "不能把 ABA 当作店铺数据");
+assertIncludes(searchTermOpportunityReviewChain?.doesNotProve ?? "", "不能把搜索词直接归因到单个广告 ASIN");
+assertIncludes(searchTermOpportunityReviewChain?.evidenceGap ?? "", "不能自动归因到单个 ASIN");
+assertIncludes(searchTermOpportunityReviewChain?.requiredEvidence ?? "", "广告商品");
+assertIncludes(searchTermOpportunityReviewChain?.nextManualStep ?? "", "加入 7/14 天复盘");
+assertIncludes(searchTermOpportunityReviewChain?.actionBoundary ?? "", "不得自动加词");
+
+const searchTermFallbackReviewChain = buildSearchTermOpportunityReviewChain(
+  [
+    {
+      sectionId: "ad_group_boundary",
+      title: "广告组边界",
+      businessQuestion: "搜索词或广告商品表现是否能安全落到广告组结构判断？",
+      objectGrain: "AdGroup 投放容器",
+      metricText: "",
+      currentJudgement: "搜索词出现在 1 个广告组上下文。",
+      proves: "能证明搜索词出现在哪些广告组上下文里。",
+      doesNotProve: "不能把广告组当产品。",
+      evidenceGap: "缺广告组级广告位证据。",
+      requiredEvidence: "需要同广告组投放商品清单。",
+      nextManualStep: "先打开广告组核对投放词。",
+    },
+  ],
+  [
+    {
+      blockId: "targeting_context",
+      label: "投放词结构",
+      value: "投放词：sunglasses for kids",
+      detail: "不能自动加词。",
+      source: "ad_targeting",
+    },
+    {
+      blockId: "search_term_market_context",
+      label: "搜索词市场背景",
+      value: "搜索词 1 条",
+      detail: "ABA匹配待补。",
+      source: "ad_search_term_daily_metrics",
+    },
+  ],
+);
+
+assertEqual(searchTermFallbackReviewChain?.title, "搜索词机会复核链");
+assertIncludes(searchTermFallbackReviewChain?.objectGrain ?? "", "SearchTerm");
+assertIncludes(searchTermFallbackReviewChain?.currentJudgement ?? "", "搜索词出现在 1 个广告组上下文");
+assertIncludes(searchTermFallbackReviewChain?.doesNotProve ?? "", "不能把广告组当产品");
+
+const targetSpecificDiagnosisContractItems = signalTriageDiagnosisContractItems(
+  {
+    diagnosis_contract: {
+      object_label: "boys sunglasses",
+      signal_id: "sig-boys",
+      status: "ready_for_manual_confirmation",
+      sections: [
+        {
+          section_id: "search_term_opportunity",
+          title: "搜索词机会",
+          business_question: "boys sunglasses 是否可扩量？",
+          object_grain: "SearchTerm",
+          current_judgement: "boys sunglasses 可进入人工扩量复核。",
+          proves: "能证明 boys sunglasses 有广告表现。",
+          does_not_prove: "不能证明应该自动加词。",
+          next_manual_step: "人工复核 boys sunglasses。",
+        },
+      ],
+    },
+    recommended_diagnosis_contract: {
+      object_label: "beach essentials",
+      signal_id: "sig-beach",
+      status: "ready_for_manual_confirmation",
+      sections: [
+        {
+          section_id: "search_term_opportunity",
+          title: "搜索词机会",
+          business_question: "beach essentials 是否可扩量？",
+          object_grain: "SearchTerm",
+          current_judgement: "beach essentials 在 2 个投放上下文中转化稳定。",
+          proves: "能证明 beach essentials 有广告订单和 ABA 语义背景。",
+          does_not_prove: "不能证明应该自动加词。",
+          next_manual_step: "人工复核 beach essentials 后加入复盘。",
+        },
+      ],
+    },
+  },
+  {
+    object_label: "beach essentials",
+    signal_id: "sig-beach",
+    status: "ready_for_manual_confirmation",
+    sections: [
+      {
+        section_id: "search_term_opportunity",
+        title: "搜索词机会",
+        business_question: "beach essentials 是否可扩量？",
+        object_grain: "SearchTerm",
+        current_judgement: "beach essentials 在 2 个投放上下文中转化稳定。",
+        proves: "能证明 beach essentials 有广告订单和 ABA 语义背景。",
+        does_not_prove: "不能证明应该自动加词。",
+        next_manual_step: "人工复核 beach essentials 后加入复盘。",
+      },
+    ],
+  },
+);
+
+assertIncludes(targetSpecificDiagnosisContractItems[0].currentJudgement, "beach essentials");
+assertNotIncludes(targetSpecificDiagnosisContractItems[0].currentJudgement, "boys sunglasses");
+
+const manualConfirmationEvidenceItems = buildManualConfirmationEvidenceItems(diagnosisContractItems);
+assertEqual(
+  manualConfirmationEvidenceItems.map((item) => item.label).join(" / "),
+  "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步",
+);
+assertIncludes(manualConfirmationEvidenceItems[0].value, "可人工复核");
+assertIncludes(manualConfirmationEvidenceItems[1].value, "2 个投放上下文");
+assertIncludes(manualConfirmationEvidenceItems[1].detail ?? "", "订单：21");
+assertIncludes(manualConfirmationEvidenceItems[2].value, "有转化");
+assertIncludes(manualConfirmationEvidenceItems[3].value, "自动加词");
+assertIncludes(manualConfirmationEvidenceItems[4].value, "加入 7/14 天复盘");
+
+const manualConfirmationSearchTermEvidenceItems = buildManualConfirmationEvidenceItems(
+  diagnosisContractItems,
+  searchTermOpportunityReviewChain,
+);
+assertEqual(
+  manualConfirmationSearchTermEvidenceItems.map((item) => item.label).join(" / "),
+  "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 动作边界",
+);
+assertIncludes(manualConfirmationSearchTermEvidenceItems[5].value, "投放词结构");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[5].detail ?? "", "不代表完整关键词库");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[6].value, "搜索词不能自动归因到单个广告 ASIN");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[6].detail ?? "", "同广告组上下文");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[7].value, "ABA排名 208");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[7].detail ?? "", "站点 + 周期 + 标准化搜索词");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[9].value, "不得自动加词");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[9].detail ?? "", "不能把 ABA 当作店铺数据");
+
+const diagnosisEvidenceSummary = buildSignalDiagnosisEvidenceSummary(
+  {
+    id: "sig-search-term",
+    signal_type: "opportunity",
+    signal_category: "long_tail_opportunity",
+    object_type: "search_term",
+    severity: 3,
+    confidence: "medium",
+    status: "pending",
+    freshness_status: "api_snapshot",
+    evidence_count: 8,
+    data_sources: [{ source_type: "ad_search_term_daily_metrics" }, { source_type: "ABA导出" }],
+    evidence: {
+      primary_object: {
+        object_type: "search_term",
+        object_id: "search_term:1:beach essentials",
+        label: "beach essentials",
+        search_term: "beach essentials",
+      },
+      facts: [{ label: "搜索词表现", value: "订单 21", source_type: "ad_search_term_daily_metrics" }],
+    },
+  },
+  diagnosisContractItems,
+);
+assertEqual(diagnosisEvidenceSummary?.title, "搜索词机会");
+assertEqual(diagnosisEvidenceSummary?.strengthLabel, "证据强度：中");
+assertEqual(diagnosisEvidenceSummary?.tone, "medium");
+assertIncludes(diagnosisEvidenceSummary?.objectReadback ?? "", "search_term");
+assertIncludes(diagnosisEvidenceSummary?.objectReadback ?? "", "beach essentials");
+assertIncludes(diagnosisEvidenceSummary?.objectReadback ?? "", "同一 stable object");
+assertIncludes(diagnosisEvidenceSummary?.strengthReason ?? "", "中置信");
+assertIncludes(diagnosisEvidenceSummary?.strengthReason ?? "", "当前证据数 8 条");
+assertIncludes(diagnosisEvidenceSummary?.proves ?? "", "当前投放上下文中有转化");
+assertIncludes(diagnosisEvidenceSummary?.doesNotProve ?? "", "自动加词");
+assertIncludes(diagnosisEvidenceSummary?.evidenceGap ?? "", "缺少投放词");
+assertIncludes(diagnosisEvidenceSummary?.nextManualStep ?? "", "加入 7/14 天复盘");
+
+const metricDecisionItems = buildSignalMetricDecisionItems(
+  {
+    impressions: 900,
+    clicks: 60,
+    cost: 34.11,
+    orders: 21,
+    sales: 193.2,
+    acos: 0.1766,
+    cvr: 0.35,
+    cpc: 0.57,
+  },
+  diagnosisContractItems,
+);
+const ordersMetricDecision = metricDecisionItems.find((item) => item.label === "订单");
+assertEqual(
+  metricDecisionItems.map((item) => item.label).join(" / "),
+  "花费 / 订单 / 销售额 / ACOS",
+);
+assertIncludes(ordersMetricDecision?.purpose ?? "", "判断搜索词是否已经产生真实广告转化");
+assertIncludes(ordersMetricDecision?.proves ?? "", "当前投放上下文中有转化");
+assertIncludes(ordersMetricDecision?.doesNotProve ?? "", "自动加词");
+assertIncludes(ordersMetricDecision?.nextManualStep ?? "", "加入 7/14 天复盘");
 
 const visibleAdAsinEvidenceItems = signalTriageBusinessEvidenceItems({
   recommended_evidence_drilldown: {
@@ -3117,6 +4228,19 @@ assertEqual(productScopeGroupOverview.adAsinRows[0].orders, 12);
 assertEqual(productScopeGroupOverview.adAsinRows[0].sales, 240);
 assertClose(productScopeGroupOverview.adAsinRows[0].acos, 80 / 240);
 assertIncludes(productScopeGroupOverview.adAsinRows[0].strategyNote ?? "", "主推款");
+assertEqual(productScopeGroupOverview.adAsinRows[0].decision.statusLabel, "按策略复核");
+assertIncludes(productScopeGroupOverview.adAsinRows[0].decision.reason, "广告花费 $80.00");
+assertIncludes(productScopeGroupOverview.adAsinRows[0].decision.reason, "策略说明");
+assertIncludes(productScopeGroupOverview.adAsinRows[0].decision.proves, "广告商品粒度表现");
+assertIncludes(productScopeGroupOverview.adAsinRows[0].decision.doesNotProve, "不能把搜索词、广告位或 ABA 自动归因到该 ASIN");
+assertIncludes(productScopeGroupOverview.adAsinRows[0].decision.nextFocus, "点击该 ASIN 下钻广告组、投放词、搜索词和广告位证据");
+assertEqual(productScopeGroupOverview.adCoverageDecision.statusLabel, "3/12 个子 ASIN 有广告投放行");
+assertIncludes(productScopeGroupOverview.adCoverageDecision.summary, "广告覆盖率 25.0%");
+assertIncludes(productScopeGroupOverview.adCoverageDecision.summary, "9 个未投放子 ASIN只作为经营背景或覆盖缺口");
+assertIncludes(productScopeGroupOverview.adCoverageDecision.proves, "advertised_products 已覆盖这些 ASIN");
+assertIncludes(productScopeGroupOverview.adCoverageDecision.doesNotProve, "不能证明 Parent ASIN 只有这些广告 ASIN");
+assertIncludes(productScopeGroupOverview.adCoverageDecision.nextManualStep, "未覆盖 B016EXMW1G、B016EXMW4S、B016EXMXTC、B06VW5SQ97、B07MH544J8 等 9 个");
+assertIncludes(productScopeGroupOverview.adCoverageDecision.nextManualStep, "补广告投放行、非 SP 来源或商品映射证据");
 assertEqual(productScopeGroupOverview.relationItems.length, 4);
 assertEqual(productScopeGroupOverview.relationItems[0].label, "Parent ASIN 经营盘子");
 assertIncludes(productScopeGroupOverview.relationItems[0].value, "Parent ASIN B0PARENT");
@@ -3180,19 +4304,35 @@ assertEqual(productScopeFirstScreenSummary.adAsinRows[0].asin, "B016EXMW02");
 assertEqual(productScopeFirstScreenSummary.adAsinRows[0].spend, 80);
 assertEqual(productScopeFirstScreenSummary.adAsinRows[0].orders, 12);
 assertEqual(productScopeFirstScreenSummary.adAsinRows[0].sales, 240);
+assertIncludes(productScopeFirstScreenSummary.adAsinRows[0].decision.nextFocus, "不自动执行广告动作");
+assertEqual(productScopeFirstScreenSummary.adCoverageDecision.statusLabel, productScopeGroupOverview.adCoverageDecision.statusLabel);
+assertIncludes(productScopeFirstScreenSummary.adCoverageDecision.nextManualStep, "未覆盖 B016EXMW1G");
 assertEqual(productScopeFirstScreenSummary.mvpStatus.title, "诊断 MVP 状态判定");
 assertEqual(productScopeFirstScreenSummary.mvpStatus.statusLabel, "人工留痕 MVP");
 assertIncludes(productScopeFirstScreenSummary.mvpStatus.summary, "当前有 3 个可写人工候选");
 assertIncludes(productScopeFirstScreenSummary.mvpStatus.summary, "不是完整复盘闭环");
 assertIncludes(productScopeFirstScreenSummary.mvpStatus.detail, "Parent ASIN -> 广告 ASIN -> 广告组 / 搜索词 / 广告位");
 assertIncludes(productScopeFirstScreenSummary.mvpStatus.boundary, "ready 复盘");
-assertEqual(productScopeFirstScreenSummary.pathSteps.length, 5);
-assertEqual(productScopeFirstScreenSummary.pathSteps[0].label, "先看销售盘");
+assertIncludes(productScopeFirstScreenSummary.pathSummary, "Parent ASIN 销售入口 -> 广告 ASIN -> 广告组");
+assertIncludes(productScopeFirstScreenSummary.pathSummary, "AI 信号诊断 -> 人工确认 -> 7/14 天复盘");
+assertEqual(productScopeFirstScreenSummary.pathSteps.length, 7);
+assertEqual(productScopeFirstScreenSummary.pathSteps[0].label, "Parent ASIN 经营盘");
 assertIncludes(productScopeFirstScreenSummary.pathSteps[0].detail, "Parent ASIN B0PARENT");
+assertEqual(productScopeFirstScreenSummary.pathSteps[1].label, "广告 ASIN 覆盖");
 assertIncludes(productScopeFirstScreenSummary.pathSteps[1].detail, "只进入有广告证据的广告 ASIN");
-assertIncludes(productScopeFirstScreenSummary.pathSteps[2].detail, "广告组是投放容器");
-assertIncludes(productScopeFirstScreenSummary.pathSteps[3].detail, "搜索词和广告位只作为上下文证据");
-assertIncludes(productScopeFirstScreenSummary.pathSteps[4].detail, "人工确认和 7/14 天复盘");
+assertEqual(productScopeFirstScreenSummary.pathSteps[2].label, "广告组结构");
+assertIncludes(productScopeFirstScreenSummary.pathSteps[2].detail, "广告组是投放容器，不是产品");
+assertEqual(productScopeFirstScreenSummary.pathSteps[3].label, "投放词 / 搜索词 / 广告位");
+assertIncludes(productScopeFirstScreenSummary.pathSteps[3].detail, "流量上下文证据");
+assertEqual(productScopeFirstScreenSummary.pathSteps[4].label, "AI 信号诊断");
+assertIncludes(productScopeFirstScreenSummary.pathSteps[4].detail, "3 个候选");
+assertIncludes(productScopeFirstScreenSummary.pathSteps[4].detail, "人工复核投放词、广告商品和归因边界");
+assertEqual(productScopeFirstScreenSummary.pathSteps[5].label, "人工确认");
+assertIncludes(productScopeFirstScreenSummary.pathSteps[5].detail, "记录观察");
+assertIncludes(productScopeFirstScreenSummary.pathSteps[5].detail, "不自动加词");
+assertEqual(productScopeFirstScreenSummary.pathSteps[6].label, "7/14 天复盘");
+assertIncludes(productScopeFirstScreenSummary.pathSteps[6].detail, "最早 2026-06-22");
+assertIncludes(productScopeFirstScreenSummary.pathSteps[6].detail, "ReviewRecord");
 assertIncludes(productScopeFirstScreenSummary.boundary, "只展示有广告证据的广告 ASIN");
 assertIncludes(productScopeFirstScreenSummary.boundary, "未投放子 ASIN 不进入广告诊断");
 assertIncludes(productScopeFirstScreenSummary.boundary, "搜索词和广告位不能直接归因");
@@ -3202,7 +4342,8 @@ assertIncludes(productScopeFirstScreenSummary.landingGates[0].value, "12 个销�
 assertIncludes(productScopeFirstScreenSummary.landingGates[0].detail, "经营背景");
 assertEqual(productScopeFirstScreenSummary.landingGates[1].label, "广告证据");
 assertIncludes(productScopeFirstScreenSummary.landingGates[1].value, "3 个广告 ASIN 可下钻");
-assertIncludes(productScopeFirstScreenSummary.landingGates[1].detail, "只有有广告证据的 ASIN");
+assertIncludes(productScopeFirstScreenSummary.landingGates[1].detail, "广告覆盖率 25.0%");
+assertIncludes(productScopeFirstScreenSummary.landingGates[1].detail, "未投放子 ASIN只作为经营背景");
 assertEqual(productScopeFirstScreenSummary.landingGates[2].label, "AI 准入");
 assertIncludes(productScopeFirstScreenSummary.landingGates[2].value, "3 个候选需人工复核");
 assertIncludes(productScopeFirstScreenSummary.landingGates[2].detail, "人工复核");
@@ -3335,6 +4476,7 @@ const dataQualityTriage = buildSignalTriageRationale(staleSignal);
 assertEqual(dataQualityTriage.queueKind, "data_quality");
 assertEqual(dataQualityTriage.queueLabel, "数据质量");
 assertIncludes(dataQualityTriage.queueReason, "signal_category=data_quality");
+assertIncludes(dataQualityTriage.queueReason, "经营问题=数据质量");
 assertIncludes(dataQualityTriage.priorityReason, "severity=4");
 assertIncludes(dataQualityTriage.reviewBoundary, "review_result 不参与分诊");
 assertIncludes(dataQualityTriage.reviewRuleFeedback, "暂无复盘结果");
@@ -3345,8 +4487,9 @@ const opportunityTriage = buildSignalTriageRationale({
   review_result: "improved",
 });
 
-assertEqual(opportunityTriage.queueKind, "opportunity");
-assertEqual(opportunityTriage.queueLabel, "市场机会");
+assertEqual(opportunityTriage.queueKind, "opportunity_expansion");
+assertEqual(opportunityTriage.queueLabel, "机会扩量");
+assertIncludes(opportunityTriage.queueReason, "经营问题=机会扩量");
 assertIncludes(opportunityTriage.queueReason, "signal_type=opportunity");
 assertIncludes(opportunityTriage.statusReason, "status=observing");
 assertIncludes(opportunityTriage.reviewBoundary, "复盘结果只说明处理后效果");

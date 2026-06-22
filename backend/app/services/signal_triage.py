@@ -39,6 +39,7 @@ REVIEWABLE_OBJECT_TYPES = {"search_term", "advertised_product", "sales_product",
 METRIC_REVIEW_OBJECT_TYPES = {"search_term", "advertised_product", "sales_product", "placement"}
 PRIORITY_SCORE = {"P0": 3, "P1": 2, "P2": 1}
 REVIEW_WAIT_FORBIDDEN_ACTIONS = ["不拉取快照", "不保存复盘结论", "不自动改规则", "不自动执行广告动作"]
+REVIEW_GAP_FORBIDDEN_ACTIONS = ["不保存复盘结论", "不自动改规则", "不自动执行广告动作"]
 ACTIONABLE_PRODUCT_SCOPE_PREFIXES = ("parent_asin:", "ad_asin:")
 MANUAL_TRIAGE_MIN_EVIDENCE_COUNT = 3
 MANUAL_TRIAGE_BLOCKED_SIGNAL_CATEGORIES = {
@@ -168,6 +169,34 @@ def build_signal_triage_payload(
         manual_preview=action_preview,
         product_scope_drilldown=product_scope_drilldown,
     )
+    candidate_layers = _dict_list(candidates_payload.get("candidate_layers")) if is_actionable_scope else []
+    recommended_candidate = _candidate_summary(_dict_or_none(candidates_payload.get("recommended_candidate"))) if is_actionable_scope else None
+    recommended_evidence_drilldown = _dict_or_none(candidates_payload.get("recommended_evidence_drilldown")) if is_actionable_scope else None
+    recommended_diagnosis_contract = _diagnosis_contract(
+        status=actionability_status["status"],
+        product_scope_gate=product_scope_gate,
+        product_scope_drilldown=product_scope_drilldown,
+        candidate_layers=candidate_layers,
+        recommended_candidate=recommended_candidate,
+        recommended_evidence_drilldown=recommended_evidence_drilldown,
+        review_status=readiness_payload,
+        actionability_status=actionability_status,
+    )
+    next_unhandled_diagnosis_contract = (
+        _diagnosis_contract(
+            status=actionability_status["status"],
+            product_scope_gate=product_scope_gate,
+            product_scope_drilldown=product_scope_drilldown,
+            candidate_layers=candidate_layers,
+            recommended_candidate=next_unhandled_candidate,
+            recommended_evidence_drilldown=next_unhandled_evidence_drilldown,
+            review_status=readiness_payload,
+            actionability_status=actionability_status,
+        )
+        if next_unhandled_candidate
+        else None
+    )
+    diagnosis_contract = next_unhandled_diagnosis_contract or recommended_diagnosis_contract
 
     return {
         "status": actionability_status["status"],
@@ -184,15 +213,17 @@ def build_signal_triage_payload(
             "excluded_summary": _dict(candidates_payload.get("excluded_summary")),
         },
         "candidate_mix": _candidate_mix(candidates if is_actionable_scope else []),
-        "candidate_layers": _dict_list(candidates_payload.get("candidate_layers")) if is_actionable_scope else [],
-        "recommended_candidate": _candidate_summary(_dict_or_none(candidates_payload.get("recommended_candidate"))) if is_actionable_scope else None,
-        "recommended_evidence_drilldown": _dict_or_none(candidates_payload.get("recommended_evidence_drilldown")) if is_actionable_scope else None,
+        "candidate_layers": candidate_layers,
+        "recommended_candidate": recommended_candidate,
+        "recommended_evidence_drilldown": recommended_evidence_drilldown,
+        "recommended_diagnosis_contract": recommended_diagnosis_contract,
         "product_scope_drilldown": product_scope_drilldown,
         "recommendation_reason": candidates_payload.get("recommendation_reason") if is_actionable_scope else product_scope_gate["message"],
         "manual_action_preview": action_preview,
         "recommended_manual_status": recommended_manual_status,
         "next_unhandled_candidate": next_unhandled_candidate,
         "next_unhandled_evidence_drilldown": next_unhandled_evidence_drilldown,
+        "next_unhandled_diagnosis_contract": next_unhandled_diagnosis_contract,
         "top_candidates": [_candidate_summary(candidate) for candidate in _rank_candidates(candidates)[:top_limit]] if is_actionable_scope else [],
         "review_status": {
             "status": readiness_payload.get("status"),
@@ -204,6 +235,7 @@ def build_signal_triage_payload(
             "review_feedback": _dict(readiness_payload.get("review_feedback")),
             "rule_improvement": _dict(readiness_payload.get("rule_improvement")),
             "review_wait_summary": _dict(readiness_payload.get("review_wait_summary")),
+            "review_identity_audit": _dict(readiness_payload.get("review_identity_audit")),
             "next_action": readiness_payload.get("next_action"),
         },
         "blockers": blockers,
@@ -215,7 +247,665 @@ def build_signal_triage_payload(
             blockers=blockers,
             product_scope_gate=product_scope_gate,
         ),
+        "diagnosis_contract": diagnosis_contract,
     }
+
+
+def _diagnosis_contract(
+    *,
+    status: str,
+    product_scope_gate: dict[str, Any] | None,
+    product_scope_drilldown: dict[str, Any] | None,
+    candidate_layers: list[dict[str, Any]],
+    recommended_candidate: dict[str, Any] | None,
+    recommended_evidence_drilldown: dict[str, Any] | None,
+    review_status: dict[str, Any],
+    actionability_status: dict[str, Any],
+) -> dict[str, Any]:
+    drilldown = _dict(recommended_evidence_drilldown)
+    candidate = _dict(recommended_candidate)
+    scope = _dict(product_scope_drilldown)
+    metric_summary = _dict(drilldown.get("metric_summary"))
+    layers = {str(layer.get("layer_id")): _dict(layer) for layer in candidate_layers}
+    search_term_count = _int(drilldown.get("search_term_context_count")) or 0
+    placement_count = _int(drilldown.get("placement_context_count")) or 0
+    ad_groups = _string_list(drilldown.get("ad_groups"))
+    object_label = _string(candidate.get("object_label") or drilldown.get("object_label") or "等待推荐对象")
+    object_type = _string(candidate.get("object_type") or drilldown.get("object_type") or "unknown")
+    review_wait = _dict(review_status.get("review_wait_summary"))
+
+    sections = [
+        _contract_section(
+            section_id="parent_asin_scope",
+            title="Parent ASIN 经营盘",
+            business_question="当前 Parent ASIN 只是经营入口，哪些对象才有广告诊断资格？",
+            object_grain="Parent ASIN / SalesProduct 经营入口",
+            metrics=[
+                _contract_metric("当前作用域", _string(_dict(product_scope_gate).get("selected_product_scope_id")) or "未选择", "确认本次诊断没有落到全量混合视图。"),
+                _contract_metric("候选信号", str(_dict(product_scope_gate).get("candidate_pool_count") or 0), "判断当前经营入口下是否存在可进入人工复核的对象。"),
+                _contract_metric("广告 ASIN", str(_int(scope.get("advertised_asin_count")) or 0), "只让有广告证据的 ASIN 进入广告诊断。"),
+            ],
+            current_judgement=_string(scope.get("summary")) or _string(_dict(product_scope_gate).get("message")) or "当前经营入口等待广告证据。",
+            proves="能证明本轮分析从 Parent ASIN 经营入口进入，而不是把所有子 ASIN 都当作广告对象。",
+            does_not_prove="不能证明未投放子 ASIN 存在广告问题，也不能把销售表现直接当广告表现。",
+            evidence_gap="缺口在于未投放子 ASIN 只有经营背景，没有广告商品、广告组、搜索词或广告位证据。",
+            required_evidence="需要 advertised_products、ad_product_daily_metrics、ad_search_term_daily_metrics 等广告证据后，才能进入广告诊断。",
+            next_manual_step="先确认 Parent ASIN 口径，再只下钻有广告证据的广告 ASIN、广告组和搜索词。",
+        ),
+        _contract_section(
+            section_id="ad_asin_coverage",
+            title="广告 ASIN 覆盖",
+            business_question="当前商品范围内是否有足够广告 ASIN 证据支撑商品级判断？",
+            object_grain="AdvertisedProduct / advertised_products",
+            metrics=_ad_asin_contract_metrics(scope, drilldown, layers),
+            current_judgement=_ad_asin_contract_judgement(scope, drilldown),
+            proves="能证明哪些 ASIN 当前有广告投放和广告指标，可作为广告诊断范围。",
+            does_not_prove="不能证明所有 Parent ASIN 子变体都有广告问题；没有广告行的 ASIN 只能作为经营背景。",
+            evidence_gap=_ad_asin_contract_evidence_gap(scope, drilldown),
+            required_evidence=_ad_asin_contract_required_evidence(scope),
+            next_manual_step=_ad_asin_contract_next_manual_step(scope, object_label),
+        ),
+        _contract_section(
+            section_id="ad_group_boundary",
+            title="广告组边界",
+            business_question="搜索词或广告商品表现是否能安全落到广告组结构判断？",
+            object_grain="AdGroup 投放容器",
+            metrics=_ad_group_contract_metrics(scope, ad_groups, search_term_count, layers),
+            current_judgement=_ad_group_contract_judgement(scope, ad_groups, search_term_count),
+            proves="能证明搜索词出现在哪些广告组上下文里。",
+            does_not_prove="不能证明某个搜索词消耗一定由单个广告 ASIN 承接，也不能把广告组当产品。",
+            evidence_gap=_ad_group_contract_evidence_gap(scope, ad_groups),
+            required_evidence=_ad_group_contract_required_evidence(scope, ad_groups),
+            next_manual_step=_ad_group_contract_next_manual_step(scope, ad_groups, object_label),
+        ),
+        _contract_section(
+            section_id="search_term_opportunity",
+            title="搜索词机会",
+            business_question="该搜索词是否存在可人工复核的扩量机会，而不是自动加词？",
+            object_grain="SearchTerm + 同广告活动 / 广告组上下文 + 站点级 ABA 背景",
+            metrics=_search_term_contract_metrics(scope, drilldown, ad_groups, metric_summary, search_term_count),
+            current_judgement=_search_term_contract_judgement(
+                object_label,
+                search_term_count,
+                metric_summary,
+                drilldown,
+                scope,
+                ad_groups,
+            ),
+            proves=_search_term_contract_proves(object_label, drilldown, scope, ad_groups),
+            does_not_prove=_search_term_contract_does_not_prove(scope, ad_groups),
+            evidence_gap=_search_term_contract_evidence_gap(scope, drilldown, ad_groups),
+            required_evidence=_search_term_contract_required_evidence(drilldown),
+            next_manual_step=_search_term_contract_next_manual_step(scope, drilldown, ad_groups, object_label),
+        ),
+        _contract_section(
+            section_id="placement_gap",
+            title="广告位证据缺口",
+            business_question="当前能否判断广告位造成了表现差异？",
+            object_grain="Placement / ad_placement_daily_metrics",
+            metrics=_placement_contract_metrics(scope, ad_groups, placement_count, search_term_count),
+            current_judgement=_placement_contract_judgement(scope, ad_groups, placement_count),
+            proves="能证明当前广告位证据停留在哪个粒度：推荐对象直连、广告组级、广告活动级或缺失。",
+            does_not_prove=_placement_contract_does_not_prove(scope, ad_groups, placement_count),
+            evidence_gap=_placement_contract_evidence_gap(scope, ad_groups, placement_count),
+            required_evidence=_placement_contract_required_evidence(scope, ad_groups),
+            next_manual_step=_placement_contract_next_manual_step(scope, ad_groups, object_label),
+        ),
+        _contract_section(
+            section_id="manual_review",
+            title="人工确认与复盘",
+            business_question="运营看完后能做什么动作，何时复盘？",
+            object_grain="ManualAction / ReviewTodo / ReviewRecord",
+            metrics=[
+                _contract_metric("人工留痕", str(_int(review_status.get("manual_action_count")) or 0), "区分已记录动作和未授权预检。"),
+                _contract_metric("已保存复盘", str(_int(review_status.get("review_record_count")) or 0), "避免把待复盘误写成效果结论。"),
+                _contract_metric("最早复盘日", _string(review_wait.get("earliest_due_date")) or "等待复盘窗口", "说明 7/14 天复盘什么时候可做。"),
+            ],
+            current_judgement=_string(actionability_status.get("message") or actionability_status.get("next_step")) or "等待人工确认。",
+            proves="能证明当前是否具备人工确认、留痕和复盘入口。",
+            does_not_prove="不能证明广告建议已经有效，也不能替代运营在广告后台执行具体动作。",
+            evidence_gap="若没有人工动作或复盘窗口未到期，缺口是处理前后指标窗口和已保存 ReviewRecord。",
+            required_evidence="需要人工授权写入 ManualAction，生成 7/14 天 ReviewTodo，到期后再保存 ReviewRecord。",
+            next_manual_step="只允许记录观察、标记已处理、加入复盘或忽略本次；未到复盘窗口前不保存效果结论。",
+        ),
+    ]
+
+    return {
+        "status": status,
+        "signal_id": candidate.get("signal_id"),
+        "object_type": object_type,
+        "object_id": candidate.get("stable_object_id") or candidate.get("object_id"),
+        "object_label": object_label,
+        "sections": sections,
+    }
+
+
+def _contract_section(
+    *,
+    section_id: str,
+    title: str,
+    business_question: str,
+    object_grain: str,
+    metrics: list[dict[str, str]],
+    current_judgement: str,
+    proves: str,
+    does_not_prove: str,
+    evidence_gap: str,
+    required_evidence: str,
+    next_manual_step: str,
+) -> dict[str, Any]:
+    return {
+        "section_id": section_id,
+        "title": title,
+        "business_question": business_question,
+        "object_grain": object_grain,
+        "metrics": metrics,
+        "current_judgement": current_judgement,
+        "proves": proves,
+        "does_not_prove": does_not_prove,
+        "evidence_gap": evidence_gap,
+        "required_evidence": required_evidence,
+        "next_manual_step": next_manual_step,
+    }
+
+
+def _contract_metric(name: str, value: str, purpose: str) -> dict[str, str]:
+    return {"name": name, "value": value, "purpose": purpose}
+
+
+def _ad_asin_contract_metrics(
+    scope: dict[str, Any],
+    drilldown: dict[str, Any],
+    layers: dict[str, dict[str, Any]],
+) -> list[dict[str, str]]:
+    items = _dict_list(scope.get("items"))
+    top_item = _top_ad_asin_contract_item(items)
+    top_asin = _string(top_item.get("asin")) or "暂无广告 ASIN"
+    top_value = (
+        f"{top_asin} / 花费 {_format_amount(top_item.get('spend'))} / 订单 {_int(top_item.get('orders')) or 0}"
+        if top_item
+        else top_asin
+    )
+    return [
+        _contract_metric("广告 ASIN 数", str(_int(scope.get("advertised_asin_count")) or len(items)), "界定本轮广告诊断只覆盖有投放证据的 ASIN。"),
+        _contract_metric("广告 ASIN 花费", _format_amount(_ad_asin_scope_spend(items)), "判断广告商品层的业务权重，而不是把未投放子 ASIN 纳入广告分析。"),
+        _contract_metric("广告 ASIN 订单", str(_ad_asin_scope_orders(items)), "判断广告商品层是否有真实转化证据支撑继续下钻。"),
+        _contract_metric("优先复核 ASIN", top_value, "把人工复核入口落到有广告花费和订单的商品，而不是停留在 Parent ASIN。"),
+        _contract_metric("直接广告商品行", str(_int(drilldown.get("direct_ad_product_row_count")) or 0), "判断推荐对象是否已经落到广告商品粒度；搜索词对象通常不能直接归因。"),
+        _contract_metric("广告 ASIN 候选层", str(_int(_dict(layers.get("advertised_asin_opportunity")).get("count")) or 0), "识别是否已有可人工处理的广告商品机会；为 0 时只做诊断不写动作。"),
+    ]
+
+
+def _ad_asin_contract_judgement(scope: dict[str, Any], drilldown: dict[str, Any]) -> str:
+    direct_count = _int(drilldown.get("direct_ad_product_row_count")) or 0
+    advertised_count = _int(scope.get("advertised_asin_count")) or 0
+    items = _dict_list(scope.get("items"))
+    spend = _format_amount(_ad_asin_scope_spend(items))
+    orders = _ad_asin_scope_orders(items)
+    top_item = _top_ad_asin_contract_item(items)
+    top_asin = _string(top_item.get("asin"))
+    if direct_count > 0:
+        return f"推荐对象已有 {direct_count} 条广告商品直接证据；当前 Parent 范围广告 ASIN {advertised_count} 个，合计花费 {spend}、订单 {orders}，可进入广告商品层复核。"
+    if advertised_count > 0:
+        focus = f"优先从 {top_asin} 及其头部广告组回看搜索词承接。" if top_asin else "先按广告组回看搜索词承接。"
+        return f"当前 Parent 范围有 {advertised_count} 个 ASIN 具备广告证据，合计花费 {spend}、订单 {orders}；推荐对象是搜索词上下文，不能直接归因到某个广告 ASIN。{focus}"
+    return "当前推荐信号停留在搜索词层，尚不能形成广告 ASIN 直接归因。"
+
+
+def _ad_asin_contract_evidence_gap(scope: dict[str, Any], drilldown: dict[str, Any]) -> str:
+    direct_count = _int(drilldown.get("direct_ad_product_row_count")) or 0
+    advertised_count = _int(scope.get("advertised_asin_count")) or 0
+    if advertised_count > 0 and direct_count == 0:
+        return "缺口不是广告 ASIN 没有数据，而是搜索词到广告 ASIN 的归因边界；需要同广告组投放商品清单和主推策略确认。"
+    if advertised_count > 0:
+        return "已有广告 ASIN 直接证据，但仍需要核对广告组内是否多商品投放，避免把容器表现误归因给单个 ASIN。"
+    return "若广告 ASIN 行不足，缺口是投放商品清单、广告商品粒度指标和销售商品映射没有同时闭合。"
+
+
+def _ad_asin_contract_required_evidence(scope: dict[str, Any]) -> str:
+    if (_int(scope.get("advertised_asin_count")) or 0) > 0:
+        return "需要广告 ASIN 指标、同广告组投放商品清单、投放词 / 搜索词上下文，以及人工确认的主推策略。"
+    return "需要广告 ASIN 的 advertised_products 行、广告商品指标，以及必要时人工确认的销售商品映射。"
+
+
+def _ad_asin_contract_next_manual_step(scope: dict[str, Any], object_label: str) -> str:
+    top_item = _top_ad_asin_contract_item(_dict_list(scope.get("items")))
+    top_asin = _string(top_item.get("asin"))
+    if top_asin:
+        return f"先从 {top_asin} 的头部广告组核对 {object_label} 是否匹配投放商品和策略，再选择记录观察、标记已处理、加入复盘或忽略本次。"
+    return "若广告 ASIN 证据不足，先补齐 advertised_products 或人工确认投放商品清单。"
+
+
+def _top_ad_asin_contract_item(items: list[dict[str, Any]]) -> dict[str, Any]:
+    if not items:
+        return {}
+    return max(items, key=lambda item: (_number(item.get("spend")) or 0, _int(item.get("orders")) or 0))
+
+
+def _ad_asin_scope_spend(items: list[dict[str, Any]]) -> float:
+    return round(sum(_number(item.get("spend")) or 0 for item in items), 2)
+
+
+def _ad_asin_scope_orders(items: list[dict[str, Any]]) -> int:
+    return sum(_int(item.get("orders")) or 0 for item in items)
+
+
+def _ad_group_contract_metrics(
+    scope: dict[str, Any],
+    ad_groups: list[str],
+    search_term_count: int,
+    layers: dict[str, dict[str, Any]],
+) -> list[dict[str, str]]:
+    diagnoses = _ad_group_contract_diagnoses(scope, ad_groups)
+    matched_count = len(diagnoses)
+    multi_count = sum(1 for diagnosis in diagnoses if (_int(diagnosis.get("ad_group_advertised_asin_count")) or 0) > 1)
+    max_asin_count = max((_int(diagnosis.get("ad_group_advertised_asin_count")) or 0 for diagnosis in diagnoses), default=0)
+    effective_count = sum(_int(diagnosis.get("effective_search_term_count")) or 0 for diagnosis in diagnoses)
+    zero_order_count = sum(_int(diagnosis.get("zero_order_search_term_count")) or 0 for diagnosis in diagnoses)
+    return [
+        _contract_metric("广告组数", str(len(ad_groups)), "定位推荐对象出现在哪些投放容器中。"),
+        _contract_metric("已匹配广告组结构", f"{matched_count}/{len(ad_groups)}", "判断这些广告组是否能回到投放商品清单和广告商品指标。"),
+        _contract_metric("多商品广告组", f"{multi_count}/{matched_count}", "识别搜索词是否处在无法直接归因到单个 ASIN 的投放容器中。"),
+        _contract_metric("最大同组 ASIN", str(max_asin_count), "判断广告组层诊断能否安全下钻到商品层。"),
+        _contract_metric("搜索词上下文", str(search_term_count), "判断广告组下是否有可复核的流量证据。"),
+        _contract_metric("有效/无订单词", f"{effective_count}/{zero_order_count}", "对比同广告组内有效搜索词和无订单消耗词，判断是否只是合并结果好看。"),
+        _contract_metric("广告位层级", _ad_group_contract_placement_summary(diagnoses), "说明广告位证据能否支持广告组层解释。"),
+        _contract_metric("广告组结构候选层", str(_int(_dict(layers.get("ad_group_structure_boundary")).get("count")) or 0), "识别是否需要优先处理多商品广告组边界。"),
+    ]
+
+
+def _ad_group_contract_judgement(scope: dict[str, Any], ad_groups: list[str], search_term_count: int) -> str:
+    diagnoses = _ad_group_contract_diagnoses(scope, ad_groups)
+    if diagnoses:
+        matched_text = f"已匹配 {len(diagnoses)}/{len(ad_groups)} 个广告组结构"
+        unmatched_count = max(len(ad_groups) - len(diagnoses), 0)
+        unmatched_text = f"，另有 {unmatched_count} 个广告组缺投放商品结构证据" if unmatched_count else ""
+        names_text = "、".join(ad_groups[:3])
+        multi_groups = [diagnosis for diagnosis in diagnoses if (_int(diagnosis.get("ad_group_advertised_asin_count")) or 0) > 1]
+        if multi_groups:
+            top_group = max(
+                multi_groups,
+                key=lambda diagnosis: (
+                    _int(diagnosis.get("ad_group_advertised_asin_count")) or 0,
+                    _number(diagnosis.get("spend")) or 0,
+                ),
+            )
+            group_name = _string(top_group.get("ad_group_name")) or "当前广告组"
+            asin_count = _int(top_group.get("ad_group_advertised_asin_count")) or 0
+            asins = _ad_group_contract_asins_text(top_group)
+            return (
+                f"搜索词出现在 {len(ad_groups)} 个广告组上下文：{names_text}；{matched_text}{unmatched_text}。"
+                f"{group_name} 同组投放 {asin_count} 个 ASIN（{asins}），只能先判断广告组承接，不能拆到单个广告 ASIN。"
+            )
+        return (
+            f"搜索词出现在 {len(ad_groups)} 个广告组上下文：{names_text}；{matched_text}{unmatched_text}。"
+            "当前匹配广告组只识别到单 ASIN 投放，但仍需要核对投放词、广告位和主推策略后再人工处理。"
+        )
+    if ad_groups:
+        return f"搜索词出现在 {len(ad_groups)} 个广告组上下文：{'、'.join(ad_groups[:3])}；广告组仍只是投放容器。"
+    if search_term_count > 0:
+        return "已有搜索词上下文，但广告组标签不足，需要人工回到广告活动 / 广告组核对。"
+    return "缺少广告组和搜索词上下文，不能判断投放结构。"
+
+
+def _ad_group_contract_evidence_gap(scope: dict[str, Any], ad_groups: list[str]) -> str:
+    diagnoses = _ad_group_contract_diagnoses(scope, ad_groups)
+    if not diagnoses:
+        return "广告组是投放容器；当前只能看到搜索词所在容器，仍缺投放商品清单、主推策略和商品级承接的人工确认。"
+    gaps: list[str] = []
+    if any((_int(diagnosis.get("ad_group_advertised_asin_count")) or 0) > 1 for diagnosis in diagnoses):
+        gaps.append("存在多商品广告组，缺主推款策略和商品承接确认时，不能把搜索词表现归到单个 ASIN。")
+    if any(_string(diagnosis.get("placement_context_level")) == "campaign" for diagnosis in diagnoses):
+        gaps.append("当前只有同广告活动广告位证据，缺广告组级广告位证据，不能判断广告位是否造成该广告组表现差异。")
+    if any(_string(diagnosis.get("placement_context_level")) == "missing" for diagnosis in diagnoses):
+        gaps.append("部分广告组缺广告位证据，只能按广告商品和搜索词上下文复核。")
+    detail = "".join(gaps) or "仍需核对投放商品清单、投放词维护状态和主推策略，才能判断是否存在结构失衡。"
+    return f"广告组是投放容器；{detail}"
+
+
+def _ad_group_contract_required_evidence(scope: dict[str, Any], ad_groups: list[str]) -> str:
+    diagnoses = _ad_group_contract_diagnoses(scope, ad_groups)
+    if diagnoses:
+        return "需要同广告组投放商品清单、advertised_products 明细、广告 ASIN 表现、投放词 / 搜索词明细、同周期广告位证据，以及人工确认的主推策略。"
+    return "需要逐广告组核对投放商品清单、广告 ASIN 表现、投放词和主推款策略，才能判断是否存在结构失衡。"
+
+
+def _ad_group_contract_next_manual_step(scope: dict[str, Any], ad_groups: list[str], object_label: str) -> str:
+    diagnoses = _ad_group_contract_diagnoses(scope, ad_groups)
+    if not diagnoses:
+        return "人工复核广告组内投放商品、投放词和策略边界，再决定是否记录观察或加入复盘。"
+    focus = max(
+        diagnoses,
+        key=lambda diagnosis: (
+            _int(diagnosis.get("ad_group_advertised_asin_count")) or 0,
+            _number(diagnosis.get("spend")) or 0,
+        ),
+    )
+    group_name = _string(focus.get("ad_group_name")) or "当前广告组"
+    asins = _ad_group_contract_asins_text(focus)
+    return (
+        f"先打开 {group_name}，核对 {object_label} 的投放词、同组 ASIN（{asins}）和主推策略；"
+        "再选择记录观察、标记已处理、加入复盘或忽略本次。"
+    )
+
+
+def _ad_group_contract_diagnoses(scope: dict[str, Any], ad_groups: list[str]) -> list[dict[str, Any]]:
+    rows = _dict_list(scope.get("ad_group_diagnosis_context")) or _dict_list(scope.get("ad_group_diagnosis"))
+    if not rows or not ad_groups:
+        return []
+    wanted = {ad_group.casefold() for ad_group in ad_groups if ad_group}
+    matched: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row in rows:
+        label = _string(row.get("ad_group_name") or row.get("ad_group_id"))
+        key = label.casefold()
+        if not key or key not in wanted or key in seen:
+            continue
+        seen.add(key)
+        matched.append(row)
+    return matched
+
+
+def _ad_group_contract_placement_summary(diagnoses: list[dict[str, Any]]) -> str:
+    if not diagnoses:
+        return "等待广告组结构"
+    counter: Counter[str] = Counter(_string(diagnosis.get("placement_context_level")) or "missing" for diagnosis in diagnoses)
+    labels = {
+        "ad_group": "广告组级",
+        "campaign": "广告活动级",
+        "missing": "缺广告位",
+    }
+    return " / ".join(f"{labels.get(key, key)} {count}" for key, count in counter.items())
+
+
+def _ad_group_contract_asins_text(diagnosis: dict[str, Any]) -> str:
+    asins = _string_list(diagnosis.get("ad_group_advertised_asins"))
+    return "、".join(asins[:4]) if asins else "待核对"
+
+
+def _placement_contract_metrics(
+    scope: dict[str, Any],
+    ad_groups: list[str],
+    placement_count: int,
+    search_term_count: int,
+) -> list[dict[str, str]]:
+    stats = _placement_contract_stats(scope, ad_groups)
+    return [
+        _contract_metric("推荐对象广告位", str(placement_count), "判断推荐信号自身是否已有可直接解释流量位置的证据。"),
+        _contract_metric("匹配广告组", f"{stats['matched_count']}/{len(ad_groups)}", "判断广告位证据能否回到相关广告组边界。"),
+        _contract_metric("广告组级广告位", str(stats["ad_group_placement_total"]), "只有这一层才可辅助解释广告组层流量位置。"),
+        _contract_metric("广告活动级背景", str(stats["campaign_only_placement_total"]), "识别只能作为活动背景、不能替代广告组归因的广告位证据。"),
+        _contract_metric("缺广告位广告组", str(stats["missing_count"]), "说明哪些相关广告组完全不能进入广告位解释。"),
+        _contract_metric("搜索词上下文", str(search_term_count), "在广告位证据不足时保留搜索词和广告组复核路径。"),
+    ]
+
+
+def _placement_contract_judgement(scope: dict[str, Any], ad_groups: list[str], placement_count: int) -> str:
+    stats = _placement_contract_stats(scope, ad_groups)
+    if stats["campaign_level_count"] > 0 and stats["ad_group_level_count"] <= 0:
+        return (
+            f"当前没有搜索词直连广告位，也没有广告组级广告位；但 {stats['campaign_level_count']} 个相关广告组"
+            f"有同广告活动广告位背景（共 {stats['campaign_only_placement_total']} 条）。这些只能辅助判断活动层流量位置，"
+            "不能证明该搜索词或该广告组由广告位导致。"
+        )
+    if stats["ad_group_level_count"] > 0:
+        return (
+            f"当前 {stats['ad_group_level_count']} 个相关广告组有广告组级广告位证据"
+            f"（共 {stats['ad_group_placement_total']} 条），可辅助复核流量位置；仍不能自动推出调价、加词或否词动作。"
+        )
+    if stats["matched_count"] > 0 and stats["missing_count"] > 0:
+        return f"已匹配 {stats['matched_count']} 个相关广告组，但缺少可用广告位证据，只能按搜索词和广告组结构先复核。"
+    if placement_count > 0:
+        return f"推荐对象已有 {placement_count} 条广告位上下文，可辅助判断流量位置；仍需核对周期和广告组边界。"
+    return "缺少广告位上下文，只能说明搜索词和投放上下文，不能判断广告位影响。"
+
+
+def _placement_contract_does_not_prove(scope: dict[str, Any], ad_groups: list[str], placement_count: int) -> str:
+    stats = _placement_contract_stats(scope, ad_groups)
+    if stats["campaign_level_count"] > 0 and stats["ad_group_level_count"] <= 0:
+        return "不能证明 Top of Search、Product Pages 或 Rest of Search 造成该搜索词或该广告组表现差异；广告活动级证据不能替代广告组级归因。"
+    if stats["ad_group_level_count"] > 0 or placement_count > 0:
+        return "不能证明应该自动调价、自动新增关键词或自动否词，也不能跳过人工核对广告组策略。"
+    return "广告位缺失时不能把表现差异解释为广告位问题。"
+
+
+def _placement_contract_evidence_gap(scope: dict[str, Any], ad_groups: list[str], placement_count: int) -> str:
+    stats = _placement_contract_stats(scope, ad_groups)
+    if stats["campaign_level_count"] > 0 and stats["ad_group_level_count"] <= 0:
+        return "缺搜索词直连广告位和广告组级广告位，只能用同广告活动广告位做背景；不能下结论为广告位问题。"
+    if stats["ad_group_level_count"] > 0 or placement_count > 0:
+        return "已有广告位证据，但仍需要核对广告位周期是否与搜索词、广告商品和广告组边界一致。"
+    return "缺少广告位证据，无法判断 Top of Search、Product Pages 或 Rest of Search 是否造成表现差异。"
+
+
+def _placement_contract_required_evidence(scope: dict[str, Any], ad_groups: list[str]) -> str:
+    stats = _placement_contract_stats(scope, ad_groups)
+    if stats["campaign_level_count"] > 0 and stats["ad_group_level_count"] <= 0:
+        return "需要同周期 ad_placement_daily_metrics，并能按 campaign_id + ad_group_id 与搜索词、广告商品指标对齐；若只有 campaign_id，只能活动级辅助复核。"
+    return "需要同周期 ad_placement_daily_metrics，并按广告活动 / 广告组与搜索词、广告商品指标对齐。"
+
+
+def _placement_contract_next_manual_step(scope: dict[str, Any], ad_groups: list[str], object_label: str) -> str:
+    stats = _placement_contract_stats(scope, ad_groups)
+    if stats["campaign_level_count"] > 0 and stats["ad_group_level_count"] <= 0:
+        names = _placement_contract_group_names(scope, ad_groups)
+        return f"若要解释广告位影响，先核对 {names} 是否有广告组级广告位数据；否则按广告组 / 搜索词先处理，不做广告位结论。"
+    if stats["ad_group_level_count"] > 0:
+        names = _placement_contract_group_names(scope, ad_groups)
+        return f"人工核对 {names} 的广告位、投放词和主推策略后，再选择记录观察、标记已处理、加入复盘或忽略本次。"
+    if object_label:
+        return f"先按 {object_label} 的搜索词和广告组上下文处理；若运营需要解释广告位影响，再补齐广告位数据。"
+    return "若运营需要解释广告位影响，先补齐或人工核对广告位数据；否则只按搜索词和广告组上下文处理。"
+
+
+def _placement_contract_stats(scope: dict[str, Any], ad_groups: list[str]) -> dict[str, int]:
+    diagnoses = _ad_group_contract_diagnoses(scope, ad_groups)
+    ad_group_level_count = sum(1 for diagnosis in diagnoses if _string(diagnosis.get("placement_context_level")) == "ad_group")
+    campaign_level_count = sum(1 for diagnosis in diagnoses if _string(diagnosis.get("placement_context_level")) == "campaign")
+    missing_count = sum(1 for diagnosis in diagnoses if _string(diagnosis.get("placement_context_level")) in {"", "missing"})
+    ad_group_placement_total = sum(_int(diagnosis.get("placement_count")) or 0 for diagnosis in diagnoses)
+    campaign_only_placement_total = sum(
+        _int(diagnosis.get("campaign_placement_count")) or 0
+        for diagnosis in diagnoses
+        if (_int(diagnosis.get("placement_count")) or 0) <= 0
+    )
+    return {
+        "matched_count": len(diagnoses),
+        "ad_group_level_count": ad_group_level_count,
+        "campaign_level_count": campaign_level_count,
+        "missing_count": missing_count,
+        "ad_group_placement_total": ad_group_placement_total,
+        "campaign_only_placement_total": campaign_only_placement_total,
+    }
+
+
+def _placement_contract_group_names(scope: dict[str, Any], ad_groups: list[str]) -> str:
+    diagnoses = _ad_group_contract_diagnoses(scope, ad_groups)
+    names = [_string(diagnosis.get("ad_group_name")) for diagnosis in diagnoses if _string(diagnosis.get("ad_group_name"))]
+    if not names:
+        names = ad_groups
+    return "、".join(names[:2]) if names else "相关广告组"
+
+
+def _search_term_contract_metrics(
+    scope: dict[str, Any],
+    drilldown: dict[str, Any],
+    ad_groups: list[str],
+    metric_summary: dict[str, Any],
+    search_term_count: int,
+) -> list[dict[str, str]]:
+    targeting_labels = _search_term_contract_targeting_labels(drilldown)
+    aba_match = _search_term_contract_aba_match(drilldown)
+    ad_group_stats = _search_term_contract_ad_group_stats(scope, ad_groups)
+    return [
+        _contract_metric("花费", _format_amount(metric_summary.get("spend")), "判断当前机会是否有可复核的广告花费样本，避免把零成本偶然样本包装成扩量机会。"),
+        _contract_metric("订单", str(_int(metric_summary.get("orders")) or 0), "判断搜索词是否已经产生真实店内广告转化，是进入人工扩量复核的最低业务证据。"),
+        _contract_metric("销售额", _format_amount(metric_summary.get("sales")), "判断订单是否带来销售承接，避免只看订单数量。"),
+        _contract_metric("ACOS", _format_ratio(metric_summary.get("acos"), empty_text="无销售额"), "判断当前效率是否可接受，只能作为人工扩量前的效率参考，不是自动调价依据。"),
+        _contract_metric("CVR", _format_ratio(metric_summary.get("cvr"), empty_text="无点击"), "判断点击承接质量是否支持继续复核，不能单独证明应放量。"),
+        _contract_metric("投放上下文", f"广告组 {len(ad_groups)} 个 / 搜索词表现行 {search_term_count} 条", "确认该词出现在哪些广告组，避免把合并结果误读为单一对象表现。"),
+        _contract_metric("投放词证据", _search_term_contract_targeting_text(targeting_labels), "判断用户搜索词是否已有投放词承接；这不是完整关键词库证明。"),
+        _contract_metric("广告位证据", _search_term_contract_placement_text(scope, drilldown, ad_groups), "判断是否能解释流量位置影响；只有广告组级或搜索词直连证据才可辅助广告位判断。"),
+        _contract_metric("ABA市场热度", _search_term_contract_aba_text(aba_match), "判断该词是否同时具备站点级市场热度；ABA 只作为市场背景。"),
+        _contract_metric("广告组承接边界", ad_group_stats["text"], "判断搜索词机会能否安全下钻到广告组和广告 ASIN。"),
+    ]
+
+
+def _search_term_contract_judgement(
+    object_label: str,
+    search_term_count: int,
+    metric_summary: dict[str, Any],
+    drilldown: dict[str, Any],
+    scope: dict[str, Any],
+    ad_groups: list[str],
+) -> str:
+    orders = _int(metric_summary.get("orders")) or 0
+    clicks = _int(metric_summary.get("clicks")) or 0
+    spend = _format_amount(metric_summary.get("spend"))
+    acos = _format_ratio(metric_summary.get("acos"), empty_text="无销售额")
+    aba_match = _search_term_contract_aba_match(drilldown)
+    aba_text = f"，且 ABA 排名 {_int(aba_match.get('search_frequency_rank'))}" if aba_match else ""
+    placement_text = _search_term_contract_placement_text(scope, drilldown, ad_groups)
+    if orders > 0:
+        return (
+            f"{object_label} 在 {search_term_count} 个投放上下文中产生 {orders} 单，点击 {clicks}，花费 {spend}，"
+            f"ACOS {acos}{aba_text}；广告位证据：{placement_text}；可进入人工扩量复核，但仍要核对投放词、"
+            "广告组结构、广告位层级和广告 ASIN 承接。"
+        )
+    return f"{object_label} 当前没有订单证据，只能作为观察或浪费排查候选。"
+
+
+def _search_term_contract_proves(
+    object_label: str,
+    drilldown: dict[str, Any],
+    scope: dict[str, Any],
+    ad_groups: list[str],
+) -> str:
+    aba_match = _search_term_contract_aba_match(drilldown)
+    placement_text = _search_term_contract_placement_text(scope, drilldown, ad_groups)
+    if aba_match:
+        return f"能证明 {object_label} 同时具备当前广告转化证据和站点级 ABA 市场热度；广告位证据层级为：{placement_text}。"
+    return f"能证明 {object_label} 在当前投放上下文中有广告表现，可进入人工复核；市场热度仍需 ABA 或关键词监控补充；广告位证据层级为：{placement_text}。"
+
+
+def _search_term_contract_does_not_prove(scope: dict[str, Any], ad_groups: list[str]) -> str:
+    stats = _search_term_contract_ad_group_stats(scope, ad_groups)
+    placement_stats = _placement_contract_stats(scope, ad_groups)
+    placement_boundary = "也不能证明广告位造成该搜索词表现差异；" if placement_stats["ad_group_placement_total"] <= 0 else "也不能自动调整广告位加价；"
+    if stats["multi_count"] > 0:
+        return f"不能证明应该自动加词、自动调价或自动否词；{placement_boundary}多商品广告组下也不能把该搜索词自动归因到单个广告 ASIN。"
+    return f"不能证明应该自动加词、自动调价、自动否词；{placement_boundary}也不能自动归因到单个广告 ASIN。"
+
+
+def _search_term_contract_evidence_gap(scope: dict[str, Any], drilldown: dict[str, Any], ad_groups: list[str]) -> str:
+    targeting_labels = _search_term_contract_targeting_labels(drilldown)
+    aba_match = _search_term_contract_aba_match(drilldown)
+    stats = _search_term_contract_ad_group_stats(scope, ad_groups)
+    placement_count = _int(drilldown.get("placement_context_count")) or 0
+    placement_stats = _placement_contract_stats(scope, ad_groups)
+    gaps: list[str] = []
+    if not targeting_labels:
+        gaps.append("缺少可识别投放词或关键词 ID，不能判断该搜索词是否已有稳定投放承接。")
+    if not aba_match:
+        gaps.append("缺少 ABA Top1000 精确匹配，只能看店内广告表现，市场热度证据不足。")
+    if placement_count <= 0 and placement_stats["ad_group_placement_total"] <= 0:
+        if placement_stats["campaign_only_placement_total"] > 0:
+            gaps.append(
+                f"缺少搜索词直连广告位和广告组级广告位；同广告活动 {placement_stats['campaign_only_placement_total']} 条广告位只能作背景。"
+            )
+        else:
+            gaps.append("缺少搜索词直连广告位和广告组级广告位，不能判断广告位是否造成表现差异。")
+    if stats["multi_count"] > 0:
+        gaps.append("存在多商品广告组，缺主推款策略时不能把搜索词机会归到单个 ASIN。")
+    if stats["matched_count"] < len(ad_groups):
+        gaps.append("部分广告组缺投放商品结构证据，人工复核前不能直接下钻到广告 ASIN。")
+    return "".join(gaps) or "主要缺口是投放词维护状态、广告商品是否适合扩量、主推策略是否允许扩量，以及处理后 7/14 天复盘窗口。"
+
+
+def _search_term_contract_required_evidence(drilldown: dict[str, Any]) -> str:
+    aba_match = _search_term_contract_aba_match(drilldown)
+    aba_text = "、ABA 搜索词快照" if aba_match else "，如需判断市场机会还要补 ABA 搜索词快照或关键词监控"
+    return f"需要 ad_search_term_daily_metrics、投放词 / keyword_id、advertised_products、广告组投放商品结构、同周期 ad_placement_daily_metrics{aba_text}，再由人工确认是否记录观察或加入复盘。"
+
+
+def _search_term_contract_next_manual_step(scope: dict[str, Any], drilldown: dict[str, Any], ad_groups: list[str], object_label: str) -> str:
+    targeting_labels = _search_term_contract_targeting_labels(drilldown)
+    targeting_text = "、".join(targeting_labels[:2]) if targeting_labels else object_label
+    group_names = _placement_contract_group_names(scope, ad_groups)
+    placement_text = _search_term_contract_placement_text(scope, drilldown, ad_groups)
+    return f"先打开 {group_names}，核对投放词 {targeting_text}、同组 ASIN、主推策略和广告位层级（{placement_text}）；若确认适合扩量，只能选择记录观察、标记已处理、加入复盘或忽略本次。"
+
+
+def _search_term_contract_targeting_labels(drilldown: dict[str, Any]) -> list[str]:
+    labels: list[str] = []
+    seen: set[str] = set()
+    for row in _dict_list(drilldown.get("search_term_rows")):
+        label = _string(row.get("targeting_text") or row.get("keyword_text") or row.get("target_value") or row.get("keyword_id"))
+        if not label or label in seen:
+            continue
+        seen.add(label)
+        labels.append(label)
+    return labels
+
+
+def _search_term_contract_targeting_text(labels: list[str]) -> str:
+    if not labels:
+        return "未识别投放词"
+    preview = "、".join(labels[:3])
+    suffix = f" 等 {len(labels)} 个" if len(labels) > 3 else f" / {len(labels)} 个"
+    return f"{preview}{suffix}"
+
+
+def _search_term_contract_placement_text(scope: dict[str, Any], drilldown: dict[str, Any], ad_groups: list[str]) -> str:
+    placement_count = _int(drilldown.get("placement_context_count")) or 0
+    stats = _placement_contract_stats(scope, ad_groups)
+    if placement_count > 0:
+        return f"推荐对象广告位 {placement_count} 条"
+    if stats["ad_group_placement_total"] > 0:
+        return f"广告组级广告位 {stats['ad_group_placement_total']} 条"
+    if stats["campaign_only_placement_total"] > 0:
+        return f"广告组级广告位 0 条 / 同广告活动广告位 {stats['campaign_only_placement_total']} 条"
+    if stats["missing_count"] > 0:
+        return f"缺少广告位广告组 {stats['missing_count']} 个"
+    return "缺少广告位上下文"
+
+
+def _search_term_contract_aba_match(drilldown: dict[str, Any]) -> dict[str, Any]:
+    query = _normalized_text(drilldown.get("object_label"))
+    if not query:
+        return {}
+    for row in load_aba_rows_from_latest_snapshot():
+        row_query = _normalized_text(row.get("normalized_query") or row.get("search_term"))
+        if row_query == query:
+            return row
+    return {}
+
+
+def _search_term_contract_aba_text(aba_match: dict[str, Any]) -> str:
+    if not aba_match:
+        return "未匹配 ABA Top1000"
+    rank = _int(aba_match.get("search_frequency_rank"))
+    period = _period_text(aba_match.get("start_date"), aba_match.get("end_date")).strip()
+    change_type = _string(aba_match.get("rank_change_type"))
+    change_value = _int(aba_match.get("rank_change_value"))
+    change_text = f" / {change_type}{change_value}" if change_type and change_value is not None else ""
+    rank_text = str(rank) if rank is not None else "未知排名"
+    return f"排名 {rank_text} / {period or '周期未知'}{change_text}"
+
+
+def _search_term_contract_ad_group_stats(scope: dict[str, Any], ad_groups: list[str]) -> dict[str, Any]:
+    diagnoses = _ad_group_contract_diagnoses(scope, ad_groups)
+    multi_count = sum(1 for diagnosis in diagnoses if (_int(diagnosis.get("ad_group_advertised_asin_count")) or 0) > 1)
+    max_asin_count = max((_int(diagnosis.get("ad_group_advertised_asin_count")) or 0 for diagnosis in diagnoses), default=0)
+    if diagnoses:
+        text = f"{len(diagnoses)}/{len(ad_groups)} 已匹配 / 最大同组 ASIN {max_asin_count}"
+        if multi_count:
+            text += f" / 多商品广告组 {multi_count}"
+    elif ad_groups:
+        text = f"0/{len(ad_groups)} 已匹配 / 待核对投放商品结构"
+    else:
+        text = "缺少广告组上下文"
+    return {"matched_count": len(diagnoses), "multi_count": multi_count, "max_asin_count": max_asin_count, "text": text}
 
 
 def build_review_candidates_payload(
@@ -309,6 +999,7 @@ def build_review_readiness_payload(
         if key in seen:
             continue
         seen.add(key)
+        evidence_snapshot_audit = _review_todo_evidence_snapshot_audit(todo)
         effect_kwargs = {
             "review_window": todo.review_window,
             "market_id": todo.market_id,
@@ -338,13 +1029,30 @@ def build_review_readiness_payload(
                 "before_end_date": effect.before_end_date,
                 "after_start_date": effect.after_start_date,
                 "after_end_date": effect.after_end_date,
+                **evidence_snapshot_audit,
             }
         )
 
     ready_count = sum(1 for effect in effects if effect["status"] == "ready")
     not_ready_count = len(effects) - ready_count
-    rule_improvement = _rule_improvement_readiness(manual_actions, effects, ready_count, identity_issues, review_feedback)
     review_wait_summary = _review_wait_summary(effects, ready_count)
+    review_identity_audit = _review_identity_audit_summary(
+        manual_actions,
+        review_records,
+        effects,
+        ready_count,
+        identity_issues,
+    )
+    review_audit_issues = _dict_list(review_identity_audit.get("issues"))
+    review_wait_summary = _review_wait_summary_with_identity_gate(review_wait_summary, review_audit_issues)
+    rule_improvement = _rule_improvement_readiness(
+        manual_actions,
+        effects,
+        ready_count,
+        identity_issues,
+        review_feedback,
+        review_audit_issues=review_audit_issues,
+    )
     return {
         "status": "ready" if ready_count else "not_ready",
         "selected_market_id": selected_market_id,
@@ -365,8 +1073,16 @@ def build_review_readiness_payload(
         "review_feedback": review_feedback,
         "rule_improvement": rule_improvement,
         "review_wait_summary": review_wait_summary,
+        "review_identity_audit": review_identity_audit,
         "effects": effects,
-        "next_action": _review_next_action(manual_actions, effects, ready_count, identity_issues, review_feedback),
+        "next_action": _review_next_action(
+            manual_actions,
+            effects,
+            ready_count,
+            identity_issues,
+            review_feedback,
+            review_audit_issues=review_audit_issues,
+        ),
     }
 
 
@@ -1705,7 +2421,7 @@ def _search_term_row_summary(row: dict[str, Any]) -> dict[str, Any]:
         "campaign_name": _string(row.get("campaign_name") or row.get("campaign_id")),
         "ad_group_name": _string(row.get("ad_group_name") or row.get("ad_group_id") or row.get("group_id")),
         "search_term": _string(row.get("search_term") or row.get("normalized_query")),
-        "targeting_text": _string(row.get("keyword_text") or row.get("target_value") or row.get("target_id") or row.get("keyword_id")),
+        "targeting_text": _string(row.get("targeting_text") or row.get("keyword_text") or row.get("target_value") or row.get("target_id") or row.get("keyword_id")),
         "spend": _number(row.get("spend") if row.get("spend") is not None else row.get("cost")),
         "clicks": _int(row.get("clicks")) or 0,
         "orders": _int(row.get("orders")) or 0,
@@ -2626,6 +3342,7 @@ def _product_scope_drilldown(product_scope_id: str | None, product_scope: Any, s
         "advertised_asin_count": len(items),
         "items": items[:6],
         "ad_group_diagnosis": ad_group_diagnosis[:6],
+        "ad_group_diagnosis_context": ad_group_diagnosis[:12],
         "candidate_gap_analysis": _product_scope_candidate_gap_analysis(items[:6], ad_group_diagnosis[:6]),
         "summary": summary,
         "boundary": "广告 ASIN 指标来自 advertised_products；搜索词和广告位只说明同广告组上下文，不能自动归因到单个 ASIN，也不能自动执行广告动作。",
@@ -3207,6 +3924,9 @@ def _manual_action_preview(candidate: dict[str, Any] | None) -> dict[str, Any] |
         asin=str(candidate.get("asin") or "") or None,
         msku=str(candidate.get("msku") or "") or None,
         sku=str(candidate.get("sku") or "") or None,
+        label=str(candidate.get("object_label") or "") or None,
+        search_term=str(candidate.get("search_term") or "") or None,
+        market_id=candidate.get("market_id"),
     )
     return {
         "will_write": False,
@@ -3394,6 +4114,18 @@ def _candidate_review_path(candidate: dict[str, Any]) -> str:
 
 
 def _stable_object_id(candidate: dict[str, Any]) -> str | None:
+    stable_id = manual_action_object_id_for_values(
+        object_type=str(candidate.get("object_type") or ""),
+        object_id=str(candidate.get("object_id") or "") or None,
+        asin=str(candidate.get("asin") or "") or None,
+        msku=str(candidate.get("msku") or "") or None,
+        sku=str(candidate.get("sku") or "") or None,
+        label=str(candidate.get("object_label") or "") or None,
+        search_term=str(candidate.get("search_term") or "") or None,
+        market_id=candidate.get("market_id"),
+    )
+    if stable_id:
+        return stable_id
     for key in ("asin", "msku", "sku", "object_label", "object_id"):
         value = candidate.get(key)
         if value:
@@ -3453,19 +4185,29 @@ def _review_wait_summary(effects: list[dict[str, Any]], ready_count: int) -> dic
     metric_not_ready_effects = _metric_review_effects(effects)
     wait_message = _not_due_review_wait_message(effects) if ready_count == 0 else None
     if not wait_message:
+        status = "ready" if ready_count else "waiting_review_todo" if not effects else "blocked_by_data_gap"
+        gap_effects = _actionable_review_effects(not_ready_effects) or not_ready_effects
+        gap_reasons = _prioritized_review_messages(gap_effects)[:3] if status == "blocked_by_data_gap" else []
+        gap_message = None
+        gap_next_step = None
+        if status == "blocked_by_data_gap":
+            gap_message = "当前没有 ready 复盘效果；" + ("；".join(gap_reasons) if gap_reasons else "复盘证据不足。")
+            gap_next_step = "先补齐复盘所需数据。" + _snapshot_gap_next_step(gap_effects)
         return {
-            "status": "ready" if ready_count else "waiting_review_todo" if not effects else "blocked_by_data_gap",
+            "status": status,
             "ready_count": ready_count,
             "not_ready_count": len(not_ready_effects),
             "earliest_due_at": None,
             "earliest_due_date": None,
             "review_windows": _review_window_labels(not_ready_effects),
+            "next_review_window": None,
             "next_object_type": None,
             "next_object_id": None,
             "next_object_label": None,
-            "message": None,
-            "next_step": None,
-            "forbidden_actions": list(REVIEW_WAIT_FORBIDDEN_ACTIONS),
+            "gap_reasons": gap_reasons,
+            "message": gap_message,
+            "next_step": gap_next_step,
+            "forbidden_actions": list(REVIEW_GAP_FORBIDDEN_ACTIONS if status == "blocked_by_data_gap" else REVIEW_WAIT_FORBIDDEN_ACTIONS),
         }
 
     sorted_effects = sorted(metric_not_ready_effects, key=_review_wait_priority)
@@ -3478,13 +4220,32 @@ def _review_wait_summary(effects: list[dict[str, Any]], ready_count: int) -> dic
         "earliest_due_at": earliest_due_at,
         "earliest_due_date": _date_part(earliest_due_at or ""),
         "review_windows": _review_window_labels(sorted_effects),
+        "next_review_window": first_effect.get("review_window"),
         "next_object_type": first_effect.get("object_type"),
         "next_object_id": first_effect.get("object_id"),
         "next_object_label": first_effect.get("object_label") or first_effect.get("object_id"),
+        "gap_reasons": [],
         "message": wait_message,
         "next_step": "等待复盘窗口完整后再复核处理后指标，未到期前不拉取快照、不保存复盘结论。",
         "forbidden_actions": list(REVIEW_WAIT_FORBIDDEN_ACTIONS),
     }
+
+
+def _review_wait_summary_with_identity_gate(
+    wait_summary: dict[str, Any],
+    review_audit_issues: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if not review_audit_issues:
+        return wait_summary
+
+    reason = _review_audit_issue_reason(review_audit_issues)
+    updated = dict(wait_summary or {})
+    updated["status"] = "blocked_by_review_evidence_gap"
+    updated["gap_reasons"] = [reason]
+    updated["message"] = f"{reason}即使复盘窗口到期，也不能保存复盘结论。"
+    updated["next_step"] = _review_audit_issue_next_action(review_audit_issues)
+    updated["forbidden_actions"] = [*REVIEW_GAP_FORBIDDEN_ACTIONS, "不静默补写历史 evidence_snapshot"]
+    return updated
 
 
 def _actionable_review_effects(effects: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -3576,6 +4337,357 @@ def _manual_action_identity_issues(manual_actions: list[Any], signal_rows: list[
             }
         )
     return issues
+
+
+def _review_todo_evidence_snapshot_audit(todo: Any) -> dict[str, Any]:
+    if not hasattr(todo, "evidence_snapshot"):
+        return {
+            "evidence_snapshot_count": None,
+            "has_diagnosis_path": None,
+            "has_ai_admission": None,
+            "has_search_term_boundary": None,
+            "has_placement_boundary": None,
+            "has_targeting_evidence": None,
+            "has_ad_group_synthesis": None,
+            "has_aba_context": None,
+            "has_evidence_gap": None,
+            "has_action_boundary": None,
+            "has_object_reference": None,
+        }
+    evidence_snapshot = _review_evidence_snapshot_items(getattr(todo, "evidence_snapshot", None))
+    return {
+        "evidence_snapshot_count": len(evidence_snapshot),
+        "has_diagnosis_path": _review_evidence_snapshot_has_label(evidence_snapshot, "排查路径"),
+        "has_ai_admission": _review_evidence_snapshot_has_label(evidence_snapshot, "AI 准入"),
+        "has_search_term_boundary": _review_evidence_snapshot_has_label(evidence_snapshot, "搜索词边界"),
+        "has_placement_boundary": _review_evidence_snapshot_has_label(evidence_snapshot, "广告位边界"),
+        "has_targeting_evidence": _review_evidence_snapshot_has_label(evidence_snapshot, "投放词证据"),
+        "has_ad_group_synthesis": _review_evidence_snapshot_has_label(evidence_snapshot, "广告组合流判断"),
+        "has_aba_context": _review_evidence_snapshot_has_label(evidence_snapshot, "ABA 背景"),
+        "has_evidence_gap": _review_evidence_snapshot_has_label(evidence_snapshot, "证据缺口"),
+        "has_action_boundary": _review_evidence_snapshot_has_label(evidence_snapshot, "动作边界"),
+        "has_object_reference": _review_evidence_snapshot_has_object_reference(evidence_snapshot, todo),
+    }
+
+
+def _review_evidence_snapshot_items(items: Any) -> list[Any]:
+    return items if isinstance(items, list) else []
+
+
+def _review_evidence_snapshot_has_label(items: list[Any], expected_label: str) -> bool:
+    for item in items:
+        label = _string(_get(item, "label")).strip()
+        value = _string(_get(item, "value")).strip()
+        if label == expected_label and value:
+            return True
+    return False
+
+
+def _review_evidence_snapshot_has_object_reference(items: list[Any], todo: Any) -> bool | None:
+    references = _review_object_reference_terms(todo)
+    if not references:
+        return None
+    snapshot_text = " ".join(
+        " ".join(
+            _string(_get(item, field)).strip()
+            for field in ("label", "value", "detail", "source")
+            if _string(_get(item, field)).strip()
+        )
+        for item in items
+    ).casefold()
+    return any(reference.casefold() in snapshot_text for reference in references)
+
+
+def _review_object_reference_terms(record: Any) -> list[str]:
+    terms: list[str] = []
+    for value in (_get(record, "object_id"), _get(record, "object_label")):
+        text = _string(value).strip()
+        if text:
+            terms.append(text)
+        if ":" in text:
+            tail = text.rsplit(":", 1)[-1].strip()
+            if tail:
+                terms.append(tail)
+    return list(dict.fromkeys(terms))
+
+
+def _review_identity_audit_summary(
+    manual_actions: list[Any],
+    review_records: list[Any],
+    effects: list[dict[str, Any]],
+    ready_count: int,
+    identity_issues: list[dict[str, Any]],
+) -> dict[str, Any]:
+    readback_keys = [_review_readback_key(effect) for effect in effects]
+    missing_action_id_count = sum(1 for item in readback_keys if not item["action_id"])
+    missing_object_id_count = sum(1 for item in readback_keys if not item["object_id"])
+    missing_review_window_count = sum(1 for item in readback_keys if not item["review_window"])
+    snapshot_known_keys = [item for item in readback_keys if item.get("evidence_snapshot_count") is not None]
+    missing_evidence_snapshot_count = sum(1 for item in snapshot_known_keys if (_int(item.get("evidence_snapshot_count")) or 0) == 0)
+    missing_diagnosis_path_count = sum(1 for item in snapshot_known_keys if not item.get("has_diagnosis_path"))
+    missing_ai_admission_count = sum(1 for item in snapshot_known_keys if not item.get("has_ai_admission"))
+    missing_search_term_boundary_count = sum(1 for item in snapshot_known_keys if not item.get("has_search_term_boundary"))
+    missing_placement_boundary_count = sum(1 for item in snapshot_known_keys if not item.get("has_placement_boundary"))
+    search_term_snapshot_keys = [item for item in snapshot_known_keys if item.get("object_type") == "search_term"]
+    missing_targeting_evidence_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_targeting_evidence"))
+    missing_ad_group_synthesis_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_ad_group_synthesis"))
+    missing_aba_context_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_aba_context"))
+    missing_evidence_gap_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_evidence_gap"))
+    missing_action_boundary_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_action_boundary"))
+    missing_object_reference_count = sum(1 for item in snapshot_known_keys if item.get("has_object_reference") is False)
+    issues = _review_identity_audit_issues(readback_keys, identity_issues)
+    earliest_any_due_date = _earliest_review_due_date(readback_keys)
+    earliest_metric_due_date = _earliest_metric_review_due_date(readback_keys)
+    return {
+        "status": "blocked" if issues else "ready_for_readback",
+        "manual_action_count": len(manual_actions),
+        "review_record_count": len(review_records),
+        "effect_count": len(effects),
+        "missing_action_id_count": missing_action_id_count,
+        "missing_object_id_count": missing_object_id_count,
+        "missing_review_window_count": missing_review_window_count,
+        "missing_evidence_snapshot_count": missing_evidence_snapshot_count,
+        "missing_diagnosis_path_count": missing_diagnosis_path_count,
+        "missing_ai_admission_count": missing_ai_admission_count,
+        "missing_search_term_boundary_count": missing_search_term_boundary_count,
+        "missing_placement_boundary_count": missing_placement_boundary_count,
+        "missing_targeting_evidence_count": missing_targeting_evidence_count,
+        "missing_ad_group_synthesis_count": missing_ad_group_synthesis_count,
+        "missing_aba_context_count": missing_aba_context_count,
+        "missing_evidence_gap_count": missing_evidence_gap_count,
+        "missing_action_boundary_count": missing_action_boundary_count,
+        "missing_object_reference_count": missing_object_reference_count,
+        "unstable_object_id_count": len(identity_issues),
+        "ready_review_count": ready_count,
+        "can_save_review_records_now": ready_count > 0 and not issues,
+        "earliest_due_date": earliest_any_due_date,
+        "earliest_any_due_date": earliest_any_due_date,
+        "earliest_metric_due_date": earliest_metric_due_date,
+        "date_boundary": "earliest_due_date / earliest_any_due_date 包含数据质量和交叉待办；保存广告复盘记录时以 earliest_metric_due_date 为准。",
+        "issues": issues,
+        "readback_keys": readback_keys,
+    }
+
+
+def _review_readback_key(effect: dict[str, Any]) -> dict[str, Any]:
+    item = {
+        "signal_id": _string(effect.get("signal_id")).strip(),
+        "action_id": _string(effect.get("action_id")).strip(),
+        "object_type": _string(effect.get("object_type")).strip(),
+        "object_id": _string(effect.get("object_id")).strip(),
+        "object_label": _string(effect.get("object_label")).strip(),
+        "review_window": _string(effect.get("review_window")).strip(),
+        "status": _string(effect.get("status")).strip(),
+        "is_due": effect.get("is_due"),
+        "due_at": _string(effect.get("due_at")).strip(),
+        "evidence_snapshot_count": effect.get("evidence_snapshot_count"),
+        "has_diagnosis_path": effect.get("has_diagnosis_path"),
+        "has_ai_admission": effect.get("has_ai_admission"),
+        "has_search_term_boundary": effect.get("has_search_term_boundary"),
+        "has_placement_boundary": effect.get("has_placement_boundary"),
+        "has_object_reference": effect.get("has_object_reference"),
+    }
+    if item["object_type"] == "search_term":
+        item.update(
+            {
+                "has_targeting_evidence": effect.get("has_targeting_evidence"),
+                "has_ad_group_synthesis": effect.get("has_ad_group_synthesis"),
+                "has_aba_context": effect.get("has_aba_context"),
+                "has_evidence_gap": effect.get("has_evidence_gap"),
+                "has_action_boundary": effect.get("has_action_boundary"),
+            }
+        )
+    return item
+
+
+def _review_identity_audit_issues(
+    readback_keys: list[dict[str, Any]],
+    identity_issues: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+    for item in readback_keys:
+        for field in ("action_id", "object_id", "review_window"):
+            if item.get(field):
+                continue
+            issues.append(
+                {
+                    "issue_type": f"missing_{field}",
+                    "signal_id": item.get("signal_id"),
+                    "action_id": item.get("action_id"),
+                    "object_type": item.get("object_type"),
+                    "object_id": item.get("object_id"),
+                    "review_window": item.get("review_window"),
+                    "note": "复盘读回缺少稳定键，不能保存 review_records。",
+                }
+            )
+        if item.get("evidence_snapshot_count") is None:
+            continue
+        if (_int(item.get("evidence_snapshot_count")) or 0) == 0:
+            issues.append(
+                {
+                    "issue_type": "missing_evidence_snapshot",
+                    "signal_id": item.get("signal_id"),
+                    "action_id": item.get("action_id"),
+                    "object_type": item.get("object_type"),
+                    "object_id": item.get("object_id"),
+                    "review_window": item.get("review_window"),
+                    "note": "历史复盘待办缺少人工点击时保存的 evidence_snapshot；不能把后补文案伪装成原始证据，需先 dry-run 作废旧待办，再重新人工留痕。",
+                }
+            )
+            continue
+        if not item.get("has_diagnosis_path"):
+            issues.append(
+                {
+                    "issue_type": "missing_diagnosis_path",
+                    "signal_id": item.get("signal_id"),
+                    "action_id": item.get("action_id"),
+                    "object_type": item.get("object_type"),
+                    "object_id": item.get("object_id"),
+                    "review_window": item.get("review_window"),
+                    "note": "复盘待办缺少“排查路径”，不能只凭指标窗口保存 ReviewRecord。",
+                }
+            )
+        if not item.get("has_ai_admission"):
+            issues.append(
+                {
+                    "issue_type": "missing_ai_admission",
+                    "signal_id": item.get("signal_id"),
+                    "action_id": item.get("action_id"),
+                    "object_type": item.get("object_type"),
+                    "object_id": item.get("object_id"),
+                    "review_window": item.get("review_window"),
+                    "note": "复盘待办缺少“AI 准入”，不能证明当时为什么允许进入人工确认。",
+                }
+            )
+        if not item.get("has_search_term_boundary"):
+            issues.append(
+                {
+                    "issue_type": "missing_search_term_boundary",
+                    "signal_id": item.get("signal_id"),
+                    "action_id": item.get("action_id"),
+                    "object_type": item.get("object_type"),
+                    "object_id": item.get("object_id"),
+                    "review_window": item.get("review_window"),
+                    "note": "复盘待办缺少“搜索词边界”，不能证明当时人工判断已看过搜索词归因限制。",
+                }
+            )
+        if not item.get("has_placement_boundary"):
+            issues.append(
+                {
+                    "issue_type": "missing_placement_boundary",
+                    "signal_id": item.get("signal_id"),
+                    "action_id": item.get("action_id"),
+                    "object_type": item.get("object_type"),
+                    "object_id": item.get("object_id"),
+                    "review_window": item.get("review_window"),
+                    "note": "复盘待办缺少“广告位边界”，不能证明当时人工判断已看过广告位证据层级。",
+                }
+            )
+        if item.get("object_type") == "search_term":
+            if not item.get("has_targeting_evidence"):
+                issues.append(
+                    {
+                        "issue_type": "missing_targeting_evidence",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "搜索词复盘待办缺少“投放词证据”，不能证明当时人工判断已看过投放承接。",
+                    }
+                )
+            if not item.get("has_ad_group_synthesis"):
+                issues.append(
+                    {
+                        "issue_type": "missing_ad_group_synthesis",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "搜索词复盘待办缺少“广告组合流判断”，不能证明当时已回看同广告组广告 ASIN、单 ASIN 归因边界和广告位证据缺口。",
+                    }
+                )
+            if not item.get("has_aba_context"):
+                issues.append(
+                    {
+                        "issue_type": "missing_aba_context",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "搜索词复盘待办缺少“ABA 背景”，不能证明当时人工判断已看过站点级市场背景和边界。",
+                    }
+                )
+            if not item.get("has_evidence_gap"):
+                issues.append(
+                    {
+                        "issue_type": "missing_evidence_gap",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "搜索词复盘待办缺少“证据缺口”，不能证明当时人工判断已保留不可证明项。",
+                    }
+                )
+            if not item.get("has_action_boundary"):
+                issues.append(
+                    {
+                        "issue_type": "missing_action_boundary",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "搜索词复盘待办缺少“动作边界”，不能证明当时已限制为人工留痕和复盘。",
+                    }
+                )
+        if item.get("has_object_reference") is False:
+            issues.append(
+                {
+                    "issue_type": "evidence_snapshot_object_mismatch",
+                    "signal_id": item.get("signal_id"),
+                    "action_id": item.get("action_id"),
+                    "object_type": item.get("object_type"),
+                    "object_id": item.get("object_id"),
+                    "review_window": item.get("review_window"),
+                    "note": "复盘待办 evidence_snapshot 未能回看目标对象，疑似混入其他候选证据；不能保存 ReviewRecord。",
+                }
+            )
+    for issue in identity_issues:
+        issues.append(
+            {
+                "issue_type": "unstable_object_id",
+                "signal_id": issue.get("signal_id"),
+                "action_id": issue.get("action_id"),
+                "object_type": issue.get("object_type"),
+                "object_id": issue.get("current_object_id"),
+                "review_window": None,
+                "note": "人工动作对象仍像快照行 ID，必须人工确认稳定 ASIN / MSKU / SKU 后再复盘。",
+            }
+        )
+    return issues
+
+
+def _earliest_review_due_date(readback_keys: list[dict[str, Any]]) -> str | None:
+    due_dates = sorted(
+        date
+        for date in (_date_part(_string(item.get("due_at"))) for item in readback_keys)
+        if date
+    )
+    return due_dates[0] if due_dates else None
+
+
+def _earliest_metric_review_due_date(readback_keys: list[dict[str, Any]]) -> str | None:
+    return _earliest_review_due_date(
+        [
+            item
+            for item in readback_keys
+            if _string(item.get("object_type")) in METRIC_REVIEW_OBJECT_TYPES
+        ]
+    )
 
 
 def _recommended_manual_status(
@@ -3910,11 +5022,9 @@ def _review_feedback_candidate_groups(
     groups: dict[str, dict[str, Any]] = {}
     for record in review_records:
         action_id = str(_value(getattr(record, "action_id", "")) or "").strip()
-        action = manual_action_by_id.get(action_id)
-        if action is None:
-            continue
-        search_intent_label = _manual_action_evidence_value(action, "语义组")
-        aba_reference_term = _manual_action_evidence_value(action, "ABA语义参考词")
+        evidence_source = manual_action_by_id.get(action_id) or record
+        search_intent_label = _evidence_snapshot_value(evidence_source, "语义组")
+        aba_reference_term = _evidence_snapshot_value(evidence_source, "ABA语义参考词")
         if search_intent_label:
             group_type = "search_intent"
             group_label = search_intent_label
@@ -3932,14 +5042,18 @@ def _review_feedback_candidate_groups(
                 "group_type": group_type,
                 "group_label": group_label,
                 "aba_reference_term": aba_reference_term,
-                "aba_period": _manual_action_evidence_value(action, "ABA周期"),
-                "aba_match_boundary": _manual_action_evidence_value(action, "ABA匹配边界"),
+                "aba_period": _evidence_snapshot_value(evidence_source, "ABA周期"),
+                "aba_match_boundary": _evidence_snapshot_value(evidence_source, "ABA匹配边界"),
                 "total": 0,
                 "by_result": {},
                 "sample_review_record_ids": [],
                 "sample_action_ids": [],
             },
         )
+        if not group.get("aba_period"):
+            group["aba_period"] = _evidence_snapshot_value(evidence_source, "ABA周期")
+        if not group.get("aba_match_boundary"):
+            group["aba_match_boundary"] = _evidence_snapshot_value(evidence_source, "ABA匹配边界")
         group["total"] += 1
         result = str(_value(getattr(record, "result", "")) or "").strip() or "unclear"
         if result not in REVIEW_RESULT_ORDER:
@@ -3955,6 +5069,7 @@ def _review_feedback_candidate_groups(
         group["by_result"] = by_result
         group["priority_result"] = priority_result
         group["recommendation"] = _review_feedback_group_recommendation(group, priority_result)
+        group["action_boundary"] = _review_action_boundary(priority_result)
         group["boundary"] = "候选只进入解释层和人工复核，不自动改规则，不自动执行广告动作。"
         candidates.append(group)
 
@@ -3970,7 +5085,11 @@ def _review_feedback_candidate_groups(
 
 
 def _manual_action_evidence_value(action: Any, label: str) -> str | None:
-    evidence_snapshot = _get(action, "evidence_snapshot")
+    return _evidence_snapshot_value(action, label)
+
+
+def _evidence_snapshot_value(source: Any, label: str) -> str | None:
+    evidence_snapshot = _get(source, "evidence_snapshot")
     if not isinstance(evidence_snapshot, list):
         return None
     for item in evidence_snapshot:
@@ -4043,6 +5162,15 @@ def _review_closure_checklist(
     evidence_status = "ready" if record_count > 0 and evidence_count == record_count else "partial" if evidence_count > 0 else "blocked"
     trace_count = sum(1 for record in records if _review_record_trace_complete(record))
     trace_status = "ready" if record_count > 0 and trace_count == record_count else "partial" if trace_count > 0 else "blocked"
+    saved_snapshot_count = sum(1 for record in records if (_int(record.get("evidence_snapshot_count")) or 0) > 0)
+    saved_ai_admission_count = sum(1 for record in records if _dict_or_none(record.get("ai_admission_snapshot")))
+    saved_snapshot_status = (
+        "ready"
+        if record_count > 0 and saved_snapshot_count == record_count and saved_ai_admission_count == record_count
+        else "partial"
+        if saved_snapshot_count > 0 or saved_ai_admission_count > 0
+        else "blocked"
+    )
     context_coverage = manual_action_context_coverage or {
         "total": 0,
         "with_evidence_snapshot": 0,
@@ -4084,6 +5212,12 @@ def _review_closure_checklist(
             "label": "复盘记录来源",
             "status": trace_status,
             "evidence": f"{trace_count} / {record_count} 条样本带 review_record_id / action_id / 指标窗口",
+        },
+        {
+            "check_id": "review_record_evidence_snapshot",
+            "label": "复盘证据快照",
+            "status": saved_snapshot_status,
+            "evidence": f"{saved_snapshot_count} / {record_count} 条样本带保存快照，{saved_ai_admission_count} / {record_count} 条可回看 AI 准入",
         },
         {
             "check_id": "action_boundary",
@@ -4150,6 +5284,7 @@ def _review_feedback_record_items(
         object_id = str(_value(getattr(record, "object_id", "")) or "").strip()
         object_label = str(_value(getattr(record, "object_label", "")) or "").strip() or object_id or "对象待补充"
         evidence_drilldown = _candidate_evidence_drilldown(signal_by_id.get(signal_id))
+        evidence_snapshot = _review_record_evidence_snapshot_items(record)
         items.append(
             {
                 "review_record_id": str(_value(getattr(record, "id", "")) or "").strip(),
@@ -4169,11 +5304,44 @@ def _review_feedback_record_items(
                 "review_note": str(_value(getattr(record, "review_note", "")) or "").strip(),
                 "sort_reason": REVIEW_SAMPLE_RECORD_REASON.get(result, REVIEW_SAMPLE_RECORD_REASON["unclear"]),
                 "action_boundary": _review_action_boundary(result),
+                "evidence_snapshot_count": len(evidence_snapshot),
+                "evidence_snapshot": evidence_snapshot,
+                "diagnosis_snapshot": _review_record_snapshot_item(evidence_snapshot, "排查路径"),
+                "ai_admission_snapshot": _review_record_snapshot_item(evidence_snapshot, "AI 准入"),
                 "evidence_drilldown": evidence_drilldown,
                 "evidence_groups": _review_feedback_evidence_groups(evidence_drilldown),
+                "diagnosis_path": _review_feedback_diagnosis_path(evidence_drilldown),
             }
         )
     return items
+
+
+def _review_record_evidence_snapshot_items(record: Any) -> list[dict[str, str]]:
+    raw_items = _get(record, "evidence_snapshot")
+    if not isinstance(raw_items, list):
+        return []
+    items: list[dict[str, str]] = []
+    for item in raw_items:
+        label = _string(_get(item, "label")).strip()
+        value = _string(_get(item, "value")).strip()
+        if not (label and value):
+            continue
+        snapshot_item = {"label": label, "value": value}
+        detail = _string(_get(item, "detail")).strip()
+        source = _string(_get(item, "source")).strip()
+        if detail:
+            snapshot_item["detail"] = detail
+        if source:
+            snapshot_item["source"] = source
+        items.append(snapshot_item)
+    return items
+
+
+def _review_record_snapshot_item(items: list[dict[str, str]], label: str) -> dict[str, str] | None:
+    for item in items:
+        if item.get("label") == label:
+            return item
+    return None
 
 
 def _review_feedback_metric_window(record: Any) -> dict[str, str] | None:
@@ -4215,15 +5383,78 @@ def _review_feedback_evidence_groups(drilldown: dict[str, Any] | None) -> list[d
     return groups
 
 
+def _review_feedback_diagnosis_path(drilldown: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(drilldown, dict):
+        return None
+    blocks = _dict_list(drilldown.get("business_evidence_blocks"))
+    if not blocks:
+        return None
+
+    path_block = next((block for block in blocks if _string(block.get("block_id")) == "diagnosis_path"), None)
+    path = _string(_dict(path_block).get("value")) or "原始广告诊断路径待补齐"
+    step_ids = {
+        "ad_product_coverage",
+        "ad_metric_summary",
+        "ad_group_problem_location",
+        "search_term_metric_summary",
+        "search_term_context",
+        "targeting_context",
+        "search_term_market_context",
+        "placement_context_gap",
+        "downstream_context_gap",
+        "context_boundary",
+        "search_term_boundary",
+    }
+    steps: list[dict[str, str]] = []
+    for block in blocks:
+        step_id = _string(block.get("block_id"))
+        if step_id not in step_ids:
+            continue
+        label = _string(block.get("label")) or step_id
+        value = _string(block.get("value"))
+        detail = _string(block.get("detail"))
+        source = _string(block.get("source"))
+        if not (value or detail):
+            continue
+        step: dict[str, str] = {"step_id": step_id, "label": label}
+        if value:
+            step["value"] = value
+        if detail:
+            step["detail"] = detail
+        if source:
+            step["source"] = source
+        steps.append(step)
+        if len(steps) >= 5:
+            break
+
+    boundary = _string(drilldown.get("boundary"))
+    if not boundary:
+        for block in reversed(blocks):
+            if _string(block.get("block_id")) in {"context_boundary", "search_term_boundary"}:
+                boundary = _string(block.get("detail")) or _string(block.get("value"))
+                break
+    if not (path or steps or boundary):
+        return None
+    return {
+        "path": path,
+        "steps": steps,
+        "boundary": boundary,
+        "next_manual_step": "只用于回看该复盘样本的原始诊断路径；继续人工复核，不自动改规则，不自动执行广告动作。",
+    }
+
+
 def _review_next_action(
     manual_actions: list[Any],
     effects: list[dict[str, Any]],
     ready_count: int,
     identity_issues: list[dict[str, Any]] | None = None,
     review_feedback: dict[str, Any] | None = None,
+    review_audit_issues: list[dict[str, Any]] | None = None,
 ) -> str:
     if identity_issues:
         return "先处理历史人工动作对象 ID 风险：存在广告商品 / 销售商品记录仍使用快照行 ID；只读确认后再人工迁移为稳定 ASIN / MSKU / SKU。"
+    if review_audit_issues:
+        return _review_audit_issue_next_action(review_audit_issues)
     if (_int((review_feedback or {}).get("total")) or 0) > 0:
         return "已有保存复盘记录；先用 improved / no_change / worse / unclear 结果校准同类信号解释，不自动调整广告动作或规则。"
     if not manual_actions:
@@ -4246,6 +5477,7 @@ def _rule_improvement_readiness(
     ready_count: int,
     identity_issues: list[dict[str, Any]] | None = None,
     review_feedback: dict[str, Any] | None = None,
+    review_audit_issues: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     base = {"can_auto_change_rules": False, "can_auto_execute_ads": False}
     if identity_issues:
@@ -4255,6 +5487,14 @@ def _rule_improvement_readiness(
             "title": "规则改进对象口径未通过",
             "reason": "存在人工动作对象 ID 风险，不能把快照行 ID 当作长期复盘对象。",
             "next_step": "先只读确认并人工迁移为稳定 ASIN / MSKU / SKU，再进入复盘或规则反馈。",
+        }
+    if review_audit_issues:
+        return {
+            **base,
+            "status": "blocked_by_review_evidence_gap",
+            "title": "规则改进证据快照未通过",
+            "reason": _review_audit_issue_reason(review_audit_issues),
+            "next_step": "先补齐人工动作证据快照口径：历史待办不得伪造原始证据；当前可落地路径是先 dry-run 作废旧待办，再重新人工留痕生成新的 ReviewTodo；不能补写历史 evidence_snapshot。",
         }
     if (_int((review_feedback or {}).get("total")) or 0) > 0:
         return {
@@ -4306,6 +5546,40 @@ def _rule_improvement_readiness(
         "reason": "当前没有 ready 复盘效果；" + "；".join(messages[:3]),
         "next_step": "先补齐复盘所需数据。" + _snapshot_gap_next_step(actionable_effects),
     }
+
+
+def _review_audit_issue_reason(issues: list[dict[str, Any]]) -> str:
+    counts: dict[str, int] = {}
+    for issue in issues:
+        issue_type = _string(issue.get("issue_type")).strip() or "unknown"
+        counts[issue_type] = counts.get(issue_type, 0) + 1
+
+    labels = {
+        "missing_evidence_snapshot": "缺少 evidence_snapshot",
+        "missing_diagnosis_path": "缺少排查路径",
+        "missing_ai_admission": "缺少 AI 准入",
+        "missing_search_term_boundary": "缺少搜索词边界",
+        "missing_placement_boundary": "缺少广告位边界",
+        "missing_targeting_evidence": "缺少投放词证据",
+        "missing_ad_group_synthesis": "缺少广告组合流判断",
+        "missing_aba_context": "缺少 ABA 背景",
+        "missing_evidence_gap": "缺少证据缺口",
+        "missing_action_boundary": "缺少动作边界",
+        "evidence_snapshot_object_mismatch": "证据快照对象不一致",
+        "missing_action_id": "缺少 action_id",
+        "missing_object_id": "缺少 object_id",
+        "missing_review_window": "缺少 review_window",
+        "unstable_object_id": "对象 ID 不稳定",
+    }
+    parts = [f"{label} {counts[issue_type]} 条" for issue_type, label in labels.items() if counts.get(issue_type)]
+    return "复盘读回门禁未通过：" + "；".join(parts or ["存在未分类证据缺口"]) + "。"
+
+
+def _review_audit_issue_next_action(issues: list[dict[str, Any]]) -> str:
+    return (
+        _review_audit_issue_reason(issues)
+        + "到期后也不能直接保存复盘记录；先 dry-run 作废旧待办，再重新人工留痕生成新的 ReviewTodo；不能补写历史 evidence_snapshot，不自动改规则，不自动执行广告动作。"
+    )
 
 
 def _prioritized_review_messages(effects: list[dict[str, Any]]) -> list[str]:
@@ -4527,6 +5801,20 @@ def _dict_list(value: Any) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         return []
     return [_dict(item) for item in value if isinstance(item, dict)]
+
+
+def _string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    results: list[str] = []
+    seen: set[str] = set()
+    for item in value:
+        text = str(item or "").strip()
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        results.append(text)
+    return results
 
 
 def _dict(value: Any) -> dict[str, Any]:

@@ -9,6 +9,7 @@ ManualActionType = Literal["observe", "handled", "add_to_review", "ignore"]
 ReviewWindow = Literal["7d", "14d"]
 ReviewEffectStatus = Literal["not_ready", "ready"]
 ReviewEffectResultType = Literal["improved", "no_change", "worse", "unclear"]
+ReviewTodoDecisionType = Literal["void_legacy_missing_evidence"]
 
 
 class ManualActionEvidenceSnapshot(BaseModel):
@@ -42,8 +43,8 @@ class ManualActionRequest(BaseModel):
     expected_product_scope_id: str | None = None
     expected_object_type: str | None = None
     expected_object_id: str | None = None
-    expected_can_auto_change_rules: bool = False
-    expected_can_auto_execute_ads: bool = False
+    expected_can_auto_change_rules: bool | None = None
+    expected_can_auto_execute_ads: bool | None = None
 
 
 class ManualActionRecord(BaseModel):
@@ -85,6 +86,35 @@ class ReviewTodo(BaseModel):
     days_since_action: int
 
 
+class ReviewTodoDecisionRequest(BaseModel):
+    action_id: str
+    review_window: ReviewWindow | None = None
+    reason: str | None = None
+    operator_name: str = "本地运营"
+    expected_object_type: str | None = None
+    expected_object_id: str | None = None
+    expected_can_auto_change_rules: bool | None = None
+    expected_can_auto_execute_ads: bool | None = None
+
+
+class ReviewTodoDecisionRecord(BaseModel):
+    id: str
+    decision_type: ReviewTodoDecisionType
+    action_id: str
+    signal_id: str
+    review_window: ReviewWindow | None = None
+    reason: str | None = None
+    operator_name: str
+    decided_at: str
+    shop_id: str | None = None
+    market_id: int | None = None
+    object_type: str | None = None
+    object_id: str | None = None
+    object_label: str | None = None
+    can_auto_change_rules: bool = False
+    can_auto_execute_ads: bool = False
+
+
 class ReviewEffectResult(BaseModel):
     signal_id: str
     action_id: str | None = None
@@ -97,6 +127,7 @@ class ReviewEffectResult(BaseModel):
     object_type: str | None = None
     object_id: str | None = None
     object_label: str | None = None
+    evidence_snapshot: list[ManualActionEvidenceSnapshot] = Field(default_factory=list)
     review_window: ReviewWindow
     status: ReviewEffectStatus
     result: ReviewEffectResultType = "unclear"
@@ -116,8 +147,9 @@ class ReviewRecordRequest(BaseModel):
     expected_object_type: str | None = None
     expected_object_id: str | None = None
     expected_review_window: ReviewWindow | None = None
-    expected_can_auto_change_rules: bool = False
-    expected_can_auto_execute_ads: bool = False
+    expected_evidence_snapshot: list[ManualActionEvidenceSnapshot] = Field(default_factory=list)
+    expected_can_auto_change_rules: bool | None = None
+    expected_can_auto_execute_ads: bool | None = None
 
 
 class ReviewRecord(BaseModel):
@@ -139,6 +171,7 @@ class ReviewRecord(BaseModel):
     after_end_date: str | None = None
     before_metrics: dict[str, int | float | None] = Field(default_factory=dict)
     after_metrics: dict[str, int | float | None] = Field(default_factory=dict)
+    evidence_snapshot: list[ManualActionEvidenceSnapshot] = Field(default_factory=list)
     result: ReviewEffectResultType
     review_note: str | None = None
     reviewer_name: str

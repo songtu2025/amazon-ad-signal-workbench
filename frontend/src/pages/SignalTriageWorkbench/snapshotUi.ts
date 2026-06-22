@@ -78,6 +78,7 @@ export interface SnapshotReviewStatusForUi {
   review_wait_summary?: {
     status?: string | null;
     earliest_due_date?: string | null;
+    next_review_window?: string | null;
     next_step?: string | null;
     forbidden_actions?: string[] | null;
   } | null;
@@ -89,6 +90,13 @@ function missingText(missing: string[]) {
 
 function cleanList(items: (string | null | undefined)[]) {
   return items.map((item) => item?.trim()).filter((item): item is string => Boolean(item));
+}
+
+function reviewWindowText(window: string | null | undefined) {
+  const value = window?.trim();
+  if (!value) return "";
+  const labels: Record<string, string> = { "7d": "7 天", "14d": "14 天" };
+  return labels[value] ?? value;
 }
 
 export function marketOptionLabel(option: MarketOptionForUi) {
@@ -110,9 +118,11 @@ export function snapshotActionBoundaryText(reviewStatus: SnapshotReviewStatusFor
   }
   const waitSummary = reviewStatus?.review_wait_summary;
   const earliestDueDate = waitSummary?.earliest_due_date?.trim() || "复盘窗口到期";
+  const nextReviewWindow = reviewWindowText(waitSummary?.next_review_window);
   const forbiddenActions = cleanList(waitSummary?.forbidden_actions ?? []);
   const forbiddenText = forbiddenActions.length ? forbiddenActions.join("、") : "不拉取快照、不保存复盘结论";
-  return `复盘窗口未到期：现在只刷新本地信号和查看人工留痕，${earliestDueDate} 后再只读检查复盘效果；未到期前${forbiddenText}。`;
+  const reviewTargetText = nextReviewWindow ? ` ${nextReviewWindow}广告指标复盘效果` : "广告指标复盘效果";
+  return `复盘窗口未到期：现在只刷新本地信号和查看人工留痕，${earliestDueDate} 后再只读检查${reviewTargetText}；未到期前${forbiddenText}。`;
 }
 
 export function snapshotFreshnessText(status: SnapshotStatusForUi | null, readiness: SnapshotReadinessForUi | null) {

@@ -22,18 +22,19 @@ import {
   ProductScopeOption,
   ProductScopeSummary,
   ReviewEffectResult,
+  ReviewEvidenceRepairPayload,
   ReviewRecord,
   ReviewTodo,
   SearchIntentSummary,
   SnapshotInspectionResult,
   SignalScanSummary,
   SignalTriageSummary,
-  SignalType,
   SnapshotReadiness,
   SnapshotStatus,
   createSignalManualAction,
   createSignalReviewRecord,
   fetchManualActionPreflight,
+  fetchReviewEvidenceRepair,
   fetchSignalManualActions,
   fetchReviewTodos,
   fetchSignalReviewEffect,
@@ -67,34 +68,49 @@ import {
   buildReviewTodoQueueSummary,
   buildRuleImprovementReadiness,
   buildReviewRecordPreflightChecklist,
+  buildReviewRecordSaveGateSummary,
+  buildReviewEffectWindowLedger,
   buildReviewRecordRequestPayload,
   buildRuleFeedbackCandidate,
   buildManualActionDisplayEvidenceSnapshot,
   buildManualActionEvidenceSnapshot,
+  buildManualActionIdentityGateItems,
+  buildManualActionPathSteps,
+  buildManualActionReadbackPathItems,
   buildManualActionPostWritePreflightRequest,
   buildManualActionRequestPayload,
   buildSignalManualActionEvidenceSnapshot,
   mergeManualActionEvidenceSnapshots,
-  canSaveReviewEffect,
+  canSaveReviewRecordWithPreflight,
   buildReviewRecordReadbackExpectation,
   buildReviewRecordReadbackTarget,
   filterReviewTodosByProductScope,
+  buildReviewTodoEvidenceReadbackSummary,
   manualActionBoundaryText,
+  manualActionEmptyStateText,
   manualActionEvidenceReasonText,
   manualActionEvidenceSnapshotText,
+  manualActionButtonExpectationText,
   manualActionIntentText,
   manualActionPostWriteExpectationSummaryText,
   manualActionPostWritePreflightReadErrorText,
   manualActionPostWriteReadbackMessage,
+  manualActionAuthorizationReadinessSummary,
+  manualConfirmationEvidenceReadinessSummary,
+  manualConfirmationDiagnosisBridgeSummary,
   buildManualReviewClosureLedger,
   manualActionButtonGate,
   manualActionPostWriteContractItems,
+  manualActionPreflightErrorForAction,
+  manualActionPreflightForAction,
   manualActionWriteGuardMessage,
   manualActionPreflightEvidenceRows,
   manualActionPreflightEvidenceSnapshotText,
+  manualActionPreflightPriorityEvidenceRows,
   manualActionPreflightStatusText,
   manualActionReadbackCompactText,
   manualActionReadbackConsistencyText,
+  hasReviewRecordReadbackMatch,
   reviewApplicabilityBoundaryText,
   reviewCheckpointText,
   reviewEffectTargetReadbackText,
@@ -105,6 +121,7 @@ import {
   reviewRecordStatusText,
   reviewRecordSignalIdForTodo,
   reviewTargetReadbackText,
+  reviewTodoEmptyStateText,
   selectManualActionsForSignal,
   selectNextReviewTodo,
   selectReviewTodosForSignal,
@@ -124,6 +141,8 @@ import {
   buildProductScopeEvidenceMatrix,
   buildNoActionableManualGate,
   buildManualActionCandidateAdGroupBridge,
+  buildManualActionDecisionFactItems,
+  buildManualConfirmationEvidenceItems,
   buildProductScopeQueueHeader,
   buildProductScopeSelectionSummary,
   buildProductScopeCandidateGapExplanation,
@@ -146,18 +165,25 @@ import {
   buildSignalOverview,
   buildSignalTriggerRationale,
   buildSignalTriageRationale,
+  buildSignalDiagnosisEvidenceSummary,
+  buildSignalMetricDecisionItems,
+  buildSearchTermOpportunityReviewChain,
   recommendedManualStatusText,
   recommendedManualActionCardCopy,
   recommendedEvidenceDrilldownText,
   nextUnhandledEvidenceDrilldownText,
+  manualActionReviewRouteSplitSummary,
+  manualActionQueueTargetSwitchSummary,
   manualActionPreviewForSelectedSignal,
   manualActionTargetSummary,
   buildRuleFeedbackPrioritySummary,
+  buildReviewEvidenceRepairSummary,
   buildReviewReadinessGateSummary,
   resolveSignalSelectionId,
   signalTriageCompactItems,
   signalTriageBlockerTexts,
   signalTriageBusinessEvidenceItems,
+  signalTriageDiagnosisContractItems,
   signalTriageDiagnosisPathItems,
   signalTriageDepthText,
   signalTriageLayerText,
@@ -171,7 +197,11 @@ import {
   ProductScopeCandidateGapExplanation,
   DiagnosisContextSummary,
   DiagnosisPathSummary,
+  SearchTermOpportunityReviewChain,
+  SignalDiagnosisEvidenceSummary,
   SignalTriageBusinessEvidenceItem,
+  SignalTriageDiagnosisContractItem,
+  SignalMetricDecisionItem,
   SignalTriageDiagnosisPathItem,
   triggerEvidenceCountText,
   filterEvidenceBySource,
@@ -188,8 +218,10 @@ import {
   signalDecisionBoundary,
   signalImpactScope,
   signalQueueKind,
+  signalQueueKindLabel,
   signalScopedStateKey,
   signalStatusOverrideKey,
+  SignalQueueKind,
 } from "./signalUi";
 
 const objectTypeLabel: Record<string, string> = {
@@ -230,6 +262,10 @@ const manualActionLabel: Record<ManualActionType, string> = {
   ignore: "忽略本次",
 };
 
+function manualActionDisplayLabel(actionType?: string | null) {
+  return manualActionLabel[actionType as ManualActionType] ?? actionType ?? "待确认";
+}
+
 const manualActionCompactIntent: Record<ManualActionType, string> = {
   add_to_review: "7d/14d 待办",
   observe: "留痕 + 复盘",
@@ -248,7 +284,15 @@ const manualActionIcon = {
 
 const defaultMarketId = 1;
 
-type QueueFilter = "all" | "high" | SignalType | "data_quality" | "observing";
+type QueueFilter = "all" | "high" | SignalQueueKind | "observing";
+
+const queueBusinessFilters: Array<{ value: SignalQueueKind; label: string }> = [
+  { value: "opportunity_expansion", label: "机会扩量" },
+  { value: "spend_waste", label: "花费浪费" },
+  { value: "structure_boundary", label: "投放结构" },
+  { value: "data_quality", label: "数据质量" },
+  { value: "review", label: "复盘" },
+];
 
 function formatPercent(value: number | null) {
   if (value === null) return "-";
@@ -266,6 +310,7 @@ export function SignalTriageWorkbench() {
   const [snapshotInspection, setSnapshotInspection] = useState<SnapshotInspectionResult | null>(null);
   const [signalScanSummary, setSignalScanSummary] = useState<SignalScanSummary | null>(null);
   const [signalTriageSummary, setSignalTriageSummary] = useState<SignalTriageSummary | null>(null);
+  const [reviewEvidenceRepair, setReviewEvidenceRepair] = useState<ReviewEvidenceRepairPayload | null>(null);
   const [searchIntents, setSearchIntents] = useState<SearchIntentSummary[]>([]);
   const [marketOptions, setMarketOptions] = useState<MarketOption[]>([]);
   const [productScope, setProductScope] = useState<ProductScopeSummary | null>(null);
@@ -284,6 +329,11 @@ export function SignalTriageWorkbench() {
   const [reviewRecordsBySignal, setReviewRecordsBySignal] = useState<Record<string, ReviewRecord[]>>({});
   const [manualActionPreflight, setManualActionPreflight] = useState<ManualActionPreflight | null>(null);
   const [manualActionPreflightError, setManualActionPreflightError] = useState<string | null>(null);
+  const [manualActionPreflightsByAction, setManualActionPreflightsByAction] =
+    useState<Partial<Record<ManualActionType, ManualActionPreflight | null>>>({});
+  const [manualActionPreflightErrorsByAction, setManualActionPreflightErrorsByAction] =
+    useState<Partial<Record<ManualActionType, string | null>>>({});
+  const [manualActionPreviewActionType, setManualActionPreviewActionType] = useState<ManualActionType | null>(null);
   const [savingManualAction, setSavingManualAction] = useState(false);
   const [savingReviewRecord, setSavingReviewRecord] = useState(false);
   const [manualActionMessage, setManualActionMessage] = useState<string | null>(null);
@@ -325,7 +375,10 @@ export function SignalTriageWorkbench() {
           ? selectedProductScopeId
           : preferredProductScopeId(nextProductScopeOptions);
       const nextProductScopedSignals = filterSignalsByProductScope(nextSignals, nextActiveProductScopeId, nextProductScopeOptions);
-      const nextSignalTriageSummary = await fetchSignalTriageSummary(selectedMarketId, 5, nextActiveProductScopeId);
+      const [nextSignalTriageSummary, nextReviewEvidenceRepair] = await Promise.all([
+        fetchSignalTriageSummary(selectedMarketId, 5, nextActiveProductScopeId),
+        fetchReviewEvidenceRepair(selectedMarketId, 5, nextActiveProductScopeId),
+      ]);
       const nextDisplayProductScopedSignals = mergeBackendTriageSignals(
         nextProductScopedSignals,
         nextSignals,
@@ -340,6 +393,7 @@ export function SignalTriageWorkbench() {
       setSignalScanSummary(nextSignalScanSummary);
       setSearchIntents(nextSearchIntents);
       setSignalTriageSummary(nextSignalTriageSummary);
+      setReviewEvidenceRepair(nextReviewEvidenceRepair);
       setReviewTodos(nextReviewTodos);
       setSelectedId((current) => resolveSignalSelectionId(current, nextDisplayProductScopedSignals, nextSignalTriageSummary));
       if (nextMarketOptions.length > 0 && !nextMarketOptions.some((option) => option.market_id === selectedMarketId)) {
@@ -436,9 +490,13 @@ export function SignalTriageWorkbench() {
 
   useEffect(() => {
     if (loading) return;
-    void fetchSignalTriageSummary(selectedMarketId, 5, activeProductScopeId)
-      .then((nextSignalTriageSummary) => {
+    void Promise.all([
+      fetchSignalTriageSummary(selectedMarketId, 5, activeProductScopeId),
+      fetchReviewEvidenceRepair(selectedMarketId, 5, activeProductScopeId),
+    ])
+      .then(([nextSignalTriageSummary, nextReviewEvidenceRepair]) => {
         setSignalTriageSummary(nextSignalTriageSummary);
+        setReviewEvidenceRepair(nextReviewEvidenceRepair);
         const nextDisplayProductScopedSignals = mergeBackendTriageSignals(
           productScopedSignals,
           normalizedSignals,
@@ -449,17 +507,25 @@ export function SignalTriageWorkbench() {
       .catch(() => setError("后端服务未连接"));
   }, [activeProductScopeId, loading, normalizedSignals, productScopedSignals, selectedMarketId]);
   const backendRecommendedManualActionCandidate = useMemo(
-    () => buildBackendRecommendedManualActionCandidate(normalizedSignals, signalTriageSummary),
-    [normalizedSignals, signalTriageSummary],
+    () => buildBackendRecommendedManualActionCandidate(displayProductScopedSignals, signalTriageSummary),
+    [displayProductScopedSignals, signalTriageSummary],
   );
   const nextUnhandledManualActionCandidate = useMemo(
-    () => buildNextUnhandledManualActionCandidate(normalizedSignals, signalTriageSummary),
-    [normalizedSignals, signalTriageSummary],
+    () => buildNextUnhandledManualActionCandidate(displayProductScopedSignals, signalTriageSummary),
+    [displayProductScopedSignals, signalTriageSummary],
   );
   const recommendedManualStatus = useMemo(() => recommendedManualStatusText(signalTriageSummary), [signalTriageSummary]);
   const recommendedManualActionCopy = useMemo(() => recommendedManualActionCardCopy(signalTriageSummary), [signalTriageSummary]);
   const triageCompactItems = useMemo(() => signalTriageCompactItems(signalTriageSummary), [signalTriageSummary]);
   const recommendedTriageBusinessEvidenceItems = useMemo(() => signalTriageBusinessEvidenceItems(signalTriageSummary, "recommended"), [signalTriageSummary]);
+  const recommendedDiagnosisContractItems = useMemo(
+    () => signalTriageDiagnosisContractItems(signalTriageSummary, signalTriageSummary?.recommended_diagnosis_contract),
+    [signalTriageSummary],
+  );
+  const nextUnhandledDiagnosisContractItems = useMemo(
+    () => signalTriageDiagnosisContractItems(signalTriageSummary, signalTriageSummary?.next_unhandled_diagnosis_contract),
+    [signalTriageSummary],
+  );
   const nextUnhandledTriageBusinessEvidenceItems = useMemo(() => signalTriageBusinessEvidenceItems(signalTriageSummary, "next_unhandled"), [signalTriageSummary]);
   const productScopeDrilldownEvidence = useMemo(() => productScopeDrilldownEvidenceItems(signalTriageSummary), [signalTriageSummary]);
   const productScopeAdGroupDiagnosis = useMemo(() => productScopeAdGroupDiagnosisRows(signalTriageSummary), [signalTriageSummary]);
@@ -468,6 +534,12 @@ export function SignalTriageWorkbench() {
   const searchIntentReviewCards = useMemo(() => buildSearchIntentReviewCards(searchIntents), [searchIntents]);
   const triageReviewFeedbackText = useMemo(() => signalTriageReviewFeedbackText(signalTriageSummary), [signalTriageSummary]);
   const reviewReadinessGateSummary = useMemo(() => buildReviewReadinessGateSummary(signalTriageSummary), [signalTriageSummary]);
+  const reviewEvidenceRepairSummary = useMemo(
+    () => buildReviewEvidenceRepairSummary(reviewEvidenceRepair),
+    [reviewEvidenceRepair],
+  );
+  const reviewEvidenceRepairAriaLabel =
+    reviewEvidenceRepairSummary?.status === "blocked" ? "历史待办治理：仍被复盘证据门禁阻断" : "历史待办治理";
   const snapshotActionBoundary = useMemo(
     () => snapshotActionBoundaryText(signalTriageSummary?.review_status ?? null),
     [signalTriageSummary?.review_status],
@@ -595,12 +667,34 @@ export function SignalTriageWorkbench() {
       : selectedSignal?.id && selectedSignal.id === signalTriageSummary?.next_unhandled_candidate?.signal_id
         ? nextUnhandledTriageBusinessEvidenceItems
         : [];
+  const selectedDiagnosisContractItems =
+    selectedSignal?.id && selectedSignal.id === signalTriageSummary?.recommended_candidate?.signal_id
+      ? recommendedDiagnosisContractItems
+      : selectedSignal?.id && selectedSignal.id === signalTriageSummary?.next_unhandled_candidate?.signal_id
+        ? nextUnhandledDiagnosisContractItems
+        : [];
+  const selectedDiagnosisEvidenceSummary = useMemo(
+    () => (selectedSignal ? buildSignalDiagnosisEvidenceSummary(selectedSignal, selectedDiagnosisContractItems) : null),
+    [selectedDiagnosisContractItems, selectedSignal],
+  );
+  const selectedSearchTermOpportunityReviewChain = useMemo(
+    () => buildSearchTermOpportunityReviewChain(selectedDiagnosisContractItems, selectedTriageBusinessEvidenceItems),
+    [selectedDiagnosisContractItems, selectedTriageBusinessEvidenceItems],
+  );
+  const selectedManualConfirmationEvidenceItems = useMemo(
+    () => buildManualConfirmationEvidenceItems(selectedDiagnosisContractItems, selectedSearchTermOpportunityReviewChain),
+    [selectedDiagnosisContractItems, selectedSearchTermOpportunityReviewChain],
+  );
   const selectedBackendManualActionPreview = canRecommendManualActionInCurrentScope
     ? manualActionPreviewForSelectedSignal(selectedSignal?.id, signalTriageSummary, selectedSignal)
     : null;
   const selectedManualActionTargetSummary = useMemo(
     () => manualActionTargetSummary(selectedBackendManualActionPreview),
     [selectedBackendManualActionPreview],
+  );
+  const selectedManualActionTargetSwitch = useMemo(
+    () => manualActionQueueTargetSwitchSummary(signalTriageSummary, selectedSignal?.id),
+    [selectedSignal?.id, signalTriageSummary],
   );
   const selectedManualActionAdGroupBridge = useMemo(
     () => buildManualActionCandidateAdGroupBridge(selectedBackendManualActionPreview, productScopeAdGroupDiagnosis),
@@ -621,7 +715,7 @@ export function SignalTriageWorkbench() {
 
   function handleSelectSearchIntent(intentLabel: string) {
     setSelectedSearchIntentLabel((current) => (current === intentLabel ? null : intentLabel));
-    setFilter("opportunity");
+    setFilter("opportunity_expansion");
     let nextSignals = filterSignalsBySearchIntent(displayProductScopedSignals, intentLabel);
     if (nextSignals.length === 0) {
       const allScope = productScopeOptions.find((option) => option.scope_id === "all");
@@ -646,13 +740,90 @@ export function SignalTriageWorkbench() {
     });
   }
 
+  function handleLocateReviewSignal(signalId?: string | null) {
+    if (!signalId) return;
+    setSelectedSearchIntentLabel(null);
+    setFilter("all");
+    if (!displayProductScopedSignals.some((signal) => signal.id === signalId)) {
+      setSelectedProductScopeId("all");
+    }
+    setSelectedId(signalId);
+    window.requestAnimationFrame(() => {
+      workbenchGridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      workbenchGridRef.current?.focus();
+    });
+  }
+
   const nextReviewTodoReadback = reviewTargetReadbackText(nextReviewTodo);
   const hasReviewTodoForSelectedObject = selectedReviewTodos.length > 0;
+  const selectedManualActionPreviewActionType =
+    manualActionPreviewActionType ?? selectedBackendManualActionPreview?.actionType ?? "add_to_review";
+  const selectedManualActionPreviewPreflight = manualActionPreflightForAction(
+    selectedManualActionPreviewActionType,
+    manualActionPreflightsByAction,
+    manualActionPreflight,
+  );
+  const selectedManualActionPreviewPreflightError = manualActionPreflightErrorForAction(
+    selectedManualActionPreviewActionType,
+    manualActionPreflightErrorsByAction,
+    manualActionPreflightError,
+  );
+  const selectedManualActionPathSteps = useMemo(
+    () =>
+      buildManualActionPathSteps({
+        preflight: selectedManualActionPreviewPreflight,
+        preflightError: selectedManualActionPreviewPreflightError,
+        latestManualAction,
+        hasReviewTodo: hasReviewTodoForSelectedObject,
+      }),
+    [
+      hasReviewTodoForSelectedObject,
+      latestManualAction,
+      selectedManualActionPreviewPreflight,
+      selectedManualActionPreviewPreflightError,
+    ],
+  );
+  const selectedManualActionIdentityGateItems = useMemo(
+    () =>
+      buildManualActionIdentityGateItems({
+        signal: selectedSignal,
+        preflight: selectedManualActionPreviewPreflight,
+        latestManualAction,
+        nextReviewTodo,
+        fallbackMarketId: selectedMarketId,
+      }),
+    [latestManualAction, nextReviewTodo, selectedManualActionPreviewPreflight, selectedMarketId, selectedSignal],
+  );
   const nextReviewObjectLabel = nextReviewTodo?.object_label ?? nextReviewTodo?.object_id ?? "对象待补充";
   const selectedReviewEffect = selectedSignalStateKey ? reviewEffectsBySignal[selectedSignalStateKey] ?? null : null;
   const selectedReviewEffectReadback = reviewEffectTargetReadbackText(selectedReviewEffect);
   const selectedReviewEffectWindowText = reviewEffectWindowText(selectedReviewEffect);
   const nextReviewTodoEvidenceText = manualActionEvidenceSnapshotText(nextReviewTodo);
+  const selectedReviewTodoEvidenceReadback = useMemo(
+    () => buildReviewTodoEvidenceReadbackSummary(nextReviewTodo),
+    [nextReviewTodo],
+  );
+  const selectedReviewEvidenceSnapshot = useMemo(() => {
+    const todoSnapshot = nextReviewTodo?.evidence_snapshot ?? [];
+    if (todoSnapshot.length > 0) {
+      return {
+        title: "复盘点击时证据快照",
+        source: `${nextReviewTodo?.review_window ?? "待确认"} / ${nextReviewTodo?.due_at ? new Date(nextReviewTodo.due_at).toLocaleDateString() : "到期待确认"}`,
+        boundary: "来自 ReviewTodo 继承的人工点击时证据快照，只用于到期后人工复盘回看；不是当前实时广告事实，也不是效果结论。",
+        items: todoSnapshot,
+      };
+    }
+    const actionSnapshot = latestManualAction?.evidence_snapshot ?? [];
+    if (actionSnapshot.length > 0) {
+      return {
+        title: "人工留痕证据快照",
+        source: latestManualAction?.acted_at ? new Date(latestManualAction.acted_at).toLocaleString() : "人工动作时间待补充",
+        boundary: "来自 ManualAction 的人工点击时证据快照；只有生成 ReviewTodo 并到期后，才能进入复盘效果判断。",
+        items: actionSnapshot,
+      };
+    }
+    return null;
+  }, [latestManualAction, nextReviewTodo]);
   const selectedReviewMetricRows = reviewMetricComparisonRows(selectedReviewEffect);
   const selectedReviewRecordReadbackTarget = buildReviewRecordReadbackTarget(selectedSignal, nextReviewTodo);
   const selectedReviewRecordReadbackExpectation = buildReviewRecordReadbackExpectation(latestManualAction, nextReviewTodo);
@@ -663,6 +834,20 @@ export function SignalTriageWorkbench() {
   );
   const selectedReviewRecords = selectedSignalStateKey ? reviewRecordsBySignal[selectedSignalStateKey] ?? [] : [];
   const latestReviewRecord = selectedReviewRecords.length > 0 ? selectedReviewRecords[selectedReviewRecords.length - 1] : null;
+  const selectedReviewRecordHasReadbackMatch = hasReviewRecordReadbackMatch(
+    selectedReviewRecords,
+    selectedReviewRecordReadbackExpectation,
+  );
+  const selectedReviewEffectWindowLedger = useMemo(
+    () => buildReviewEffectWindowLedger(nextReviewTodo, selectedReviewEffect, selectedReviewRecordHasReadbackMatch),
+    [nextReviewTodo, selectedReviewEffect, selectedReviewRecordHasReadbackMatch],
+  );
+  const selectedReviewRecordSaveGate = buildReviewRecordSaveGateSummary(
+    nextReviewTodo,
+    selectedReviewEffect,
+    selectedReviewRecordPreflightChecklist,
+    selectedReviewRecordHasReadbackMatch,
+  );
   const selectedManualActionReadbackConsistency = manualActionReadbackConsistencyText(
     latestManualAction,
     selectedReviewTodos,
@@ -670,6 +855,15 @@ export function SignalTriageWorkbench() {
     selectedReviewRecordReadbackExpectation,
   );
   const selectedManualActionReadbackCompact = manualActionReadbackCompactText(latestManualAction, selectedReviewTodos, selectedReviewRecords);
+  const selectedManualActionReadbackPathItems = useMemo(
+    () =>
+      buildManualActionReadbackPathItems({
+        latestManualAction,
+        reviewTodos: selectedReviewTodos,
+        reviewRecords: selectedReviewRecords,
+      }),
+    [latestManualAction, selectedReviewRecords, selectedReviewTodos],
+  );
   const selectedManualReviewClosureLedger = useMemo(
     () =>
       buildManualReviewClosureLedger({
@@ -687,18 +881,67 @@ export function SignalTriageWorkbench() {
       selectedReviewTodos.length,
     ],
   );
-  const selectedManualActionPreflightText = manualActionPreflightError ?? manualActionPreflightStatusText(manualActionPreflight);
-  const selectedManualActionPreflightEvidenceText = manualActionPreflightEvidenceSnapshotText(manualActionPreflight);
+  const selectedManualActionPreflightText =
+    selectedManualActionPreviewPreflightError ?? manualActionPreflightStatusText(selectedManualActionPreviewPreflight);
+  const selectedManualActionPreflightEvidenceText = manualActionPreflightEvidenceSnapshotText(
+    selectedManualActionPreviewPreflight,
+  );
   const selectedManualActionPreflightEvidenceRows = useMemo(
-    () => manualActionPreflightEvidenceRows(manualActionPreflight),
-    [manualActionPreflight],
+    () => manualActionPreflightEvidenceRows(selectedManualActionPreviewPreflight),
+    [selectedManualActionPreviewPreflight],
+  );
+  const selectedManualActionFullPreflightEvidenceRows = useMemo(
+    () => manualActionPreflightEvidenceRows(selectedManualActionPreviewPreflight, 30),
+    [selectedManualActionPreviewPreflight],
+  );
+  const selectedManualActionPreflightPriorityEvidenceRows = useMemo(
+    () => manualActionPreflightPriorityEvidenceRows(selectedManualActionPreviewPreflight),
+    [selectedManualActionPreviewPreflight],
+  );
+  const selectedManualConfirmationEvidenceReadiness = useMemo(
+    () =>
+      manualConfirmationEvidenceReadinessSummary(
+        selectedManualConfirmationEvidenceItems,
+        selectedManualActionFullPreflightEvidenceRows,
+      ),
+    [selectedManualActionFullPreflightEvidenceRows, selectedManualConfirmationEvidenceItems],
+  );
+  const selectedManualConfirmationDiagnosisBridge = useMemo(
+    () =>
+      manualConfirmationDiagnosisBridgeSummary(
+        selectedDiagnosisEvidenceSummary,
+        selectedManualConfirmationEvidenceItems,
+        selectedManualConfirmationEvidenceReadiness,
+      ),
+    [
+      selectedDiagnosisEvidenceSummary,
+      selectedManualConfirmationEvidenceItems,
+      selectedManualConfirmationEvidenceReadiness,
+    ],
   );
   const selectedManualActionPostWriteContractItems = useMemo(
-    () => manualActionPostWriteContractItems(manualActionPreflight),
-    [manualActionPreflight],
+    () => manualActionPostWriteContractItems(selectedManualActionPreviewPreflight),
+    [selectedManualActionPreviewPreflight],
+  );
+  const selectedManualActionAuthorizationReadiness = useMemo(
+    () => manualActionAuthorizationReadinessSummary(selectedManualActionPreviewPreflight),
+    [selectedManualActionPreviewPreflight],
+  );
+  const selectedManualActionRouteSplit = useMemo(
+    () =>
+      manualActionReviewRouteSplitSummary(
+        signalTriageSummary,
+        selectedSignal?.id,
+        selectedManualActionAuthorizationReadiness,
+      ),
+    [selectedManualActionAuthorizationReadiness, selectedSignal?.id, signalTriageSummary],
   );
   const selectedManualActionPreflightTone =
-    manualActionPreflightError || manualActionPreflight?.status === "blocked" ? "blocked" : manualActionPreflight ? "ready" : "loading";
+    selectedManualActionPreviewPreflightError || selectedManualActionPreviewPreflight?.status === "blocked"
+      ? "blocked"
+      : selectedManualActionPreviewPreflight
+        ? "ready"
+        : "loading";
   const selectedRuleImprovementReadiness = useMemo(
     () =>
       buildRuleImprovementReadiness(
@@ -744,13 +987,24 @@ export function SignalTriageWorkbench() {
     () =>
       buildManualActionDisplayEvidenceSnapshot({
         fallbackEvidenceSnapshot: selectedManualActionEvidenceSnapshot,
-        preflight: manualActionPreflight,
+        preflight: selectedManualActionPreviewPreflight,
       }),
-    [manualActionPreflight, selectedManualActionEvidenceSnapshot],
+    [selectedManualActionEvidenceSnapshot, selectedManualActionPreviewPreflight],
   );
   const selectedManualActionEvidenceReason = useMemo(
     () => manualActionEvidenceReasonText(selectedDisplayManualActionEvidenceSnapshot),
     [selectedDisplayManualActionEvidenceSnapshot],
+  );
+  const selectedManualActionDecisionFactItems = useMemo(
+    () =>
+      selectedSignal
+        ? buildManualActionDecisionFactItems(
+            selectedSignal,
+            selectedDiagnosisContractItems,
+            selectedManualActionEvidenceReason,
+          )
+        : [],
+    [selectedDiagnosisContractItems, selectedManualActionEvidenceReason, selectedSignal],
   );
 
   const overview = useMemo(() => buildSignalOverview(displayProductScopedSignals), [displayProductScopedSignals]);
@@ -782,26 +1036,50 @@ export function SignalTriageWorkbench() {
     if (!selectedSignal || !selectedBackendManualActionPreview) {
       setManualActionPreflight(null);
       setManualActionPreflightError(null);
+      setManualActionPreflightsByAction({});
+      setManualActionPreflightErrorsByAction({});
+      setManualActionPreviewActionType(null);
       return;
     }
     let cancelled = false;
+    const preflightErrorText = "后端预检读取失败；未读取前不会自动写入人工动作。";
+    const recommendedActionType = selectedBackendManualActionPreview.actionType;
     setManualActionPreflight(null);
     setManualActionPreflightError(null);
-    void fetchManualActionPreflight({
-      marketId: selectedSignal.market_id ?? selectedMarketId,
-      top: 5,
-      productScopeId: activeProductScopeId,
-      expectedObjectId: selectedBackendManualActionPreview.objectId,
-      expectedObjectType: selectedBackendManualActionPreview.objectType,
-      actionType: selectedBackendManualActionPreview.actionType,
-      expectWritten: false,
-    })
-      .then((preflight) => {
-        if (!cancelled) setManualActionPreflight(preflight);
-      })
-      .catch(() => {
-        if (!cancelled) setManualActionPreflightError("后端预检读取失败；未读取前不会自动写入人工动作。");
+    setManualActionPreflightsByAction({});
+    setManualActionPreflightErrorsByAction({});
+    setManualActionPreviewActionType(recommendedActionType);
+    void Promise.all(
+      manualActionOrder.map(async (actionType) => {
+        try {
+          const preflight = await fetchManualActionPreflight({
+            marketId: selectedSignal.market_id ?? selectedMarketId,
+            top: 5,
+            productScopeId: activeProductScopeId,
+            expectedObjectId: selectedBackendManualActionPreview.objectId,
+            expectedObjectType: selectedBackendManualActionPreview.objectType,
+            actionType,
+            expectWritten: false,
+          });
+          return { actionType, preflight, error: null };
+        } catch {
+          return { actionType, preflight: null, error: preflightErrorText };
+        }
+      }),
+    ).then((results) => {
+      if (cancelled) return;
+      const nextPreflightsByAction: Partial<Record<ManualActionType, ManualActionPreflight | null>> = {};
+      const nextPreflightErrorsByAction: Partial<Record<ManualActionType, string | null>> = {};
+      results.forEach((result) => {
+        nextPreflightsByAction[result.actionType] = result.preflight;
+        nextPreflightErrorsByAction[result.actionType] = result.error;
       });
+      setManualActionPreflightsByAction(nextPreflightsByAction);
+      setManualActionPreflightErrorsByAction(nextPreflightErrorsByAction);
+      setManualActionPreflight(nextPreflightsByAction[recommendedActionType] ?? null);
+      setManualActionPreflightError(nextPreflightErrorsByAction[recommendedActionType] ?? null);
+      setManualActionPreviewActionType(recommendedActionType);
+    });
     return () => {
       cancelled = true;
     };
@@ -864,14 +1142,21 @@ export function SignalTriageWorkbench() {
 
   async function handleManualAction(actionType: ManualActionType) {
     if (!selectedSignal) return;
+    const actionPreflight = manualActionPreflightForAction(actionType, manualActionPreflightsByAction, manualActionPreflight);
+    const actionPreflightError = manualActionPreflightErrorForAction(
+      actionType,
+      manualActionPreflightErrorsByAction,
+      manualActionPreflightError,
+    );
     const actionGate = manualActionButtonGate(
       actionType,
-      manualActionPreflight,
-      manualActionPreflightError,
+      actionPreflight,
+      actionPreflightError,
       hasReviewTodoForSelectedObject,
       {
         objectType: selectedBackendManualActionPreview?.objectType ?? null,
         objectId: selectedBackendManualActionPreview?.objectId ?? null,
+        actionType,
       },
     );
     const guardMessage = manualActionWriteGuardMessage(manualActionLabel[actionType], actionGate);
@@ -890,7 +1175,7 @@ export function SignalTriageWorkbench() {
           operatorName: "本地运营",
           productScopeId: activeProductScopeId,
           evidenceSnapshot: selectedManualActionEvidenceSnapshot,
-          preflight: manualActionPreflight,
+          preflight: actionPreflight,
         }),
         selectedSignal.market_id ?? selectedMarketId,
       );
@@ -905,9 +1190,10 @@ export function SignalTriageWorkbench() {
         [actionStateKey]: [...(current[actionStateKey] ?? []), record],
       }));
       const readback = await loadManualActions(selectedSignal.id, actionMarketId);
-      const [nextReviewTodos, nextSignalTriageSummary] = await Promise.all([
+      const [nextReviewTodos, nextSignalTriageSummary, nextReviewEvidenceRepair] = await Promise.all([
         fetchReviewTodos(actionMarketId),
         fetchSignalTriageSummary(actionMarketId, 5, activeProductScopeId),
+        fetchReviewEvidenceRepair(actionMarketId, 5, activeProductScopeId),
       ]);
       let postWritePreflight: ManualActionPreflight | null = null;
       let postWritePreflightError: string | null = null;
@@ -920,11 +1206,16 @@ export function SignalTriageWorkbench() {
           }),
         );
         setManualActionPreflight(postWritePreflight);
+        setManualActionPreflightsByAction((current) => ({ ...current, [actionType]: postWritePreflight }));
+        setManualActionPreviewActionType(actionType);
       } catch {
         postWritePreflightError = manualActionPostWritePreflightReadErrorText;
+        setManualActionPreflightErrorsByAction((current) => ({ ...current, [actionType]: postWritePreflightError }));
+        setManualActionPreviewActionType(actionType);
       }
       setReviewTodos(nextReviewTodos);
       setSignalTriageSummary(nextSignalTriageSummary);
+      setReviewEvidenceRepair(nextReviewEvidenceRepair);
       setManualActionMessage(
         readback
           ? manualActionPostWriteReadbackMessage(record, readback.reviewTodos, [], postWritePreflight, postWritePreflightError)
@@ -938,7 +1229,7 @@ export function SignalTriageWorkbench() {
   }
 
   async function handleSaveReviewRecord() {
-    if (!selectedSignal || !selectedReviewEffect || !canSaveReviewEffect(selectedReviewEffect)) return;
+    if (!selectedSignal || !selectedReviewEffect || !canSaveReviewRecordWithPreflight(selectedReviewEffect, selectedReviewRecordPreflightChecklist)) return;
     const reviewRecordSignalId = reviewRecordSignalIdForTodo(selectedSignal, nextReviewTodo);
     if (!reviewRecordSignalId) return;
     setSavingReviewRecord(true);
@@ -1183,7 +1474,29 @@ export function SignalTriageWorkbench() {
                   </div>
                 ))}
               </div>
+              <div className="productScopeAdCoverageDecision" aria-label="广告 ASIN 覆盖准入判断">
+                <div>
+                  <strong>广告 ASIN 覆盖准入</strong>
+                  <span>{productScopeFirstScreenSummary.adCoverageDecision.statusLabel}</span>
+                </div>
+                <p>{productScopeFirstScreenSummary.adCoverageDecision.summary}</p>
+                <ul>
+                  <li>
+                    <b>能证明</b>
+                    <span>{productScopeFirstScreenSummary.adCoverageDecision.proves}</span>
+                  </li>
+                  <li>
+                    <b>不能证明</b>
+                    <span>{productScopeFirstScreenSummary.adCoverageDecision.doesNotProve}</span>
+                  </li>
+                  <li>
+                    <b>人工下一步</b>
+                    <span>{productScopeFirstScreenSummary.adCoverageDecision.nextManualStep}</span>
+                  </li>
+                </ul>
+              </div>
               <div className="productScopeBusinessPreviewPath" aria-label="首屏诊断路径">
+                <p className="productScopeBusinessPreviewPathSummary">{productScopeFirstScreenSummary.pathSummary}</p>
                 {productScopeFirstScreenSummary.pathSteps.map((step, index) => (
                   <div className="productScopeBusinessPreviewPathStep" key={step.label}>
                     <span>{index + 1}</span>
@@ -1204,6 +1517,7 @@ export function SignalTriageWorkbench() {
                         <th>订单</th>
                         <th>销售额</th>
                         <th>ACOS</th>
+                        <th>下钻判断</th>
                         <th>策略</th>
                       </tr>
                     </thead>
@@ -1224,6 +1538,11 @@ export function SignalTriageWorkbench() {
                           <td>{row.orders}</td>
                           <td>{formatMoney(row.sales)}</td>
                           <td>{formatPercent(row.acos)}</td>
+                          <td className="adAsinDecisionCell">
+                            <strong>{row.decision.statusLabel}</strong>
+                            <span>{row.decision.reason}</span>
+                            <small>{row.decision.nextFocus}</small>
+                          </td>
                           <td>{row.strategyNote ?? "未标记"}</td>
                         </tr>
                       ))}
@@ -1292,6 +1611,27 @@ export function SignalTriageWorkbench() {
                       </div>
                     ))}
                   </div>
+                  <div className="productScopeAdCoverageDecision" aria-label="商品组广告覆盖准入判断">
+                    <div>
+                      <strong>广告 ASIN 覆盖准入</strong>
+                      <span>{productScopeGroupOverview.adCoverageDecision.statusLabel}</span>
+                    </div>
+                    <p>{productScopeGroupOverview.adCoverageDecision.summary}</p>
+                    <ul>
+                      <li>
+                        <b>能证明</b>
+                        <span>{productScopeGroupOverview.adCoverageDecision.proves}</span>
+                      </li>
+                      <li>
+                        <b>不能证明</b>
+                        <span>{productScopeGroupOverview.adCoverageDecision.doesNotProve}</span>
+                      </li>
+                      <li>
+                        <b>人工下一步</b>
+                        <span>{productScopeGroupOverview.adCoverageDecision.nextManualStep}</span>
+                      </li>
+                    </ul>
+                  </div>
                   {productScopeGroupOverview.adAsinRows.length > 0 && (
                     <div className="productGroupAsinTableWrap" aria-label="广告 ASIN 对比">
                       <table className="productGroupAsinTable">
@@ -1302,6 +1642,7 @@ export function SignalTriageWorkbench() {
                             <th>订单</th>
                             <th>销售额</th>
                             <th>ACOS</th>
+                            <th>下钻判断</th>
                             <th>策略</th>
                           </tr>
                         </thead>
@@ -1322,6 +1663,11 @@ export function SignalTriageWorkbench() {
                               <td>{row.orders}</td>
                               <td>{formatMoney(row.sales)}</td>
                               <td>{formatPercent(row.acos)}</td>
+                              <td className="adAsinDecisionCell">
+                                <strong>{row.decision.statusLabel}</strong>
+                                <span>{row.decision.reason}</span>
+                                <small>{row.decision.nextFocus}</small>
+                              </td>
                               <td>{row.strategyNote ?? "未标记"}</td>
                             </tr>
                           ))}
@@ -1450,10 +1796,23 @@ export function SignalTriageWorkbench() {
                 <span>{reviewTodoQueueSummary.description}</span>
               </div>
               {reviewTodoQueueSummary.nextLabel && (
-                <span className="reviewTodoQueueNext">
-                  下一项：{reviewTodoQueueSummary.nextLabel}
-                  {reviewTodoQueueSummary.nextDueDate ? ` / 到期 ${reviewTodoQueueSummary.nextDueDate}` : ""}
-                </span>
+                reviewTodoQueueSummary.next?.signal_id ? (
+                  <button
+                    className="reviewTodoQueueNext"
+                    type="button"
+                    onClick={() => handleLocateReviewSignal(reviewTodoQueueSummary.next?.signal_id)}
+                    aria-label={`定位复盘待办 ${reviewTodoQueueSummary.nextLabel}`}
+                    title="查看复盘对象对应信号和证据链"
+                  >
+                    下一项：{reviewTodoQueueSummary.nextLabel}
+                    {reviewTodoQueueSummary.nextDueDate ? ` / 到期 ${reviewTodoQueueSummary.nextDueDate}` : ""}
+                  </button>
+                ) : (
+                  <span className="reviewTodoQueueNext">
+                    下一项：{reviewTodoQueueSummary.nextLabel}
+                    {reviewTodoQueueSummary.nextDueDate ? ` / 到期 ${reviewTodoQueueSummary.nextDueDate}` : ""}
+                  </span>
+                )
               )}
               {reviewTodoScopeHint && (
                 <button
@@ -1519,15 +1878,11 @@ export function SignalTriageWorkbench() {
             <button className={filter === "high" ? "active" : ""} onClick={() => setFilter("high")}>
               高优先级
             </button>
-            <button className={filter === "anomaly" ? "active" : ""} onClick={() => setFilter("anomaly")}>
-              异常
-            </button>
-            <button className={filter === "opportunity" ? "active" : ""} onClick={() => setFilter("opportunity")}>
-              机会
-            </button>
-            <button className={filter === "data_quality" ? "active" : ""} onClick={() => setFilter("data_quality")}>
-              数据质量
-            </button>
+            {queueBusinessFilters.map((item) => (
+              <button key={item.value} className={filter === item.value ? "active" : ""} onClick={() => setFilter(item.value)}>
+                {item.label}
+              </button>
+            ))}
             <button className={filter === "observing" ? "active" : ""} onClick={() => setFilter("observing")}>
               观察中
             </button>
@@ -1595,6 +1950,9 @@ export function SignalTriageWorkbench() {
                       ))}
                     </span>
                     <span className="signalRowContext">{queueMeta.secondary}</span>
+                    <span className="signalRowDecisionContext" aria-label="业务问题和对象边界">
+                      {queueMeta.decision}
+                    </span>
                     {sourceTags.length > 0 && (
                       <span className="signalSourceTrail" aria-label="证据来源">
                         {sourceTags.map((sourceType) => (
@@ -1690,11 +2048,7 @@ export function SignalTriageWorkbench() {
                       type="button"
                       key={row.key}
                       disabled={!row.signalId}
-                      onClick={() => {
-                        if (!row.signalId) return;
-                        setFilter("all");
-                        setSelectedId(row.signalId);
-                      }}
+                      onClick={() => handleLocateReviewSignal(row.signalId)}
                       aria-label={`查看复盘待办 ${row.label}`}
                     >
                       <span>{row.statusText}</span>
@@ -1716,7 +2070,15 @@ export function SignalTriageWorkbench() {
             <ProductScopeCandidateGapExplanationPanel explanation={productScopeCandidateGapExplanation} />
           )}
           {selectedSignal ? (
-            <SignalDiagnosis signal={selectedSignal} triageBusinessEvidenceItems={selectedTriageBusinessEvidenceItems} />
+            <SignalDiagnosis
+              signal={selectedSignal}
+              triageBusinessEvidenceItems={selectedTriageBusinessEvidenceItems}
+              diagnosisContractItems={selectedDiagnosisContractItems}
+              reviewEvidenceSnapshot={selectedReviewEvidenceSnapshot?.items ?? []}
+              reviewEvidenceSnapshotTitle={selectedReviewEvidenceSnapshot?.title ?? null}
+              reviewEvidenceSnapshotSource={selectedReviewEvidenceSnapshot?.source ?? null}
+              reviewEvidenceSnapshotBoundary={selectedReviewEvidenceSnapshot?.boundary ?? null}
+            />
           ) : productScopeAdmissionCard ? (
             <ProductScopeDrilldownEvidencePanel
               admissionCard={productScopeAdmissionCard}
@@ -1762,31 +2124,105 @@ export function SignalTriageWorkbench() {
                     <strong>{selectedManualActionAdGroupBridge.title}</strong>
                     <span>{selectedManualActionAdGroupBridge.evidence}</span>
                     <p>{selectedManualActionAdGroupBridge.decision}</p>
+                    <ul className="manualActionBridgeBoundaryList" aria-label="人工点击前广告组合流复核">
+                      <li>
+                        <b>{selectedManualActionAdGroupBridge.synthesisStatus}</b>
+                        <span>{selectedManualActionAdGroupBridge.synthesisJudgement}</span>
+                      </li>
+                      <li>
+                        <b>合流证据链</b>
+                        <span>{selectedManualActionAdGroupBridge.synthesisEvidenceChain}</span>
+                      </li>
+                      <li>
+                        <b>合流证明边界</b>
+                        <span>{selectedManualActionAdGroupBridge.synthesisBoundary}</span>
+                      </li>
+                      <li>
+                        <b>合流证据缺口</b>
+                        <span>{selectedManualActionAdGroupBridge.synthesisGap}</span>
+                      </li>
+                      <li>
+                        <b>搜索词边界</b>
+                        <span>{selectedManualActionAdGroupBridge.searchTermBoundary}</span>
+                      </li>
+                      <li>
+                        <b>广告位边界</b>
+                        <span>{selectedManualActionAdGroupBridge.placementBoundary}</span>
+                      </li>
+                      <li>
+                        <b>人工下一步</b>
+                        <span>{selectedManualActionAdGroupBridge.manualNextStep}</span>
+                      </li>
+                    </ul>
                     <small>{selectedManualActionAdGroupBridge.boundary}</small>
                   </div>
                 )}
+                {selectedManualConfirmationEvidenceItems.length > 0 && (
+                  <div className="manualConfirmationEvidence" aria-label="人工确认证据依据">
+                    <strong>人工确认证据依据</strong>
+                    <ul>
+                      {selectedManualConfirmationEvidenceItems.map((item) => (
+                        <li key={item.label}>
+                          <span>{item.label}</span>
+                          <b>{item.value}</b>
+                          {item.detail && <p>{item.detail}</p>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {selectedManualConfirmationEvidenceReadiness && (
+                  <div
+                    className={`manualConfirmationEvidenceReadiness ${selectedManualConfirmationEvidenceReadiness.tone}`}
+                    aria-label="人工确认证据写入核对"
+                  >
+                    <strong>{selectedManualConfirmationEvidenceReadiness.title}</strong>
+                    <p>{selectedManualConfirmationEvidenceReadiness.summary}</p>
+                    <ul>
+                      {selectedManualConfirmationEvidenceReadiness.rows.map((row) => (
+                        <li key={row.label} className={row.tone}>
+                          <span>{row.label}</span>
+                          <b>{row.value}</b>
+                          <p>{row.detail}</p>
+                        </li>
+                      ))}
+                    </ul>
+                    <small>{selectedManualConfirmationEvidenceReadiness.boundary}</small>
+                  </div>
+                )}
+                {selectedManualConfirmationDiagnosisBridge && (
+                  <div
+                    className={`manualConfirmationDiagnosisBridge ${selectedManualConfirmationDiagnosisBridge.tone}`}
+                    aria-label="诊断到人工留痕证据同步"
+                  >
+                    <strong>{selectedManualConfirmationDiagnosisBridge.title}</strong>
+                    <p>{selectedManualConfirmationDiagnosisBridge.summary}</p>
+                    <ul>
+                      {selectedManualConfirmationDiagnosisBridge.rows.map((row) => (
+                        <li key={row.label} className={row.tone}>
+                          <span>{row.label}</span>
+                          <b>{row.value}</b>
+                          <p>{row.detail}</p>
+                        </li>
+                      ))}
+                    </ul>
+                    <small>{selectedManualConfirmationDiagnosisBridge.boundary}</small>
+                  </div>
+                )}
                 <div className="actionFactList">
-                  {selectedManualActionEvidenceReason && (
-                    <span>
-                      <b>处理依据</b>
-                      {selectedManualActionEvidenceReason}
+                  {selectedManualActionDecisionFactItems.map((item) => (
+                    <span key={item.label}>
+                      <b>{item.label}</b>
+                      {item.value}
                     </span>
-                  )}
-                  <span>
-                    <b>风险</b>
-                    {selectedSignal.risk}
-                  </span>
-                  <span>
-                    <b>不确定性</b>
-                    {selectedSignal.uncertainty}
-                  </span>
+                  ))}
                   {selectedBackendManualActionPreview ? (
                     <span>
                       <b>预检</b>
-                      {selectedBackendManualActionPreview.actionType} / 复盘对象：
+                      {manualActionDisplayLabel(selectedBackendManualActionPreview.actionType)} / 复盘对象：
                       {objectTypeLabel[selectedBackendManualActionPreview.objectType] ?? selectedBackendManualActionPreview.objectType} / 对象ID：
                       {selectedBackendManualActionPreview.objectId} / 窗口：
-                      {selectedBackendManualActionPreview.reviewWindows.join(" / ")}
+                      {selectedBackendManualActionPreview.reviewWindows.join(" / ")} / 不执行广告动作
                     </span>
                   ) : (
                     <span>
@@ -1812,6 +2248,45 @@ export function SignalTriageWorkbench() {
                   </span>
                   <span>{selectedManualActionTargetSummary}</span>
                 </div>
+                {selectedManualActionTargetSwitch && (
+                  <div
+                    className={`manualActionTargetSwitch ${selectedManualActionTargetSwitch.tone}`}
+                    aria-label="人工动作目标切换提示"
+                  >
+                    <strong>{selectedManualActionTargetSwitch.title}</strong>
+                    <p>{selectedManualActionTargetSwitch.primary}</p>
+                    <ul>
+                      <li>
+                        <span>诊断对象</span>
+                        <b>{selectedManualActionTargetSwitch.diagnosisObject}</b>
+                      </li>
+                      <li>
+                        <span>可写候选</span>
+                        <b>{selectedManualActionTargetSwitch.writeTarget}</b>
+                      </li>
+                    </ul>
+                    <small>{selectedManualActionTargetSwitch.boundary}</small>
+                  </div>
+                )}
+                {selectedManualActionRouteSplit && (
+                  <div
+                    className={`manualActionRouteSplit ${selectedManualActionRouteSplit.tone}`}
+                    aria-label="人工确认双轨分流"
+                  >
+                    <strong>{selectedManualActionRouteSplit.title}</strong>
+                    <p>{selectedManualActionRouteSplit.primary}</p>
+                    <ul>
+                      {selectedManualActionRouteSplit.rows.map((row) => (
+                        <li key={row.label} className={row.tone}>
+                          <span>{row.label}</span>
+                          <b>{row.value}</b>
+                          <p>{row.detail}</p>
+                        </li>
+                      ))}
+                    </ul>
+                    <small>{selectedManualActionRouteSplit.boundary}</small>
+                  </div>
+                )}
                 {selectedSearchIntentManualActionEvidenceSnapshot.length > 0 && (
                   <div className="manualActionContextSnapshot" aria-label="当前语义组留痕上下文">
                     <strong>当前语义组留痕</strong>
@@ -1841,11 +2316,65 @@ export function SignalTriageWorkbench() {
                 ) : null}
                 <div className={`manualActionBackendPreflight ${selectedManualActionPreflightTone}`} aria-label="后端人工动作只读预检">
                   <strong>后端只读预检</strong>
+                  <span>当前预览动作：{manualActionLabel[selectedManualActionPreviewActionType]}</span>
                   <p>{selectedManualActionPreflightText}</p>
                   {selectedManualActionPreflightEvidenceText ? (
                     <p className="manualActionPreflightEvidence">{selectedManualActionPreflightEvidenceText}</p>
                   ) : null}
                 </div>
+                {selectedManualActionAuthorizationReadiness && (
+                  <div
+                    className={`manualActionAuthorizationReadiness ${selectedManualActionAuthorizationReadiness.tone}`}
+                    aria-label="人工动作待授权写入状态"
+                  >
+                    <strong>{selectedManualActionAuthorizationReadiness.title}</strong>
+                    <p>{selectedManualActionAuthorizationReadiness.primary}</p>
+                    <ul>
+                      <li>{selectedManualActionAuthorizationReadiness.target}</li>
+                      <li>{selectedManualActionAuthorizationReadiness.currentState}</li>
+                      <li>{selectedManualActionAuthorizationReadiness.authorizedResult}</li>
+                      <li>{selectedManualActionAuthorizationReadiness.evidence}</li>
+                    </ul>
+                    <small>{selectedManualActionAuthorizationReadiness.boundary}</small>
+                  </div>
+                )}
+                <div className="manualActionPathSteps" aria-label="人工处理路径">
+                  {selectedManualActionPathSteps.map((step, index) => (
+                    <div key={step.label} className={`manualActionPathStep ${step.tone}`}>
+                      <span>{index + 1}</span>
+                      <strong>{step.label}</strong>
+                      <b>{step.value}</b>
+                      <p>{step.detail}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="manualActionIdentityGate" aria-label="人工动作对象身份门禁">
+                  {selectedManualActionIdentityGateItems.map((item) => (
+                    <div key={item.label} className={`manualActionIdentityGateItem ${item.tone}`}>
+                      <span>{item.label}</span>
+                      <b>{item.value}</b>
+                      <p>{item.detail}</p>
+                    </div>
+                  ))}
+                </div>
+                {selectedManualActionPreflightPriorityEvidenceRows.length > 0 && (
+                  <div className="manualActionEvidencePreviewList manualActionEvidenceGapPreview" aria-label="优先查看的边界与证据缺口">
+                    <div>
+                      <strong>先看边界与缺口</strong>
+                      <span>{selectedManualActionPreflightPriorityEvidenceRows.length} 条</span>
+                    </div>
+                    <ul>
+                      {selectedManualActionPreflightPriorityEvidenceRows.map((item, index) => (
+                        <li key={`${item.label}-${item.value}-${index}`}>
+                          <span>{item.label}</span>
+                          <b>{item.value}</b>
+                          {item.detail && <p>{item.detail}</p>}
+                          {item.source && <small>来源：{item.source}</small>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 {selectedManualActionPreflightEvidenceRows.length > 0 && (
                   <div className="manualActionEvidencePreviewList" aria-label="将保存的人工证据快照">
                     <div>
@@ -1862,8 +2391,10 @@ export function SignalTriageWorkbench() {
                         </li>
                       ))}
                     </ul>
-                    {manualActionPreflight?.evidence_snapshot_preview?.boundary && (
-                      <p className="manualActionEvidencePreviewBoundary">{manualActionPreflight.evidence_snapshot_preview.boundary}</p>
+                    {selectedManualActionPreviewPreflight?.evidence_snapshot_preview?.boundary && (
+                      <p className="manualActionEvidencePreviewBoundary">
+                        {selectedManualActionPreviewPreflight.evidence_snapshot_preview.boundary}
+                      </p>
                     )}
                   </div>
                 )}
@@ -1882,27 +2413,44 @@ export function SignalTriageWorkbench() {
                     ))}
                   </ul>
                 </div>
-                <div className="manualActionGrid">
+                <div className="manualActionButtonBoundary" aria-label="人工留痕动作">
+                  只保存人工留痕和复盘待办，不执行广告动作
+                </div>
+                <div className="manualActionGrid" aria-label="人工动作按钮">
                   {manualActionOrder.map((actionType) => {
                     const Icon = manualActionIcon[actionType];
+                    const actionPreflight = manualActionPreflightForAction(
+                      actionType,
+                      manualActionPreflightsByAction,
+                      manualActionPreflight,
+                    );
+                    const actionPreflightError = manualActionPreflightErrorForAction(
+                      actionType,
+                      manualActionPreflightErrorsByAction,
+                      manualActionPreflightError,
+                    );
                     const actionGate = manualActionButtonGate(
                       actionType,
-                      manualActionPreflight,
-                      manualActionPreflightError,
+                      actionPreflight,
+                      actionPreflightError,
                       hasReviewTodoForSelectedObject,
                       {
                         objectType: selectedBackendManualActionPreview?.objectType ?? null,
                         objectId: selectedBackendManualActionPreview?.objectId ?? null,
+                        actionType,
                       },
                     );
                     const isDuplicateReviewAction = actionType === "add_to_review" && hasReviewTodoForSelectedObject;
                     const actionLabel = isDuplicateReviewAction ? "等待复盘窗口" : manualActionLabel[actionType];
-                    const actionIntent = actionGate.reason ?? manualActionIntentText(actionType);
-                    const compactIntent = actionGate.compactReason ?? manualActionCompactIntent[actionType];
+                    const actionExpectationText = manualActionButtonExpectationText(actionType, actionPreflight);
+                    const actionIntent = actionGate.reason ?? [manualActionIntentText(actionType), actionExpectationText].filter(Boolean).join(" ");
+                    const compactIntent = actionGate.compactReason ?? actionExpectationText ?? manualActionCompactIntent[actionType];
                     return (
                       <button
                         key={actionType}
                         className={`manualActionButton${actionType === "add_to_review" ? " primaryManualAction" : ""}`}
+                        onFocus={() => setManualActionPreviewActionType(actionType)}
+                        onMouseEnter={() => setManualActionPreviewActionType(actionType)}
                         onClick={() => handleManualAction(actionType)}
                         disabled={savingManualAction || actionGate.disabled}
                         aria-label={`${actionLabel}：${actionIntent}`}
@@ -1918,6 +2466,15 @@ export function SignalTriageWorkbench() {
                   })}
                 </div>
                 <div className="manualActionReadbackStatusGroup">
+                  <div className="manualActionReadbackPath" aria-label="点击后读回路径">
+                    {selectedManualActionReadbackPathItems.map((item) => (
+                      <div key={item.label} className={`manualActionReadbackPathItem ${item.tone}`}>
+                        <span>{item.label}</span>
+                        <b>{item.value}</b>
+                        <p>{item.detail}</p>
+                      </div>
+                    ))}
+                  </div>
                   <p className="manualActionReadbackStatusLine">{manualActionPostWriteExpectationSummaryText()}</p>
                   <p
                     className="manualActionReadbackStatusLine"
@@ -1974,6 +2531,23 @@ export function SignalTriageWorkbench() {
                         <p>{reviewReadinessGateSummary.identityAudit.boundary}</p>
                       </div>
                     )}
+                    {reviewReadinessGateSummary.queueSeparation && (
+                      <div className="reviewQueueSeparation" aria-label="复盘对象与下一候选分层">
+                        <div>
+                          <strong>{reviewReadinessGateSummary.queueSeparation.title}</strong>
+                          <span>{reviewReadinessGateSummary.queueSeparation.primary}</span>
+                        </div>
+                        <ul>
+                          {reviewReadinessGateSummary.queueSeparation.items.map((item) => (
+                            <li key={item.label} className={item.tone}>
+                              <span>{item.label}</span>
+                              <b>{item.value}</b>
+                            </li>
+                          ))}
+                        </ul>
+                        <p>{reviewReadinessGateSummary.queueSeparation.boundary}</p>
+                      </div>
+                    )}
                     <p>{reviewReadinessGateSummary.detail}</p>
                     <ol className="reviewReadinessNextSteps" aria-label="复盘下一步路径">
                       {reviewReadinessGateSummary.nextSteps.map((step) => (
@@ -1984,6 +2558,95 @@ export function SignalTriageWorkbench() {
                       ))}
                     </ol>
                     <p>{reviewReadinessGateSummary.boundary}</p>
+                  </div>
+                )}
+
+                {reviewEvidenceRepairSummary && (
+                  <div
+                    className={`reviewReadinessGateSummary reviewEvidenceRepairSummary ${
+                      reviewEvidenceRepairSummary.status === "blocked" ? "blocked" : "ready"
+                    }`}
+                    aria-label={reviewEvidenceRepairAriaLabel}
+                  >
+                    <div>
+                      <strong>{reviewEvidenceRepairSummary.title}</strong>
+                      <span>{reviewEvidenceRepairSummary.primary}</span>
+                    </div>
+                    <ul>
+                      {reviewEvidenceRepairSummary.items.map((item) => (
+                        <li key={item.label} className={item.tone}>
+                          <span>{item.label}</span>
+                          <b>{item.value}</b>
+                        </li>
+                      ))}
+                    </ul>
+                    <p>{reviewEvidenceRepairSummary.detail}</p>
+                    {reviewEvidenceRepairSummary.voidPlanItems.length > 0 && (
+                      <div className="reviewRepairDryRunChecklist" aria-label="历史待办 dry-run 核对清单">
+                        {reviewEvidenceRepairSummary.voidPlanItems.map((item) => (
+                          <article key={item.actionId}>
+                            <div>
+                              <strong>dry-run 核对</strong>
+                              <span>{item.actionId}</span>
+                            </div>
+                            <dl>
+                              <div>
+                                <dt>计划状态</dt>
+                                <dd>{item.statusText}</dd>
+                              </div>
+                              <div>
+                                <dt>作废对象</dt>
+                                <dd>{item.objectText}</dd>
+                              </div>
+                              <div>
+                                <dt>复盘窗口</dt>
+                                <dd>{item.reviewWindows}</dd>
+                              </div>
+                              <div>
+                                <dt>作废后</dt>
+                                <dd>{item.afterVoidText}</dd>
+                              </div>
+                              <div>
+                                <dt>重新留痕</dt>
+                                <dd>{item.recreateText}</dd>
+                              </div>
+                              <div>
+                                <dt>授权码</dt>
+                                <dd>
+                                  <code>{item.authorizationCode || "待生成"}</code>
+                                </dd>
+                              </div>
+                              <div>
+                                <dt>dry-run</dt>
+                                <dd>
+                                  <code>{item.dryRunCommand || "待生成"}</code>
+                                </dd>
+                              </div>
+                              <div>
+                                <dt>写入边界</dt>
+                                <dd>{item.boundary || "只读预检，不执行广告动作。"}</dd>
+                              </div>
+                            </dl>
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                    {reviewEvidenceRepairSummary.sampleItems.length > 0 && (
+                      <ul className="ruleFeedbackRecordList">
+                        {reviewEvidenceRepairSummary.sampleItems.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    )}
+                    <ol className="reviewReadinessNextSteps" aria-label="历史待办治理下一步">
+                      {reviewEvidenceRepairSummary.nextSteps.map((step) => (
+                        <li key={step.label}>
+                          <span>{step.label}</span>
+                          <p>{step.detail}</p>
+                        </li>
+                      ))}
+                    </ol>
+                    <p>{reviewEvidenceRepairSummary.boundary}</p>
                   </div>
                 )}
 
@@ -2023,7 +2686,7 @@ export function SignalTriageWorkbench() {
                       {latestManualActionBoundary && <span>{latestManualActionBoundary}</span>}
                     </>
                   ) : (
-                    <p>暂无人工处理记录</p>
+                    <p>{manualActionEmptyStateText(manualActionPreflight)}</p>
                   )}
                   {manualActionMessage && <span>{manualActionMessage}</span>}
                 </section>
@@ -2039,9 +2702,61 @@ export function SignalTriageWorkbench() {
                       </span>
                       {nextReviewTodoReadback && <span>{nextReviewTodoReadback}</span>}
                       {nextReviewTodoEvidenceText && <span>{nextReviewTodoEvidenceText}</span>}
+                      {selectedReviewTodoEvidenceReadback && (
+                        <div
+                          className={`manualConfirmationEvidenceReadiness reviewTodoEvidenceReadback ${selectedReviewTodoEvidenceReadback.tone}`}
+                          aria-label="复盘待办证据回读核对"
+                        >
+                          <strong>{selectedReviewTodoEvidenceReadback.title}</strong>
+                          <p>{selectedReviewTodoEvidenceReadback.summary}</p>
+                          <ul>
+                            {selectedReviewTodoEvidenceReadback.rows.map((row) => (
+                              <li key={row.label} className={row.tone}>
+                                <span>{row.label}</span>
+                                <b>{row.value}</b>
+                                <p>{row.detail}</p>
+                              </li>
+                            ))}
+                          </ul>
+                          <small>{selectedReviewTodoEvidenceReadback.boundary}</small>
+                        </div>
+                      )}
                       {selectedReviewEffectReadback && <span>{selectedReviewEffectReadback}</span>}
                       {selectedReviewEffectWindowText && <span>{selectedReviewEffectWindowText}</span>}
                       {selectedReviewEffect?.status === "ready" && <span>{reviewEffectSummaryText(selectedReviewEffect)}</span>}
+                      <div
+                        className={`reviewEffectWindowLedger ${selectedReviewEffectWindowLedger.tone}`}
+                        aria-label="复盘效果窗口口径"
+                      >
+                        <strong>{selectedReviewEffectWindowLedger.title}</strong>
+                        <p>{selectedReviewEffectWindowLedger.status}</p>
+                        <dl>
+                          <div>
+                            <dt>处理前窗口</dt>
+                            <dd>{selectedReviewEffectWindowLedger.beforeWindow}</dd>
+                          </div>
+                          <div>
+                            <dt>处理后窗口</dt>
+                            <dd>{selectedReviewEffectWindowLedger.afterWindow}</dd>
+                          </div>
+                          <div>
+                            <dt>指标口径</dt>
+                            <dd>{selectedReviewEffectWindowLedger.metricCoverage}</dd>
+                          </div>
+                          <div>
+                            <dt>下一步</dt>
+                            <dd>{selectedReviewEffectWindowLedger.nextStep}</dd>
+                          </div>
+                        </dl>
+                        <small>{selectedReviewEffectWindowLedger.boundary}</small>
+                      </div>
+                      <p
+                        className={`reviewRecordSaveGate ${selectedReviewRecordSaveGate.tone}`}
+                        aria-label="复盘保存门槛"
+                      >
+                        <strong>{selectedReviewRecordSaveGate.title}</strong>
+                        <span>{selectedReviewRecordSaveGate.detail}</span>
+                      </p>
                       {selectedReviewMetricRows.length > 0 && (
                         <div className="reviewMetricTable" aria-label="复盘指标对比">
                           {selectedReviewMetricRows.map((row) => (
@@ -2066,14 +2781,14 @@ export function SignalTriageWorkbench() {
                           </ul>
                         </div>
                       )}
-                      {canSaveReviewEffect(selectedReviewEffect) && (
+                      {selectedReviewRecordSaveGate.canSave && (
                         <button className="secondaryButton" onClick={handleSaveReviewRecord} disabled={savingReviewRecord}>
                           保存复盘记录
                         </button>
                       )}
                     </>
                   ) : (
-                    <p>{reviewCheckpointText(null, null)}</p>
+                    <p>{reviewTodoEmptyStateText(latestManualAction)}</p>
                   )}
                   <span>{reviewRecordStatusText(latestReviewRecord)}</span>
                   {reviewTodoMessage && <span>{reviewTodoMessage}</span>}
@@ -2171,6 +2886,129 @@ function DiagnosisPathPanel({ items }: { items: SignalTriageDiagnosisPathItem[] 
           </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+function DiagnosisContractPanel({
+  items,
+  summary,
+}: {
+  items: SignalTriageDiagnosisContractItem[];
+  summary: SignalDiagnosisEvidenceSummary | null;
+}) {
+  return (
+    <section className="diagnosisContractPanel diagnosisStep stepEvidence" aria-label="业务判断与指标目的">
+      <div className="detailSectionHeader">
+        <h3>业务判断与指标目的</h3>
+        <span>{items.length} 个判断块</span>
+      </div>
+      <p className="diagnosisContractIntro">先回答这条信号要判断什么，再说明指标能证明什么、不能证明什么，以及人工下一步。</p>
+      {summary && (
+        <div className={`diagnosisEvidenceSummary ${summary.tone}`} aria-label="证据强度和判断边界摘要">
+          <div>
+            <strong>{summary.title}</strong>
+            <span>{summary.strengthLabel}</span>
+          </div>
+          <p>{summary.businessQuestion}</p>
+          <ul>
+            <li>
+              <b>诊断对象</b>
+              <span>{summary.objectReadback}</span>
+            </li>
+            <li>
+              <b>强度依据</b>
+              <span>{summary.strengthReason}</span>
+            </li>
+            <li>
+              <b>能证明</b>
+              <span>{summary.proves}</span>
+            </li>
+            <li>
+              <b>不能证明</b>
+              <span>{summary.doesNotProve}</span>
+            </li>
+            <li>
+              <b>证据缺口</b>
+              <span>{summary.evidenceGap}</span>
+            </li>
+            <li>
+              <b>人工下一步</b>
+              <span>{summary.nextManualStep}</span>
+            </li>
+          </ul>
+        </div>
+      )}
+      <div className="triageBusinessEvidenceStrip" aria-label="指标为什么服务业务判断">
+        {items.map((item) => (
+          <span key={item.sectionId}>
+            <b>{item.title}</b>
+            <strong>{item.businessQuestion}</strong>
+            <small>对象粒度：{item.objectGrain}</small>
+            {item.metricText && <small>指标目的：{item.metricText}</small>}
+            <small>当前判断：{item.currentJudgement}</small>
+            <small>能证明：{item.proves}</small>
+            <small>不能证明：{item.doesNotProve}</small>
+            <small>证据缺口：{item.evidenceGap}</small>
+            <small>需要补证：{item.requiredEvidence}</small>
+            <small>人工下一步：{item.nextManualStep}</small>
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SearchTermOpportunityReviewChainPanel({ chain }: { chain: SearchTermOpportunityReviewChain }) {
+  return (
+    <section className="searchTermOpportunityReviewChain diagnosisStep stepEvidence" aria-label="搜索词机会复核链">
+      <div className="detailSectionHeader">
+        <h3>搜索词机会复核链</h3>
+        <span>{chain.title}</span>
+      </div>
+      <p>{chain.businessQuestion}</p>
+      <ul>
+        <li>
+          <b>对象粒度</b>
+          <span>{chain.objectGrain}</span>
+        </li>
+        <li>
+          <b>投放词证据</b>
+          <span>{chain.targetingEvidence}</span>
+        </li>
+        <li>
+          <b>ABA 背景</b>
+          <span>{chain.marketContext}</span>
+        </li>
+        <li>
+          <b>当前判断</b>
+          <span>{chain.currentJudgement}</span>
+        </li>
+        <li>
+          <b>能证明</b>
+          <span>{chain.proves}</span>
+        </li>
+        <li>
+          <b>不能证明</b>
+          <span>{chain.doesNotProve}</span>
+        </li>
+        <li>
+          <b>证据缺口</b>
+          <span>{chain.evidenceGap}</span>
+        </li>
+        <li>
+          <b>需要补证</b>
+          <span>{chain.requiredEvidence}</span>
+        </li>
+        <li>
+          <b>人工下一步</b>
+          <span>{chain.nextManualStep}</span>
+        </li>
+        <li>
+          <b>动作边界</b>
+          <span>{chain.actionBoundary}</span>
+        </li>
+      </ul>
     </section>
   );
 }
@@ -2288,6 +3126,31 @@ function ProductScopeEvidenceRouteGuidePanel({ guide }: { guide: ProductScopeEvi
         <span>{guide.steps.length} 层证据</span>
       </div>
       <p className="productScopeEvidenceRouteGuideSummary">{guide.summary}</p>
+      <div className={`productScopeEvidenceRouteDecision ${guide.decision.statusTone}`} aria-label="广告路径可落地判断">
+        <div>
+          <span>{guide.decision.title}</span>
+          <strong>{guide.decision.statusLabel}</strong>
+        </div>
+        <p>{guide.decision.businessQuestion}</p>
+        <ul>
+          <li>
+            <b>当前判断</b>
+            <span>{guide.decision.currentJudgement}</span>
+          </li>
+          <li>
+            <b>能证明</b>
+            <span>{guide.decision.proves}</span>
+          </li>
+          <li>
+            <b>不能证明</b>
+            <span>{guide.decision.doesNotProve}</span>
+          </li>
+          <li>
+            <b>人工下一步</b>
+            <span>{guide.decision.nextManualStep}</span>
+          </li>
+        </ul>
+      </div>
       <div className="productScopeEvidenceRouteGuideSteps">
         {guide.steps.map((step) => (
           <article className={`productScopeEvidenceRouteGuideStep ${step.tone}`} key={step.layerId}>
@@ -2327,6 +3190,94 @@ function ProductScopeAdGroupDiagnosisPanel({ rows }: { rows: ProductScopeAdGroup
               <span>{row.metrics}</span>
               <span>{row.trafficContext}</span>
             </div>
+            <div className="productScopeAdGroupOwnership" aria-label="广告组问题归属判定">
+              <div>
+                <strong>{row.ownershipDecision.title}</strong>
+                <span>{row.ownershipDecision.statusLabel}</span>
+              </div>
+              <p>{row.ownershipDecision.businessQuestion}</p>
+              <ul>
+                <li>
+                  <b>当前判断</b>
+                  <span>{row.ownershipDecision.currentJudgement}</span>
+                </li>
+                <li>
+                  <b>归属结论</b>
+                  <span>{row.ownershipDecision.issueOwner}</span>
+                </li>
+                <li>
+                  <b>证据路径</b>
+                  <span>{row.ownershipDecision.evidencePath}</span>
+                </li>
+                <li>
+                  <b>不能证明</b>
+                  <span>{row.ownershipDecision.doesNotProve}</span>
+                </li>
+                <li>
+                  <b>人工下一步</b>
+                  <span>{row.ownershipDecision.nextManualStep}</span>
+                </li>
+              </ul>
+            </div>
+            <div className="productScopeAdGroupProblemLocator" aria-label="广告组问题落点">
+              <strong>{row.problemLocator.title}</strong>
+              <p>{row.problemLocator.businessQuestion}</p>
+              <ul>
+                <li>
+                  <b>当前判断</b>
+                  <span>{row.problemLocator.currentJudgement}</span>
+                </li>
+                <li>
+                  <b>问题落点</b>
+                  <span>{row.problemLocator.problemLocation}</span>
+                </li>
+                <li>
+                  <b>为何拆开看</b>
+                  <span>{row.problemLocator.splitReason}</span>
+                </li>
+                <li>
+                  <b>不能证明</b>
+                  <span>{row.problemLocator.doesNotProve}</span>
+                </li>
+                <li>
+                  <b>人工下一步</b>
+                  <span>{row.problemLocator.nextManualStep}</span>
+                </li>
+              </ul>
+            </div>
+            <div className={`productScopeAdGroupEvidenceSynthesis ${row.evidenceSynthesis.tone}`} aria-label="广告组证据合流判断">
+              <div>
+                <strong>{row.evidenceSynthesis.title}</strong>
+                <span>{row.evidenceSynthesis.statusLabel}</span>
+              </div>
+              <p>{row.evidenceSynthesis.businessQuestion}</p>
+              <ul>
+                <li>
+                  <b>当前判断</b>
+                  <span>{row.evidenceSynthesis.currentJudgement}</span>
+                </li>
+                <li>
+                  <b>证据链</b>
+                  <span>{row.evidenceSynthesis.evidenceChain}</span>
+                </li>
+                <li>
+                  <b>能证明</b>
+                  <span>{row.evidenceSynthesis.proves}</span>
+                </li>
+                <li>
+                  <b>不能证明</b>
+                  <span>{row.evidenceSynthesis.doesNotProve}</span>
+                </li>
+                <li>
+                  <b>证据缺口</b>
+                  <span>{row.evidenceSynthesis.evidenceGap}</span>
+                </li>
+                <li>
+                  <b>人工下一步</b>
+                  <span>{row.evidenceSynthesis.nextManualStep}</span>
+                </li>
+              </ul>
+            </div>
             <div className="productScopeAdGroupActionability" aria-label="广告组人工复核判断">
               <strong>{row.actionableReview.title}</strong>
               <span>{row.actionableReview.evidence}</span>
@@ -2337,6 +3288,36 @@ function ProductScopeAdGroupDiagnosisPanel({ rows }: { rows: ProductScopeAdGroup
             <small>{row.nextReviewFocus}</small>
             <small>{row.boundary}</small>
             {row.searchTermDiagnosis && <ProductScopeSearchTermDiagnosisPanel rowId={row.id} diagnosis={row.searchTermDiagnosis} />}
+            <div className="productScopePlacementEvidenceDecision" aria-label="广告位证据判断">
+              <strong>{row.placementDecision.title}</strong>
+              <p>{row.placementDecision.businessQuestion}</p>
+              <ul>
+                <li>
+                  <b>当前判断</b>
+                  <span>{row.placementDecision.currentJudgement}</span>
+                </li>
+                <li>
+                  <b>证据层级</b>
+                  <span>{row.placementDecision.evidenceLevel}</span>
+                </li>
+                <li>
+                  <b>能证明</b>
+                  <span>{row.placementDecision.proves}</span>
+                </li>
+                <li>
+                  <b>不能证明</b>
+                  <span>{row.placementDecision.doesNotProve}</span>
+                </li>
+                <li>
+                  <b>证据缺口</b>
+                  <span>{row.placementDecision.evidenceGap}</span>
+                </li>
+                <li>
+                  <b>人工下一步</b>
+                  <span>{row.placementDecision.nextManualStep}</span>
+                </li>
+              </ul>
+            </div>
             <div className="productScopeAdGroupDiagnosisForbidden" aria-label="禁止的自动广告动作">
               {row.forbiddenActions.map((action) => (
                 <span key={`${row.id}-${action}`}>{action}</span>
@@ -2381,16 +3362,42 @@ function ProductScopeSearchTermDiagnosisPanel({
   if (!diagnosis) return null;
   const effectiveTerms = diagnosis.effectiveTerms.length
     ? diagnosis.effectiveTerms
-    : [{ label: "暂无有效词样本", termTypeLabel: "缺口", metrics: "等待搜索词证据" }];
+    : [{ label: "暂无有效词样本", termTypeLabel: "缺口", metrics: "等待搜索词证据", targetingText: null }];
   const zeroOrderTerms = diagnosis.zeroOrderTerms.length
     ? diagnosis.zeroOrderTerms
-    : [{ label: "暂无零单花费词样本", termTypeLabel: "缺口", metrics: "等待搜索词证据" }];
+    : [{ label: "暂无零单花费词样本", termTypeLabel: "缺口", metrics: "等待搜索词证据", targetingText: null }];
 
   return (
     <div className="productScopeSearchTermDiagnosis" aria-label="搜索词问题定位">
       <div className="productScopeSearchTermDiagnosisHeader">
         <strong>搜索词问题定位</strong>
         <span>{diagnosis.termSummary}</span>
+      </div>
+      <div className="productScopeSearchTermDecision" aria-label="搜索词业务判断">
+        <strong>{diagnosis.decision.title}</strong>
+        <p>{diagnosis.decision.businessQuestion}</p>
+        <ul>
+          <li>
+            <b>当前判断</b>
+            <span>{diagnosis.decision.currentJudgement}</span>
+          </li>
+          <li>
+            <b>投放词证据</b>
+            <span>{diagnosis.decision.targetingEvidence}</span>
+          </li>
+          <li>
+            <b>能证明</b>
+            <span>{diagnosis.decision.proves}</span>
+          </li>
+          <li>
+            <b>不能证明</b>
+            <span>{diagnosis.decision.doesNotProve}</span>
+          </li>
+          <li>
+            <b>人工下一步</b>
+            <span>{diagnosis.decision.nextManualStep}</span>
+          </li>
+        </ul>
       </div>
       <div className="productScopeSearchTermColumns">
         <div>
@@ -2401,6 +3408,7 @@ function ProductScopeSearchTermDiagnosisPanel({
               <small>
                 {term.termTypeLabel} / {term.metrics}
               </small>
+              {term.targetingText && <small>投放词：{term.targetingText}</small>}
             </span>
           ))}
         </div>
@@ -2412,6 +3420,7 @@ function ProductScopeSearchTermDiagnosisPanel({
               <small>
                 {term.termTypeLabel} / {term.metrics}
               </small>
+              {term.targetingText && <small>投放词：{term.targetingText}</small>}
             </span>
           ))}
         </div>
@@ -2476,9 +3485,19 @@ function NoActionableManualGatePanel({ gate }: { gate: NoActionableManualGate })
 function SignalDiagnosis({
   signal,
   triageBusinessEvidenceItems = [],
+  diagnosisContractItems = [],
+  reviewEvidenceSnapshot = [],
+  reviewEvidenceSnapshotTitle = null,
+  reviewEvidenceSnapshotSource = null,
+  reviewEvidenceSnapshotBoundary = null,
 }: {
   signal: AiSignal;
   triageBusinessEvidenceItems?: SignalTriageBusinessEvidenceItem[];
+  diagnosisContractItems?: SignalTriageDiagnosisContractItem[];
+  reviewEvidenceSnapshot?: Array<{ label: string; value: string; detail?: string | null; source?: string | null }>;
+  reviewEvidenceSnapshotTitle?: string | null;
+  reviewEvidenceSnapshotSource?: string | null;
+  reviewEvidenceSnapshotBoundary?: string | null;
 }) {
   const metrics = signal.evidence.metrics;
   const decisionBoundary = signalDecisionBoundary(signal);
@@ -2513,6 +3532,18 @@ function SignalDiagnosis({
   const triageDiagnosisPathItems = useMemo(
     () => signalTriageDiagnosisPathItems(triageBusinessEvidenceItems),
     [triageBusinessEvidenceItems],
+  );
+  const metricDecisionItems = useMemo(
+    () => buildSignalMetricDecisionItems(metrics, diagnosisContractItems),
+    [metrics, diagnosisContractItems],
+  );
+  const diagnosisEvidenceSummary = useMemo(
+    () => buildSignalDiagnosisEvidenceSummary(signal, diagnosisContractItems),
+    [diagnosisContractItems, signal],
+  );
+  const searchTermOpportunityReviewChain = useMemo(
+    () => buildSearchTermOpportunityReviewChain(diagnosisContractItems, triageBusinessEvidenceItems),
+    [diagnosisContractItems, triageBusinessEvidenceItems],
   );
 
   useEffect(() => {
@@ -2578,11 +3609,10 @@ function SignalDiagnosis({
         <span>来源：{freshnessLabel[signal.freshness_status]}</span>
       </div>
 
-      <div className="metricsRow">
-        <MetricCell label="花费" value={formatMoney(metrics.cost)} />
-        <MetricCell label="订单" value={String(metrics.orders)} />
-        <MetricCell label="销售额" value={formatMoney(metrics.sales)} />
-        <MetricCell label="ACOS" value={formatPercent(metrics.acos)} />
+      <div className="metricsRow metricDecisionRow" aria-label="关键指标判断目的">
+        {metricDecisionItems.map((item) => (
+          <MetricDecisionCell key={item.label} item={item} />
+        ))}
       </div>
 
       <section className="detailSection diagnosisReason diagnosisStep stepReason" aria-label="原因">
@@ -2597,6 +3627,35 @@ function SignalDiagnosis({
       </section>
 
       {triageDiagnosisPathItems.length > 0 && <DiagnosisPathPanel items={triageDiagnosisPathItems} />}
+
+      {diagnosisContractItems.length > 0 && (
+        <DiagnosisContractPanel items={diagnosisContractItems} summary={diagnosisEvidenceSummary} />
+      )}
+
+      {searchTermOpportunityReviewChain && <SearchTermOpportunityReviewChainPanel chain={searchTermOpportunityReviewChain} />}
+
+      {reviewEvidenceSnapshot.length > 0 && (
+        <section className="reviewEvidenceSnapshotPanel diagnosisStep stepEvidence" aria-label="复盘点击时证据快照">
+          <div className="detailSectionHeader">
+            <h3>{reviewEvidenceSnapshotTitle ?? "复盘证据快照"}</h3>
+            <span>
+              {reviewEvidenceSnapshot.length} 条 / {reviewEvidenceSnapshotSource ?? "来源待确认"}
+            </span>
+          </div>
+          {reviewEvidenceSnapshotBoundary && <p>{reviewEvidenceSnapshotBoundary}</p>}
+          <div className="reviewEvidenceSnapshotGrid">
+            {reviewEvidenceSnapshot.map((item, index) => (
+              <div key={`${item.label}-${item.value}-${index}`}>
+                <span>{item.source ?? "点击时证据"}</span>
+                <strong>
+                  {item.label}：{item.value}
+                </strong>
+                {item.detail && <p>{item.detail}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="evidenceWorkbench diagnosisStep stepEvidence" aria-label="证据链">
         <div className="detailSectionHeader">
@@ -2820,12 +3879,13 @@ function SignalDiagnosis({
 
 function SignalPill({ signal }: { signal: AiSignal }) {
   const kind = signalQueueKind(signal);
-  const Icon = kind === "opportunity" ? Sparkles : kind === "data_quality" ? FileWarning : AlertTriangle;
+  const Icon = kind === "opportunity_expansion" ? Sparkles : kind === "data_quality" ? FileWarning : kind === "review" ? ClipboardList : AlertTriangle;
+  const tone = kind === "opportunity_expansion" ? "opportunity" : kind === "data_quality" ? "data_quality" : "anomaly";
 
   return (
-    <span className={`signalPill ${kind}`}>
+    <span className={`signalPill ${tone}`}>
       <Icon size={14} />
-      {signalCategoryLabel(signal)}
+      {signalQueueKindLabel(kind)}
     </span>
   );
 }
@@ -2835,6 +3895,19 @@ function MetricCell({ label, value }: { label: string; value: string }) {
     <div>
       <span>{label}</span>
       <strong>{value}</strong>
+    </div>
+  );
+}
+
+function MetricDecisionCell({ item }: { item: SignalMetricDecisionItem }) {
+  return (
+    <div className="metricDecisionCell">
+      <span>{item.label}</span>
+      <strong>{item.value}</strong>
+      <small>服务判断：{item.purpose}</small>
+      <small>能证明：{item.proves}</small>
+      <small>不能证明：{item.doesNotProve}</small>
+      <small>人工下一步：{item.nextManualStep}</small>
     </div>
   );
 }

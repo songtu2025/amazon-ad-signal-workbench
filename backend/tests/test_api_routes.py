@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
@@ -532,6 +533,8 @@ def test_manual_action_api_write_then_readback_uses_same_object_identity(monkeyp
                 "expected_product_scope_id": "parent_asin:B00K4W4AAA",
                 "expected_object_type": "advertised_product",
                 "expected_object_id": object_id,
+                "expected_can_auto_change_rules": False,
+                "expected_can_auto_execute_ads": False,
                 "evidence_snapshot": evidence_snapshot,
             },
         )
@@ -574,12 +577,26 @@ def test_manual_action_api_write_then_readback_uses_same_object_identity(monkeyp
         assert records.status_code == 200
         assert records.json() == []
 
+    ignore_signal = signals_by_id["sig-api-ignore"]
+    ignore_object_id = ignore_signal.evidence.primary_object.asin or ""
+    ignore_evidence_snapshot = [{"label": "人工确认判断依据", "value": "忽略本次但保留当时证据", "source": "manual_preflight"}]
+    preflight_evidence_by_object_id[ignore_object_id] = ignore_evidence_snapshot
     ignored = client.post(
         "/api/signals/sig-api-ignore/manual-actions?market_id=1",
-        json={"action_type": "ignore", "action_note": "隔离合同测试", "operator_name": "本地运营"},
+        json={
+            "action_type": "ignore",
+            "action_note": "隔离合同测试",
+            "operator_name": "本地运营",
+            "expected_object_type": "advertised_product",
+            "expected_object_id": ignore_object_id,
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
+            "evidence_snapshot": ignore_evidence_snapshot,
+        },
     )
     assert ignored.status_code == 200
     assert ignored.json()["object_id"] == "B00IGNOREME"
+    assert ignored.json()["evidence_snapshot"][0]["label"] == "人工确认判断依据"
 
     ignored_todos = client.get("/api/signals/sig-api-ignore/review-todos?market_id=1")
     assert ignored_todos.status_code == 200
@@ -598,7 +615,478 @@ def test_manual_action_api_write_then_readback_uses_same_object_identity(monkeyp
     assert "sig-api-ignore" not in {todo["signal_id"] for todo in global_todos}
 
 
-def test_manual_action_api_rejects_reviewable_action_without_evidence_snapshot(monkeypatch, tmp_path: Path) -> None:
+def test_review_todo_void_api_removes_legacy_todos_and_blocks_review_record(monkeypatch, tmp_path: Path) -> None:
+    action_root = tmp_path / "manual_actions"
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", action_root)
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path / "review_records")
+    action_root.mkdir(parents=True, exist_ok=True)
+    action_payload = {
+        "id": "manual-action-legacy-gap",
+        "signal_id": "sig-legacy-gap",
+        "action_type": "add_to_review",
+        "action_note": "历史旧动作缺证据快照",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-01T00:00:00+00:00",
+        "manual_status": "pending",
+        "snapshot_id": "snapshot-old",
+        "shop_id": "market:1",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "search_term:1:beach essentials",
+        "object_label": "beach essentials",
+        "evidence_snapshot": [],
+    }
+    (action_root / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+    client = TestClient(app)
+
+    before_response = client.get("/api/review-todos", params={"market_id": 1})
+    assert before_response.status_code == 200
+    assert [todo["review_window"] for todo in before_response.json()] == ["7d", "14d"]
+
+    void_response = client.post(
+        "/api/review-todos/void",
+        params={"market_id": 1},
+        json={
+            "action_id": "manual-action-legacy-gap",
+            "reason": "历史动作缺少 evidence_snapshot，不能进入 ReviewRecord。",
+            "operator_name": "本地运营",
+            "expected_object_type": "search_term",
+            "expected_object_id": "search_term:1:beach essentials",
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
+        },
+    )
+    assert void_response.status_code == 200
+    decision = void_response.json()
+    assert decision["decision_type"] == "void_legacy_missing_evidence"
+    assert decision["action_id"] == "manual-action-legacy-gap"
+    assert decision["review_window"] is None
+    assert decision["can_auto_change_rules"] is False
+    assert decision["can_auto_execute_ads"] is False
+
+    after_response = client.get("/api/review-todos", params={"market_id": 1})
+    assert after_response.status_code == 200
+    assert after_response.json() == []
+
+    monkeypatch.setattr(
+        routes,
+        "build_review_effect_result",
+        lambda *args, **kwargs: SimpleNamespace(status="ready"),
+    )
+    save_response = client.post(
+        "/api/signals/sig-legacy-gap/review-records",
+        params={"market_id": 1, "review_window": "7d"},
+        json={
+            "review_note": "不能保存已作废旧待办",
+            "reviewer_name": "本地运营",
+            "expected_action_id": "manual-action-legacy-gap",
+            "expected_object_type": "search_term",
+            "expected_object_id": "search_term:1:beach essentials",
+            "expected_review_window": "7d",
+            "expected_evidence_snapshot": [
+                {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组"},
+                {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
+                {"label": "搜索词边界", "value": "beach essentials 只说明同广告组搜索词上下文"},
+                {"label": "广告位边界", "value": "广告位证据缺口不能自动归因"},
+                {"label": "广告组合流判断", "value": "beach essentials 已串联广告组问题定位"},
+                {"label": "投放词证据", "value": "beach essentials / 1 个"},
+                {"label": "ABA 背景", "value": "ABA 排名 208"},
+                {"label": "证据缺口", "value": "缺少主推策略和投放词维护状态"},
+                {"label": "动作边界", "value": "只允许人工留痕和复盘"},
+            ],
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
+        },
+    )
+    assert save_response.status_code == 409
+    assert save_response.json()["detail"] == "review_record_preflight_mismatch"
+
+
+def test_review_record_rejects_evidence_snapshot_object_mismatch(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path / "manual_actions")
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path / "review_records")
+    monkeypatch.setattr(
+        routes,
+        "build_review_effect_result",
+        lambda *args, **kwargs: SimpleNamespace(status="ready"),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/signals/sig-opportunity-search-term-1-beach-essentials/review-records",
+        params={"market_id": 1, "review_window": "7d"},
+        json={
+            "review_note": "对象不一致不能保存",
+            "reviewer_name": "本地运营",
+            "expected_object_type": "search_term",
+            "expected_object_id": "search_term:1:beach essentials",
+            "expected_review_window": "7d",
+            "expected_evidence_snapshot": [
+                {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组"},
+                {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
+                {"label": "搜索词边界", "value": "boys sunglasses 只说明同广告组搜索词上下文"},
+                {"label": "广告位边界", "value": "广告位证据缺口不能自动归因"},
+                {"label": "广告组合流判断", "value": "boys sunglasses 已串联广告组问题定位"},
+                {"label": "投放词证据", "value": "boys sunglasses / 1 个"},
+                {"label": "ABA 背景", "value": "ABA 未命中"},
+                {"label": "证据缺口", "value": "缺少主推策略和投放词维护状态"},
+                {"label": "动作边界", "value": "只允许人工留痕和复盘"},
+                {"label": "人工确认判断依据", "value": "boys sunglasses 产生 3 单，可进入人工扩量复核"},
+            ],
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "review_record_evidence_snapshot_object_mismatch"
+
+
+def test_review_record_rejects_search_term_snapshot_without_action_boundary(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path / "manual_actions")
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path / "review_records")
+    monkeypatch.setattr(
+        routes,
+        "build_review_effect_result",
+        lambda *args, **kwargs: SimpleNamespace(status="ready"),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/signals/sig-opportunity-search-term-1-beach-essentials/review-records",
+        params={"market_id": 1, "review_window": "7d"},
+        json={
+            "review_note": "缺动作边界不能保存",
+            "reviewer_name": "本地运营",
+            "expected_object_type": "search_term",
+            "expected_object_id": "search_term:1:beach essentials",
+            "expected_review_window": "7d",
+            "expected_evidence_snapshot": [
+                {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组"},
+                {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
+                {"label": "搜索词边界", "value": "beach essentials 只说明同广告组搜索词上下文"},
+                {"label": "广告位边界", "value": "广告位证据缺口不能自动归因"},
+                {"label": "广告组合流判断", "value": "beach essentials 已串联广告组问题定位"},
+                {"label": "投放词证据", "value": "beach essentials / 1 个"},
+                {"label": "ABA 背景", "value": "ABA 排名 208"},
+                {"label": "证据缺口", "value": "缺少主推策略和投放词维护状态"},
+            ],
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "review_record_missing_action_boundary"
+
+
+def test_review_record_rejects_search_term_snapshot_without_ad_group_synthesis(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path / "manual_actions")
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path / "review_records")
+    monkeypatch.setattr(
+        routes,
+        "build_review_effect_result",
+        lambda *args, **kwargs: SimpleNamespace(status="ready"),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/signals/sig-opportunity-search-term-1-beach-essentials/review-records",
+        params={"market_id": 1, "review_window": "7d"},
+        json={
+            "review_note": "缺广告组问题定位不能保存",
+            "reviewer_name": "本地运营",
+            "expected_object_type": "search_term",
+            "expected_object_id": "search_term:1:beach essentials",
+            "expected_review_window": "7d",
+            "expected_evidence_snapshot": [
+                {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组"},
+                {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
+                {"label": "搜索词边界", "value": "beach essentials 只说明同广告组搜索词上下文"},
+                {"label": "广告位边界", "value": "广告位证据缺口不能自动归因"},
+                {"label": "投放词证据", "value": "beach essentials / 1 个"},
+                {"label": "ABA 背景", "value": "ABA 排名 208"},
+                {"label": "证据缺口", "value": "缺少主推策略和投放词维护状态"},
+                {"label": "动作边界", "value": "只允许人工留痕和复盘"},
+            ],
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "review_record_missing_ad_group_synthesis"
+
+
+def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapshot(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path / "manual_actions")
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path / "review_records")
+    client = TestClient(app)
+
+    preflight_response = client.get(
+        "/api/manual-action/preflight",
+        params={
+            "market_id": 1,
+            "top": 5,
+            "product_scope_id": "parent_asin:B00K4W4AAA",
+            "expected_object_id": "search_term:1:beach essentials",
+            "expected_object_type": "search_term",
+            "action_type": "add_to_review",
+            "expect_written": "false",
+        },
+    )
+
+    assert preflight_response.status_code == 200
+    preflight = preflight_response.json()
+    assert preflight["status"] == "ready_for_explicit_manual_write"
+    assert preflight["will_write"] is False
+    assert preflight["target"]["signal_id"] == "sig-opportunity-search-term-1-beach-essentials"
+    assert preflight["target"]["object_type"] == "search_term"
+    assert preflight["target"]["object_id"] == "search_term:1:beach essentials"
+    assert preflight["evidence_snapshot_preview"]["item_count"] == 22
+    assert preflight["evidence_snapshot_preview"]["items"][0]["label"] == "排查路径"
+    assert preflight["evidence_snapshot_preview"]["items"][1]["label"] == "AI 准入"
+    assert "搜索词 -> 广告活动 / 广告组" in preflight["evidence_snapshot_preview"]["items"][0]["value"]
+    assert "ready_for_manual_confirmation" in preflight["evidence_snapshot_preview"]["items"][1]["value"]
+    assert "不会自动执行广告动作" in preflight["evidence_snapshot_preview"]["items"][1]["detail"]
+    snapshot_items = preflight["evidence_snapshot_preview"]["items"]
+    assert {
+        "搜索词边界",
+        "广告位边界",
+        "广告组合流判断",
+        "人工确认判断依据",
+        "能证明的事实",
+        "不能证明的边界",
+        "人工下一步",
+        "诊断证据缺口",
+        "需要补证",
+        "投放词证据",
+        "ABA 背景",
+        "证据缺口",
+        "动作边界",
+    }.issubset(
+        {item["label"] for item in snapshot_items}
+    )
+    snapshot_by_label = {item["label"]: item for item in snapshot_items}
+    assert "beach essentials" in snapshot_by_label["广告组合流判断"]["value"]
+    assert "广告组级广告位 0 条 / 同广告活动广告位 6 条" in snapshot_by_label["广告组合流判断"]["value"]
+    assert "自动归因到单个广告 ASIN" in snapshot_by_label["广告组合流判断"]["detail"]
+    assert "不能自动归因到单个 ASIN" in snapshot_by_label["搜索词边界"]["detail"]
+    assert "广告位" in snapshot_by_label["广告位边界"]["value"]
+    assert "不能自动归因到单个搜索词或广告 ASIN" in snapshot_by_label["广告位边界"]["detail"]
+    assert "beach essentials" in snapshot_by_label["投放词证据"]["value"]
+    assert "ABA" in snapshot_by_label["ABA 背景"]["value"]
+    assert "不得自动加词" in snapshot_by_label["动作边界"]["detail"]
+
+    created_response = client.post(
+        f"/api/signals/{preflight['target']['signal_id']}/manual-actions",
+        params={"market_id": 1},
+        json={
+            "action_type": "add_to_review",
+            "action_note": "加入复盘",
+            "operator_name": "本地运营",
+            "expected_product_scope_id": "parent_asin:B00K4W4AAA",
+            "expected_object_type": preflight["target"]["object_type"],
+            "expected_object_id": preflight["target"]["object_id"],
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
+            "evidence_snapshot": preflight["evidence_snapshot_preview"]["items"],
+        },
+    )
+
+    assert created_response.status_code == 200
+    action = created_response.json()
+    assert action["signal_id"] == "sig-opportunity-search-term-1-beach-essentials"
+    assert action["object_type"] == "search_term"
+    assert action["object_id"] == "search_term:1:beach essentials"
+    assert action["shop_id"] == "market:1"
+    assert action["market_id"] == 1
+    assert action["action_note"] == "加入复盘"
+    assert action["operator_name"] == "本地运营"
+    assert len(action["evidence_snapshot"]) == 22
+    assert action["evidence_snapshot"][0]["label"] == "排查路径"
+    assert action["evidence_snapshot"][1]["label"] == "AI 准入"
+    assert {item["label"] for item in action["evidence_snapshot"]}.issuperset(
+        {"广告组合流判断", "搜索词边界", "广告位边界", "投放词证据", "ABA 背景", "证据缺口", "动作边界"}
+    )
+
+    todos_response = client.get(
+        f"/api/signals/{preflight['target']['signal_id']}/review-todos",
+        params={"market_id": 1},
+    )
+
+    assert todos_response.status_code == 200
+    todos = todos_response.json()
+    assert [todo["review_window"] for todo in todos] == ["7d", "14d"]
+    assert {todo["action_id"] for todo in todos} == {action["id"]}
+    assert {todo["object_id"] for todo in todos} == {"search_term:1:beach essentials"}
+    assert [len(todo["evidence_snapshot"]) for todo in todos] == [22, 22]
+    assert [todo["evidence_snapshot"][0]["label"] for todo in todos] == ["排查路径", "排查路径"]
+    assert [todo["evidence_snapshot"][1]["label"] for todo in todos] == ["AI 准入", "AI 准入"]
+    assert {todo["evidence_snapshot"][2]["label"] for todo in todos} == {"广告组合流判断"}
+    assert {todo["evidence_snapshot"][4]["label"] for todo in todos} == {"搜索词边界"}
+    assert {todo["evidence_snapshot"][5]["label"] for todo in todos} == {"广告位边界"}
+    assert {
+        "自动归因到单个广告 ASIN" in todo["evidence_snapshot"][2]["detail"] for todo in todos
+    } == {True}
+
+    post_write_response = client.get(
+        "/api/manual-action/preflight",
+        params={
+            "market_id": 1,
+            "top": 5,
+            "product_scope_id": "parent_asin:B00K4W4AAA",
+            "expected_object_id": action["object_id"],
+            "expected_object_type": action["object_type"],
+            "action_type": action["action_type"],
+            "expect_written": "true",
+        },
+    )
+
+    assert post_write_response.status_code == 200
+    post_write = post_write_response.json()
+    assert post_write["status"] == "post_write_verified"
+    assert post_write["post_write_checks"]["target_review_windows"] == ["7d", "14d"]
+    assert post_write["post_write_checks"]["target_manual_action_evidence_snapshot_counts"] == [
+        {
+            "signal_id": "sig-opportunity-search-term-1-beach-essentials",
+            "object_type": "search_term",
+            "object_id": "search_term:1:beach essentials",
+            "evidence_snapshot_count": 22,
+        }
+    ]
+    assert {
+        item["review_window"]: item["evidence_snapshot_count"]
+        for item in post_write["post_write_checks"]["target_review_todo_evidence_snapshot_counts"]
+    } == {"7d": 22, "14d": 22}
+    assert post_write["post_write_checks"]["target_review_record_count"] == 0
+    assert "不执行广告动作" in post_write["forbidden_effects"]
+
+
+def test_beach_essentials_manual_action_post_write_readback_distinguishes_action_types(
+    monkeypatch, tmp_path: Path
+) -> None:
+    client = TestClient(app)
+
+    for action_type, expected_review_todos in [
+        ("observe", 2),
+        ("handled", 2),
+        ("add_to_review", 2),
+        ("ignore", 0),
+    ]:
+        monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path / action_type / "manual_actions")
+        monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path / action_type / "review_records")
+
+        preflight_response = client.get(
+            "/api/manual-action/preflight",
+            params={
+                "market_id": 1,
+                "top": 5,
+                "product_scope_id": "parent_asin:B00K4W4AAA",
+                "expected_object_id": "search_term:1:beach essentials",
+                "expected_object_type": "search_term",
+                "action_type": action_type,
+                "expect_written": "false",
+            },
+        )
+        assert preflight_response.status_code == 200
+        preflight = preflight_response.json()
+        assert preflight["status"] == "ready_for_explicit_manual_write"
+        assert preflight["target"]["action_type"] == action_type
+        assert preflight["expected_after_write"]["target_manual_action_count"] == 1
+        assert preflight["expected_after_write"]["target_review_todo_count"] == expected_review_todos
+        assert preflight["evidence_snapshot_preview"]["items"][0]["label"] == "排查路径"
+        assert preflight["evidence_snapshot_preview"]["items"][1]["label"] == "AI 准入"
+        assert {
+            "广告组合流判断",
+            "人工确认判断依据",
+            "不能证明的边界",
+            "人工下一步",
+            "诊断证据缺口",
+            "需要补证",
+            "投放词证据",
+            "ABA 背景",
+            "证据缺口",
+            "动作边界",
+        }.issubset(
+            {item["label"] for item in preflight["evidence_snapshot_preview"]["items"]}
+        )
+
+        created_response = client.post(
+            f"/api/signals/{preflight['target']['signal_id']}/manual-actions",
+            params={"market_id": 1},
+            json={
+                "action_type": action_type,
+                "action_note": f"隔离读回测试：{action_type}",
+                "operator_name": "本地运营",
+                "expected_product_scope_id": "parent_asin:B00K4W4AAA",
+                "expected_object_type": preflight["target"]["object_type"],
+                "expected_object_id": preflight["target"]["object_id"],
+                "expected_can_auto_change_rules": False,
+                "expected_can_auto_execute_ads": False,
+                "evidence_snapshot": preflight["evidence_snapshot_preview"]["items"],
+            },
+        )
+        assert created_response.status_code == 200
+        action = created_response.json()
+        assert action["action_type"] == action_type
+        assert action["object_type"] == "search_term"
+        assert action["object_id"] == "search_term:1:beach essentials"
+        assert len(action["evidence_snapshot"]) == 22
+        assert {item["label"] for item in action["evidence_snapshot"]}.issuperset(
+            {"广告组合流判断", "搜索词边界", "广告位边界", "投放词证据", "ABA 背景", "证据缺口", "动作边界"}
+        )
+        snapshot_by_label = {item["label"]: item for item in action["evidence_snapshot"]}
+        assert "beach essentials" in snapshot_by_label["广告组合流判断"]["value"]
+        assert "广告组级广告位 0 条 / 同广告活动广告位 6 条" in snapshot_by_label["广告组合流判断"]["value"]
+        assert "自动归因到单个广告 ASIN" in snapshot_by_label["广告组合流判断"]["detail"]
+
+        todos_response = client.get(
+            f"/api/signals/{preflight['target']['signal_id']}/review-todos",
+            params={"market_id": 1},
+        )
+        assert todos_response.status_code == 200
+        todos = todos_response.json()
+        assert len(todos) == expected_review_todos
+        if expected_review_todos:
+            assert [todo["review_window"] for todo in todos] == ["7d", "14d"]
+            assert {todo["action_type"] for todo in todos} == {action_type}
+            assert {todo["action_id"] for todo in todos} == {action["id"]}
+            assert [len(todo["evidence_snapshot"]) for todo in todos] == [22, 22]
+            assert {todo["evidence_snapshot"][2]["label"] for todo in todos} == {"广告组合流判断"}
+
+        post_write_response = client.get(
+            "/api/manual-action/preflight",
+            params={
+                "market_id": 1,
+                "top": 5,
+                "product_scope_id": "parent_asin:B00K4W4AAA",
+                "expected_object_id": action["object_id"],
+                "expected_object_type": action["object_type"],
+                "action_type": action["action_type"],
+                "expect_written": "true",
+            },
+        )
+        assert post_write_response.status_code == 200
+        post_write = post_write_response.json()
+        assert post_write["status"] == "post_write_verified"
+        assert post_write["target"]["action_type"] == action_type
+        assert post_write["current_counts"]["target_manual_action_count"] == 1
+        assert post_write["current_counts"]["target_review_todo_count"] == expected_review_todos
+        assert post_write["expected_after_write"]["target_manual_action_count"] == 1
+        assert post_write["expected_after_write"]["target_review_todo_count"] == expected_review_todos
+        assert post_write["post_write_checks"]["target_review_record_count"] == 0
+        assert post_write["post_write_checks"]["target_review_windows"] == (
+            ["7d", "14d"] if expected_review_todos else []
+        )
+        assert [
+            item["evidence_snapshot_count"]
+            for item in post_write["post_write_checks"]["target_manual_action_evidence_snapshot_counts"]
+        ] == [22]
+        assert "不执行广告动作" in post_write["forbidden_effects"]
+
+
+def test_manual_action_api_rejects_action_without_evidence_snapshot(monkeypatch, tmp_path: Path) -> None:
     action_root = tmp_path / "manual_actions"
     review_root = tmp_path / "review_records"
     signals = [make_api_manual_action_signal("sig-api-add-to-review", "B07BS9754Q")]
@@ -607,13 +1095,21 @@ def test_manual_action_api_rejects_reviewable_action_without_evidence_snapshot(m
     monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", review_root)
     monkeypatch.setattr(routes, "_current_signals", lambda selected_market_id=None: signals)
 
-    response = TestClient(app).post(
-        "/api/signals/sig-api-add-to-review/manual-actions?market_id=1",
-        json={"action_type": "add_to_review", "action_note": "空证据不应进入复盘", "operator_name": "本地运营"},
-    )
+    client = TestClient(app)
+    for action_type in ("add_to_review", "ignore"):
+        response = client.post(
+            "/api/signals/sig-api-add-to-review/manual-actions?market_id=1",
+            json={
+                "action_type": action_type,
+                "action_note": "空证据不应进入人工留痕",
+                "operator_name": "本地运营",
+                "expected_can_auto_change_rules": False,
+                "expected_can_auto_execute_ads": False,
+            },
+        )
 
-    assert response.status_code == 409
-    assert response.json()["detail"] == "manual_action_missing_evidence_snapshot"
+        assert response.status_code == 409
+        assert response.json()["detail"] == "manual_action_missing_evidence_snapshot"
     assert not (action_root / "manual_actions.jsonl").exists()
 
 
@@ -637,7 +1133,7 @@ def test_manual_action_api_rejects_evidence_snapshot_that_does_not_match_preflig
             "target": {
                 "object_type": "advertised_product",
                 "object_id": "B07BS9754Q",
-                "action_type": "add_to_review",
+                "action_type": str(kwargs.get("expected_action_type") or "add_to_review"),
             },
             "evidence_snapshot_preview": {
                 "status": "ready",
@@ -654,21 +1150,25 @@ def test_manual_action_api_rejects_evidence_snapshot_that_does_not_match_preflig
     monkeypatch.setattr(routes, "_current_signals", lambda selected_market_id=None: signals)
     monkeypatch.setattr(routes, "build_manual_action_preflight_payload", fake_build_manual_action_preflight_payload)
 
-    response = TestClient(app).post(
-        "/api/signals/sig-api-add-to-review/manual-actions?market_id=1",
-        json={
-            "action_type": "add_to_review",
-            "action_note": "加入复盘",
-            "operator_name": "本地运营",
-            "expected_product_scope_id": "parent_asin:B00K4W4AAA",
-            "expected_object_type": "advertised_product",
-            "expected_object_id": "B07BS9754Q",
-            "evidence_snapshot": [{"label": "前端旧证据", "value": "不应写入复盘待办", "source": "stale_frontend"}],
-        },
-    )
+    client = TestClient(app)
+    for action_type in ("add_to_review", "ignore"):
+        response = client.post(
+            "/api/signals/sig-api-add-to-review/manual-actions?market_id=1",
+            json={
+                "action_type": action_type,
+                "action_note": "加入复盘" if action_type == "add_to_review" else "忽略本次",
+                "operator_name": "本地运营",
+                "expected_product_scope_id": "parent_asin:B00K4W4AAA",
+                "expected_object_type": "advertised_product",
+                "expected_object_id": "B07BS9754Q",
+                "expected_can_auto_change_rules": False,
+                "expected_can_auto_execute_ads": False,
+                "evidence_snapshot": [{"label": "前端旧证据", "value": "不应写入人工留痕", "source": "stale_frontend"}],
+            },
+        )
 
-    assert response.status_code == 409
-    assert response.json()["detail"] == "manual_action_evidence_snapshot_mismatch"
+        assert response.status_code == 409
+        assert response.json()["detail"] == "manual_action_evidence_snapshot_mismatch"
     assert not (action_root / "manual_actions.jsonl").exists()
 
 
@@ -741,6 +1241,8 @@ def test_search_term_manual_action_api_readback_preserves_aba_review_context(mon
             "expected_product_scope_id": "parent_asin:B00K4W4AAA",
             "expected_object_type": "search_term",
             "expected_object_id": old_object_id,
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
             "evidence_snapshot": [
                 {**item, "value": "beach essentials for kids"} if item["label"] == "搜索词" else item for item in evidence_snapshot
             ],
@@ -755,6 +1257,8 @@ def test_search_term_manual_action_api_readback_preserves_aba_review_context(mon
             "expected_product_scope_id": "parent_asin:B00K4W4AAA",
             "expected_object_type": "search_term",
             "expected_object_id": current_object_id,
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
             "evidence_snapshot": evidence_snapshot,
         },
     )
@@ -763,7 +1267,7 @@ def test_search_term_manual_action_api_readback_preserves_aba_review_context(mon
     assert current_created.status_code == 200
     current_action = current_created.json()
     assert current_action["object_type"] == "search_term"
-    assert current_action["object_id"] == "gerpgo_market_1_20260616_120443:beach essentials for toddlers 1-3"
+    assert current_action["object_id"] == "search_term:1:beach essentials for toddlers 1-3"
     assert [item["label"] for item in current_action["evidence_snapshot"]] == [
         "语义组",
         "搜索词",
@@ -865,6 +1369,38 @@ def test_signal_triage_rule_feedback_after_saving_ready_review_record(monkeypatc
     action_root = tmp_path / "manual_actions"
     review_root = tmp_path / "review_records"
     action_root.mkdir(parents=True)
+    evidence_snapshot = [
+        {
+            "label": "排查路径",
+            "value": "Parent 经营盘子 -> 广告 ASIN -> 广告组 -> 投放词 / 搜索词 / 广告位",
+            "detail": "保存复盘前必须回看原始广告诊断路径。",
+            "source": "business_rule",
+        },
+        {
+            "label": "AI 准入",
+            "value": "可进入人工确认 / ready_for_manual_confirmation / 候选 1 个 / 允许人工留痕",
+            "detail": "准入只证明允许人工留痕，不代表系统会自动执行广告动作。",
+            "source": "actionability_status",
+        },
+        {
+            "label": "搜索词边界",
+            "value": "搜索词只说明同广告组上下文，不能自动归因到单个广告 ASIN。",
+            "detail": "保存复盘前必须确认未自动加词、否词或调价。",
+            "source": "search_term_metrics",
+        },
+        {
+            "label": "广告位边界",
+            "value": "广告组级广告位 0 条 / 同广告活动广告位 4 条。",
+            "detail": "活动级广告位只能作背景，不能替代广告组级证据。",
+            "source": "placement_metrics",
+        },
+        {
+            "label": "广告商品覆盖",
+            "value": "覆盖 advertised_product B00READYASIN 的处理前后指标",
+            "detail": "用于验证规则反馈只来自当前广告商品和当前复盘窗口。",
+            "source": "ad_product_daily_metrics",
+        },
+    ]
     action_payload = {
         "id": "manual-action-ready-review",
         "signal_id": "sig-ready-rule-feedback",
@@ -879,6 +1415,7 @@ def test_signal_triage_rule_feedback_after_saving_ready_review_record(monkeypatc
         "object_type": "advertised_product",
         "object_id": "B00READYASIN",
         "object_label": "B00READYASIN",
+        "evidence_snapshot": evidence_snapshot,
     }
     (action_root / "manual_actions.jsonl").write_text(
         json.dumps(action_payload, ensure_ascii=False) + "\n",
@@ -957,6 +1494,9 @@ def test_signal_triage_rule_feedback_after_saving_ready_review_record(monkeypatc
             "expected_object_type": "advertised_product",
             "expected_object_id": "B00READYASIN",
             "expected_review_window": "7d",
+            "expected_evidence_snapshot": evidence_snapshot,
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
         },
     )
     assert saved.status_code == 200
@@ -964,12 +1504,19 @@ def test_signal_triage_rule_feedback_after_saving_ready_review_record(monkeypatc
     assert saved_record["signal_id"] == "sig-ready-rule-feedback"
     assert saved_record["object_id"] == "B00READYASIN"
     assert saved_record["result"] == "improved"
+    assert saved_record["evidence_snapshot"][0]["label"] == "排查路径"
+    assert saved_record["evidence_snapshot"][1]["label"] == "AI 准入"
 
     after_triage = client.get("/api/signal-triage?market_id=1")
     assert after_triage.status_code == 200
     after_review_status = after_triage.json()["review_status"]
     assert after_review_status["review_record_count"] == 1
     assert after_review_status["review_feedback"]["total"] == 1
+    feedback_record = after_review_status["review_feedback"]["records"][0]
+    assert feedback_record["evidence_snapshot_count"] == 5
+    assert feedback_record["diagnosis_snapshot"]["label"] == "排查路径"
+    assert feedback_record["ai_admission_snapshot"]["label"] == "AI 准入"
+    assert feedback_record["ai_admission_snapshot"]["source"] == "actionability_status"
     assert after_review_status["rule_improvement"]["status"] == "saved_feedback"
     assert after_review_status["rule_improvement"]["can_auto_execute_ads"] is False
 
@@ -1206,6 +1753,70 @@ def test_signal_triage_route_returns_readonly_summary(monkeypatch) -> None:
     assert "不要自动执行广告动作" in payload["next_action"]
     assert "access_token" not in str(payload).lower()
     assert "app_key" not in str(payload).lower()
+
+
+def test_review_evidence_repair_route_returns_readonly_preview(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_build_review_evidence_repair_payload(
+        *,
+        selected_market_id=None,
+        product_scope_id=None,
+        top=5,
+        action_root=None,
+        review_root=None,
+    ):
+        captured.update(
+            {
+                "selected_market_id": selected_market_id,
+                "product_scope_id": product_scope_id,
+                "top": top,
+                "action_root": action_root,
+                "review_root": review_root,
+            }
+        )
+        return {
+            "status": "blocked_by_legacy_evidence_gap",
+            "will_write": False,
+            "requires_explicit_authorization": True,
+            "counts": {
+                "manual_actions": 17,
+                "review_todos": 10,
+                "legacy_action_gap_count": 5,
+                "preview_rebuildable_count": 0,
+                "recreatable_count": 0,
+            },
+            "items": [
+                {
+                    "action_id": "manual-action-legacy",
+                    "object_type": "advertised_product",
+                    "object_id": "B016EXMVZS",
+                    "review_windows": ["7d", "14d"],
+                    "can_patch_legacy_record": False,
+                    "will_write": False,
+                }
+            ],
+            "forbidden_effects": ["不保存 review_records", "不执行广告动作"],
+            "next_action": "先人工确认作废旧待办或补录策略。",
+        }
+
+    monkeypatch.setattr(routes, "build_review_evidence_repair_payload", fake_build_review_evidence_repair_payload, raising=False)
+
+    response = TestClient(app).get("/api/review-evidence-repair?market_id=1&top=3&product_scope_id=parent_asin%3AB00K4W4AAA")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert captured == {
+        "selected_market_id": 1,
+        "product_scope_id": "parent_asin:B00K4W4AAA",
+        "top": 3,
+        "action_root": routes.MANUAL_ACTION_ROOT,
+        "review_root": routes.REVIEW_RECORD_ROOT,
+    }
+    assert payload["status"] == "blocked_by_legacy_evidence_gap"
+    assert payload["will_write"] is False
+    assert payload["items"][0]["can_patch_legacy_record"] is False
+    assert "不执行广告动作" in payload["forbidden_effects"]
 
 
 def test_manual_action_preflight_route_returns_readonly_validation(monkeypatch) -> None:

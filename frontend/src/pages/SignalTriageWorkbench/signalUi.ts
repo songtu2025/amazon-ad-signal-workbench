@@ -10,8 +10,16 @@ export interface SignalForUi {
   review_result?: string | null;
 }
 
-export type SignalQueueKind = SignalForUi["signal_type"] | "data_quality";
+export type SignalQueueKind = "spend_waste" | "opportunity_expansion" | "structure_boundary" | "data_quality" | "review";
 export type SignalStatusOverrideMap = Record<string, SignalForUi["status"]>;
+
+const signalQueueKindLabels: Record<SignalQueueKind, string> = {
+  spend_waste: "花费浪费",
+  opportunity_expansion: "机会扩量",
+  structure_boundary: "投放结构",
+  data_quality: "数据质量",
+  review: "复盘",
+};
 
 export interface SignalTriageRationale {
   queueKind: SignalQueueKind;
@@ -78,6 +86,7 @@ export interface SignalQueueMetaInput extends SignalForUi {
 export interface SignalQueueMeta {
   primary: string[];
   secondary: string;
+  decision: string;
 }
 
 export interface SignalQueueObjectStatusTodo {
@@ -240,6 +249,39 @@ export interface RecommendedManualActionCandidate<T extends ManualActionCandidat
   manualActionPreview: RecommendedManualActionPreview;
 }
 
+export interface ManualActionQueueTargetSwitchSummary {
+  title: string;
+  tone: "blocked" | "ready" | "waiting";
+  primary: string;
+  diagnosisObject: string;
+  writeTarget: string;
+  boundary: string;
+}
+
+export interface ManualActionRouteSplitReadinessForUi {
+  tone?: "ready" | "blocked" | "waiting" | string;
+  target?: string;
+  currentState?: string;
+  authorizedResult?: string;
+  evidence?: string;
+  boundary?: string;
+}
+
+export interface ManualActionRouteSplitRow {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "saved" | "ready" | "waiting" | "blocked";
+}
+
+export interface ManualActionRouteSplitSummary {
+  title: string;
+  tone: "blocked" | "ready" | "waiting";
+  primary: string;
+  rows: ManualActionRouteSplitRow[];
+  boundary: string;
+}
+
 interface SelectedSignalManualActionFallback extends SignalForUi {
   shop_id?: string | null;
   shop_name?: string | null;
@@ -263,10 +305,15 @@ export interface RuleFeedbackRecordForUi {
     after?: string | null;
   } | null;
   review_note?: string | null;
+  evidence_snapshot_count?: number | null;
+  evidence_snapshot?: RuleFeedbackEvidenceSnapshotForUi[];
+  diagnosis_snapshot?: RuleFeedbackEvidenceSnapshotForUi | null;
+  ai_admission_snapshot?: RuleFeedbackEvidenceSnapshotForUi | null;
   evidence_drilldown?: {
     summary?: string | null;
     boundary?: string | null;
   } | null;
+  diagnosis_path?: RuleFeedbackDiagnosisPathForUi | null;
   sort_reason?: string | null;
   action_boundary?: RuleFeedbackActionBoundaryForUi | null;
   evidence_groups?: {
@@ -282,13 +329,35 @@ export interface RuleFeedbackCandidateGroupForUi {
   group_label?: string | null;
   aba_reference_term?: string | null;
   aba_period?: string | null;
+  aba_match_boundary?: string | null;
   total?: number | null;
   by_result?: Record<string, number>;
   priority_result?: string | null;
   sample_review_record_ids?: string[];
   sample_action_ids?: string[];
   recommendation?: string | null;
+  action_boundary?: RuleFeedbackActionBoundaryForUi | null;
   boundary?: string | null;
+}
+
+export interface RuleFeedbackDiagnosisPathForUi {
+  path?: string | null;
+  steps?: {
+    step_id?: string | null;
+    label?: string | null;
+    value?: string | null;
+    detail?: string | null;
+    source?: string | null;
+  }[];
+  boundary?: string | null;
+  next_manual_step?: string | null;
+}
+
+export interface RuleFeedbackEvidenceSnapshotForUi {
+  label?: string | null;
+  value?: string | null;
+  detail?: string | null;
+  source?: string | null;
 }
 
 export interface RuleFeedbackActionBoundaryForUi {
@@ -427,6 +496,49 @@ interface ProductScopeDrilldownForUi {
   boundary?: string | null;
 }
 
+export interface SignalTriageCandidateForUi {
+  signal_id?: string | null;
+  signal_type?: string | null;
+  signal_category?: string | null;
+  priority?: string | null;
+  confidence?: string | null;
+  severity?: number | null;
+  shop_id?: string | null;
+  shop_name?: string | null;
+  market_id?: number | null;
+  marketplace?: string | null;
+  object_type?: string | null;
+  object_id?: string | null;
+  stable_object_id?: string | null;
+  object_label?: string | null;
+  summary?: string | null;
+  uncertainty?: string | null;
+  evidence_count?: number | null;
+  freshness_status?: string | null;
+  problem_type?: string | null;
+  evidence_strength?: string | null;
+  attribution_boundary?: string | null;
+  review_path?: string | null;
+  manual_action_preview?: {
+    will_write?: boolean;
+    signal_id?: string | null;
+    action_type?: string | null;
+    object_type?: string | null;
+    object_id?: string | null;
+    object_label?: string | null;
+    shop_id?: string | null;
+    shop_name?: string | null;
+    market_id?: number | null;
+    review_windows?: string[];
+    preflight_checklist?: {
+      check_id?: string | null;
+      label: string;
+      evidence: string;
+      required?: boolean | null;
+    }[];
+  } | null;
+}
+
 export interface SignalTriageSummaryForUi {
   actionability_status?: {
     status?: string | null;
@@ -457,50 +569,8 @@ export interface SignalTriageSummaryForUi {
     count?: number | null;
     top_candidates?: unknown[];
   }[];
-  recommended_candidate?: {
-    signal_id?: string | null;
-    stable_object_id?: string | null;
-    object_label?: string | null;
-    problem_type?: string | null;
-    evidence_strength?: string | null;
-    attribution_boundary?: string | null;
-    uncertainty?: string | null;
-    review_path?: string | null;
-  } | null;
-  next_unhandled_candidate?: {
-    signal_id?: string | null;
-    shop_id?: string | null;
-    shop_name?: string | null;
-    market_id?: number | null;
-    marketplace?: string | null;
-    object_type?: string | null;
-    object_id?: string | null;
-    stable_object_id?: string | null;
-    object_label?: string | null;
-    problem_type?: string | null;
-    evidence_strength?: string | null;
-    attribution_boundary?: string | null;
-    uncertainty?: string | null;
-    review_path?: string | null;
-    manual_action_preview?: {
-      will_write?: boolean;
-      signal_id?: string | null;
-      action_type?: string | null;
-      object_type?: string | null;
-      object_id?: string | null;
-      object_label?: string | null;
-      shop_id?: string | null;
-      shop_name?: string | null;
-      market_id?: number | null;
-      review_windows?: string[];
-      preflight_checklist?: {
-        check_id?: string | null;
-        label: string;
-        evidence: string;
-        required?: boolean | null;
-      }[];
-    } | null;
-  } | null;
+  recommended_candidate?: SignalTriageCandidateForUi | null;
+  next_unhandled_candidate?: SignalTriageCandidateForUi | null;
   recommended_evidence_drilldown?: {
     object_label?: string | null;
     direct_ad_product_row_count?: number | null;
@@ -762,7 +832,33 @@ export interface SignalTriageSummaryForUi {
     boundary?: string | null;
     summary?: string | null;
   } | null;
+  diagnosis_contract?: {
+    status?: string | null;
+    signal_id?: string | null;
+    object_type?: string | null;
+    object_id?: string | null;
+    object_label?: string | null;
+    sections?: {
+      section_id?: string | null;
+      title?: string | null;
+      business_question?: string | null;
+      object_grain?: string | null;
+      metrics?: {
+        name?: string | null;
+        value?: string | null;
+        purpose?: string | null;
+      }[] | null;
+      current_judgement?: string | null;
+      proves?: string | null;
+      does_not_prove?: string | null;
+      evidence_gap?: string | null;
+      required_evidence?: string | null;
+      next_manual_step?: string | null;
+    }[] | null;
+  } | null;
   next_unhandled_evidence_drilldown?: SignalTriageSummaryForUi["recommended_evidence_drilldown"];
+  recommended_diagnosis_contract?: SignalTriageSummaryForUi["diagnosis_contract"];
+  next_unhandled_diagnosis_contract?: SignalTriageSummaryForUi["diagnosis_contract"];
   recommendation_reason?: string | null;
   manual_action_preview?: {
     will_write?: boolean;
@@ -800,6 +896,7 @@ export interface SignalTriageSummaryForUi {
     next_action?: string | null;
   } | null;
   review_status?: {
+    status?: string | null;
     manual_action_count?: number;
     review_record_count?: number;
     ready_count?: number;
@@ -807,8 +904,11 @@ export interface SignalTriageSummaryForUi {
     review_wait_summary?: {
       status?: string | null;
       earliest_due_date?: string | null;
+      next_review_window?: string | null;
       next_object_type?: string | null;
+      next_object_id?: string | null;
       next_object_label?: string | null;
+      gap_reasons?: string[] | null;
       message?: string | null;
       next_step?: string | null;
       forbidden_actions?: string[] | null;
@@ -874,11 +974,24 @@ export interface ReviewIdentityAuditForUi {
   missing_action_id_count?: number | null;
   missing_object_id_count?: number | null;
   missing_review_window_count?: number | null;
+  missing_evidence_snapshot_count?: number | null;
+  missing_diagnosis_path_count?: number | null;
+  missing_ai_admission_count?: number | null;
+  missing_search_term_boundary_count?: number | null;
+  missing_placement_boundary_count?: number | null;
+  missing_targeting_evidence_count?: number | null;
+  missing_ad_group_synthesis_count?: number | null;
+  missing_aba_context_count?: number | null;
+  missing_evidence_gap_count?: number | null;
+  missing_action_boundary_count?: number | null;
+  missing_object_reference_count?: number | null;
   unstable_object_id_count?: number | null;
   ready_review_count?: number | null;
   can_save_review_records_now?: boolean | null;
   earliest_due_date?: string | null;
+  earliest_any_due_date?: string | null;
   earliest_metric_due_date?: string | null;
+  date_boundary?: string | null;
   issues?: unknown[] | null;
   readback_keys?: unknown[] | null;
 }
@@ -891,15 +1004,108 @@ export interface ReviewIdentityAuditSummary {
   items: ReviewReadinessGateItem[];
 }
 
+export interface ReviewQueueSeparationSummary {
+  title: string;
+  primary: string;
+  boundary: string;
+  items: ReviewReadinessGateItem[];
+}
+
 export interface ReviewReadinessGateSummary {
   title: string;
-  status: "empty" | "waiting" | "ready";
+  status: "empty" | "waiting" | "blocked" | "ready";
   primary: string;
   detail: string;
   boundary: string;
   items: ReviewReadinessGateItem[];
   nextSteps: ReviewReadinessNextStep[];
   identityAudit?: ReviewIdentityAuditSummary | null;
+  queueSeparation?: ReviewQueueSeparationSummary | null;
+}
+
+export interface ReviewEvidenceRepairPayloadForUi {
+  status?: string | null;
+  will_write?: boolean | null;
+  requires_explicit_authorization?: boolean | null;
+  readiness_status?: string | null;
+  rule_improvement_status?: string | null;
+  counts?: {
+    manual_actions?: number | null;
+    review_todos?: number | null;
+    repair_issue_count?: number | null;
+    legacy_action_gap_count?: number | null;
+    preview_rebuildable_count?: number | null;
+    recreatable_count?: number | null;
+  } | null;
+  items?: {
+    action_id?: string | null;
+    object_type?: string | null;
+    object_id?: string | null;
+    object_label?: string | null;
+    review_windows?: string[] | null;
+    issue_types?: string[] | null;
+    todo_count?: number | null;
+    current_preflight?: {
+      status?: string | null;
+      target_matches_legacy?: boolean | null;
+      evidence_snapshot_item_count?: number | null;
+      has_diagnosis_path?: boolean | null;
+      has_ai_admission?: boolean | null;
+      has_search_term_boundary?: boolean | null;
+      has_placement_boundary?: boolean | null;
+      has_targeting_evidence?: boolean | null;
+      has_ad_group_synthesis?: boolean | null;
+      has_aba_context?: boolean | null;
+      has_evidence_gap?: boolean | null;
+      has_action_boundary?: boolean | null;
+      has_object_reference?: boolean | null;
+      missing_required_labels?: string[] | null;
+    } | null;
+    can_patch_legacy_record?: boolean | null;
+    can_rebuild_evidence_preview?: boolean | null;
+    can_recreate_from_current_signal?: boolean | null;
+    patch_policy?: string | null;
+    void_plan?: {
+      status?: string | null;
+      action_id?: string | null;
+      review_window?: string | null;
+      review_windows?: string[] | null;
+      expected_object_type?: string | null;
+      expected_object_id?: string | null;
+      required_authorization_code?: string | null;
+      dry_run_command?: string | null;
+      execute_command?: string | null;
+      boundary?: string | null;
+    } | null;
+    recommended_next_step?: string | null;
+    will_write?: boolean | null;
+  }[] | null;
+  forbidden_effects?: string[] | null;
+  next_action?: string | null;
+}
+
+export interface ReviewEvidenceRepairSummary {
+  title: string;
+  status: "ready" | "blocked";
+  primary: string;
+  detail: string;
+  boundary: string;
+  items: ReviewReadinessGateItem[];
+  nextSteps: ReviewReadinessNextStep[];
+  sampleItems: string[];
+  voidPlanItems: ReviewEvidenceRepairVoidPlanSummary[];
+}
+
+export interface ReviewEvidenceRepairVoidPlanSummary {
+  actionId: string;
+  statusText: string;
+  objectText: string;
+  reviewWindows: string;
+  authorizationCode: string;
+  dryRunCommand: string;
+  afterVoidText: string;
+  recreateText: string;
+  boundary: string;
 }
 
 export interface RuleFeedbackPrioritySummary {
@@ -932,6 +1138,7 @@ export interface ProductScopeGroupOverview {
   summary: string;
   adAsinLabels: string[];
   adAsinRows: ProductGroupAdAsinRow[];
+  adCoverageDecision: ProductScopeAdCoverageDecision;
   relationItems: ProductScopeRelationItem[];
   strategyNotes: string[];
   boundaryNotes: string[];
@@ -943,7 +1150,9 @@ export interface ProductScopeFirstScreenSummary {
   mvpStatus: ProductScopeMvpStatus;
   factItems: ProductScopeRelationItem[];
   adAsinRows: ProductGroupAdAsinRow[];
+  adCoverageDecision: ProductScopeAdCoverageDecision;
   landingGates: ProductScopeLandingGateItem[];
+  pathSummary: string;
   pathSteps: ProductScopeFirstScreenPathStep[];
   boundary: string;
 }
@@ -975,6 +1184,22 @@ export interface ProductScopeRelationItem {
   tone: "primary" | "direct" | "strategy" | "context";
 }
 
+export interface ProductGroupAdAsinDecision {
+  statusLabel: string;
+  reason: string;
+  proves: string;
+  doesNotProve: string;
+  nextFocus: string;
+}
+
+export interface ProductScopeAdCoverageDecision {
+  statusLabel: string;
+  summary: string;
+  proves: string;
+  doesNotProve: string;
+  nextManualStep: string;
+}
+
 export interface ProductGroupAdAsinRow {
   scopeId: string;
   asin: string;
@@ -983,6 +1208,7 @@ export interface ProductGroupAdAsinRow {
   sales: number;
   acos: number | null;
   strategyNote: string | null;
+  decision: ProductGroupAdAsinDecision;
 }
 
 export interface ProductScopeSelectionSummary {
@@ -1155,8 +1381,26 @@ export function applySignalStatusOverrides<T extends SignalForUi>(signals: T[], 
 }
 
 export function signalQueueKind(signal: SignalForUi): SignalQueueKind {
-  if (signal.signal_category === "data_quality") return "data_quality";
-  return signal.signal_type;
+  const category = signal.signal_category.toLowerCase();
+  if (category.includes("data_quality")) return "data_quality";
+  if (category.includes("review")) return "review";
+  if (
+    category.includes("ad_group") ||
+    category.includes("structure") ||
+    category.includes("placement") ||
+    signal.object_type === "ad_group" ||
+    signal.object_type === "placement"
+  ) {
+    return "structure_boundary";
+  }
+  if (signal.signal_type === "opportunity" || category.includes("opportunity") || category.includes("aba")) {
+    return "opportunity_expansion";
+  }
+  return "spend_waste";
+}
+
+export function signalQueueKindLabel(kind: SignalQueueKind): string {
+  return signalQueueKindLabels[kind];
 }
 
 function sourceParentAsin(row: Record<string, unknown>): string {
@@ -1225,10 +1469,10 @@ export function mergeBackendTriageSignals<T extends ProductScopedSignalForUi>(
 
   backendTriageSignalIds(summary).forEach((signalId) => {
     if (seen.has(signalId)) return;
-    const signal = allSignals.find((item) => item.id === signalId);
+    const signal = allSignals.find((item) => item.id === signalId) ?? buildBackendTriageFallbackSignal(summary, signalId);
     if (!signal) return;
     seen.add(signal.id);
-    merged.push(signal);
+    merged.push(signal as T);
   });
 
   return merged;
@@ -1256,6 +1500,213 @@ function backendTriageSignalIds(summary: SignalTriageSummaryForUi | null | undef
   });
 
   return Array.from(ids);
+}
+
+type SignalTriageEvidenceDrilldownForUi = SignalTriageSummaryForUi["recommended_evidence_drilldown"];
+
+interface BackendTriageCandidateEntry {
+  candidate: SignalTriageCandidateForUi;
+  drilldown?: SignalTriageEvidenceDrilldownForUi | null;
+}
+
+const knownSignalObjectTypes: NonNullable<SignalForUi["object_type"]>[] = [
+  "ad_group",
+  "sales_product",
+  "advertised_product",
+  "search_term",
+  "placement",
+  "search_intent",
+  "cross",
+];
+
+function buildBackendTriageFallbackSignal(
+  summary: SignalTriageSummaryForUi | null | undefined,
+  signalId: string,
+): ProductScopedSignalForUi | null {
+  const entry = backendTriageCandidateEntries(summary).find(({ candidate }) => triageCandidateMatchesSignalId(candidate, signalId));
+  if (!entry) return null;
+
+  const candidate = entry.candidate;
+  const preview = candidate.manual_action_preview;
+  const objectType = normalizeSignalObjectType(preview?.object_type || candidate.object_type, candidate.signal_category);
+  const objectId =
+    stringValue(preview?.object_id) ||
+    stringValue(candidate.stable_object_id) ||
+    stringValue(candidate.object_id) ||
+    signalId;
+  const objectLabel =
+    stringValue(preview?.object_label) ||
+    stringValue(candidate.object_label) ||
+    stringValue(candidate.stable_object_id) ||
+    stringValue(candidate.object_id) ||
+    signalId;
+  const confidence = normalizeSignalConfidence(candidate.confidence || candidate.evidence_strength);
+  const severity = numericValue(candidate.severity) ?? (confidence === "high" ? 4 : 3);
+  const signalCategory = stringValue(candidate.signal_category) || defaultSignalCategoryForObjectType(objectType);
+  const summaryText = stringValue(candidate.summary) || `${objectLabel} 需要进入人工复核`;
+  const whyText =
+    stringValue(candidate.problem_type) ||
+    stringValue(candidate.attribution_boundary) ||
+    "后端 signal-triage 已识别为可人工处理候选，但 /api/signals 暂无同 ID 队列记录。";
+  const primaryObject: PrimaryObjectForUi = {
+    object_type: objectType,
+    object_id: objectId,
+    label: objectLabel,
+  };
+
+  if (objectType === "search_term") primaryObject.search_term = objectLabel;
+  if (objectType === "placement") primaryObject.placement = objectLabel;
+  if (objectType === "advertised_product" || objectType === "sales_product") {
+    primaryObject.asin = stringValue(candidate.stable_object_id) || objectId;
+  }
+
+  return {
+    id: signalId,
+    signal_type: normalizeSignalType(candidate.signal_type),
+    signal_category: signalCategory,
+    priority: normalizeSignalPriority(candidate.priority),
+    confidence,
+    shop_id: stringValue(preview?.shop_id) || stringValue(candidate.shop_id) || null,
+    shop_name: stringValue(preview?.shop_name) || stringValue(candidate.shop_name) || null,
+    market_id: preview?.market_id ?? candidate.market_id ?? null,
+    marketplace: stringValue(candidate.marketplace) || null,
+    object_type: objectType,
+    severity,
+    summary: summaryText,
+    why: whyText,
+    evidence: {
+      period_days: 30,
+      primary_object: primaryObject,
+      metrics: triageMetricSnapshot(entry.drilldown),
+      comparison: [],
+      facts: triageFallbackFacts(candidate),
+      source_rows: [],
+    },
+    evidence_count: numericValue(candidate.evidence_count) ?? 1,
+    data_sources: [
+      {
+        source_type: "signal_triage",
+        source_name: "/api/signal-triage",
+      },
+    ],
+    freshness_status: normalizeFreshnessStatus(candidate.freshness_status),
+    detected_at: "",
+    uncertainty: stringValue(candidate.uncertainty) || stringValue(candidate.attribution_boundary),
+    suggested_action: {
+      action_type: stringValue(preview?.action_type) || "add_to_review",
+      title: "加入人工复盘",
+      description: "只生成可人工确认的处理入口，不自动执行广告动作。",
+      requires_manual_confirmation: true,
+    },
+    risk: stringValue(candidate.attribution_boundary) || "该候选来自后端分诊摘要，仍需人工核对对象边界和证据链。",
+    status: "pending",
+    manual_status: "pending",
+    review_result: null,
+    tags: [candidate.problem_type, candidate.evidence_strength, candidate.review_path].map(stringValue).filter(Boolean),
+  } as ProductScopedSignalForUi;
+}
+
+function backendTriageCandidateEntries(summary: SignalTriageSummaryForUi | null | undefined): BackendTriageCandidateEntry[] {
+  const entries: BackendTriageCandidateEntry[] = [];
+  if (summary?.recommended_candidate) {
+    entries.push({
+      candidate: {
+        ...summary.recommended_candidate,
+        manual_action_preview: summary.recommended_candidate.manual_action_preview ?? summary.manual_action_preview ?? null,
+      },
+      drilldown: summary.recommended_evidence_drilldown,
+    });
+  }
+  if (summary?.next_unhandled_candidate) {
+    entries.push({
+      candidate: summary.next_unhandled_candidate,
+      drilldown: summary.next_unhandled_evidence_drilldown,
+    });
+  }
+  (summary?.candidate_layers ?? []).forEach((layer) => {
+    (layer.top_candidates ?? []).forEach((candidate) => {
+      if (!candidate || typeof candidate !== "object") return;
+      if (!stringValue((candidate as SignalTriageCandidateForUi).signal_id)) return;
+      entries.push({ candidate: candidate as SignalTriageCandidateForUi });
+    });
+  });
+  return entries;
+}
+
+function triageCandidateMatchesSignalId(candidate: SignalTriageCandidateForUi, signalId: string): boolean {
+  return [candidate.signal_id, candidate.manual_action_preview?.signal_id].map(stringValue).includes(signalId);
+}
+
+function normalizeSignalType(value: unknown): SignalForUi["signal_type"] {
+  return stringValue(value) === "anomaly" ? "anomaly" : "opportunity";
+}
+
+function normalizeSignalPriority(value: unknown): "P0" | "P1" | "P2" {
+  const priority = stringValue(value);
+  return priority === "P0" || priority === "P2" ? priority : "P1";
+}
+
+function normalizeSignalConfidence(value: unknown): "high" | "medium" | "low" {
+  const confidence = stringValue(value).toLowerCase();
+  if (confidence === "high" || confidence.includes("高")) return "high";
+  if (confidence === "low" || confidence.includes("低")) return "low";
+  return "medium";
+}
+
+function normalizeFreshnessStatus(value: unknown): SignalForUi["freshness_status"] {
+  const status = stringValue(value);
+  return status === "api_snapshot" || status === "sample_data" || status === "stale" ? status : "unknown";
+}
+
+function normalizeSignalObjectType(value: unknown, signalCategory?: unknown): SignalForUi["object_type"] {
+  const objectType = stringValue(value);
+  if ((knownSignalObjectTypes as string[]).includes(objectType)) return objectType as SignalForUi["object_type"];
+  const category = stringValue(signalCategory).toLowerCase();
+  if (category.includes("advertised_product")) return "advertised_product";
+  if (category.includes("product_ad_coverage") || category.includes("sales_product")) return "sales_product";
+  if (category.includes("search_term")) return "search_term";
+  if (category.includes("placement")) return "placement";
+  if (category.includes("ad_group")) return "ad_group";
+  return undefined;
+}
+
+function defaultSignalCategoryForObjectType(objectType: SignalForUi["object_type"]): string {
+  if (objectType === "advertised_product") return "advertised_product_opportunity";
+  if (objectType === "sales_product") return "product_ad_coverage";
+  if (objectType === "placement") return "placement_efficiency";
+  if (objectType === "ad_group") return "ad_group_structure";
+  return "search_term_opportunity";
+}
+
+function numericValue(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value !== "string" || !value.trim()) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function triageMetricSnapshot(drilldown: SignalTriageEvidenceDrilldownForUi | null | undefined) {
+  const metricSummary = drilldown?.metric_summary;
+  const clicks = numericValue(metricSummary?.clicks) ?? 0;
+  const cost = numericValue(metricSummary?.spend) ?? 0;
+  return {
+    impressions: 0,
+    clicks,
+    cost,
+    orders: numericValue(metricSummary?.orders) ?? 0,
+    sales: numericValue(metricSummary?.sales) ?? 0,
+    acos: numericValue(metricSummary?.acos),
+    cvr: numericValue(metricSummary?.cvr),
+    cpc: clicks > 0 ? cost / clicks : null,
+  };
+}
+
+function triageFallbackFacts(candidate: SignalTriageCandidateForUi): EvidenceForUi[] {
+  return [
+    { label: "业务问题", value: stringValue(candidate.problem_type), source_type: "signal_triage" },
+    { label: "证据强度", value: stringValue(candidate.evidence_strength), source_type: "signal_triage" },
+    { label: "对象边界", value: stringValue(candidate.attribution_boundary), source_type: "signal_triage" },
+  ].filter((fact) => fact.value);
 }
 
 const reviewableManualActionObjectTypes: SignalForUi["object_type"][] = [
@@ -1500,7 +1951,7 @@ export function buildNextUnhandledManualActionCandidate<T extends ManualActionCa
 }
 
 function recommendedManualActionSignalId(summary: SignalTriageSummaryForUi | null | undefined): string | null {
-  return stringValue(summary?.manual_action_preview?.signal_id) || stringValue(summary?.recommended_candidate?.signal_id) || null;
+  return stringValue(summary?.recommended_candidate?.signal_id) || stringValue(summary?.manual_action_preview?.signal_id) || null;
 }
 
 function nextUnhandledManualActionSignalId(summary: SignalTriageSummaryForUi | null | undefined): string | null {
@@ -1520,12 +1971,16 @@ export function resolveSignalSelectionId<T extends ManualActionCandidateSignalFo
   const recommendedCandidate = buildBackendRecommendedManualActionCandidate(signals, summary);
   const nextUnhandledCandidate = buildNextUnhandledManualActionCandidate(signals, summary);
   const shouldUseNextUnhandled = shouldPreferNextUnhandledManualAction(summary);
+  const recommendedSignalId = recommendedManualActionSignalId(summary);
+  const currentSelectionExists = Boolean(currentSelectedId && signals.some((signal) => signal.id === currentSelectedId));
 
-  if (currentSelectedId && signals.some((signal) => signal.id === currentSelectedId)) {
-    return currentSelectedId;
+  if (shouldUseNextUnhandled && nextUnhandledCandidate && (!currentSelectionExists || currentSelectedId === recommendedSignalId)) {
+    return nextUnhandledCandidate.signal.id;
   }
 
-  if (shouldUseNextUnhandled && nextUnhandledCandidate) return nextUnhandledCandidate.signal.id;
+  if (currentSelectedId && currentSelectionExists) {
+    return currentSelectedId;
+  }
 
   return (
     recommendedCandidate?.signal.id ??
@@ -1684,6 +2139,137 @@ export function manualActionTargetSummary(preview: RecommendedManualActionPrevie
   return `${shopText}；${marketText}；${objectText}；${windowText}；只记录人工判断，不会自动执行广告动作。`;
 }
 
+export function manualActionQueueTargetSwitchSummary(
+  summary: SignalTriageSummaryForUi | null | undefined,
+  selectedSignalId?: string | null,
+): ManualActionQueueTargetSwitchSummary | null {
+  if (!summary?.recommended_manual_status?.has_manual_action || !summary.next_unhandled_candidate) return null;
+  const recommended = summary.recommended_candidate;
+  const nextCandidate = summary.next_unhandled_candidate;
+  const nextPreview = nextCandidate.manual_action_preview;
+  const recommendedLabel =
+    stringValue(recommended?.object_label) ||
+    stringValue(recommended?.stable_object_id) ||
+    stringValue(recommended?.object_id) ||
+    "推荐对象";
+  const recommendedObject = uniqueNonEmpty([
+    recommended?.object_type,
+    recommended?.stable_object_id || recommended?.object_id || recommendedLabel,
+  ]).join(" / ");
+  const recommendedObjectText =
+    recommendedObject && recommendedLabel && !recommendedObject.includes(recommendedLabel)
+      ? `${recommendedObject} / ${recommendedLabel}`
+      : recommendedObject || recommendedLabel;
+  const nextSignalId = stringValue(nextPreview?.signal_id) || stringValue(nextCandidate.signal_id);
+  const nextLabel =
+    stringValue(nextPreview?.object_label) ||
+    stringValue(nextCandidate.object_label) ||
+    stringValue(nextCandidate.stable_object_id) ||
+    stringValue(nextCandidate.object_id) ||
+    "下一个未留痕候选";
+  const nextObject = uniqueNonEmpty([
+    nextPreview?.object_type || nextCandidate.object_type,
+    nextPreview?.object_id || nextCandidate.stable_object_id || nextCandidate.object_id || nextLabel,
+  ]).join(" / ");
+  const nextObjectText =
+    nextObject && nextLabel && !nextObject.includes(nextLabel) ? `${nextObject} / ${nextLabel}` : nextObject || nextLabel;
+  const selectedIsRecommended = Boolean(selectedSignalId && selectedSignalId === stringValue(recommended?.signal_id));
+  const selectedIsNext = Boolean(selectedSignalId && selectedSignalId === nextSignalId);
+  const tone: ManualActionQueueTargetSwitchSummary["tone"] = selectedIsRecommended ? "blocked" : selectedIsNext ? "ready" : "waiting";
+  const primary = selectedIsRecommended
+    ? `当前选中 ${recommendedLabel}，它已经有人工留痕；右侧按钮不能继续写同一对象。`
+    : selectedIsNext
+      ? `当前选中 ${nextLabel}，这是下一个未留痕候选；只读预检通过后才允许人工确认。`
+      : `${recommendedLabel} 已有人工留痕；当前可写候选已切换到 ${nextLabel}。`;
+  return {
+    title: "人工动作目标切换",
+    tone,
+    primary,
+    diagnosisObject: `诊断推荐对象：${recommendedObjectText}`,
+    writeTarget: `当前可写候选：${nextObjectText}`,
+    boundary: "推荐对象和可写候选必须分开处理；不能把推荐对象的诊断证据写到另一个可写候选，也不能自动加词、否词、调价或暂停广告。",
+  };
+}
+
+export function manualActionReviewRouteSplitSummary(
+  summary: SignalTriageSummaryForUi | null | undefined,
+  selectedSignalId?: string | null,
+  readiness?: ManualActionRouteSplitReadinessForUi | null,
+): ManualActionRouteSplitSummary | null {
+  if (!summary?.recommended_manual_status?.has_manual_action || !summary.next_unhandled_candidate) return null;
+  const switchSummary = manualActionQueueTargetSwitchSummary(summary, selectedSignalId);
+  if (!switchSummary) return null;
+
+  const status = summary.recommended_manual_status;
+  const recommended = summary.recommended_candidate;
+  const nextCandidate = summary.next_unhandled_candidate;
+  const nextPreview = nextCandidate.manual_action_preview;
+  const recommendedLabel =
+    stringValue(status.object_label) ||
+    stringValue(recommended?.object_label) ||
+    stringValue(recommended?.stable_object_id) ||
+    stringValue(status.object_id) ||
+    stringValue(recommended?.object_id) ||
+    "已留痕推荐对象";
+  const nextLabel =
+    stringValue(nextPreview?.object_label) ||
+    stringValue(nextCandidate.object_label) ||
+    stringValue(nextCandidate.stable_object_id) ||
+    stringValue(nextCandidate.object_id) ||
+    "下一个未留痕候选";
+  const recommendedSignalId = stringValue(status.signal_id) || stringValue(recommended?.signal_id);
+  const nextSignalId = stringValue(nextPreview?.signal_id) || stringValue(nextCandidate.signal_id);
+  const selectedIsRecommended = Boolean(selectedSignalId && selectedSignalId === recommendedSignalId);
+  const selectedIsNext = Boolean(selectedSignalId && selectedSignalId === nextSignalId);
+  const manualActionCount = Math.max(0, status.manual_action_count ?? (status.has_manual_action ? 1 : 0));
+  const reviewTodoCount = Math.max(0, status.review_todo_count ?? (status.has_review_todo ? 1 : 0));
+  const windows = status.review_windows?.length ? status.review_windows.join(" / ") : "7d / 14d";
+  const readinessTone = readiness?.tone === "ready" || readiness?.tone === "blocked" ? readiness.tone : "waiting";
+  const nextTone: ManualActionRouteSplitRow["tone"] =
+    readinessTone === "blocked" ? "blocked" : readinessTone === "ready" ? "ready" : "waiting";
+  const tone: ManualActionRouteSplitSummary["tone"] = selectedIsRecommended ? "blocked" : selectedIsNext && nextTone === "ready" ? "ready" : "waiting";
+  const currentWriteState = readiness?.currentState?.trim() || "当前：等待后端只读预检读回 ManualAction / ReviewTodo 计数";
+  const expectedWriteState = readiness?.authorizedResult?.trim() || "授权后预期：人工点击后才生成 ManualAction 和 7/14 天 ReviewTodo";
+  const evidenceState = readiness?.evidence?.trim() || "证据快照：等待只读预检确认，未确认前不能写入";
+  const nextValue = readiness?.target?.trim()
+    ? `${nextLabel} / ${readiness.target.replace(/^目标：/, "")}`
+    : `${nextLabel} / 待后端只读预检`;
+  const nextStep = selectedIsNext
+    ? "当前选中待授权新对象：先核对预检、证据快照和对象身份，再由人工按钮授权。"
+    : selectedIsRecommended
+      ? "当前停在已留痕旧对象：不要重复写入，切到下一候选后再做只读预检。"
+      : "当前未直接停在两条轨道之一：先确认信号队列选中对象，再判断是否进入人工按钮。";
+
+  return {
+    title: "人工确认双轨分流",
+    tone,
+    primary: `${recommendedLabel} 已进入人工留痕轨道；${nextLabel} 是待授权新轨道。两者不能互借证据或状态。`,
+    rows: [
+      {
+        label: "已留痕旧对象",
+        value: `${recommendedLabel} / ManualAction ${manualActionCount} 条 / ReviewTodo ${reviewTodoCount} 条`,
+        detail: `这条轨道只说明已经记录人工判断，并等待 ${windows} 复盘；不能再把它当作当前可写对象。`,
+        tone: "saved",
+      },
+      {
+        label: "待授权新对象",
+        value: nextValue,
+        detail: `${currentWriteState}；${expectedWriteState}；${evidenceState}`,
+        tone: nextTone,
+      },
+      {
+        label: "人工下一步",
+        value: selectedIsNext && nextTone === "ready" ? "可人工授权" : selectedIsRecommended ? "先切换候选" : "先确认选中对象",
+        detail: nextStep,
+        tone: selectedIsNext && nextTone === "ready" ? "ready" : "waiting",
+      },
+    ],
+    boundary: `${switchSummary.boundary}；已留痕旧对象只进入复盘读回，待授权新对象只有人工点击后才写入 manual_actions 和 review_todos。${
+      readiness?.boundary ? `；${readiness.boundary}` : ""
+    }`,
+  };
+}
+
 export function signalTriageSummaryText(summary: SignalTriageSummaryForUi | null | undefined): string {
   if (!summary) return "后端分诊摘要未加载。";
   const signalCount = summary.signal_status?.signal_count ?? 0;
@@ -1725,29 +2311,261 @@ function buildReviewIdentityAuditSummary(
   const missingObjectIdCount = audit.missing_object_id_count ?? 0;
   const missingReviewWindowCount = audit.missing_review_window_count ?? 0;
   const missingKeyCount = missingActionIdCount + missingObjectIdCount + missingReviewWindowCount;
+  const missingEvidenceSnapshotCount = audit.missing_evidence_snapshot_count ?? 0;
+  const missingDiagnosisPathCount = audit.missing_diagnosis_path_count ?? 0;
+  const missingAiAdmissionCount = audit.missing_ai_admission_count ?? 0;
+  const missingSearchTermBoundaryCount = audit.missing_search_term_boundary_count ?? 0;
+  const missingPlacementBoundaryCount = audit.missing_placement_boundary_count ?? 0;
+  const missingTargetingEvidenceCount = audit.missing_targeting_evidence_count ?? 0;
+  const missingAdGroupSynthesisCount = audit.missing_ad_group_synthesis_count ?? 0;
+  const missingAbaContextCount = audit.missing_aba_context_count ?? 0;
+  const missingEvidenceGapCount = audit.missing_evidence_gap_count ?? 0;
+  const missingActionBoundaryCount = audit.missing_action_boundary_count ?? 0;
+  const missingObjectReferenceCount = audit.missing_object_reference_count ?? 0;
+  const missingSearchTermReviewChainCount =
+    missingTargetingEvidenceCount +
+    missingAdGroupSynthesisCount +
+    missingAbaContextCount +
+    missingEvidenceGapCount +
+    missingActionBoundaryCount;
+  const missingEvidenceGateCount =
+    missingEvidenceSnapshotCount +
+    missingDiagnosisPathCount +
+    missingAiAdmissionCount +
+    missingSearchTermBoundaryCount +
+    missingPlacementBoundaryCount +
+    missingSearchTermReviewChainCount +
+    missingObjectReferenceCount;
   const unstableObjectIdCount = audit.unstable_object_id_count ?? 0;
   const issueCount = audit.issues?.length ?? 0;
   const readyReviewCount = audit.ready_review_count ?? 0;
   const effectCount = audit.effect_count ?? 0;
   const earliestMetricDueDate = audit.earliest_metric_due_date?.trim() || "等待广告指标窗口";
-  const isBlocked = issueCount > 0 || missingKeyCount > 0 || unstableObjectIdCount > 0 || audit.status === "blocked";
+  const earliestAnyDueDate = audit.earliest_any_due_date?.trim() || audit.earliest_due_date?.trim() || "";
+  const dateBoundary =
+    audit.date_boundary?.trim() ||
+    (earliestAnyDueDate && earliestAnyDueDate !== earliestMetricDueDate
+      ? `全部待办最早到期 ${earliestAnyDueDate}，但广告指标复盘以 ${earliestMetricDueDate} 为准`
+      : "");
+  const isBlocked = issueCount > 0 || missingKeyCount > 0 || missingEvidenceGateCount > 0 || unstableObjectIdCount > 0 || audit.status === "blocked";
   const statusText = isBlocked ? "读回身份存在阻塞" : "读回身份可审计";
   const saveText = audit.can_save_review_records_now
     ? "当前存在 ready 复盘，保存前仍需人工确认"
     : "当前不能保存复盘记录";
+  const boundaryParts = [
+    saveText,
+    "ready_for_readback 只表示可按原动作读回对象，不表示复盘效果 ready",
+    dateBoundary,
+  ].filter(Boolean);
 
   return {
     title: "复盘读回身份门禁",
     status: isBlocked ? "blocked" : "ready",
-    summary: `${statusText}；缺失 action_id / object_id / review_window：${missingActionIdCount} / ${missingObjectIdCount} / ${missingReviewWindowCount}；广告指标最早复盘：${earliestMetricDueDate}。`,
-    boundary: `${saveText}；ready_for_readback 只表示可按原动作读回对象，不表示复盘效果 ready。`,
+    summary: `${statusText}；缺失 action_id / object_id / review_window：${missingActionIdCount} / ${missingObjectIdCount} / ${missingReviewWindowCount}；证据快照缺口：${missingEvidenceSnapshotCount} / 排查路径 ${missingDiagnosisPathCount} / AI 准入 ${missingAiAdmissionCount} / 搜索词边界 ${missingSearchTermBoundaryCount} / 广告位边界 ${missingPlacementBoundaryCount} / 搜索词复核链 ${missingSearchTermReviewChainCount}（投放词 ${missingTargetingEvidenceCount} / 广告组合流判断 ${missingAdGroupSynthesisCount} / ABA ${missingAbaContextCount} / 证据缺口 ${missingEvidenceGapCount} / 动作边界 ${missingActionBoundaryCount}）/ 对象引用 ${missingObjectReferenceCount}；广告指标最早复盘：${earliestMetricDueDate}。`,
+    boundary: `${boundaryParts.join("；")}。`,
     items: [
       { label: "待读回效果", value: `${effectCount}`, tone: effectCount > 0 ? "ready" : "neutral" },
       { label: "ready 复盘", value: `${readyReviewCount}`, tone: readyReviewCount > 0 ? "ready" : "waiting" },
       { label: "历史对象 ID 风险", value: `${unstableObjectIdCount}`, tone: unstableObjectIdCount > 0 ? "blocked" : "ready" },
       { label: "缺失键", value: `${missingKeyCount}`, tone: missingKeyCount > 0 ? "blocked" : "ready" },
+      { label: "证据快照缺口", value: `${missingEvidenceGateCount}`, tone: missingEvidenceGateCount > 0 ? "blocked" : "ready" },
+      {
+        label: "搜索词复核链缺口",
+        value: `${missingSearchTermReviewChainCount}`,
+        tone: missingSearchTermReviewChainCount > 0 ? "blocked" : "ready",
+      },
     ],
   };
+}
+
+function buildReviewQueueSeparationSummary(
+  summary: SignalTriageSummaryForUi | null | undefined,
+): ReviewQueueSeparationSummary | null {
+  const waitSummary = summary?.review_status?.review_wait_summary;
+  const readbackKeys = reviewReadbackKeys(summary?.review_status?.review_identity_audit?.readback_keys);
+  const nextCandidate = summary?.next_unhandled_candidate;
+
+  const reviewObjectLabel =
+    waitSummary?.next_object_label?.trim() ||
+    waitSummary?.next_object_id?.trim() ||
+    readbackKeys[0]?.objectLabel ||
+    readbackKeys[0]?.objectId ||
+    "";
+  const reviewObjectType = waitSummary?.next_object_type?.trim() || readbackKeys[0]?.objectType || "";
+  const reviewObjectId = waitSummary?.next_object_id?.trim() || readbackKeys[0]?.objectId || "";
+  const reviewObjectText = uniqueNonEmpty([reviewObjectType, reviewObjectLabel || reviewObjectId]).join(" / ");
+  const reviewWindowTextValue = reviewReadbackWindowText(readbackKeys, waitSummary);
+  const evidenceSnapshotText = reviewEvidenceSnapshotText(readbackKeys);
+
+  const candidateObjectLabel =
+    nextCandidate?.object_label?.trim() ||
+    nextCandidate?.stable_object_id?.trim() ||
+    nextCandidate?.object_id?.trim() ||
+    "";
+  const candidateObjectText = uniqueNonEmpty([nextCandidate?.object_type, candidateObjectLabel]).join(" / ");
+
+  if (!reviewObjectText && !candidateObjectText) return null;
+
+  const reviewIdentityKeys = normalizedIdentityKeys([
+    reviewObjectId,
+    reviewObjectLabel,
+    ...readbackKeys.flatMap((key) => [key.objectId, key.objectLabel]),
+  ]);
+  const candidateIdentityKeys = normalizedIdentityKeys([
+    nextCandidate?.object_id,
+    nextCandidate?.stable_object_id,
+    nextCandidate?.object_label,
+  ]);
+  const isSameObject =
+    reviewIdentityKeys.length > 0 &&
+    candidateIdentityKeys.length > 0 &&
+    candidateIdentityKeys.some((key) => reviewIdentityKeys.includes(key));
+  const relationText =
+    reviewObjectText && candidateObjectText
+      ? isSameObject
+        ? "同一对象，先查重"
+        : "不同对象，分开处理"
+      : "对象待补齐";
+
+  return {
+    title: "复盘对象与候选队列",
+    primary: `已加入复盘的是 ${reviewObjectText || "待识别对象"}；下一条待处理候选是 ${candidateObjectText || "暂无候选"}。`,
+    boundary:
+      "复盘对象只用于到期后读回处理效果；下一候选只用于下一次人工确认，二者不能混合归因，不能由页面自动加词、否词或调价。",
+    items: [
+      { label: "已加入复盘", value: reviewObjectText || "待识别", tone: reviewObjectText ? "waiting" : "blocked" },
+      { label: "复盘窗口", value: reviewWindowTextValue || "待识别", tone: reviewWindowTextValue ? "waiting" : "blocked" },
+      { label: "证据快照", value: evidenceSnapshotText, tone: evidenceSnapshotText.includes("待识别") ? "blocked" : "ready" },
+      { label: "下一待处理", value: candidateObjectText || "暂无候选", tone: candidateObjectText ? "ready" : "neutral" },
+      { label: "对象关系", value: relationText, tone: relationText === "不同对象，分开处理" ? "ready" : "waiting" },
+    ],
+  };
+}
+
+function reviewReadbackKeys(keys: unknown[] | null | undefined) {
+  return (keys ?? [])
+    .map((key) => {
+      if (!key || typeof key !== "object") return null;
+      const row = key as Record<string, unknown>;
+      return {
+        objectType: sourceText(row, "object_type"),
+        objectId: sourceText(row, "object_id"),
+        objectLabel: sourceText(row, "object_label"),
+        reviewWindow: reviewWindowText(sourceText(row, "review_window")),
+        dueDate: dateOnlyText(sourceText(row, "due_at") || sourceText(row, "due_date") || sourceText(row, "review_due_date")),
+        evidenceSnapshotCount: sourceNumber(row, "evidence_snapshot_count"),
+        hasDiagnosisPath: sourceBoolean(row, "has_diagnosis_path"),
+        hasAiAdmission: sourceBoolean(row, "has_ai_admission"),
+        hasSearchTermBoundary: sourceBoolean(row, "has_search_term_boundary"),
+        hasPlacementBoundary: sourceBoolean(row, "has_placement_boundary"),
+        hasTargetingEvidence: sourceBoolean(row, "has_targeting_evidence"),
+        hasAdGroupSynthesis: sourceBoolean(row, "has_ad_group_synthesis"),
+        hasAbaContext: sourceBoolean(row, "has_aba_context"),
+        hasEvidenceGap: sourceBoolean(row, "has_evidence_gap"),
+        hasActionBoundary: sourceBoolean(row, "has_action_boundary"),
+        hasObjectReference: sourceBoolean(row, "has_object_reference"),
+      };
+    })
+    .filter((key): key is NonNullable<typeof key> => Boolean(key));
+}
+
+function reviewReadbackWindowText(
+  readbackKeys: ReturnType<typeof reviewReadbackKeys>,
+  waitSummary: NonNullable<NonNullable<SignalTriageSummaryForUi["review_status"]>["review_wait_summary"]> | null | undefined,
+): string {
+  const windows = uniqueNonEmpty(
+    readbackKeys.map((key) => uniqueNonEmpty([key.reviewWindow, key.dueDate]).join(" ")),
+  );
+  if (windows.length > 0) return windows.join(" / ");
+  const fallbackWindow = reviewWindowText(waitSummary?.next_review_window);
+  const fallbackDue = dateOnlyText(waitSummary?.earliest_due_date);
+  return uniqueNonEmpty([fallbackWindow, fallbackDue]).join(" ");
+}
+
+function reviewEvidenceSnapshotText(readbackKeys: ReturnType<typeof reviewReadbackKeys>): string {
+  if (readbackKeys.length === 0) return "待识别";
+  const snapshotCounts = readbackKeys.map((key) => key.evidenceSnapshotCount).filter((count) => count > 0);
+  const hasBoundaryFields = readbackKeys.some(
+    (key) =>
+      key.hasDiagnosisPath !== null ||
+      key.hasAiAdmission !== null ||
+      key.hasSearchTermBoundary !== null ||
+      key.hasPlacementBoundary !== null ||
+      key.hasObjectReference !== null,
+  );
+  const searchTermKeys = readbackKeys.filter((key) => key.objectType === "search_term");
+  const hasSearchTermChainFields = searchTermKeys.some(
+    (key) =>
+      key.hasTargetingEvidence !== null ||
+      key.hasAdGroupSynthesis !== null ||
+      key.hasAbaContext !== null ||
+      key.hasEvidenceGap !== null ||
+      key.hasActionBoundary !== null,
+  );
+  const allSearchTermChainComplete =
+    searchTermKeys.length === 0 ||
+    (hasSearchTermChainFields &&
+      searchTermKeys.every(
+        (key) =>
+          key.hasTargetingEvidence === true &&
+          key.hasAdGroupSynthesis === true &&
+          key.hasAbaContext === true &&
+          key.hasEvidenceGap === true &&
+          key.hasActionBoundary === true,
+      ));
+  const hasSearchTermChainGap =
+    hasSearchTermChainFields &&
+    searchTermKeys.some(
+      (key) =>
+        key.hasTargetingEvidence === false ||
+        key.hasAdGroupSynthesis === false ||
+        key.hasAbaContext === false ||
+        key.hasEvidenceGap === false ||
+        key.hasActionBoundary === false,
+    );
+  const allBoundariesComplete =
+    hasBoundaryFields &&
+    readbackKeys.every(
+      (key) =>
+        key.hasDiagnosisPath === true &&
+        key.hasAiAdmission === true &&
+        key.hasSearchTermBoundary === true &&
+        key.hasPlacementBoundary === true &&
+        key.hasObjectReference !== false,
+    );
+  const hasBoundaryGap =
+    hasBoundaryFields &&
+    readbackKeys.some(
+      (key) =>
+        key.hasDiagnosisPath === false ||
+        key.hasAiAdmission === false ||
+        key.hasSearchTermBoundary === false ||
+        key.hasPlacementBoundary === false ||
+        key.hasObjectReference === false,
+    );
+  const hasObjectReferenceGap = readbackKeys.some((key) => key.hasObjectReference === false);
+  const boundaryText = hasObjectReferenceGap
+    ? " / 对象引用缺口"
+    : hasSearchTermChainGap
+      ? " / 搜索词复核链缺口"
+      : allBoundariesComplete
+        ? searchTermKeys.length > 0 && allSearchTermChainComplete
+          ? " / 搜索词复核链齐全"
+          : " / 基础边界齐全"
+        : hasBoundaryGap
+          ? " / 关键边界缺口"
+          : "";
+  if (snapshotCounts.length === 0) return `${readbackKeys.length} 个待办 / 待识别证据${boundaryText}`;
+  return `${readbackKeys.length} 个待办 / ${Math.max(...snapshotCounts)} 条证据${boundaryText}`;
+}
+
+function normalizedIdentityKeys(values: Array<string | null | undefined>): string[] {
+  return uniqueNonEmpty(values).map((value) => value.toLowerCase());
+}
+
+function dateOnlyText(value: string | null | undefined): string {
+  const text = value?.trim() || "";
+  return /^\d{4}-\d{2}-\d{2}/.test(text) ? text.slice(0, 10) : text;
 }
 
 export function buildReviewReadinessGateSummary(
@@ -1757,17 +2575,28 @@ export function buildReviewReadinessGateSummary(
   if (!status) return null;
 
   const identityAudit = buildReviewIdentityAuditSummary(status.review_identity_audit);
+  const queueSeparation = buildReviewQueueSeparationSummary(summary);
   const manualActionCount = status.manual_action_count ?? 0;
   const reviewRecordCount = status.review_record_count ?? status.review_feedback?.total ?? 0;
   const readyCount = status.ready_count ?? 0;
   const notReadyCount = status.not_ready_count ?? 0;
   const waitSummary = status.review_wait_summary;
+  const waitStatus = waitSummary?.status?.trim() || "";
+  const isReviewEvidenceGateBlocked =
+    waitStatus === "blocked_by_review_evidence_gap" || identityAudit?.status === "blocked";
   const earliestDueDate = waitSummary?.earliest_due_date?.trim() || "等待窗口";
-  const nextObject = uniqueNonEmpty([waitSummary?.next_object_type, waitSummary?.next_object_label]).join(" / ");
+  const nextReviewWindow = reviewWindowText(waitSummary?.next_review_window);
+  const nextObjectLabel = waitSummary?.next_object_label || waitSummary?.next_object_id;
+  const nextObject = uniqueNonEmpty([waitSummary?.next_object_type, nextObjectLabel]).join(" / ");
   const waitForbiddenActions = uniqueNonEmpty(waitSummary?.forbidden_actions ?? []);
+  const defaultForbiddenActions =
+    isReviewEvidenceGateBlocked || (waitStatus && waitStatus !== "waiting_review_window")
+      ? ["不保存复盘结论", "不自动改规则", "不自动执行广告动作"]
+      : ["不拉取快照", "不保存复盘结论", "不自动改规则", "不自动执行广告动作"];
   const forbiddenActions = waitForbiddenActions.length
     ? waitForbiddenActions
-    : ["不拉取快照", "不保存复盘结论", "不自动改规则", "不自动执行广告动作"];
+    : defaultForbiddenActions;
+  const forbiddenActionText = forbiddenActions.join("、");
 
   if (readyCount > 0) {
     const nextStep = status.rule_improvement?.next_step?.trim() || "先人工确认 ready 复盘，再保存 review_records。";
@@ -1778,6 +2607,7 @@ export function buildReviewReadinessGateSummary(
       detail: nextStep,
       boundary: "ready 只表示窗口数据满足预检，仍需人工确认并手动保存 review_records；不自动改规则，不自动执行广告动作。",
       identityAudit,
+      queueSeparation,
       items: [
         { label: "人工留痕", value: `${manualActionCount} 条`, tone: manualActionCount > 0 ? "ready" : "neutral" },
         { label: "已存复盘", value: `${reviewRecordCount} 条`, tone: reviewRecordCount > 0 ? "ready" : "waiting" },
@@ -1792,28 +2622,86 @@ export function buildReviewReadinessGateSummary(
     };
   }
 
+  if (manualActionCount > 0 && (isReviewEvidenceGateBlocked || (waitStatus && waitStatus !== "waiting_review_window"))) {
+    const gapReasons = uniqueNonEmpty(waitSummary?.gap_reasons ?? []);
+    const gapReasonText =
+      gapReasons.join("；") ||
+      waitSummary?.message?.trim() ||
+      status.rule_improvement?.reason?.trim() ||
+      identityAudit?.summary?.trim() ||
+      "当前没有 ready 复盘效果，处理前后指标证据仍不足。";
+    const rawNextStep =
+      waitSummary?.next_step?.trim() ||
+      status.rule_improvement?.next_step?.trim() ||
+      (isReviewEvidenceGateBlocked
+        ? "先 dry-run 作废旧待办，再重新人工留痕生成完整证据快照；必须包含排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、ABA 背景、证据缺口和动作边界，不能用当前页面证据伪装成历史点击证据，不能补写历史 evidence_snapshot。"
+        : "先补齐复盘所需的处理前后广告指标快照，再只读检查 ready 状态。");
+    const nextStep = isReviewEvidenceGateBlocked ? reviewEvidenceGateRepairStep(rawNextStep) : rawNextStep;
+    const gapStatusText =
+      waitStatus === "blocked_by_data_gap"
+        ? "证据不足"
+        : isReviewEvidenceGateBlocked
+          ? "证据门禁阻断"
+          : waitStatus;
+    return {
+      title: isReviewEvidenceGateBlocked
+        ? "复盘证据门禁阻断"
+        : waitStatus === "blocked_by_data_gap"
+          ? "复盘证据缺口"
+          : "复盘输入未就绪",
+      status: "blocked",
+      primary: isReviewEvidenceGateBlocked
+        ? `已有 ${manualActionCount} 条人工留痕，但复盘读回门禁未通过；当前不能保存复盘结论。`
+        : `已有 ${manualActionCount} 条人工留痕，但 ready 复盘 ${readyCount} 个；当前不能保存复盘结论。`,
+      detail: gapReasonText,
+      boundary: isReviewEvidenceGateBlocked
+        ? `缺 evidence_snapshot、排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、ABA 背景、证据缺口或动作边界时，不能把当前页面证据伪装成历史点击证据；当前${forbiddenActionText}。`
+        : `not_ready 只说明证据不足，不能证明处理有效或无效；当前${forbiddenActionText}。`,
+      identityAudit,
+      queueSeparation,
+      items: [
+        { label: "人工留痕", value: `${manualActionCount} 条`, tone: "ready" },
+        { label: "已存复盘", value: `${reviewRecordCount} 条`, tone: reviewRecordCount > 0 ? "ready" : "waiting" },
+        { label: "ready 复盘", value: `${readyCount} 个`, tone: "blocked" },
+        { label: "未就绪", value: `${notReadyCount} 个`, tone: notReadyCount > 0 ? "blocked" : "neutral" },
+        { label: "缺口状态", value: gapStatusText, tone: "blocked" },
+      ],
+      nextSteps: [
+        { label: "现在", detail: `先确认复盘缺口：${gapReasonText}` },
+        { label: "补证据", detail: nextStep },
+        { label: "ready 后", detail: "只有出现 ready 复盘后，才人工核对并保存 review_records；不自动改规则或执行广告动作。" },
+      ],
+    };
+  }
+
   if (manualActionCount > 0) {
     const detailParts = uniqueNonEmpty([
       waitSummary?.message,
       nextObject ? `下一项：${nextObject}` : null,
+      nextReviewWindow ? `下一窗口：${nextReviewWindow}` : null,
       waitSummary?.next_step,
     ]);
+    const nextReviewTargetText = nextObject ? ` ${nextObject}` : "下一广告对象";
+    const nextWindowText = nextReviewWindow ? ` ${nextReviewWindow}` : "广告指标";
     return {
       title: "复盘等待窗口",
       status: "waiting",
-      primary: `已有 ${manualActionCount} 条人工留痕，ready 复盘 ${readyCount} 个，最早 ${earliestDueDate} 后再复核。`,
+      primary: `已有 ${manualActionCount} 条人工留痕，ready 复盘 ${readyCount} 个，最早广告复盘 ${earliestDueDate} 后再复核。`,
       detail: detailParts.join("；") || "人工动作已记录，等待 7/14 天窗口形成可比较的前后指标。",
-      boundary: `未到期前${forbiddenActions.join("、")}。`,
+      boundary: `未到期前${forbiddenActionText}。`,
       identityAudit,
+      queueSeparation,
       items: [
         { label: "人工留痕", value: `${manualActionCount} 条`, tone: "ready" },
         { label: "已存复盘", value: `${reviewRecordCount} 条`, tone: reviewRecordCount > 0 ? "ready" : "waiting" },
-        { label: "最早复盘", value: earliestDueDate, tone: "waiting" },
+        { label: "最早广告复盘", value: earliestDueDate, tone: "waiting" },
+        { label: "下一窗口", value: nextReviewWindow || "待识别", tone: nextReviewWindow ? "waiting" : "blocked" },
+        { label: "下一广告对象", value: nextObject || "待识别", tone: nextObject ? "waiting" : "blocked" },
         { label: "未就绪", value: `${notReadyCount} 个`, tone: notReadyCount > 0 ? "waiting" : "neutral" },
       ],
       nextSteps: [
-        { label: "现在", detail: "查看当前人工留痕和复盘待办，未到期前不拉取快照、不保存复盘结论。" },
-        { label: "到期后", detail: `${earliestDueDate} 后只读检查复盘效果，确认处理前后 7/14 天窗口是否完整。` },
+        { label: "现在", detail: `查看当前人工留痕和复盘待办，未到期前${forbiddenActionText}。` },
+        { label: "到期后", detail: `${earliestDueDate} 后只读检查${nextReviewTargetText} 的${nextWindowText}复盘效果，确认处理前后窗口是否完整。` },
         { label: "ready 后", detail: "出现 ready 复盘后，人工确认后再保存 review_records；仍不自动改规则或执行广告动作。" },
       ],
     };
@@ -1826,6 +2714,7 @@ export function buildReviewReadinessGateSummary(
     detail: "先完成可行动候选的人工确认，并生成 review_todos 后再进入效果复盘。",
     boundary: "没有 manual_actions 就不能保存 review_records；不自动改规则，不自动执行广告动作。",
     identityAudit,
+    queueSeparation,
     items: [
       { label: "人工留痕", value: "0 条", tone: "blocked" },
       { label: "已存复盘", value: `${reviewRecordCount} 条`, tone: reviewRecordCount > 0 ? "ready" : "neutral" },
@@ -1840,16 +2729,356 @@ export function buildReviewReadinessGateSummary(
   };
 }
 
+function reviewEvidenceGateRepairStep(value: string): string {
+  const text = value.trim();
+  const hasCompleteSnapshot = text.includes("完整证据快照");
+  const hasSearchBoundary = text.includes("搜索词边界");
+  const hasPlacementBoundary = text.includes("广告位边界");
+  const hasTargetingEvidence = text.includes("投放词证据");
+  const hasAdGroupSynthesis = text.includes("广告组合流判断");
+  const hasAbaContext = text.includes("ABA 背景");
+  const hasEvidenceGap = text.includes("证据缺口");
+  const hasActionBoundary = text.includes("动作边界");
+  const hasPatchPolicy = text.includes("不能静默补写历史 evidence_snapshot");
+  if (
+    hasCompleteSnapshot &&
+    hasSearchBoundary &&
+    hasPlacementBoundary &&
+    hasTargetingEvidence &&
+    hasAdGroupSynthesis &&
+    hasAbaContext &&
+    hasEvidenceGap &&
+    hasActionBoundary &&
+    hasPatchPolicy
+  ) {
+    return text;
+  }
+  const base = text.replace(/[。；;.\s]+$/, "");
+  const patchPolicyText = hasPatchPolicy ? null : "不能静默补写历史 evidence_snapshot";
+  const snapshotText =
+    hasCompleteSnapshot &&
+    hasSearchBoundary &&
+    hasPlacementBoundary &&
+    hasTargetingEvidence &&
+    hasAdGroupSynthesis &&
+    hasAbaContext &&
+    hasEvidenceGap &&
+    hasActionBoundary
+      ? null
+      : "重新人工留痕必须形成完整证据快照，包含排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、ABA 背景、证据缺口和动作边界";
+  return `${uniqueNonEmpty([base, patchPolicyText, snapshotText]).join("；")}。`;
+}
+
+export function buildReviewEvidenceRepairSummary(
+  payload: ReviewEvidenceRepairPayloadForUi | null | undefined,
+): ReviewEvidenceRepairSummary | null {
+  if (!payload) return null;
+
+  const counts = payload.counts ?? {};
+  const legacyGapCount = counts.legacy_action_gap_count ?? 0;
+  const reviewTodoCount = counts.review_todos ?? 0;
+  const repairIssueCount = counts.repair_issue_count ?? 0;
+  const previewRebuildableCount = counts.preview_rebuildable_count ?? 0;
+  const recreatableCount = counts.recreatable_count ?? 0;
+  const hasLegacyGap = payload.status === "blocked_by_legacy_evidence_gap" || legacyGapCount > 0;
+  const hasReviewEvidenceGateGap = payload.rule_improvement_status === "blocked_by_review_evidence_gap";
+  const forbiddenEffects = uniqueNonEmpty(payload.forbidden_effects ?? []);
+  const boundary =
+    `只读预览 will_write=${payload.will_write === true ? "true" : "false"}；` +
+    "不能补写历史 evidence_snapshot，不能保存 ReviewRecord，不能自动执行广告动作。";
+  const sampleItems = (payload.items ?? [])
+    .slice(0, 3)
+    .map((item) => {
+      const objectText = uniqueNonEmpty([item.object_type, item.object_label || item.object_id]).join(" / ") || "历史待办对象";
+      const windows = uniqueNonEmpty(item.review_windows ?? []).join(" / ") || "复盘窗口待识别";
+      const action = item.action_id ? `动作 ${item.action_id}` : "历史动作";
+      const nextStep = item.recommended_next_step?.trim() || "需要先 dry-run 作废旧待办，再重新人工留痕。";
+      const issueText = reviewRepairIssueText(item.issue_types);
+      const preflightText = reviewRepairPreflightText(item);
+      const patchPolicy =
+        item.patch_policy?.trim() || (item.can_patch_legacy_record === false ? "历史记录不能静默 patch" : "");
+      const voidPlanText = reviewRepairVoidPlanText(item);
+      return uniqueNonEmpty([
+        `${objectText}；${windows}；${action}`,
+        issueText,
+        preflightText,
+        patchPolicy,
+        nextStep,
+        voidPlanText,
+      ]).join("；");
+    });
+  const voidPlanItems = (payload.items ?? [])
+    .slice(0, 3)
+    .map(reviewRepairVoidPlanItem)
+    .filter((item): item is ReviewEvidenceRepairVoidPlanSummary => item !== null);
+
+  if (!hasLegacyGap && hasReviewEvidenceGateGap) {
+    return {
+      title: "历史待办治理",
+      status: "blocked",
+      primary: "旧证据快照没有整份缺失，但搜索词复核链仍被复盘证据门禁阻断。",
+      detail:
+        "当前缺口不是 legacy evidence_snapshot 为空，而是旧快照缺少搜索词复核链标签；具体缺口以“复盘证据门禁阻断”为准，不能保存 ReviewRecord。",
+      boundary,
+      items: [
+        { label: "历史缺口动作", value: "0 个", tone: "ready" },
+        { label: "复盘待办", value: `${reviewTodoCount} 条`, tone: reviewTodoCount > 0 ? "blocked" : "neutral" },
+        { label: "搜索词复核链", value: "阻断", tone: "blocked" },
+        { label: "可自动执行广告", value: "0 项", tone: "ready" },
+      ],
+      nextSteps: [
+        { label: "先看门禁", detail: "回到复盘证据门禁，核对缺少的是投放词证据、广告组合流判断、ABA 背景、证据缺口还是动作边界。" },
+        { label: "治理方式", detail: "当前可落地路径是 dry-run 作废旧待办，再重新人工留痕；不能静默补写历史 evidence_snapshot。" },
+        { label: "保存限制", detail: "复核链补齐并出现 ready 复盘前，不保存 ReviewRecord，不自动改规则，不执行广告动作。" },
+      ],
+      sampleItems: forbiddenEffects,
+      voidPlanItems,
+    };
+  }
+
+  if (!hasLegacyGap) {
+    return {
+      title: "历史待办治理",
+      status: "ready",
+      primary: "当前没有历史证据快照缺口。",
+      detail: payload.next_action?.trim() || "继续等待复盘窗口；未到期前不保存 ReviewRecord。",
+      boundary,
+      items: [
+        { label: "历史缺口动作", value: "0 个", tone: "ready" },
+        { label: "复盘待办", value: `${reviewTodoCount} 条`, tone: reviewTodoCount > 0 ? "waiting" : "neutral" },
+        { label: "可静默补证据", value: "0 个", tone: "ready" },
+        { label: "可自动执行广告", value: "0 项", tone: "ready" },
+      ],
+      nextSteps: [
+        { label: "继续", detail: payload.next_action?.trim() || "等待复盘窗口到期后，再人工核对是否满足保存门槛。" },
+      ],
+      sampleItems,
+      voidPlanItems,
+    };
+  }
+
+  const primary = `发现 ${legacyGapCount} 个历史动作缺证据，影响 ${reviewTodoCount} 条复盘待办。`;
+  const detail =
+    payload.next_action?.trim() ||
+    "当前信号不能直接重建同对象证据；需要先 dry-run 作废旧待办，再重新人工留痕。";
+  return {
+    title: "历史待办治理",
+    status: "blocked",
+    primary,
+    detail,
+    boundary,
+    items: [
+      { label: "历史缺口动作", value: `${legacyGapCount} 个`, tone: "blocked" },
+      { label: "缺口问题", value: `${repairIssueCount} 个`, tone: repairIssueCount > 0 ? "blocked" : "neutral" },
+      { label: "可重建预览", value: `${previewRebuildableCount} 个`, tone: previewRebuildableCount > 0 ? "waiting" : "blocked" },
+      { label: "可重新留痕", value: `${recreatableCount} 个`, tone: recreatableCount > 0 ? "waiting" : "blocked" },
+    ],
+    nextSteps: [
+      { label: "核对", detail: "先核对 action_id、对象 ID、7/14 天窗口，以及缺的是排查路径、AI 准入、搜索词边界、广告位边界还是广告组合流判断。" },
+      { label: "补证边界", detail: "可重建预览只作为人工核对参考；当前不提供补写历史 evidence_snapshot 的执行入口，已有旧留痕时不能重复写入绕过门禁。" },
+      { label: "dry-run", detail: "先按卡片中的 dry-run 命令做只读预检；真实作废必须显式带授权码，页面不能静默补写历史 evidence_snapshot。" },
+      { label: "复盘", detail: "作废旧待办不等于复盘完成；需要新的人工留痕生成带证据的 ReviewTodo 后再等窗口复盘。" },
+    ],
+    sampleItems: sampleItems.length ? sampleItems : forbiddenEffects,
+    voidPlanItems,
+  };
+}
+
+function reviewRepairIssueText(issueTypes: string[] | null | undefined): string {
+  const labels: Record<string, string> = {
+    missing_evidence_snapshot: "缺 evidence_snapshot",
+    missing_diagnosis_path: "缺排查路径",
+    missing_ai_admission: "缺 AI 准入",
+    missing_search_term_boundary: "缺搜索词边界",
+    missing_placement_boundary: "缺广告位边界",
+    missing_targeting_evidence: "缺投放词证据",
+    missing_ad_group_synthesis: "缺广告组合流判断",
+    missing_aba_context: "缺 ABA 背景",
+    missing_evidence_gap: "缺证据缺口",
+    missing_action_boundary: "缺动作边界",
+    evidence_snapshot_object_mismatch: "证据快照对象不一致",
+    missing_action_id: "缺 action_id",
+    missing_object_id: "缺 object_id",
+    missing_review_window: "缺 review_window",
+    unstable_object_id: "对象 ID 不稳定",
+  };
+  const values = uniqueNonEmpty(issueTypes ?? []).map((issue) => labels[issue] ?? issue);
+  return values.length ? `证据缺口：${values.join(" / ")}` : "";
+}
+
+function reviewRepairPreflightText(
+  item: NonNullable<ReviewEvidenceRepairPayloadForUi["items"]>[number],
+): string {
+  const preflight = item.current_preflight;
+  const previewState = item.can_rebuild_evidence_preview ? "可重建证据预览" : "证据预览不可重建";
+  const recreateState = item.can_recreate_from_current_signal ? "可重新人工留痕" : "当前不可重新留痕";
+  const patchState = item.can_patch_legacy_record ? "可人工补证待确认" : "不可补写历史证据";
+  const status = preflight?.status?.trim() ? `预检 ${preflight.status.trim()}` : "";
+  const target = preflight?.target_matches_legacy === true ? "对象匹配旧待办" : preflight?.target_matches_legacy === false ? "对象不匹配旧待办" : "";
+  const evidenceCount =
+    typeof preflight?.evidence_snapshot_item_count === "number"
+      ? `当前预览 ${preflight.evidence_snapshot_item_count} 条证据`
+      : "";
+  const required = [
+    preflight?.has_diagnosis_path === true ? "有排查路径" : preflight?.has_diagnosis_path === false ? "缺排查路径" : "",
+    preflight?.has_ai_admission === true ? "有 AI 准入" : preflight?.has_ai_admission === false ? "缺 AI 准入" : "",
+    preflight?.has_search_term_boundary === true
+      ? "有搜索词边界"
+      : preflight?.has_search_term_boundary === false
+        ? "缺搜索词边界"
+        : "",
+    preflight?.has_placement_boundary === true
+      ? "有广告位边界"
+      : preflight?.has_placement_boundary === false
+        ? "缺广告位边界"
+        : "",
+    preflight?.has_targeting_evidence === true
+      ? "有投放词证据"
+      : preflight?.has_targeting_evidence === false
+        ? "缺投放词证据"
+        : "",
+    preflight?.has_ad_group_synthesis === true
+      ? "有广告组合流判断"
+      : preflight?.has_ad_group_synthesis === false
+        ? "缺广告组合流判断"
+        : "",
+    preflight?.has_aba_context === true
+      ? "有 ABA 背景"
+      : preflight?.has_aba_context === false
+        ? "缺 ABA 背景"
+        : "",
+    preflight?.has_evidence_gap === true
+      ? "有证据缺口"
+      : preflight?.has_evidence_gap === false
+        ? "缺证据缺口"
+        : "",
+    preflight?.has_action_boundary === true
+      ? "有动作边界"
+      : preflight?.has_action_boundary === false
+        ? "缺动作边界"
+        : "",
+    preflight?.has_object_reference === true
+      ? "对象引用可回看"
+      : preflight?.has_object_reference === false
+        ? "对象引用错配"
+        : "",
+  ];
+  const missingLabels = uniqueNonEmpty(preflight?.missing_required_labels ?? []);
+  const missing = missingLabels.length ? `当前预览仍缺：${missingLabels.join(" / ")}` : "";
+  return uniqueNonEmpty([
+    `当前预检：${previewState} / ${recreateState} / ${patchState}`,
+    status,
+    target,
+    evidenceCount,
+    ...required,
+    missing,
+  ]).join("；");
+}
+
+function reviewRepairVoidPlanText(item: NonNullable<ReviewEvidenceRepairPayloadForUi["items"]>[number]): string {
+  const planItem = reviewRepairVoidPlanItem(item);
+  if (!planItem) return "";
+  return uniqueNonEmpty([
+    planItem.statusText,
+    `作废对象：${planItem.objectText}`,
+    `复盘窗口：${planItem.reviewWindows}`,
+    `作废后：${planItem.afterVoidText}`,
+    `重新留痕：${planItem.recreateText}`,
+    planItem.authorizationCode ? `授权码 ${planItem.authorizationCode}` : "",
+    planItem.dryRunCommand ? `dry-run：${planItem.dryRunCommand}` : "",
+    planItem.boundary,
+  ]).join("；");
+}
+
+function reviewRepairVoidPlanItem(
+  item: NonNullable<ReviewEvidenceRepairPayloadForUi["items"]>[number],
+): ReviewEvidenceRepairVoidPlanSummary | null {
+  const voidPlan = item.void_plan;
+  if (!voidPlan) return null;
+  const actionId = voidPlan.action_id?.trim() || item.action_id?.trim() || "";
+  const statusText = reviewRepairVoidPlanStatusText(voidPlan.status);
+  const objectText =
+    uniqueNonEmpty([voidPlan.expected_object_type, voidPlan.expected_object_id]).join(" / ") ||
+    uniqueNonEmpty([item.object_type, item.object_id]).join(" / ");
+  const reviewWindows =
+    uniqueNonEmpty([...(voidPlan.review_windows ?? []), voidPlan.review_window, ...(item.review_windows ?? [])]).join(" / ") ||
+    "复盘窗口待识别";
+  const authorizationCode = voidPlan.required_authorization_code?.trim() ?? "";
+  const dryRunCommand = voidPlan.dry_run_command?.trim() ?? "";
+  const boundary = voidPlan.boundary?.trim() ?? "";
+  const afterVoidText = reviewRepairAfterVoidText(voidPlan.expected_object_type || item.object_type);
+  const recreateText = reviewRepairRecreateText(voidPlan.expected_object_type || item.object_type);
+  if (!uniqueNonEmpty([actionId, objectText, reviewWindows, authorizationCode, dryRunCommand, boundary]).length) {
+    return null;
+  }
+  return {
+    actionId: actionId || "历史动作待识别",
+    statusText,
+    objectText: objectText || "作废对象待识别",
+    reviewWindows,
+    authorizationCode,
+    dryRunCommand,
+    afterVoidText,
+    recreateText,
+    boundary,
+  };
+}
+
+function reviewRepairVoidPlanStatusText(status: string | null | undefined): string {
+  const value = status?.trim();
+  if (value === "dry_run_available") return "dry-run 可预检；真实作废未执行";
+  if (value === "missing_action_id") return "缺 action_id，不能预检作废";
+  return value ? `作废计划状态：${value}` : "作废计划状态待识别";
+}
+
+function reviewRepairAfterVoidText(objectType: string | null | undefined): string {
+  const prefix = objectType?.trim() === "search_term" ? "搜索词旧待办作废后" : "旧待办作废后";
+  return `${prefix}仍不是复盘完成；需要重新跑人工动作预检，确认 duplicate 阻挡已清掉。`;
+}
+
+function reviewRepairRecreateText(objectType: string | null | undefined): string {
+  if (objectType?.trim() === "search_term") {
+    return "重新点击“加入复盘”时必须保存新的 ManualAction 和 7d / 14d ReviewTodo，并带排查路径、AI 准入、搜索词边界、广告位边界、广告组合流、投放词、ABA、证据缺口和动作边界。";
+  }
+  return "重新点击人工动作时必须保存新的 ManualAction 和 7d / 14d ReviewTodo；不能补写旧 evidence_snapshot。";
+}
+
+function reviewWindowText(window: string | null | undefined): string {
+  const value = window?.trim();
+  if (!value) return "";
+  const labels: Record<string, string> = { "7d": "7 天", "14d": "14 天" };
+  return labels[value] ?? value;
+}
+
 export function buildRuleFeedbackPrioritySummary(summary: SignalTriageSummaryForUi | null | undefined): RuleFeedbackPrioritySummary | null {
   const feedback = summary?.review_status?.review_feedback;
   const closureChecklist = (feedback?.closure_checklist ?? []).map(ruleFeedbackClosureCheckText);
   if (!feedback || ((feedback.total ?? 0) <= 0 && closureChecklist.length === 0)) return null;
+  const savedRecordCount = feedback.total ?? 0;
   const bySignalType = feedback.by_signal_type ?? {};
   const signalTypeText = formatOrderedCounts(bySignalType, ["opportunity", "anomaly", "unknown"]) || "信号类型维度待补齐";
   const byResult = feedback.by_result ?? {};
+  if (savedRecordCount <= 0) {
+    const readyReviewCount = summary?.review_status?.ready_count ?? 0;
+    const actionBoundary =
+      readyReviewCount > 0
+        ? "当前只能补齐人工动作证据、人工核对已 ready 复盘并保存复盘记录；不自动改规则，不自动执行广告动作。"
+        : "当前只能补齐人工动作证据或等待复盘窗口；没有 ready 复盘前不保存复盘记录，不自动改规则，不自动执行广告动作。";
+    return {
+      title: "复盘样本池门槛",
+      basis: "暂无已保存 ReviewRecord；这里只展示复盘输入证据和保存门槛，不形成规则反馈候选。",
+      priority: "未保存复盘结论前，不能判断规则有效、无效或需要调整。",
+      sampleSort: "worse / no_change / unclear / improved 的样本排序只在保存 ReviewRecord 后启用。",
+      actionBoundary,
+      closureChecklist,
+      records: [],
+      candidateGroups: [],
+      boundary: "没有已保存 ReviewRecord 时，该区域只是门槛检查，不代表已有规则反馈样本池，不代表当前选中信号已 ready。",
+    };
+  }
   return {
     title: "已保存复盘样本池",
-    basis: `来自已保存 ReviewRecord：${feedback.total ?? 0} 条；信号类型：${signalTypeText}；复盘结果：${
+    basis: `来自已保存 ReviewRecord：${savedRecordCount} 条；信号类型：${signalTypeText}；复盘结果：${
       formatOrderedCounts(byResult, ["worse", "no_change", "unclear", "improved"]) || "待补齐"
     }。`,
     priority: ruleFeedbackPriorityText(byResult),
@@ -1932,9 +3161,11 @@ function ruleFeedbackRecordText(record: RuleFeedbackRecordForUi) {
   const note = record.review_note ? `；${record.review_note}` : "";
   const sortReason = record.sort_reason ? `；${record.sort_reason}` : "";
   const actionBoundary = ruleFeedbackRecordActionBoundaryText(record.action_boundary);
+  const savedSnapshot = ruleFeedbackSavedSnapshotText(record);
+  const diagnosisPath = ruleFeedbackDiagnosisPathText(record.diagnosis_path);
   const evidence = record.evidence_drilldown?.summary ? `；证据回看：${record.evidence_drilldown.summary}` : "";
   const evidenceGroups = ruleFeedbackEvidenceGroupsText(record.evidence_groups);
-  return `${result} / ${signalType} / ${objectType} / ${objectLabel} / ${reviewWindow}${recordSource}${metricWindow}${note}${sortReason}${actionBoundary}${evidence}${evidenceGroups}`;
+  return `${result} / ${signalType} / ${objectType} / ${objectLabel} / ${reviewWindow}${recordSource}${metricWindow}${note}${sortReason}${actionBoundary}${savedSnapshot}${diagnosisPath}${evidence}${evidenceGroups}`;
 }
 
 function ruleFeedbackCandidateGroupText(group: RuleFeedbackCandidateGroupForUi) {
@@ -1945,9 +3176,15 @@ function ruleFeedbackCandidateGroupText(group: RuleFeedbackCandidateGroupForUi) 
   const abaText = group.aba_reference_term
     ? `；ABA参考：${group.aba_reference_term}${group.aba_period ? ` / ${group.aba_period}` : ""}`
     : "";
+  const abaBoundary = group.aba_match_boundary
+    ? `；ABA边界：${group.aba_match_boundary}`
+    : group.aba_reference_term
+      ? "；ABA边界：ABA 只作为站点级市场背景，不能当作店铺、广告组、商品或搜索词归因证据。"
+      : "";
   const recommendation = group.recommendation ? `；${group.recommendation}` : "";
-  const boundary = group.boundary ? `；${group.boundary}` : "；只进入解释层和人工复核，不自动改规则，不自动执行广告动作。";
-  return `${groupType}：${groupLabel} / ${totalText} / ${resultText}${abaText}${recommendation}${boundary}`;
+  const actionBoundary = ruleFeedbackRecordActionBoundaryText(group.action_boundary);
+  const boundary = group.boundary ? `；${group.boundary}` : actionBoundary ? "" : "；只进入解释层和人工复核，不自动改规则，不自动执行广告动作。";
+  return `${groupType}：${groupLabel} / ${totalText} / ${resultText}${abaText}${abaBoundary}${recommendation}${actionBoundary}${boundary}`;
 }
 
 function ruleFeedbackActionBoundaryText(boundaries: Record<string, RuleFeedbackActionBoundaryForUi> | null | undefined) {
@@ -1975,6 +3212,47 @@ function ruleFeedbackRecordActionBoundaryText(boundary: RuleFeedbackActionBounda
   if (!allowed) return "";
   const boundaryText = boundary?.boundary ? `；${boundary.boundary}` : "";
   return `；动作边界：${allowed}${boundaryText}`;
+}
+
+function ruleFeedbackSnapshotItemText(item: RuleFeedbackEvidenceSnapshotForUi | null | undefined) {
+  if (!item) return "";
+  const label = item.label?.trim() || "证据快照";
+  const value = item.value?.trim();
+  const detail = item.detail?.trim();
+  const source = item.source?.trim();
+  if (!value && !detail) return "";
+  return `${label}：${value || detail}${source ? ` / ${source}` : ""}`;
+}
+
+function ruleFeedbackSavedSnapshotText(record: RuleFeedbackRecordForUi) {
+  const count = Number(record.evidence_snapshot_count ?? record.evidence_snapshot?.length ?? 0);
+  const diagnosis = ruleFeedbackSnapshotItemText(record.diagnosis_snapshot);
+  const aiAdmission = ruleFeedbackSnapshotItemText(record.ai_admission_snapshot);
+  const missingParts = [
+    count <= 0 ? "保存快照" : "",
+    diagnosis ? "" : "排查路径",
+    aiAdmission ? "" : "AI 准入",
+  ].filter(Boolean);
+  const parts = [diagnosis, aiAdmission, missingParts.length ? `缺口：${missingParts.join(" / ")}` : ""].filter(Boolean);
+  return `；保存快照：${count} 条${parts.length > 0 ? `；${parts.join("；")}` : ""}`;
+}
+
+function ruleFeedbackDiagnosisPathText(path: RuleFeedbackDiagnosisPathForUi | null | undefined) {
+  if (!path) return "";
+  const pathText = path.path?.trim() || "";
+  const steps = (path.steps ?? [])
+    .slice(0, 4)
+    .map((step) => {
+      const label = step.label?.trim() || step.step_id?.trim() || "路径节点";
+      const value = step.value?.trim();
+      return value ? `${label}：${value}` : label;
+    })
+    .filter(Boolean);
+  const stepText = steps.length > 0 ? `；路径证据：${steps.join(" / ")}` : "";
+  const boundary = path.boundary?.trim() ? `；边界：${path.boundary.trim()}` : "";
+  const next = path.next_manual_step?.trim() ? `；人工下一步：${path.next_manual_step.trim()}` : "";
+  if (!pathText && !stepText && !boundary && !next) return "";
+  return `；诊断路径：${pathText || "待补齐"}${stepText}${boundary}${next}`;
 }
 
 function ruleFeedbackEvidenceGroupsText(groups: RuleFeedbackRecordForUi["evidence_groups"]) {
@@ -2049,6 +3327,87 @@ export interface SignalTriageBusinessEvidenceItem {
   value: string;
   detail: string | null;
   source: string | null;
+}
+
+export interface SignalTriageDiagnosisContractItem {
+  sectionId: string;
+  title: string;
+  businessQuestion: string;
+  objectGrain: string;
+  metricText: string;
+  currentJudgement: string;
+  proves: string;
+  doesNotProve: string;
+  evidenceGap: string;
+  requiredEvidence: string;
+  nextManualStep: string;
+}
+
+export interface SearchTermOpportunityReviewChain {
+  title: string;
+  businessQuestion: string;
+  objectGrain: string;
+  targetingEvidence: string;
+  adGroupSynthesis: string;
+  marketContext: string;
+  currentJudgement: string;
+  proves: string;
+  doesNotProve: string;
+  evidenceGap: string;
+  requiredEvidence: string;
+  nextManualStep: string;
+  actionBoundary: string;
+}
+
+export interface SignalDiagnosisEvidenceSummary {
+  title: string;
+  businessQuestion: string;
+  objectReadback: string;
+  strengthLabel: string;
+  strengthReason: string;
+  proves: string;
+  doesNotProve: string;
+  evidenceGap: string;
+  nextManualStep: string;
+  tone: "strong" | "medium" | "weak";
+}
+
+export interface ManualConfirmationEvidenceItem {
+  label: string;
+  value: string;
+  detail: string | null;
+}
+
+export interface ManualActionDecisionFactItem {
+  label: "处理依据" | "风险" | "不确定性";
+  value: string;
+}
+
+interface ManualActionDecisionFactSignal extends SignalForUi {
+  risk?: string | null;
+  uncertainty?: string | null;
+  why?: string | null;
+  summary?: string | null;
+}
+
+export interface SignalMetricDecisionItem {
+  label: string;
+  value: string;
+  purpose: string;
+  proves: string;
+  doesNotProve: string;
+  nextManualStep: string;
+}
+
+interface SignalMetricSnapshotForUi {
+  impressions?: number;
+  clicks?: number;
+  cost: number;
+  orders: number;
+  sales: number;
+  acos?: number | null;
+  cvr?: number | null;
+  cpc?: number | null;
 }
 
 export interface ProductScopeAdmissionCard {
@@ -2129,7 +3488,7 @@ export interface ProductScopeEvidenceMatrix {
 
 export interface ProductScopeEvidenceRouteGuideStep {
   order: number;
-  layerId: ProductScopeEvidenceMatrixRow["layerId"];
+  layerId: ProductScopeEvidenceMatrixRow["layerId"] | "ai_signal" | "manual_confirmation" | "review";
   label: string;
   objectLabel: string;
   primaryEvidence: string;
@@ -2137,9 +3496,21 @@ export interface ProductScopeEvidenceRouteGuideStep {
   tone: ProductScopeEvidenceMatrixRow["tone"];
 }
 
+export interface ProductScopeEvidenceRouteDecision {
+  title: string;
+  statusLabel: string;
+  statusTone: "ready" | "blocked" | "context";
+  businessQuestion: string;
+  currentJudgement: string;
+  proves: string;
+  doesNotProve: string;
+  nextManualStep: string;
+}
+
 export interface ProductScopeEvidenceRouteGuide {
   title: string;
   summary: string;
+  decision: ProductScopeEvidenceRouteDecision;
   steps: ProductScopeEvidenceRouteGuideStep[];
   boundary: string;
 }
@@ -2151,10 +3522,63 @@ export interface ProductScopeAdGroupActionableReview {
   manualGate: string;
 }
 
+export interface ProductScopeAdGroupProblemLocator {
+  title: string;
+  businessQuestion: string;
+  currentJudgement: string;
+  problemLocation: string;
+  splitReason: string;
+  doesNotProve: string;
+  nextManualStep: string;
+}
+
+export interface ProductScopeAdGroupOwnershipDecision {
+  title: string;
+  statusLabel: string;
+  businessQuestion: string;
+  currentJudgement: string;
+  issueOwner: string;
+  evidencePath: string;
+  doesNotProve: string;
+  nextManualStep: string;
+}
+
+export interface ProductScopeAdGroupEvidenceSynthesis {
+  title: string;
+  tone: "aligned" | "partial" | "gap";
+  statusLabel: string;
+  businessQuestion: string;
+  currentJudgement: string;
+  evidenceChain: string;
+  proves: string;
+  doesNotProve: string;
+  evidenceGap: string;
+  nextManualStep: string;
+}
+
+export interface ProductScopePlacementEvidenceDecision {
+  title: string;
+  businessQuestion: string;
+  currentJudgement: string;
+  evidenceLevel: string;
+  proves: string;
+  doesNotProve: string;
+  evidenceGap: string;
+  nextManualStep: string;
+}
+
 export interface ManualActionCandidateAdGroupBridge {
   title: string;
   evidence: string;
   decision: string;
+  synthesisStatus: string;
+  synthesisJudgement: string;
+  synthesisEvidenceChain: string;
+  synthesisBoundary: string;
+  synthesisGap: string;
+  searchTermBoundary: string;
+  placementBoundary: string;
+  manualNextStep: string;
   boundary: string;
 }
 
@@ -2168,7 +3592,11 @@ export interface ProductScopeAdGroupDiagnosisRow {
   trafficContext: string;
   reason: string;
   advertisedAsins: string[];
+  ownershipDecision: ProductScopeAdGroupOwnershipDecision;
+  problemLocator: ProductScopeAdGroupProblemLocator;
+  evidenceSynthesis: ProductScopeAdGroupEvidenceSynthesis;
   actionableReview: ProductScopeAdGroupActionableReview;
+  placementDecision: ProductScopePlacementEvidenceDecision;
   nextReviewFocus: string;
   boundary: string;
   forbiddenActions: string[];
@@ -2179,10 +3607,22 @@ export interface ProductScopeSearchTermDiagnosisTerm {
   label: string;
   termTypeLabel: string;
   metrics: string;
+  targetingText: string | null;
+}
+
+export interface ProductScopeSearchTermDecision {
+  title: string;
+  businessQuestion: string;
+  currentJudgement: string;
+  targetingEvidence: string;
+  proves: string;
+  doesNotProve: string;
+  nextManualStep: string;
 }
 
 export interface ProductScopeSearchTermDiagnosis {
   termSummary: string;
+  decision: ProductScopeSearchTermDecision;
   effectiveTerms: ProductScopeSearchTermDiagnosisTerm[];
   zeroOrderTerms: ProductScopeSearchTermDiagnosisTerm[];
   termBoundary: string;
@@ -2236,6 +3676,408 @@ export function signalTriageBusinessEvidenceItems(
     detail: block.detail ?? null,
     source: block.source ?? null,
   }));
+}
+
+export function signalTriageDiagnosisContractItems(
+  summary: SignalTriageSummaryForUi | null | undefined,
+  contract: SignalTriageSummaryForUi["diagnosis_contract"] | null | undefined = summary?.diagnosis_contract,
+): SignalTriageDiagnosisContractItem[] {
+  const sections = contract?.sections ?? [];
+  return sections
+    .filter((section) => section.title && section.business_question && section.current_judgement)
+    .map((section) => ({
+      sectionId: section.section_id ?? section.title ?? "diagnosis_contract_section",
+      title: section.title ?? "诊断合同",
+      businessQuestion: section.business_question ?? "等待补充业务问题",
+      objectGrain: section.object_grain ?? "等待补充对象粒度",
+      metricText: diagnosisContractMetricText(section.metrics),
+      currentJudgement: section.current_judgement ?? "等待补充当前判断",
+      proves: section.proves ?? "等待补充能证明什么",
+      doesNotProve: section.does_not_prove ?? "等待补充不能证明什么",
+      evidenceGap: section.evidence_gap ?? "等待补充证据缺口",
+      requiredEvidence: section.required_evidence ?? "等待补充所需证据",
+      nextManualStep: section.next_manual_step ?? "等待人工复核",
+    }));
+}
+
+export function buildSearchTermOpportunityReviewChain(
+  diagnosisContractItems: SignalTriageDiagnosisContractItem[],
+  businessEvidenceItems: SignalTriageBusinessEvidenceItem[],
+): SearchTermOpportunityReviewChain | null {
+  const directSearchTermContract = diagnosisContractItems.find((item) => {
+    const text = `${item.sectionId} ${item.title} ${item.objectGrain} ${item.businessQuestion}`.toLowerCase();
+    return item.sectionId === "search_term_opportunity" || item.title.includes("搜索词机会") || text.includes("searchterm");
+  });
+  const searchTermContextContract = diagnosisContractItems.find((item) => {
+    const text = `${item.sectionId} ${item.title} ${item.objectGrain} ${item.businessQuestion}`.toLowerCase();
+    return text.includes("search_term") || text.includes("搜索词") || text.includes("aba");
+  });
+  const searchTermContract = directSearchTermContract ?? searchTermContextContract;
+  const targetingBlock = businessEvidenceItems.find(
+    (item) => item.blockId === "targeting_context" || item.label.includes("投放词"),
+  );
+  const adGroupBlock = businessEvidenceItems.find(
+    (item) =>
+      item.blockId === "ad_group_problem_location" ||
+      item.blockId === "ad_group_context" ||
+      item.blockId === "product_scope_ad_group_products" ||
+      item.label.includes("广告组"),
+  );
+  const marketBlock = businessEvidenceItems.find(
+    (item) =>
+      item.blockId === "search_term_market_context" ||
+      item.blockId === "search_term_aba_context" ||
+      item.label.includes("搜索词市场") ||
+      item.label.includes("ABA"),
+  );
+  const boundaryBlock = businessEvidenceItems.find((item) => item.blockId === "context_boundary");
+  if (!searchTermContract && !targetingBlock && !marketBlock) return null;
+
+  const doesNotProve = uniqueNonEmpty([
+    searchTermContract?.doesNotProve,
+    "不能把 ABA 当作店铺数据，不能把搜索词直接归因到单个广告 ASIN，也不能据此自动执行广告动作。",
+  ]).join("；");
+  const evidenceGap = uniqueNonEmpty([
+    searchTermContract?.evidenceGap,
+    boundaryBlock?.detail,
+    marketBlock ? null : "缺少可匹配的 ABA 站点级市场背景时，只能用广告搜索词表现做人工观察。",
+  ]).join("；");
+
+  return {
+    title: directSearchTermContract?.title ?? "搜索词机会复核链",
+    businessQuestion:
+      directSearchTermContract?.businessQuestion ?? "这个搜索词是否只是广告上下文，还是值得人工复核扩量或治理？",
+    objectGrain:
+      directSearchTermContract?.objectGrain ?? "SearchTerm + 同广告活动 / 广告组上下文 + 站点级 ABA 背景",
+    targetingEvidence: businessEvidenceBlockSentence(
+      targetingBlock,
+      "投放词结构待补：需要核对关键词 / 商品定向 / 自动投放上下文。",
+    ),
+    adGroupSynthesis: businessEvidenceBlockSentence(
+      adGroupBlock,
+      "广告组合流判断待补：搜索词不能自动归因到单个广告 ASIN，需回到同广告组广告 ASIN、广告组结构和广告位证据缺口。",
+    ),
+    marketContext: businessEvidenceBlockSentence(
+      marketBlock,
+      "ABA 市场背景待补：ABA 只能按站点 + 周期 + 标准化搜索词匹配，不能当作店铺或广告组数据。",
+    ),
+    currentJudgement: searchTermContract?.currentJudgement ?? marketBlock?.value ?? targetingBlock?.value ?? "等待补充搜索词机会判断。",
+    proves:
+      searchTermContract?.proves ??
+      "能证明当前搜索词在已有广告上下文中存在人工复核价值，但仍要结合投放词、广告组和商品承接判断。",
+    doesNotProve,
+    evidenceGap: evidenceGap || "等待补充投放词、ABA 周期、广告组结构或人工策略证据。",
+    requiredEvidence:
+      searchTermContract?.requiredEvidence ||
+      "需要人工核对广告商品、投放词维护状态、广告组策略、ABA 周期和 7/14 天复盘指标。",
+    nextManualStep:
+      searchTermContract?.nextManualStep ||
+      "先核对投放词、广告组结构和 ABA 周期，再选择记录观察、加入复盘或忽略本次。",
+    actionBoundary: "只允许人工记录观察、标记已处理、加入复盘或忽略本次；不得自动加词、否词、调价或暂停广告。",
+  };
+}
+
+function businessEvidenceBlockSentence(block: SignalTriageBusinessEvidenceItem | undefined, fallback: string): string {
+  if (!block) return fallback;
+  return `${block.label}：${block.value}${block.detail ? `；${block.detail}` : ""}`;
+}
+
+const manualConfirmationPreferredSections = [
+  "search_term_opportunity",
+  "ad_asin_coverage",
+  "ad_group_boundary",
+  "placement_gap",
+  "manual_review",
+];
+
+export function buildManualConfirmationEvidenceItems(
+  diagnosisContractItems: SignalTriageDiagnosisContractItem[],
+  searchTermOpportunityReviewChain: SearchTermOpportunityReviewChain | null | undefined = null,
+): ManualConfirmationEvidenceItem[] {
+  const primary =
+    manualConfirmationPreferredSections
+      .map((sectionId) => diagnosisContractItems.find((item) => item.sectionId === sectionId))
+      .find(Boolean) ?? diagnosisContractItems[0];
+
+  const primaryItems: ManualConfirmationEvidenceItem[] = primary
+    ? [
+        {
+          label: "业务问题",
+          value: primary.businessQuestion,
+          detail: primary.objectGrain ? `对象粒度：${primary.objectGrain}` : null,
+        },
+        {
+          label: "当前判断",
+          value: primary.currentJudgement,
+          detail: primary.metricText ? `关键指标：${primary.metricText}` : null,
+        },
+        {
+          label: "能证明",
+          value: primary.proves,
+          detail: "只说明当前证据能支撑哪些判断。",
+        },
+        {
+          label: "不能证明",
+          value: primary.doesNotProve,
+          detail: "反证边界必须在人工点击前确认，不能包装成自动广告动作。",
+        },
+        {
+          label: "人工下一步",
+          value: primary.nextManualStep,
+          detail: "只允许记录观察、标记已处理、加入复盘或忽略本次。",
+        },
+      ]
+    : [];
+  const searchTermReviewItems: ManualConfirmationEvidenceItem[] = searchTermOpportunityReviewChain
+    ? [
+        {
+          label: "投放词证据",
+          value: searchTermOpportunityReviewChain.targetingEvidence,
+          detail: "用于确认搜索词来自当前投放上下文，不代表完整关键词库。",
+        },
+        {
+          label: "广告组合流判断",
+          value: searchTermOpportunityReviewChain.adGroupSynthesis,
+          detail: "用于确认搜索词只说明同广告组上下文，不能自动归因到单个广告 ASIN、广告组或广告位。",
+        },
+        {
+          label: "ABA 背景",
+          value: searchTermOpportunityReviewChain.marketContext,
+          detail: "ABA 只能按站点 + 周期 + 标准化搜索词匹配，不能当店铺、产品、广告组或广告 ASIN 数据。",
+        },
+        {
+          label: "证据缺口",
+          value: searchTermOpportunityReviewChain.evidenceGap,
+          detail: `需要补证：${searchTermOpportunityReviewChain.requiredEvidence}`,
+        },
+        {
+          label: "动作边界",
+          value: searchTermOpportunityReviewChain.actionBoundary,
+          detail: searchTermOpportunityReviewChain.doesNotProve,
+        },
+      ]
+    : [];
+
+  return [...primaryItems, ...searchTermReviewItems].filter((item) => item.value.trim());
+}
+
+function preferredDiagnosisContractItem(
+  diagnosisContractItems: SignalTriageDiagnosisContractItem[],
+): SignalTriageDiagnosisContractItem | undefined {
+  return (
+    manualConfirmationPreferredSections
+      .map((sectionId) => diagnosisContractItems.find((item) => item.sectionId === sectionId))
+      .find(Boolean) ?? diagnosisContractItems[0]
+  );
+}
+
+function manualActionDecisionFallbackBoundary(signal: ManualActionDecisionFactSignal): string {
+  return signalDecisionBoundary(signal) || "该信号只能作为人工复核线索，不能绕过证据链直接执行广告动作。";
+}
+
+function manualActionDecisionFactValue(value: string, fallback: string): string {
+  return value.trim() || fallback;
+}
+
+function manualActionDecisionBasisText(
+  primary: SignalTriageDiagnosisContractItem | undefined,
+  evidenceReason?: string | null,
+): string {
+  if (!primary) return stringValue(evidenceReason);
+  return uniqueNonEmpty([
+    `业务问题：${primary.businessQuestion}`,
+    `当前判断：${primary.currentJudgement}`,
+    stringValue(evidenceReason) ? `证据摘要：${stringValue(evidenceReason)}` : primary.metricText ? `关键指标：${primary.metricText}` : null,
+    `人工下一步：${primary.nextManualStep}`,
+  ]).join("；");
+}
+
+export function buildManualActionDecisionFactItems(
+  signal: ManualActionDecisionFactSignal,
+  diagnosisContractItems: SignalTriageDiagnosisContractItem[] = [],
+  evidenceReason?: string | null,
+): ManualActionDecisionFactItem[] {
+  const primary = preferredDiagnosisContractItem(diagnosisContractItems);
+  const boundary = manualActionDecisionFallbackBoundary(signal);
+  const basis = manualActionDecisionFactValue(
+    manualActionDecisionBasisText(primary, evidenceReason) || stringValue(signal.why) || stringValue(signal.summary),
+    boundary,
+  );
+  const risk = manualActionDecisionFactValue(
+    primary ? `不能证明：${primary.doesNotProve}` : stringValue(signal.risk),
+    boundary,
+  );
+  const uncertainty = manualActionDecisionFactValue(
+    primary
+      ? `证据缺口：${primary.evidenceGap}；需要补证：${primary.requiredEvidence}`
+      : stringValue(signal.uncertainty),
+    boundary,
+  );
+
+  return [
+    { label: "处理依据", value: basis },
+    { label: "风险", value: risk },
+    { label: "不确定性", value: uncertainty },
+  ];
+}
+
+function signalDiagnosisObjectStableId(primaryObject: PrimaryObjectForUi | undefined, signal: SignalEvidenceSupportInput): string {
+  return (
+    stringValue(primaryObject?.object_id) ||
+    stringValue(primaryObject?.asin) ||
+    stringValue(primaryObject?.search_term) ||
+    stringValue(primaryObject?.placement) ||
+    stringValue(primaryObject?.label) ||
+    signal.id
+  );
+}
+
+function signalDiagnosisObjectLabel(primaryObject: PrimaryObjectForUi | undefined, stableId: string): string {
+  return (
+    stringValue(primaryObject?.label) ||
+    stringValue(primaryObject?.asin) ||
+    stringValue(primaryObject?.search_term) ||
+    stringValue(primaryObject?.placement) ||
+    stableId
+  );
+}
+
+function buildSignalDiagnosisObjectReadback(
+  signal: SignalEvidenceSupportInput,
+  primary: SignalTriageDiagnosisContractItem,
+): string {
+  const primaryObject = signal.evidence?.primary_object;
+  const objectType = primaryObject?.object_type ?? signal.object_type ?? "unknown";
+  const stableId = signalDiagnosisObjectStableId(primaryObject, signal);
+  const objectLabel = signalDiagnosisObjectLabel(primaryObject, stableId);
+  const objectText = uniqueNonEmpty([objectType, objectLabel !== stableId ? objectLabel : null, stableId]).join(" / ");
+  const grainText = primary.objectGrain ? `对象粒度：${primary.objectGrain}` : "对象粒度待补充";
+
+  if (!objectType || objectType === "unknown") {
+    return `诊断对象待核对：${objectText || signal.id}；${grainText}；不能把中间诊断直接带入右侧 ManualAction / ReviewTodo / ReviewRecord。`;
+  }
+
+  return `诊断对象：${objectText}；${grainText}；该对象必须与右侧 ManualAction / ReviewTodo / ReviewRecord 使用同一 stable object。`;
+}
+
+export function buildSignalDiagnosisEvidenceSummary(
+  signal: SignalEvidenceSupportInput,
+  diagnosisContractItems: SignalTriageDiagnosisContractItem[],
+): SignalDiagnosisEvidenceSummary | null {
+  const primary =
+    manualConfirmationPreferredSections
+      .map((sectionId) => diagnosisContractItems.find((item) => item.sectionId === sectionId))
+      .find(Boolean) ?? diagnosisContractItems[0];
+  if (!primary) return null;
+
+  const support = buildSignalEvidenceSupport(signal);
+  const strengthLabelByConfidence: Record<SignalEvidenceSupportInput["confidence"], string> = {
+    high: "证据强度：高",
+    medium: "证据强度：中",
+    low: "证据强度：低",
+  };
+  const toneByConfidence: Record<SignalEvidenceSupportInput["confidence"], SignalDiagnosisEvidenceSummary["tone"]> = {
+    high: "strong",
+    medium: "medium",
+    low: "weak",
+  };
+  const strengthReason = [support.confidenceReason, support.supportWarning].filter(Boolean).join(" ");
+
+  return {
+    title: primary.title,
+    businessQuestion: primary.businessQuestion,
+    objectReadback: buildSignalDiagnosisObjectReadback(signal, primary),
+    strengthLabel: strengthLabelByConfidence[signal.confidence],
+    strengthReason,
+    proves: primary.proves,
+    doesNotProve: primary.doesNotProve,
+    evidenceGap: primary.evidenceGap,
+    nextManualStep: primary.nextManualStep,
+    tone: toneByConfidence[signal.confidence],
+  };
+}
+
+export function buildSignalMetricDecisionItems(
+  metrics: SignalMetricSnapshotForUi,
+  diagnosisContractItems: SignalTriageDiagnosisContractItem[] = [],
+): SignalMetricDecisionItem[] {
+  return [
+    {
+      label: "花费",
+      value: formatSignalMetricMoney(metrics.cost),
+      fallbackPurpose: "用于判断当前信号是否有足够广告花费样本，避免把零成本偶然波动当成机会或异常。",
+    },
+    {
+      label: "订单",
+      value: String(metrics.orders),
+      fallbackPurpose: "用于判断当前对象是否产生真实广告转化，避免只用点击或花费推断机会。",
+    },
+    {
+      label: "销售额",
+      value: formatSignalMetricMoney(metrics.sales),
+      fallbackPurpose: "用于判断订单是否带来销售承接，避免只看订单数量。",
+    },
+    {
+      label: "ACOS",
+      value: formatSignalMetricPercent(metrics.acos ?? null),
+      fallbackPurpose: "用于判断当前效率是否可接受，只能作为人工复核线索。",
+    },
+  ].map((metric) => {
+    const contractItem = diagnosisContractItemForMetric(metric.label, diagnosisContractItems);
+    return {
+      label: metric.label,
+      value: metric.value,
+      purpose: metricPurposeFromContract(metric.label, contractItem) ?? metric.fallbackPurpose,
+      proves: contractItem?.proves ?? "能证明当前指标在所选对象和周期内成立。",
+      doesNotProve: contractItem?.doesNotProve ?? "不能单独证明应自动调价、自动加词、自动否词或归因到单个 ASIN。",
+      nextManualStep: contractItem?.nextManualStep ?? "人工复核广告商品、投放词、广告组策略后记录观察或加入复盘。",
+    };
+  });
+}
+
+function diagnosisContractItemForMetric(
+  label: string,
+  items: SignalTriageDiagnosisContractItem[],
+): SignalTriageDiagnosisContractItem | undefined {
+  return items.find((item) => metricPurposeFromContract(label, item)) ?? items[0];
+}
+
+function metricPurposeFromContract(label: string, item: SignalTriageDiagnosisContractItem | undefined): string | null {
+  if (!item?.metricText) return null;
+  const part = item.metricText
+    .split("；")
+    .map((text) => text.trim())
+    .find((text) => text.startsWith(`${label}：`));
+  if (!part) return null;
+  const purpose = part.split("，").slice(1).join("，").trim();
+  return purpose || null;
+}
+
+function formatSignalMetricMoney(value: number): string {
+  return `$${value.toFixed(2)}`;
+}
+
+function formatSignalMetricPercent(value: number | null): string {
+  if (value === null) return "-";
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function diagnosisContractMetricText(
+  metrics: NonNullable<NonNullable<SignalTriageSummaryForUi["diagnosis_contract"]>["sections"]>[number]["metrics"],
+): string {
+  const parts = (metrics ?? [])
+    .filter((metric) => metric.name && metric.value)
+    .map((metric) => {
+      const purpose = diagnosisContractPurposeText(metric.purpose);
+      return purpose ? `${metric.name}：${metric.value}，${purpose}` : `${metric.name}：${metric.value}`;
+    });
+  return parts.join("；");
+}
+
+function diagnosisContractPurposeText(purpose: string | null | undefined): string {
+  const normalized = purpose?.trim().replace(/[。；;]$/, "");
+  if (!normalized) return "";
+  return normalized.startsWith("用于") ? normalized : `用于${normalized}`;
 }
 
 export function productScopeDrilldownEvidenceItems(summary: SignalTriageSummaryForUi | null | undefined): SignalTriageBusinessEvidenceItem[] {
@@ -2359,12 +4201,95 @@ export function productScopeAdGroupDiagnosisRows(summary: SignalTriageSummaryFor
       } 条 / 活动广告位 ${row.campaign_placement_count ?? 0} 条`,
       reason: row.reason?.trim() || "等待后端补充广告组诊断原因。",
       advertisedAsins: row.ad_group_advertised_asins?.map((asin) => asin.trim()).filter(Boolean) ?? [],
+      ownershipDecision: productScopeAdGroupOwnershipDecision(row, canWriteManualAction),
+      problemLocator: productScopeAdGroupProblemLocator(row, candidateCount, canWriteManualAction),
+      evidenceSynthesis: productScopeAdGroupEvidenceSynthesis(row, canWriteManualAction),
       actionableReview: productScopeAdGroupActionableReview(row, candidateCount, canWriteManualAction),
+      placementDecision: productScopePlacementEvidenceDecision(row, canWriteManualAction),
       nextReviewFocus: row.next_review_focus?.trim() || "先下钻广告 ASIN、搜索词和广告位上下文。",
       boundary: row.attribution_boundary?.trim() || "广告组是投放容器，搜索词和广告位不能自动归因到单个 ASIN。",
       forbiddenActions: row.forbidden_actions?.length ? row.forbidden_actions : ["自动调价", "自动暂停广告", "自动否词", "自动新增关键词"],
       searchTermDiagnosis: productScopeSearchTermDiagnosis(row),
     }));
+}
+
+function productScopeAdGroupEvidenceSynthesis(
+  row: ProductScopeDrilldownAdGroupDiagnosisForUi,
+  canWriteManualAction: boolean,
+): ProductScopeAdGroupEvidenceSynthesis {
+  const groupName = row.ad_group_name?.trim() || row.ad_group_id?.trim() || "未知广告组";
+  const effectiveCount = row.effective_search_term_count ?? row.search_term_diagnosis?.effective_terms?.length ?? 0;
+  const zeroOrderCount = row.zero_order_search_term_count ?? row.search_term_diagnosis?.zero_order_terms?.length ?? 0;
+  const searchTermCount = row.search_term_count ?? 0;
+  const placementCount = row.placement_count ?? 0;
+  const campaignPlacementCount = row.campaign_placement_count ?? 0;
+  const adAsins = row.ad_group_advertised_asins?.map((asin) => asin.trim()).filter(Boolean) ?? [];
+  const adAsinCount = row.ad_group_advertised_asin_count ?? row.current_scope_advertised_asin_count ?? row.ad_product_row_count ?? adAsins.length;
+  const adAsinText = adAsins.length > 0 ? adAsins.slice(0, 3).join("、") : "广告 ASIN 清单待补充";
+  const targetingTerms = [
+    ...(row.search_term_diagnosis?.effective_terms ?? []),
+    ...(row.search_term_diagnosis?.zero_order_terms ?? []),
+  ]
+    .map((term) => term.targeting_text?.trim())
+    .filter((term): term is string => Boolean(term));
+  const uniqueTargetingTerms = Array.from(new Set(targetingTerms));
+  const targetingText = uniqueTargetingTerms.length > 0 ? uniqueTargetingTerms.slice(0, 3).join("、") : "投放词待补充";
+  const placementText =
+    placementCount > 0
+      ? `广告组级 ${placementCount} 条`
+      : campaignPlacementCount > 0
+        ? `仅活动级 ${campaignPlacementCount} 条`
+        : "缺少广告位证据";
+  const tone: ProductScopeAdGroupEvidenceSynthesis["tone"] =
+    adAsinCount === 0 || searchTermCount === 0 ? "gap" : placementCount > 0 ? "aligned" : "partial";
+  let statusLabel = "证据不足：等待下游证据";
+
+  if (effectiveCount > 0 && zeroOrderCount > 0) {
+    statusLabel = "证据合流：搜索词分化优先";
+  } else if (zeroOrderCount > 0) {
+    statusLabel = "证据合流：无订单花费词优先";
+  } else if (effectiveCount > 0 && placementCount === 0 && campaignPlacementCount > 0) {
+    statusLabel = "证据部分合流：有效词可复核，广告位只是活动背景";
+  } else if (effectiveCount > 0) {
+    statusLabel = "证据合流：有效词承接优先";
+  } else if (adAsinCount > 1) {
+    statusLabel = "证据部分合流：多广告 ASIN 容器边界优先";
+  } else if (placementCount === 0 && campaignPlacementCount > 0) {
+    statusLabel = "证据缺口：广告位只有活动背景";
+  } else if (searchTermCount === 0) {
+    statusLabel = "证据缺口：缺少搜索词样本";
+  }
+
+  const gaps = [
+    adAsinCount > 0 ? "" : "广告 ASIN 清单",
+    uniqueTargetingTerms.length > 0 ? "" : "投放词证据",
+    searchTermCount > 0 ? "" : "搜索词样本",
+    placementCount > 0 ? "" : "广告组级广告位证据",
+  ].filter(Boolean);
+  const evidenceGap =
+    gaps.length > 0
+      ? `当前仍缺少${gaps.join("、")}；只能按已有广告商品和搜索词上下文人工复核。`
+      : "证据链已能支持广告组层人工复核，但仍缺少搜索词到单个广告 ASIN 和广告位的直接归因链路。";
+  const proves =
+    effectiveCount > 0 || zeroOrderCount > 0
+      ? `能证明 ${groupName} 下已有可比较的搜索词表现：有效词 ${effectiveCount} 条、无订单花费词 ${zeroOrderCount} 条，可用于人工判断词意图分化或商品承接差异。`
+      : `能证明 ${groupName} 当前广告组层证据还不足以形成搜索词表现判断，只能先看广告 ASIN 和广告位覆盖。`;
+  const nextManualStep = canWriteManualAction
+    ? "右侧人工记录前，先按这条合流判断核对广告 ASIN、投放词、搜索词和广告位缺口；只能记录观察、标记已处理、加入复盘或忽略本次。"
+    : "当前只读诊断；先按这条合流判断核对广告 ASIN、投放词、搜索词和广告位缺口，不写人工动作。";
+
+  return {
+    title: `广告组证据合流判断：${groupName}`,
+    tone,
+    statusLabel,
+    businessQuestion: "广告商品、投放词、搜索词和广告位证据是否指向同一个可人工复核的问题？",
+    currentJudgement: `广告 ASIN ${adAsinCount} 个 / 投放词 ${uniqueTargetingTerms.length} 个 / 搜索词 ${searchTermCount} 条 / 广告位 ${placementText}。`,
+    evidenceChain: `广告 ASIN ${adAsinCount} 个（${adAsinText}）-> 投放词 ${uniqueTargetingTerms.length} 个（${targetingText}）-> 搜索词 ${searchTermCount} 条（有效 ${effectiveCount} / 无订单 ${zeroOrderCount}）-> 广告位 ${placementText}。`,
+    proves,
+    doesNotProve: "不能证明应该自动拆广告组、自动加词、自动否词、自动调价，也不能把搜索词或广告位影响自动归因到单个广告 ASIN。",
+    evidenceGap,
+    nextManualStep,
+  };
 }
 
 export function buildManualActionCandidateAdGroupBridge(
@@ -2401,11 +4326,124 @@ export function buildManualActionCandidateAdGroupBridge(
     evidence = `候选搜索词 ${objectLabel} 使用优先广告组 ${topGroup.title} 的同组搜索词上下文复核。`;
   }
 
+  const searchTermDecision = topGroup.searchTermDiagnosis?.decision;
+  const searchTermBoundary = searchTermDecision
+    ? `搜索词边界：${searchTermDecision.proves} ${searchTermDecision.doesNotProve}`
+    : "搜索词边界：当前没有搜索词业务判断，不能用搜索词推导人工动作。";
+  const placementBoundary = `广告位边界：${topGroup.placementDecision.evidenceLevel} ${topGroup.placementDecision.doesNotProve}`;
+  const synthesis = topGroup.evidenceSynthesis;
+  const manualNextStep = [
+    synthesis.nextManualStep,
+    searchTermDecision?.nextManualStep,
+    topGroup.placementDecision.nextManualStep,
+    "右侧按钮只保存人工留痕或复盘待办，不执行广告动作。",
+  ]
+    .filter((text): text is string => Boolean(text?.trim()))
+    .join(" ");
+
   return {
     title: "人工候选与广告组关系",
     evidence,
-    decision: `沿用中间广告组判断：${topGroup.actionableReview.decision}`,
+    decision: `沿用中间广告组合流判断：${synthesis.statusLabel}；${topGroup.actionableReview.decision}`,
+    synthesisStatus: `合流状态：${synthesis.statusLabel}`,
+    synthesisJudgement: synthesis.currentJudgement,
+    synthesisEvidenceChain: synthesis.evidenceChain,
+    synthesisBoundary: `能证明：${synthesis.proves} 不能证明：${synthesis.doesNotProve}`,
+    synthesisGap: `证据缺口：${synthesis.evidenceGap}`,
+    searchTermBoundary,
+    placementBoundary,
+    manualNextStep,
     boundary: "广告组是投放容器；该关系只说明候选对象与同广告组上下文的复核关系，不自动归因到单个 ASIN，也不自动执行广告动作。",
+  };
+}
+
+function productScopeAdGroupOwnershipDecision(
+  row: ProductScopeDrilldownAdGroupDiagnosisForUi,
+  canWriteManualAction: boolean,
+): ProductScopeAdGroupOwnershipDecision {
+  const groupName = row.ad_group_name?.trim() || row.ad_group_id?.trim() || "未知广告组";
+  const effectiveCount = row.effective_search_term_count ?? row.search_term_diagnosis?.effective_terms?.length ?? 0;
+  const zeroOrderCount = row.zero_order_search_term_count ?? row.search_term_diagnosis?.zero_order_terms?.length ?? 0;
+  const searchTermCount = row.search_term_count ?? 0;
+  const placementCount = row.placement_count ?? 0;
+  const campaignPlacementCount = row.campaign_placement_count ?? 0;
+  const adAsins = row.ad_group_advertised_asins?.map((asin) => asin.trim()).filter(Boolean) ?? [];
+  const adAsinCount = row.ad_group_advertised_asin_count ?? row.current_scope_advertised_asin_count ?? row.ad_product_row_count ?? adAsins.length;
+  const adAsinText = adAsins.length > 0 ? adAsins.slice(0, 3).join("、") : "广告 ASIN 清单待补充";
+  const statusLabel =
+    adAsinCount > 1
+      ? "先归属到广告组容器"
+      : adAsinCount === 1
+        ? "可从单广告 ASIN 复核"
+        : "广告商品归属待补证";
+  const issueOwner =
+    adAsinCount > 1
+      ? `当前广告组包含 ${adAsinCount} 个广告 ASIN（${adAsinText}），问题先归属到广告组容器和搜索词上下文，不能拆到单个广告 ASIN。`
+      : adAsinCount === 1
+        ? `当前广告组只识别到 1 个广告 ASIN（${adAsinText}），可作为商品承接复核入口，但搜索词和广告位仍需独立验证。`
+        : "当前广告组缺少广告 ASIN 清单，不能判断商品归属，只能先补 advertised_products 投放行或商品映射。";
+  const evidencePath =
+    `广告 ASIN -> 广告组 ${groupName} -> 搜索词 ${searchTermCount} 条` +
+    `（有效 ${effectiveCount} / 无订单 ${zeroOrderCount}）-> 广告组级广告位 ${placementCount} 条 / 活动级广告位 ${campaignPlacementCount} 条。`;
+  const nextManualStep = canWriteManualAction
+    ? "右侧人工记录前，先按归属判定逐项核对广告 ASIN 清单、有效词、无订单花费词和广告位粒度。"
+    : "当前只读诊断；先按归属判定核对广告 ASIN 清单、有效词、无订单花费词和广告位粒度，不写人工动作。";
+
+  return {
+    title: `问题归属判定：${groupName}`,
+    statusLabel,
+    businessQuestion: "这个广告组问题能不能归到单个广告 ASIN，还是只能先归到广告组容器和搜索词 / 广告位上下文？",
+    currentJudgement: `广告 ASIN ${adAsinCount} 个 / 搜索词 ${searchTermCount} 条 / 广告组级广告位 ${placementCount} 条 / 活动级广告位 ${campaignPlacementCount} 条。`,
+    issueOwner,
+    evidencePath,
+    doesNotProve: "不能证明应自动拆广告组、自动调价、自动否词，也不能把搜索词或广告位直接归因到单个广告 ASIN。",
+    nextManualStep,
+  };
+}
+
+function productScopeAdGroupProblemLocator(
+  row: ProductScopeDrilldownAdGroupDiagnosisForUi,
+  candidateCount: number,
+  canWriteManualAction: boolean,
+): ProductScopeAdGroupProblemLocator {
+  const groupName = row.ad_group_name?.trim() || row.ad_group_id?.trim() || "未知广告组";
+  const effectiveCount = row.effective_search_term_count ?? row.search_term_diagnosis?.effective_terms?.length ?? 0;
+  const zeroOrderCount = row.zero_order_search_term_count ?? row.search_term_diagnosis?.zero_order_terms?.length ?? 0;
+  const searchTermCount = row.search_term_count ?? 0;
+  const placementCount = row.placement_count ?? 0;
+  const campaignPlacementCount = row.campaign_placement_count ?? 0;
+  const adAsinCount = row.ad_group_advertised_asin_count ?? row.current_scope_advertised_asin_count ?? row.ad_product_row_count ?? 0;
+  const metricText = `花费 ${formatEvidenceNumber(row.spend)} / 订单 ${Math.round(row.orders ?? 0)} / ACOS ${formatEvidencePercent(row.acos)}`;
+  let problemLocation = "问题落点待补充：先确认广告商品、搜索词和广告位证据是否齐全。";
+
+  if (effectiveCount > 0 && zeroOrderCount > 0) {
+    problemLocation = "优先落在搜索词意图分化：同一广告组同时有有效词和无订单花费词。";
+  } else if (zeroOrderCount > 0) {
+    problemLocation = "优先落在无订单花费词：先复核搜索词相关性、匹配方式和商品承接。";
+  } else if (adAsinCount > 1) {
+    problemLocation = "优先落在广告组容器边界：同组多个广告 ASIN 会掩盖商品级表现差异。";
+  } else if (searchTermCount === 0) {
+    problemLocation = "优先落在搜索词证据缺口：当前广告组没有可复核搜索词样本。";
+  } else if (placementCount === 0 && campaignPlacementCount > 0) {
+    problemLocation = "优先落在广告位证据缺口：只能看到活动级广告位，不能判断广告组级广告位影响。";
+  }
+
+  const splitReason =
+    adAsinCount > 1
+      ? `广告组汇总会把 ${adAsinCount} 个广告 ASIN 的花费、订单和承接混在一起；必须拆到广告 ASIN 和搜索词层复核。`
+      : "广告组仍是投放容器；即使只有一个广告 ASIN，也要用搜索词和广告位上下文复核问题来源。";
+  const nextManualStep = canWriteManualAction
+    ? `右侧已有 ${candidateCount} 个候选可人工确认；先按广告 ASIN清单、有效词、无订单花费词和广告位缺口逐项核对。`
+    : `当前候选 ${candidateCount} 个，先只读复核广告 ASIN清单、有效词、无订单花费词和广告位缺口，不写人工动作。`;
+
+  return {
+    title: `问题先落到哪里：${groupName}`,
+    businessQuestion: "这个广告组的问题应该先看投放商品、搜索词分化、广告位缺口，还是数据缺口？",
+    currentJudgement: `${metricText}；广告 ASIN ${adAsinCount} 个 / 搜索词 ${searchTermCount} 条 / 广告位 ${placementCount} 条 / 活动广告位 ${campaignPlacementCount} 条。`,
+    problemLocation,
+    splitReason,
+    doesNotProve: "不能证明应自动拆广告组、自动否词、自动调价，也不能把搜索词或广告位自动归因到单个广告 ASIN。",
+    nextManualStep,
   };
 }
 
@@ -2438,6 +4476,46 @@ function productScopeAdGroupActionableReview(
   };
 }
 
+function productScopePlacementEvidenceDecision(
+  row: ProductScopeDrilldownAdGroupDiagnosisForUi,
+  canWriteManualAction: boolean,
+): ProductScopePlacementEvidenceDecision {
+  const groupName = row.ad_group_name?.trim() || row.ad_group_id?.trim() || "未知广告组";
+  const placementCount = row.placement_count ?? 0;
+  const campaignPlacementCount = row.campaign_placement_count ?? 0;
+  const searchTermCount = row.search_term_count ?? 0;
+  const adAsinCount = row.ad_group_advertised_asin_count ?? row.current_scope_advertised_asin_count ?? 0;
+  let evidenceLevel = "广告位证据缺口：当前没有广告组级或活动级广告位样本。";
+  let proves = "能证明当前广告组诊断缺少广告位维度，暂时不能判断流量位置是否影响转化或 ACOS。";
+  let evidenceGap = "需要补齐 ad_placement_daily_metrics 中 campaign_id + ad_group_id 级别的广告位表现。";
+  let nextManualStep = "先按广告 ASIN、投放词和搜索词只读复核；补齐广告位数据前，不判断广告位影响，也不写自动广告动作。";
+
+  if (placementCount > 0) {
+    evidenceLevel = "广告组级广告位证据可用：可以和同广告组搜索词、广告 ASIN 一起人工复核流量位置。";
+    proves = "能证明该广告组存在广告位上下文，可用于人工比较不同流量位置的花费、订单、ACOS 或 CVR。";
+    evidenceGap = "仍缺少搜索词到广告位的直接链路，不能判断某个搜索词或单个 ASIN 一定由该广告位造成。";
+    nextManualStep = canWriteManualAction
+      ? "先对照广告位、有效词、无订单花费词和广告 ASIN 承接，再在右侧人工记录观察或加入复盘。"
+      : "先只读对照广告位、有效词、无订单花费词和广告 ASIN 承接；未满足门禁前不写人工动作。";
+  } else if (campaignPlacementCount > 0) {
+    evidenceLevel = "只有广告活动级广告位背景：可以说明活动层有广告位数据，但不能替代广告组级判断。";
+    proves = "能证明同广告活动存在广告位背景，可提示补齐广告组级广告位证据。";
+    evidenceGap = "缺少当前广告组级广告位样本，不能判断广告位是否造成该广告组、搜索词或广告 ASIN 的表现。";
+    nextManualStep = "先核对广告位接口是否能下钻到广告组；当前只用搜索词和广告 ASIN 复核，不做广告位结论。";
+  }
+
+  return {
+    title: `广告位证据判断：${groupName}`,
+    businessQuestion: "当前广告位数据能否解释流量位置问题，还是只是证据缺口？",
+    currentJudgement: `广告组级广告位 ${placementCount} 条 / 活动级广告位 ${campaignPlacementCount} 条 / 搜索词 ${searchTermCount} 条 / 广告 ASIN ${adAsinCount} 个。`,
+    evidenceLevel,
+    proves,
+    doesNotProve: "不能证明应自动调整广告位加价、预算或竞价，也不能把广告位影响自动归因到单个搜索词或广告 ASIN。",
+    evidenceGap,
+    nextManualStep,
+  };
+}
+
 function productScopeSearchTermDiagnosis(
   row: ProductScopeDrilldownAdGroupDiagnosisForUi,
 ): ProductScopeSearchTermDiagnosis | null {
@@ -2447,6 +4525,7 @@ function productScopeSearchTermDiagnosis(
   const zeroOrderTerms = productScopeSearchTermDiagnosisTerms(diagnosis.zero_order_terms ?? []);
   return {
     termSummary: diagnosis.term_summary?.trim() || `有效搜索词 ${effectiveTerms.length} 条 / 无订单花费词 ${zeroOrderTerms.length} 条`,
+    decision: productScopeSearchTermDecision(row, diagnosis, effectiveTerms, zeroOrderTerms),
     effectiveTerms,
     zeroOrderTerms,
     termBoundary:
@@ -2466,7 +4545,46 @@ function productScopeSearchTermDiagnosisTerms(
     label: term.search_term?.trim() || term.normalized_query?.trim() || "未知搜索词",
     termTypeLabel: term.term_type === "asin_like" ? "ASIN 型" : "普通搜索词",
     metrics: `花费 ${formatEvidenceNumber(term.spend)} / 点击 ${Math.round(term.clicks ?? 0)} / 订单 ${Math.round(term.orders ?? 0)}`,
+    targetingText: term.targeting_text?.trim() || null,
   }));
+}
+
+function productScopeSearchTermDecision(
+  row: ProductScopeDrilldownAdGroupDiagnosisForUi,
+  diagnosis: ProductScopeSearchTermDiagnosisForUi,
+  effectiveTerms: ProductScopeSearchTermDiagnosisTerm[],
+  zeroOrderTerms: ProductScopeSearchTermDiagnosisTerm[],
+): ProductScopeSearchTermDecision {
+  const targetingLabels = uniqueNonEmpty([...effectiveTerms, ...zeroOrderTerms].map((term) => term.targetingText));
+  const searchTermCount = row.search_term_count ?? effectiveTerms.length + zeroOrderTerms.length;
+  const placementCount = row.placement_count ?? 0;
+  const campaignPlacementCount = row.campaign_placement_count ?? 0;
+  const adAsinCount = row.ad_group_advertised_asin_count ?? row.current_scope_advertised_asin_count ?? 0;
+  let proves = "能证明当前广告组存在可人工复核的搜索词样本，但还不能直接判断应做广告动作。";
+
+  if (effectiveTerms.length > 0 && zeroOrderTerms.length > 0) {
+    proves = "能证明同广告组内搜索意图表现分化：有词产生订单，也有词产生花费但没有订单。";
+  } else if (effectiveTerms.length > 0) {
+    proves = "能证明当前广告组存在产生订单的搜索词，可作为人工复核扩量或稳定承接的线索。";
+  } else if (zeroOrderTerms.length > 0) {
+    proves = "能证明当前广告组存在花费无订单的搜索词，可作为人工复核相关性、匹配方式和承接的线索。";
+  }
+
+  return {
+    title: "搜索词业务判断",
+    businessQuestion: "这些搜索词是在提示放量机会、浪费风险，还是仅表示广告组上下文？",
+    currentJudgement: `有效词 ${effectiveTerms.length} 条 / 无订单花费词 ${zeroOrderTerms.length} 条 / 搜索词样本 ${searchTermCount} 条 / 投放词 ${
+      targetingLabels.length
+    } 个 / 广告 ASIN ${adAsinCount} 个 / 广告位 ${placementCount} 条 / 活动广告位 ${campaignPlacementCount} 条。`,
+    targetingEvidence: targetingLabels.length > 0 ? `触发投放词：${targetingLabels.join("、")}` : "触发投放词：当前搜索词样本未带投放词证据。",
+    proves,
+    doesNotProve:
+      "不能证明应自动加词、自动否词、自动调价，也不能把搜索词归因到单个广告 ASIN；ASIN 型搜索词只能进入商品定向或自动投放上下文复核。",
+    nextManualStep:
+      diagnosis.next_review_focus?.trim() ||
+      row.next_review_focus?.trim() ||
+      "先核对投放词、广告 ASIN、商品承接和广告组策略；满足右侧门禁后再人工记录观察或加入复盘。",
+  };
 }
 
 function productScopeAdGroupDiagnosisTone(status: string | null | undefined): ProductScopeAdGroupDiagnosisRow["statusTone"] {
@@ -2790,19 +4908,133 @@ export function buildProductScopeEvidenceMatrix(
 }
 
 export function buildProductScopeEvidenceRouteGuide(matrix: ProductScopeEvidenceMatrix): ProductScopeEvidenceRouteGuide {
+  const rowByLayer = (layerId: ProductScopeEvidenceMatrixRow["layerId"]) => matrix.rows.find((row) => row.layerId === layerId);
+  const routeStepFromRow = (
+    row: ProductScopeEvidenceMatrixRow | undefined,
+    order: number,
+    label: string,
+    fallbackObject: string,
+    fallbackEvidence: string,
+    fallbackFocus: string,
+  ): ProductScopeEvidenceRouteGuideStep => ({
+    order,
+    layerId: row?.layerId ?? "ai_signal",
+    label,
+    objectLabel: row?.objectLabel ?? fallbackObject,
+    primaryEvidence: row ? `${row.evidenceLabel}：${row.value}` : fallbackEvidence,
+    nextFocus: row?.detail ?? fallbackFocus,
+    tone: row?.tone ?? "neutral",
+  });
+  const scopeRow = rowByLayer("scope");
+  const adAsinRow = rowByLayer("ad_asin");
+  const adGroupRow = rowByLayer("ad_group");
+  const trafficRow = rowByLayer("traffic_context");
+  const admissionRow = rowByLayer("admission");
+  const admissionObject = admissionRow?.objectLabel ?? "AI 准入待确认";
+  const admissionEvidence = admissionRow ? `${admissionRow.evidenceLabel}：${admissionRow.value}` : "人工动作门禁：等待 actionability_status";
+  const admissionFocus = admissionRow?.detail ?? "先补齐广告 ASIN、广告组、投放词、搜索词和广告位证据。";
+  const reviewTone = admissionRow?.tone === "ready" ? "ready" : admissionRow?.tone === "blocked" ? "blocked" : "neutral";
+
   return {
     title: "广告证据链导览",
-    summary: "先看经营入口，再看广告 ASIN、广告组、搜索词/广告位和人工确认门禁。",
-    steps: matrix.rows.map((row, index) => ({
-      order: index + 1,
-      layerId: row.layerId,
-      label: row.layerId === "admission" ? "人工确认" : row.layerLabel,
-      objectLabel: row.objectLabel,
-      primaryEvidence: `${row.evidenceLabel}：${row.value}`,
-      nextFocus: row.detail,
-      tone: row.tone,
-    })),
+    summary: "先看经营入口，再看广告 ASIN、广告组、投放词/搜索词/广告位、AI 信号诊断、人工确认和 7/14 天复盘。",
+    decision: buildProductScopeEvidenceRouteDecision(matrix),
+    steps: [
+      routeStepFromRow(
+        scopeRow,
+        1,
+        "Parent ASIN 经营盘",
+        "等待经营入口",
+        "销售表现口径：等待销售表现证据",
+        "先确认 Parent ASIN 和销售表现子 ASIN 口径。",
+      ),
+      routeStepFromRow(
+        adAsinRow,
+        2,
+        "广告 ASIN 覆盖",
+        "等待广告 ASIN",
+        "广告商品表现：等待 advertised_products 证据",
+        "只下钻有广告数据的广告 ASIN。",
+      ),
+      routeStepFromRow(
+        adGroupRow,
+        3,
+        "广告组结构",
+        "等待广告组上下文",
+        "投放容器边界：等待 ad_groups 证据",
+        "广告组是投放容器，不是产品。",
+      ),
+      routeStepFromRow(
+        trafficRow,
+        4,
+        "投放词 / 搜索词 / 广告位",
+        "等待流量上下文",
+        "流量上下文：等待搜索词、投放词或广告位证据",
+        "搜索词和广告位只能作为同广告组上下文证据。",
+      ),
+      {
+        order: 5,
+        layerId: "ai_signal",
+        label: "AI 信号诊断",
+        objectLabel: admissionObject,
+        primaryEvidence: admissionEvidence,
+        nextFocus: `${admissionFocus} 诊断区必须解释业务问题、指标目的、能证明什么和不能证明什么。`,
+        tone: admissionRow?.tone ?? "neutral",
+      },
+      {
+        order: 6,
+        layerId: "manual_confirmation",
+        label: "人工确认",
+        objectLabel: admissionObject,
+        primaryEvidence: "人工动作门禁：只允许记录观察、标记已处理、加入复盘或忽略本次。",
+        nextFocus:
+          admissionRow?.tone === "ready"
+            ? "人工点击前继续核对证据快照、对象身份和动作边界。"
+            : "未通过 AI 准入时不能写 ManualAction，也不能包装成广告调整建议。",
+        tone: admissionRow?.tone ?? "neutral",
+      },
+      {
+        order: 7,
+        layerId: "review",
+        label: "7/14 天复盘",
+        objectLabel: "等待人工留痕和 ReviewTodo",
+        primaryEvidence: "复盘门槛：先有人工留痕和 7d / 14d ReviewTodo，到期后人工保存 ReviewRecord。",
+        nextFocus: "复盘只评价人工处理后的指标变化，不能自动改规则、调价、加词或否词。",
+        tone: reviewTone,
+      },
+    ],
     boundary: matrix.boundary,
+  };
+}
+
+export function buildProductScopeEvidenceRouteDecision(matrix: ProductScopeEvidenceMatrix): ProductScopeEvidenceRouteDecision {
+  const adAsinRow = matrix.rows.find((row) => row.layerId === "ad_asin");
+  const adGroupRow = matrix.rows.find((row) => row.layerId === "ad_group");
+  const trafficRow = matrix.rows.find((row) => row.layerId === "traffic_context");
+  const admissionRow = matrix.rows.find((row) => row.layerId === "admission");
+
+  const isBlocked = admissionRow?.tone === "blocked" || admissionRow?.detail.includes("candidate_count=0");
+  const isReady = admissionRow?.tone === "ready";
+  const statusLabel = isReady ? "可人工复核" : isBlocked ? "只能诊断" : "证据待补齐";
+  const statusTone: ProductScopeEvidenceRouteDecision["statusTone"] = isReady ? "ready" : isBlocked ? "blocked" : "context";
+  const adAsinLabel = adAsinRow?.objectLabel || "待选择广告 ASIN";
+  const adGroupLabel = adGroupRow?.objectLabel || "等待广告组上下文";
+  const trafficLabel = trafficRow?.objectLabel || "等待搜索词/广告位上下文";
+  const admissionLabel = admissionRow?.objectLabel || "AI 准入待确认";
+  const admissionNextStep = admissionRow?.value || "先复核广告 ASIN、广告组、搜索词和广告位证据。";
+
+  return {
+    title: "路径可落地判断",
+    statusLabel,
+    statusTone,
+    businessQuestion: "这条 Parent ASIN 路径下，哪些广告对象真的有广告数据，是否足够支撑人工复核？",
+    currentJudgement: `当前链路定位到广告 ASIN ${adAsinLabel}、广告组 ${adGroupLabel} 和 ${trafficLabel}；AI 准入为 ${admissionLabel}。`,
+    proves: `能证明当前经营入口下的广告分析只落到有广告表现的对象：广告 ASIN ${adAsinLabel}、广告组 ${adGroupLabel}，以及同广告组的搜索词/广告位上下文。`,
+    doesNotProve:
+      "不能证明未投放子 ASIN 存在广告问题，也不能把搜索词、广告位或 ABA 市场热度自动归因到单个广告 ASIN。",
+    nextManualStep: isReady
+      ? `下一步人工复核：${admissionNextStep}`
+      : `下一步先补证据或继续只读诊断：${admissionNextStep}`,
   };
 }
 
@@ -3085,8 +5317,7 @@ export function recommendedManualStatusText(summary: SignalTriageSummaryForUi | 
   const status = summary?.recommended_manual_status;
   if (!status) return null;
   const label = status.object_label || status.object_id || "推荐对象";
-  const triageNextAction = status.has_manual_action ? summary?.next_action?.trim() : "";
-  let nextAction = triageNextAction || status.next_action;
+  let nextAction = status.next_action;
   if (!nextAction && (status.ready_review_count ?? 0) > 0) {
     nextAction = `已有 ${status.ready_review_count} 个 ready 复盘结果，保存前仍需人工确认。`;
   }
@@ -3535,6 +5766,95 @@ function scopeSalesAmount(option: ProductScopeFilterOption): number {
   return option.sales_amount ?? option.sales ?? 0;
 }
 
+function buildProductGroupAdAsinDecision(input: {
+  asin: string;
+  spend: number;
+  orders: number;
+  sales: number;
+  acos: number | null;
+  strategyNote: string | null;
+}): ProductGroupAdAsinDecision {
+  const spendText = formatScopeMoney(input.spend);
+  const salesText = formatScopeMoney(input.sales);
+  const acosText = input.acos === null ? "无销售额" : `${(input.acos * 100).toFixed(1)}%`;
+  const hasStrategy = Boolean(input.strategyNote?.trim());
+  const statusLabel =
+    input.spend <= 0
+      ? "不优先下钻"
+      : input.orders <= 0
+        ? "优先排查承接"
+        : hasStrategy
+          ? "按策略复核"
+          : "可作为下钻入口";
+  const metricReason =
+    input.spend <= 0
+      ? `广告花费 ${spendText}，当前只能证明覆盖关系。`
+      : input.orders <= 0
+        ? `广告花费 ${spendText} 但订单 0，先查同广告组搜索词和广告位上下文。`
+        : `广告花费 ${spendText}，订单 ${input.orders}，销售额 ${salesText}，ACOS ${acosText}。`;
+  const strategyReason = hasStrategy ? `策略说明：${input.strategyNote}` : "暂无主推款策略说明。";
+
+  return {
+    statusLabel,
+    reason: `${metricReason} ${strategyReason}`,
+    proves: `能证明广告 ASIN ${input.asin} 在当前 Parent ASIN 范围内有广告商品粒度表现。`,
+    doesNotProve: "不能证明未投放子 ASIN 有广告问题，也不能把搜索词、广告位或 ABA 自动归因到该 ASIN。",
+    nextFocus:
+      input.spend <= 0
+        ? "下一步先核对广告商品覆盖；没有消耗时不进入花费或 ACOS 判断。"
+        : "下一步点击该 ASIN 下钻广告组、投放词、搜索词和广告位证据；只做人工复核，不自动执行广告动作。",
+  };
+}
+
+function formatCoverageRatio(part: number, total: number): string {
+  if (total <= 0) return "覆盖率待核对";
+  return `${((part / total) * 100).toFixed(1)}%`;
+}
+
+function buildProductScopeAdCoverageDecision(
+  childAsins: string[],
+  adAsinRows: ProductGroupAdAsinRow[],
+): ProductScopeAdCoverageDecision {
+  const adAsinSet = new Set(adAsinRows.map((row) => row.asin));
+  const unadvertisedChildAsins = childAsins.filter((asin) => !adAsinSet.has(asin));
+  const childCount = childAsins.length;
+  const adCount = adAsinRows.length;
+  const uncoveredCount = unadvertisedChildAsins.length;
+  const coverageText = formatCoverageRatio(adCount, childCount);
+  const uncoveredSample = unadvertisedChildAsins.slice(0, 5).join("、");
+  const hiddenUncoveredCount = Math.max(0, uncoveredCount - 5);
+  const uncoveredText =
+    uncoveredCount > 0
+      ? `${uncoveredSample}${hiddenUncoveredCount > 0 ? ` 等 ${uncoveredCount} 个` : ""}`
+      : "暂无未投放子 ASIN";
+
+  if (childCount === 0) {
+    return {
+      statusLabel: "子 ASIN 待核对",
+      summary: "当前 Parent ASIN 缺少销售表现子 ASIN 清单，不能判断广告覆盖率，也不能证明没有未投放变体。",
+      proves: "只能证明当前筛选范围下暂时没有可比较的销售表现子 ASIN 清单。",
+      doesNotProve: "不能证明 Parent ASIN 没有子商品，也不能用广告 ASIN 数替代完整变体数量。",
+      nextManualStep: "先补销售表现 parent_asin / variationAsin 或稳定商品映射，再判断广告 ASIN 覆盖。",
+    };
+  }
+
+  return {
+    statusLabel: `${adCount}/${childCount} 个子 ASIN 有广告投放行`,
+    summary:
+      `广告覆盖率 ${coverageText}；${adCount} 个广告 ASIN 可进入广告诊断，` +
+      `${uncoveredCount} 个未投放子 ASIN只作为经营背景或覆盖缺口。`,
+    proves:
+      adCount > 0
+        ? "advertised_products 已覆盖这些 ASIN 的广告商品表现，可继续下钻广告组、投放词、搜索词和广告位。"
+        : "当前 Parent ASIN 销售范围没有命中 advertised_products 投放行，不能进入广告对象级诊断。",
+    doesNotProve: "不能证明 Parent ASIN 只有这些广告 ASIN，也不能证明未投放子 ASIN 存在广告异常。",
+    nextManualStep:
+      uncoveredCount > 0
+        ? `先围绕 ${adCount} 个广告 ASIN 做广告诊断；未覆盖 ${uncoveredText} 需要补广告投放行、非 SP 来源或商品映射证据后再进入广告分析。`
+        : "全部销售表现子 ASIN 都有广告投放行时，仍需逐个下钻广告组、投放词、搜索词和广告位，不能自动执行广告动作。",
+  };
+}
+
 export function buildProductScopeGroupOverview(
   selectedScope: ProductScopeFilterOption | null,
   options: ProductScopeFilterOption[],
@@ -3556,16 +5876,22 @@ export function buildProductScopeGroupOverview(
   const adAsinRows = adAsinOptions.map((option) => {
     const spend = scopeAdSpend(option);
     const sales = scopeAdSales(option);
+    const asin = option.asin ?? option.label ?? "未知 ASIN";
+    const orders = scopeAdOrders(option);
+    const acos = sales > 0 ? spend / sales : null;
+    const strategyNote = option.strategy_notes?.[0] ?? null;
     return {
       scopeId: option.scope_id,
-      asin: option.asin ?? option.label ?? "未知 ASIN",
+      asin,
       spend,
-      orders: scopeAdOrders(option),
+      orders,
       sales,
-      acos: sales > 0 ? spend / sales : null,
-      strategyNote: option.strategy_notes?.[0] ?? null,
+      acos,
+      strategyNote,
+      decision: buildProductGroupAdAsinDecision({ asin, spend, orders, sales, acos, strategyNote }),
     };
   });
+  const adCoverageDecision = buildProductScopeAdCoverageDecision(childAsins, adAsinRows);
   const strategyNotes = uniqueNonEmpty([
     ...(selectedScope.strategy_notes ?? []),
     ...adAsinOptions.flatMap((option) => option.strategy_notes ?? []),
@@ -3622,6 +5948,7 @@ export function buildProductScopeGroupOverview(
     summary: `已识别 ${childAsins.length} 个销售表现子 ASIN / ${adAsinLabels.length} 个当前投放广告 ASIN`,
     adAsinLabels,
     adAsinRows,
+    adCoverageDecision,
     relationItems,
     strategyNotes,
     boundaryNotes,
@@ -3692,6 +6019,12 @@ export function buildProductScopeFirstScreenSummary(
       : manualActionCount > 0
         ? `已有 ${manualActionCount} 条人工留痕，最早 ${earliestDueDate || "等待窗口"} 后复盘`
         : "暂无人工留痕，不能生成复盘结论";
+  const pathSummary =
+    "Parent ASIN 销售入口 -> 广告 ASIN -> 广告组 -> 投放词 / 搜索词 / 广告位 -> AI 信号诊断 -> 人工确认 -> 7/14 天复盘";
+  const aiSignalStepDetail =
+    candidateCount === undefined
+      ? `等待 AI 准入扫描；${actionabilityMessage}`
+      : `${candidateCount} 个候选；${actionabilityMessage}`;
   const landingGates: ProductScopeLandingGateItem[] = [
     {
       label: "经营口径",
@@ -3702,7 +6035,7 @@ export function buildProductScopeFirstScreenSummary(
     {
       label: "广告证据",
       value: advertisedAsinCount > 0 ? `${advertisedAsinCount} 个广告 ASIN 可下钻` : "缺少广告 ASIN，不能进入广告诊断",
-      detail: "只有有广告证据的 ASIN 才进入广告诊断；未投放子 ASIN 不包装成广告问题。",
+      detail: overview.adCoverageDecision.summary,
       tone: advertisedAsinCount > 0 ? "ready" : "blocked",
     },
     {
@@ -3724,13 +6057,26 @@ export function buildProductScopeFirstScreenSummary(
     mvpStatus,
     factItems: overview.relationItems.slice(0, 2),
     adAsinRows: overview.adAsinRows.slice(0, 3),
+    adCoverageDecision: overview.adCoverageDecision,
     landingGates,
+    pathSummary,
     pathSteps: [
-      { label: "先看销售盘", detail: salesFact },
-      { label: "再看广告 ASIN", detail: adAsinText },
-      { label: "定位广告组", detail: "广告组是投放容器，先看同组广告商品、花费和订单分化。" },
-      { label: "复核流量证据", detail: "搜索词和广告位只作为上下文证据，不能直接归因到单个 ASIN。" },
-      { label: "进入人工闭环", detail: "AI 只给诊断和建议，最终必须人工确认和 7/14 天复盘。" },
+      { label: "Parent ASIN 经营盘", detail: salesFact },
+      { label: "广告 ASIN 覆盖", detail: adAsinText },
+      { label: "广告组结构", detail: "广告组是投放容器，不是产品；先看同组广告商品、花费和订单分化。" },
+      {
+        label: "投放词 / 搜索词 / 广告位",
+        detail: "投放词、搜索词和广告位只作为流量上下文证据，不能直接归因到单个 ASIN。",
+      },
+      { label: "AI 信号诊断", detail: aiSignalStepDetail },
+      {
+        label: "人工确认",
+        detail: "只允许记录观察、标记已处理、加入复盘、忽略本次；不自动加词、否词、调价或暂停广告。",
+      },
+      {
+        label: "7/14 天复盘",
+        detail: `${reviewGateValue}；窗口完整后人工保存 ReviewRecord，不能自动改规则或执行广告动作。`,
+      },
     ],
     boundary: "只展示有广告证据的广告 ASIN；未投放子 ASIN 不进入广告诊断；搜索词和广告位不能直接归因到单个 ASIN。",
   };
@@ -3824,9 +6170,13 @@ export function buildSignalQueueMeta(signal: SignalQueueMetaInput): SignalQueueM
   const confidence = signal.confidence ? queueConfidenceLabel[signal.confidence] : "待补";
   const shop = signal.shop_name || signal.shop_id || "未知店铺";
   const marketplace = signal.marketplace || "未知站点";
+  const businessProblem = signalQueueKindLabel(signalQueueKind(signal));
+  const decisionBoundary = signalDecisionBoundary(signal);
+  const actionBoundary = buildSignalTriggerRationale(signal).actionBoundary;
   return {
-    primary: [objectType, `严重 ${signal.severity}`, `置信 ${confidence}`],
+    primary: [`经营问题 ${businessProblem}`, objectType, `严重 ${signal.severity}`, `置信 ${confidence}`],
     secondary: `${shop} / ${marketplace} / ${queueFreshnessLabel[signal.freshness_status]} / ${queueStatusLabel[signal.status]}`,
+    decision: `${decisionBoundary || "按当前对象层级判断，不能跨层级归因"}；${actionBoundary}`,
   };
 }
 
@@ -3907,11 +6257,12 @@ export function signalCategoryLabel(signal: SignalForUi): string {
 
 export function buildSignalTriageRationale(signal: SignalForUi): SignalTriageRationale {
   const queueKind = signalQueueKind(signal);
-  const queueLabel = signalCategoryLabel(signal);
+  const queueLabel = signalQueueKindLabel(queueKind);
+  const categoryLabel = signalCategoryLabel(signal);
   const queueReason =
     queueKind === "data_quality"
-      ? "进入数据质量桶：signal_category=data_quality，先解释数据链路、来源或新鲜度问题。"
-      : `进入${queueLabel}桶：signal_type=${signal.signal_type}，表示当前规则判断为${queueLabel}信号。`;
+      ? `进入数据质量队列：经营问题=数据质量；signal_category=${signal.signal_category}，先解释数据链路、来源或新鲜度问题。`
+      : `进入${queueLabel}队列：经营问题=${queueLabel}；原始信号=${categoryLabel}，signal_type=${signal.signal_type}，signal_category=${signal.signal_category}。`;
   const priorityReason =
     signal.severity >= 4
       ? `进入高优先级筛选：severity=${signal.severity}，优先处理影响较大的信号。`
@@ -4306,6 +6657,17 @@ function sourceNumber(row: Record<string, unknown>, key: string): number {
   const value = row[key];
   const numberValue = typeof value === "number" ? value : Number(value ?? 0);
   return Number.isFinite(numberValue) ? numberValue : 0;
+}
+
+function sourceBoolean(row: Record<string, unknown>, key: string): boolean | null {
+  const value = row[key];
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return null;
 }
 
 function roundRate(value: number): number {

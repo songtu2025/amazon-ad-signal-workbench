@@ -21,8 +21,10 @@ from app.services.signal_triage import build_signal_triage_payload  # noqa: E402
 CONTRACT_FIELDS = [
     "status",
     "earliest_due_date",
+    "next_review_window",
     "next_object_type",
     "next_object_id",
+    "gap_reasons",
     "forbidden_actions",
 ]
 

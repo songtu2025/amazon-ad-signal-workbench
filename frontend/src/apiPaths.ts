@@ -9,6 +9,11 @@ export function signalTriagePath(marketId?: number | null, top = 5, productScope
   return marketScopedPath(`/api/signal-triage?top=${encodeURIComponent(String(top))}${scope}`, marketId);
 }
 
+export function reviewEvidenceRepairPath(marketId?: number | null, top = 5, productScopeId?: string | null) {
+  const scope = productScopeId && productScopeId !== "all" ? `&product_scope_id=${encodeURIComponent(productScopeId)}` : "";
+  return marketScopedPath(`/api/review-evidence-repair?top=${encodeURIComponent(String(top))}${scope}`, marketId);
+}
+
 export interface ManualActionPreflightPathOptions {
   marketId?: number | null;
   top?: number;

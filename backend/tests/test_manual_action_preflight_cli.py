@@ -110,6 +110,15 @@ def test_manual_action_preflight_targets_next_unhandled_advertised_product(monke
                 "review_record_count": 0,
                 "manual_action_identity_issue_count": 0,
             },
+            "actionability_status": {
+                "status": "ready_for_manual_confirmation",
+                "can_write_manual_action": True,
+                "message": "已有可进入人工确认的广告对象级候选。",
+                "next_step": "由运营人工确认后写入留痕，并生成 7/14 天复盘待办。",
+                "manual_gate_title": "可进入人工确认",
+                "boundary": "只允许人工记录观察、标记已处理、加入复盘或忽略本次；不会自动执行广告动作。",
+            },
+            "signal_status": {"candidate_count": 3},
             "recommended_candidate": {
                 "signal_id": recommended_signal_id,
                 "object_type": "advertised_product",
@@ -150,6 +159,13 @@ def test_manual_action_preflight_targets_next_unhandled_advertised_product(monke
             },
             "next_unhandled_evidence_drilldown": {
                 "business_evidence_blocks": [
+                    {
+                        "block_id": "diagnosis_path",
+                        "label": "排查路径",
+                        "value": "Parent 经营盘子 -> 广告 ASIN -> 广告组 -> 投放词 / 搜索词 / 广告位",
+                        "detail": "先用 Parent ASIN 看整体销售，再只下钻有广告证据的广告 ASIN。",
+                        "source": "business_rule",
+                    },
                     {
                         "block_id": "ad_product_coverage",
                         "label": "广告商品覆盖",
@@ -215,6 +231,25 @@ def test_manual_action_preflight_targets_next_unhandled_advertised_product(monke
                     },
                 ],
             },
+            "product_scope_drilldown": {
+                "ad_group_diagnosis": [
+                    {
+                        "ad_group_name": "RBK004-Auto",
+                        "ad_group_advertised_asin_count": 2,
+                        "ad_group_advertised_asins": ["B016EXMW02", "B07BS9754Q"],
+                        "search_term_count": 18,
+                        "effective_search_term_count": 3,
+                        "zero_order_search_term_count": 3,
+                        "placement_count": 0,
+                        "campaign_placement_count": 4,
+                        "placement_context_level": "campaign",
+                        "search_term_diagnosis": {
+                            "term_boundary": "搜索词只说明同广告组上下文，不能自动归因到单个 ASIN。",
+                            "next_review_focus": "先比较有效词和无订单花费词，再人工核对同组 ASIN 承接。",
+                        },
+                    }
+                ]
+            },
         },
     )
     monkeypatch.setattr(
@@ -260,23 +295,463 @@ def test_manual_action_preflight_targets_next_unhandled_advertised_product(monke
     assert payload["expected_after_write"]["review_record_count"] == 0
     assert payload["expected_after_write"]["target_review_record_count"] == 0
     assert payload["evidence_snapshot_preview"]["status"] == "ready"
-    assert payload["evidence_snapshot_preview"]["item_count"] == 9
-    assert [item["label"] for item in payload["evidence_snapshot_preview"]["items"][:6]] == [
+    assert payload["evidence_snapshot_preview"]["item_count"] == 14
+    assert [item["label"] for item in payload["evidence_snapshot_preview"]["items"][:7]] == [
+        "排查路径",
+        "AI 准入",
         "综合判断",
         "广告组问题定位",
+        "广告组合流判断",
         "投放词结构",
         "搜索词市场背景",
-        "广告位证据缺口",
-        "上下文边界",
     ]
-    assert "有效 beach essentials" in payload["evidence_snapshot_preview"]["items"][2]["value"]
-    assert "无订单 beach trip essentials" in payload["evidence_snapshot_preview"]["items"][3]["value"]
+    synthesis_item = next(item for item in payload["evidence_snapshot_preview"]["items"] if item["label"] == "广告组合流判断")
+    assert "Parent 经营盘子" in payload["evidence_snapshot_preview"]["items"][0]["value"]
+    assert "ready_for_manual_confirmation" in payload["evidence_snapshot_preview"]["items"][1]["value"]
+    assert "候选 3 个" in payload["evidence_snapshot_preview"]["items"][1]["value"]
+    assert "不会自动执行广告动作" in payload["evidence_snapshot_preview"]["items"][1]["detail"]
+    assert "同广告组广告 ASIN 2 个" in synthesis_item["value"]
+    assert "搜索词 18 条" in synthesis_item["value"]
+    assert "广告组级广告位 0 条 / 同广告活动广告位 4 条" in synthesis_item["value"]
+    assert "不能自动归因到单个广告 ASIN" in synthesis_item["detail"]
+    assert "不能自动加词" in synthesis_item["detail"]
+    assert "缺少广告组级广告位证据" in synthesis_item["detail"]
+    assert "有效 beach essentials" in payload["evidence_snapshot_preview"]["items"][5]["value"]
+    assert "无订单 beach trip essentials" in payload["evidence_snapshot_preview"]["items"][6]["value"]
     assert payload["evidence_snapshot_preview"]["items"][-1]["label"] == "主要花费来源"
     assert payload["evidence_snapshot_preview"]["will_save_on_authorized_write"] is True
     assert payload["blockers"] == []
     assert "明确人工授权" in payload["next_action"]
     assert "不执行广告动作" in payload["forbidden_effects"]
     assert "不保存 review_records" in payload["forbidden_effects"]
+
+
+def test_manual_action_preflight_snapshots_diagnosis_contract_gaps(monkeypatch) -> None:
+    module = load_manual_action_preflight_script()
+    signal_id = "sig-search-term-opportunity:1:beach-essentials"
+
+    monkeypatch.setattr(
+        module,
+        "build_signal_triage_payload",
+        lambda selected_market_id=None, top=5, product_scope_id=None: {
+            "status": "ready_for_manual_confirmation",
+            "review_status": {
+                "manual_action_count": 0,
+                "review_record_count": 0,
+                "manual_action_identity_issue_count": 0,
+            },
+            "diagnosis_contract": {
+                "sections": [
+                    {
+                        "section_id": "search_term_opportunity",
+                        "title": "搜索词机会",
+                        "current_judgement": "beach essentials 有广告订单和 ABA 热度，可以进入人工扩量复核。",
+                        "proves": "能证明该搜索词在当前广告组上下文中有真实广告转化。",
+                        "does_not_prove": "不能证明应该自动加词、自动调价或归因到单个广告 ASIN。",
+                        "evidence_gap": "缺少投放词是否已稳定维护、广告商品是否适合扩量的人工证据。",
+                        "required_evidence": "需要人工核对广告商品、投放词、广告组策略和 7/14 天复盘指标。",
+                        "next_manual_step": "人工核对投放词和同组 ASIN 后，记录观察或加入 7/14 天复盘。",
+                    },
+                    {
+                        "section_id": "placement_gap",
+                        "title": "广告位缺口",
+                        "current_judgement": "当前缺少广告组级广告位证据，不能判断广告位影响。",
+                        "proves": "能证明广告位证据粒度不足。",
+                        "does_not_prove": "不能证明搜索词表现由广告位造成。",
+                        "evidence_gap": "缺少同周期广告位数据，不能判断广告位是否造成转化差。",
+                        "required_evidence": "需要同周期 ad_placement_daily_metrics。",
+                        "next_manual_step": "补齐广告位证据前，只记录观察，不输出广告位调整建议。",
+                    },
+                ],
+            },
+            "recommended_candidate": {
+                "signal_id": signal_id,
+                "shop_id": "market:1",
+                "shop_name": "rivbos",
+                "object_type": "search_term",
+                "stable_object_id": "search_term:1:beach essentials",
+                "object_label": "beach essentials",
+                "manual_action_preview": {
+                    "will_write": False,
+                    "signal_id": signal_id,
+                    "action_type": "add_to_review",
+                    "object_type": "search_term",
+                    "object_id": "search_term:1:beach essentials",
+                    "object_label": "beach essentials",
+                    "shop_id": "market:1",
+                    "shop_name": "rivbos",
+                    "market_id": 1,
+                    "review_windows": ["7d", "14d"],
+                },
+            },
+            "recommended_evidence_drilldown": {
+                "business_evidence_blocks": [
+                    {
+                        "block_id": "search_term_market_context",
+                        "label": "搜索词市场背景",
+                        "value": "beach essentials 有订单且命中 ABA Top1000。",
+                        "detail": "搜索词只作为同广告组上下文，不能自动归因到单个 ASIN。",
+                        "source": "ad_search_term_daily_metrics + ABA导出",
+                    }
+                ],
+            },
+        },
+    )
+    monkeypatch.setattr(module, "load_manual_actions", lambda market_id=None: [])
+    monkeypatch.setattr(module, "build_review_todos", lambda market_id=None: [])
+    monkeypatch.setattr(module, "load_review_records", lambda market_id=None: [])
+
+    payload = module.build_manual_action_preflight_payload(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+        expected_object_id="search_term:1:beach essentials",
+        expected_object_type="search_term",
+        expected_action_type="add_to_review",
+    )
+
+    items = payload["evidence_snapshot_preview"]["items"]
+    labels = [item["label"] for item in items]
+    judgement_item = next(item for item in items if item["label"] == "人工确认判断依据")
+    proves_item = next(item for item in items if item["label"] == "能证明的事实")
+    counter_item = next(item for item in items if item["label"] == "不能证明的边界")
+    next_step_item = next(item for item in items if item["label"] == "人工下一步")
+    gap_item = next(item for item in items if item["label"] == "诊断证据缺口")
+    required_item = next(item for item in items if item["label"] == "需要补证")
+    targeting_item = next(item for item in items if item["label"] == "投放词证据")
+    aba_item = next(item for item in items if item["label"] == "ABA 背景")
+    review_gap_item = next(item for item in items if item["label"] == "证据缺口")
+    action_boundary_item = next(item for item in items if item["label"] == "动作边界")
+    assert labels[:5] == ["广告组合流判断", "搜索词市场背景", "搜索词边界", "广告位边界", "人工确认判断依据"]
+    assert "可以进入人工扩量复核" in judgement_item["value"]
+    assert "真实广告转化" in proves_item["value"]
+    assert "不能证明应该自动加词" in counter_item["value"]
+    assert "加入 7/14 天复盘" in next_step_item["value"]
+    assert "投放词是否已稳定维护" in gap_item["value"]
+    assert "缺少同周期广告位数据" in gap_item["value"]
+    assert "广告组策略" in required_item["value"]
+    assert "ad_placement_daily_metrics" in required_item["value"]
+    assert judgement_item["source"] == "diagnosis_contract"
+    assert counter_item["source"] == "diagnosis_contract"
+    assert gap_item["source"] == "diagnosis_contract"
+    assert required_item["source"] == "diagnosis_contract"
+    assert "投放词证据" in targeting_item["value"]
+    assert "ABA Top1000" in aba_item["value"]
+    assert "投放词是否已稳定维护" in review_gap_item["value"]
+    assert "不得自动加词" in action_boundary_item["detail"]
+
+
+def test_manual_action_preflight_snapshots_next_unhandled_diagnosis_contract(monkeypatch) -> None:
+    module = load_manual_action_preflight_script()
+    recommended_signal_id = "sig-opportunity-search-term-1-beach-essentials"
+    next_signal_id = "sig-opportunity-gerpgo_market_1_20260616_120443:507942344"
+
+    monkeypatch.setattr(
+        module,
+        "build_signal_triage_payload",
+        lambda selected_market_id=None, top=5, product_scope_id=None: {
+            "status": "ready_for_manual_confirmation",
+            "review_status": {
+                "manual_action_count": 1,
+                "review_record_count": 0,
+                "manual_action_identity_issue_count": 0,
+            },
+            "diagnosis_contract": {
+                "signal_id": next_signal_id,
+                "object_type": "search_term",
+                "object_id": "boys sunglasses",
+                "object_label": "boys sunglasses",
+                "sections": [
+                    {
+                        "section_id": "search_term_opportunity",
+                        "title": "搜索词机会",
+                        "current_judgement": "boys sunglasses 产生 3 单，花费 8.38，ACOS 21.8%，可进入人工扩量复核。",
+                        "proves": "能证明 boys sunglasses 在当前投放上下文中有广告表现。",
+                        "does_not_prove": "不能证明应该自动加词、自动调价或自动归因到单个广告 ASIN。",
+                        "evidence_gap": "缺少 ABA Top1000 精确匹配，只能看店内广告表现。",
+                        "required_evidence": "需要人工核对投放词、广告组结构和广告 ASIN 承接。",
+                        "next_manual_step": "核对 sunglasses for kids、同组 ASIN 和主推策略后，再选择加入复盘或忽略本次。",
+                    }
+                ],
+            },
+            "recommended_candidate": {
+                "signal_id": recommended_signal_id,
+                "shop_id": "market:1",
+                "shop_name": "rivbos",
+                "object_type": "search_term",
+                "stable_object_id": "search_term:1:beach essentials",
+                "object_label": "beach essentials",
+                "manual_action_preview": {
+                    "will_write": False,
+                    "signal_id": recommended_signal_id,
+                    "action_type": "add_to_review",
+                    "object_type": "search_term",
+                    "object_id": "search_term:1:beach essentials",
+                    "object_label": "beach essentials",
+                    "shop_id": "market:1",
+                    "shop_name": "rivbos",
+                    "market_id": 1,
+                    "review_windows": ["7d", "14d"],
+                },
+            },
+            "next_unhandled_candidate": {
+                "signal_id": next_signal_id,
+                "shop_id": "market:1",
+                "shop_name": "rivbos",
+                "object_type": "search_term",
+                "object_id": "gerpgo_market_1_20260616_120443:507942344",
+                "object_label": "boys sunglasses",
+                "manual_action_preview": {
+                    "will_write": False,
+                    "signal_id": next_signal_id,
+                    "action_type": "add_to_review",
+                    "object_type": "search_term",
+                    "object_id": "gerpgo_market_1_20260616_120443:507942344",
+                    "object_label": "boys sunglasses",
+                    "shop_id": "market:1",
+                    "shop_name": "rivbos",
+                    "market_id": 1,
+                    "review_windows": ["7d", "14d"],
+                },
+            },
+            "next_unhandled_evidence_drilldown": {
+                "business_evidence_blocks": [
+                    {
+                        "block_id": "diagnosis_path",
+                        "label": "排查路径",
+                        "value": "搜索词 -> 广告活动 / 广告组 -> 投放词结构 -> 广告 ASIN 人工复核",
+                        "detail": "搜索词先定位投放上下文，不自动执行广告动作。",
+                        "source": "business_rule",
+                    }
+                ],
+            },
+        },
+    )
+    monkeypatch.setattr(
+        module,
+        "load_manual_actions",
+        lambda market_id=None: [
+            SimpleNamespace(
+                object_type="search_term",
+                object_id="search_term:1:beach essentials",
+                signal_id=recommended_signal_id,
+                action_type="add_to_review",
+                market_id=market_id,
+                shop_id="market:1",
+            )
+        ],
+    )
+    monkeypatch.setattr(
+        module,
+        "build_review_todos",
+        lambda market_id=None: [
+            SimpleNamespace(
+                object_type="search_term",
+                object_id="search_term:1:beach essentials",
+                object_label="beach essentials",
+                signal_id=recommended_signal_id,
+                action_type="add_to_review",
+                market_id=market_id,
+                shop_id="market:1",
+                review_window=window,
+                evidence_snapshot=[{"label": "排查路径", "value": "beach essentials 已进入复盘等待"}],
+            )
+            for window in ("7d", "14d")
+        ],
+    )
+    monkeypatch.setattr(module, "load_review_records", lambda market_id=None: [])
+
+    payload = module.build_manual_action_preflight_payload(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+        expected_object_id="gerpgo_market_1_20260616_120443:507942344",
+        expected_object_type="search_term",
+        expected_action_type="add_to_review",
+    )
+
+    assert payload["status"] == "ready_for_explicit_manual_write"
+    assert payload["target"]["signal_id"] == next_signal_id
+    assert payload["target"]["object_id"] == "search_term:1:boys sunglasses"
+    assert payload["target"]["source_object_id"] == "gerpgo_market_1_20260616_120443:507942344"
+    assert payload["target"]["object_label"] == "boys sunglasses"
+    assert payload["current_counts"]["target_manual_action_count"] == 0
+    assert payload["current_counts"]["target_review_todo_count"] == 0
+    assert payload["expected_after_write"]["target_review_todo_count"] == 2
+    assert payload["post_write_checks"]["target_review_todo_count"] == 0
+    assert payload["post_write_checks"]["target_review_windows"] == []
+
+    items = payload["evidence_snapshot_preview"]["items"]
+    contract_items = [item for item in items if item["source"] == "diagnosis_contract"]
+    contract_text = "\n".join(item["value"] for item in contract_items)
+    snapshot_text = "\n".join(item["value"] for item in items)
+    assert contract_items[0]["label"] == "广告组合流判断"
+    assert "boys sunglasses" in contract_items[0]["value"]
+    assert [item["label"] for item in contract_items[1:5]] == [
+        "人工确认判断依据",
+        "能证明的事实",
+        "不能证明的边界",
+        "人工下一步",
+    ]
+    assert "boys sunglasses" in contract_text
+    assert "花费 8.38" in contract_text
+    assert "不能证明应该自动加词" in contract_text
+    assert "beach essentials" not in contract_text
+    assert "beach essentials 已进入复盘等待" not in snapshot_text
+    assert payload["blockers"] == []
+
+
+def test_manual_action_preflight_uses_target_diagnosis_contract_when_global_points_to_next(
+    monkeypatch,
+) -> None:
+    module = load_manual_action_preflight_script()
+    recommended_signal_id = "sig-opportunity-search-term-1-beach-essentials"
+    next_signal_id = "sig-opportunity-gerpgo_market_1_20260616_120443:507942344"
+
+    monkeypatch.setattr(
+        module,
+        "build_signal_triage_payload",
+        lambda selected_market_id=None, top=5, product_scope_id=None: {
+            "status": "ready_for_manual_confirmation",
+            "review_status": {
+                "manual_action_count": 0,
+                "review_record_count": 0,
+                "manual_action_identity_issue_count": 0,
+            },
+            "diagnosis_contract": {
+                "signal_id": next_signal_id,
+                "object_type": "search_term",
+                "object_id": "boys sunglasses",
+                "object_label": "boys sunglasses",
+                "sections": [
+                    {
+                        "section_id": "search_term_opportunity",
+                        "title": "搜索词机会",
+                        "current_judgement": "boys sunglasses 可进入人工扩量复核。",
+                        "proves": "能证明 boys sunglasses 在当前投放上下文中有广告表现。",
+                        "does_not_prove": "不能证明应该自动加词。",
+                        "next_manual_step": "人工复核 boys sunglasses 后再加入复盘。",
+                    }
+                ],
+            },
+            "recommended_diagnosis_contract": {
+                "signal_id": recommended_signal_id,
+                "object_type": "search_term",
+                "object_id": "beach essentials",
+                "object_label": "beach essentials",
+                "sections": [
+                    {
+                        "section_id": "search_term_opportunity",
+                        "title": "搜索词机会",
+                        "current_judgement": "beach essentials 在 2 个投放上下文中转化稳定，可进入人工扩量复核。",
+                        "proves": "能证明 beach essentials 有广告订单和 ABA 语义背景。",
+                        "does_not_prove": "不能证明应该自动加词、自动调价或归因到单个广告 ASIN。",
+                        "next_manual_step": "人工核对 beach essentials 的投放词和广告组后加入复盘。",
+                    }
+                ],
+            },
+            "next_unhandled_diagnosis_contract": {
+                "signal_id": next_signal_id,
+                "object_type": "search_term",
+                "object_id": "boys sunglasses",
+                "object_label": "boys sunglasses",
+                "sections": [
+                    {
+                        "section_id": "search_term_opportunity",
+                        "title": "搜索词机会",
+                        "current_judgement": "boys sunglasses 可进入人工扩量复核。",
+                        "proves": "能证明 boys sunglasses 在当前投放上下文中有广告表现。",
+                        "does_not_prove": "不能证明应该自动加词。",
+                        "next_manual_step": "人工复核 boys sunglasses 后再加入复盘。",
+                    }
+                ],
+            },
+            "recommended_candidate": {
+                "signal_id": recommended_signal_id,
+                "shop_id": "market:1",
+                "shop_name": "rivbos",
+                "object_type": "search_term",
+                "stable_object_id": "search_term:1:beach essentials",
+                "object_label": "beach essentials",
+                "manual_action_preview": {
+                    "will_write": False,
+                    "signal_id": recommended_signal_id,
+                    "action_type": "add_to_review",
+                    "object_type": "search_term",
+                    "object_id": "search_term:1:beach essentials",
+                    "object_label": "beach essentials",
+                    "shop_id": "market:1",
+                    "shop_name": "rivbos",
+                    "market_id": 1,
+                    "review_windows": ["7d", "14d"],
+                },
+            },
+            "next_unhandled_candidate": {
+                "signal_id": next_signal_id,
+                "shop_id": "market:1",
+                "shop_name": "rivbos",
+                "object_type": "search_term",
+                "object_id": "gerpgo_market_1_20260616_120443:507942344",
+                "object_label": "boys sunglasses",
+                "manual_action_preview": {
+                    "will_write": False,
+                    "signal_id": next_signal_id,
+                    "action_type": "add_to_review",
+                    "object_type": "search_term",
+                    "object_id": "gerpgo_market_1_20260616_120443:507942344",
+                    "object_label": "boys sunglasses",
+                    "shop_id": "market:1",
+                    "shop_name": "rivbos",
+                    "market_id": 1,
+                    "review_windows": ["7d", "14d"],
+                },
+            },
+            "recommended_evidence_drilldown": {
+                "business_evidence_blocks": [
+                    {
+                        "block_id": "diagnosis_path",
+                        "label": "排查路径",
+                        "value": "beach essentials -> 广告活动 / 广告组 -> 人工复核",
+                        "detail": "搜索词只定位上下文，不自动执行广告动作。",
+                        "source": "business_rule",
+                    }
+                ],
+            },
+            "next_unhandled_evidence_drilldown": {
+                "business_evidence_blocks": [
+                    {
+                        "block_id": "diagnosis_path",
+                        "label": "排查路径",
+                        "value": "boys sunglasses -> 广告活动 / 广告组 -> 人工复核",
+                        "detail": "搜索词只定位上下文，不自动执行广告动作。",
+                        "source": "business_rule",
+                    }
+                ],
+            },
+        },
+    )
+    monkeypatch.setattr(module, "load_manual_actions", lambda market_id=None: [])
+    monkeypatch.setattr(module, "build_review_todos", lambda market_id=None: [])
+    monkeypatch.setattr(module, "load_review_records", lambda market_id=None: [])
+
+    payload = module.build_manual_action_preflight_payload(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+        expected_object_id="search_term:1:beach essentials",
+        expected_object_type="search_term",
+        expected_action_type="add_to_review",
+    )
+
+    contract_text = "\n".join(
+        item["value"]
+        for item in payload["evidence_snapshot_preview"]["items"]
+        if item["source"] == "diagnosis_contract"
+    )
+    snapshot_text = "\n".join(item["value"] for item in payload["evidence_snapshot_preview"]["items"])
+    assert payload["target"]["signal_id"] == recommended_signal_id
+    assert "beach essentials" in contract_text
+    assert "boys sunglasses" not in contract_text
+    assert "beach essentials -> 广告活动" in snapshot_text
+    assert "boys sunglasses -> 广告活动" not in snapshot_text
+    assert payload["blockers"] == []
 
 
 def test_manual_action_preflight_uses_custom_runtime_roots(monkeypatch, tmp_path) -> None:
@@ -509,9 +984,354 @@ def test_manual_action_preflight_verifies_post_write_review_todos(monkeypatch) -
         item["review_window"]: item["evidence_snapshot_count"]
         for item in payload["post_write_checks"]["target_review_todo_evidence_snapshot_counts"]
     } == {"7d": 1, "14d": 1}
-    assert payload["post_write_checks"]["target_review_windows"] == ["14d", "7d"]
+    assert payload["post_write_checks"]["target_review_windows"] == ["7d", "14d"]
     assert payload["blockers"] == []
     assert "写入后验收通过" in payload["next_action"]
+
+
+def test_manual_action_preflight_post_write_locks_expected_object_when_queue_moves(monkeypatch) -> None:
+    module = load_manual_action_preflight_script()
+    written_signal_id = "sig-opportunity-search-term-1-beach-essentials"
+    next_signal_id = "sig-opportunity-gerpgo_market_1_20260616_120443:507942344"
+
+    monkeypatch.setattr(
+        module,
+        "build_signal_triage_payload",
+        lambda selected_market_id=None, top=5, product_scope_id=None: {
+            "status": "ready_for_manual_confirmation",
+            "snapshot": {
+                "snapshot_id": "gerpgo_market_1_20260616_120443",
+                "start_date": "2026-05-18",
+                "end_date": "2026-06-16",
+            },
+            "review_status": {
+                "manual_action_count": 18,
+                "review_record_count": 0,
+                "manual_action_identity_issue_count": 0,
+            },
+            "next_unhandled_candidate": {
+                "signal_id": next_signal_id,
+                "shop_id": "market:1",
+                "shop_name": "rivbos",
+                "object_type": "search_term",
+                "stable_object_id": "gerpgo_market_1_20260616_120443:507942344",
+                "object_label": "boys sunglasses",
+                "manual_action_preview": {
+                    "will_write": False,
+                    "signal_id": next_signal_id,
+                    "action_type": "add_to_review",
+                    "object_type": "search_term",
+                    "object_id": "gerpgo_market_1_20260616_120443:507942344",
+                    "object_label": "boys sunglasses",
+                    "shop_id": "market:1",
+                    "shop_name": "rivbos",
+                    "market_id": 1,
+                    "review_windows": ["7d", "14d"],
+                },
+            },
+        },
+    )
+    target_action = SimpleNamespace(
+        object_type="search_term",
+        object_id="search_term:1:beach essentials",
+        object_label="beach essentials",
+        signal_id=written_signal_id,
+        action_type="add_to_review",
+        market_id=1,
+        shop_id="market:1",
+        evidence_snapshot=[{"label": "排查路径", "value": "已保存"}],
+    )
+    target_todos = [
+        SimpleNamespace(
+            object_type="search_term",
+            object_id="search_term:1:beach essentials",
+            object_label="beach essentials",
+            signal_id=written_signal_id,
+            action_type="add_to_review",
+            market_id=1,
+            shop_id="market:1",
+            review_window=window,
+            evidence_snapshot=[{"label": "排查路径", "value": "已保存"}],
+        )
+        for window in ("7d", "14d")
+    ]
+    monkeypatch.setattr(module, "load_manual_actions", lambda market_id=None: [target_action])
+    monkeypatch.setattr(module, "build_review_todos", lambda market_id=None: target_todos)
+    monkeypatch.setattr(module, "load_review_records", lambda market_id=None: [])
+
+    payload = module.build_manual_action_preflight_payload(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+        expected_object_id="search_term:1:beach essentials",
+        expected_object_type="search_term",
+        expected_action_type="add_to_review",
+        expect_written=True,
+    )
+
+    assert payload["status"] == "post_write_verified"
+    assert payload["target"]["signal_id"] == written_signal_id
+    assert payload["target"]["object_id"] == "search_term:1:beach essentials"
+    assert payload["target"]["object_label"] == "beach essentials"
+    assert payload["current_counts"]["target_manual_action_count"] == 1
+    assert payload["current_counts"]["target_review_todo_count"] == 2
+    assert payload["post_write_checks"]["target_review_windows"] == ["7d", "14d"]
+    assert payload["evidence_snapshot_preview"]["status"] == "saved"
+    assert payload["evidence_snapshot_preview"]["item_count"] == 1
+    assert payload["evidence_snapshot_preview"]["items"][0]["value"] == "已保存"
+    assert "不重新生成当前候选证据" in payload["evidence_snapshot_preview"]["boundary"]
+    assert payload["blockers"] == []
+
+
+def test_manual_action_preflight_allows_rewrite_after_voided_legacy_boundary_gap(monkeypatch) -> None:
+    module = load_manual_action_preflight_script()
+    signal_id = "sig-opportunity-search-term-1-beach-essentials"
+
+    monkeypatch.setattr(
+        module,
+        "build_signal_triage_payload",
+        lambda selected_market_id=None, top=5, product_scope_id=None: {
+            "status": "ready_for_manual_confirmation",
+            "snapshot": {"snapshot_id": "gerpgo_market_1_20260616_120443"},
+            "review_status": {
+                "manual_action_count": 18,
+                "review_record_count": 0,
+                "manual_action_identity_issue_count": 0,
+            },
+            "recommended_candidate": {
+                "signal_id": signal_id,
+                "shop_id": "market:1",
+                "shop_name": "rivbos",
+                "object_type": "search_term",
+                "stable_object_id": "search_term:1:beach essentials",
+                "object_label": "beach essentials",
+                "manual_action_preview": {
+                    "will_write": False,
+                    "signal_id": signal_id,
+                    "action_type": "add_to_review",
+                    "object_type": "search_term",
+                    "object_id": "search_term:1:beach essentials",
+                    "object_label": "beach essentials",
+                    "shop_id": "market:1",
+                    "shop_name": "rivbos",
+                    "market_id": 1,
+                    "review_windows": ["7d", "14d"],
+                },
+            },
+            "recommended_evidence_drilldown": {
+                "business_evidence_blocks": [{"label": "排查路径", "value": "Parent -> 搜索词", "source": "test"}],
+            },
+            "actionability_status": {
+                "status": "ready_for_manual_confirmation",
+                "manual_gate_title": "AI 信号准入",
+                "can_write_manual_action": True,
+            },
+        },
+    )
+    legacy_action = SimpleNamespace(
+        signal_id=signal_id,
+        action_type="add_to_review",
+        shop_id="market:1",
+        market_id=1,
+        object_type="search_term",
+        object_id="search_term:1:beach essentials",
+        object_label="beach essentials",
+        evidence_snapshot=[
+            {"label": "排查路径", "value": "旧证据"},
+            {"label": "AI 准入", "value": "旧准入"},
+        ],
+    )
+    monkeypatch.setattr(module, "load_manual_actions", lambda market_id=None: [legacy_action])
+    monkeypatch.setattr(module, "build_review_todos", lambda market_id=None: [])
+    monkeypatch.setattr(module, "load_review_records", lambda market_id=None: [])
+
+    payload = module.build_manual_action_preflight_payload(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+        expected_object_id="search_term:1:beach essentials",
+        expected_object_type="search_term",
+        expected_action_type="add_to_review",
+    )
+
+    assert payload["status"] == "ready_for_explicit_manual_write"
+    assert payload["current_counts"]["target_manual_action_count"] == 1
+    assert payload["current_counts"]["target_review_todo_count"] == 0
+    assert payload["expected_after_write"]["target_manual_action_count"] == 2
+    assert payload["expected_after_write"]["target_review_todo_count"] == 2
+    assert payload["blockers"] == []
+
+
+def test_manual_action_preflight_allows_rewrite_when_complete_labels_belong_to_other_object(monkeypatch) -> None:
+    module = load_manual_action_preflight_script()
+    from app.services.manual_action_preflight import SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS
+
+    signal_id = "sig-opportunity-search-term-1-beach-essentials"
+    required_labels = list(SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS)
+
+    monkeypatch.setattr(
+        module,
+        "build_signal_triage_payload",
+        lambda selected_market_id=None, top=5, product_scope_id=None: {
+            "status": "ready_for_manual_confirmation",
+            "review_status": {
+                "manual_action_count": 19,
+                "review_record_count": 0,
+                "manual_action_identity_issue_count": 0,
+            },
+            "recommended_candidate": {
+                "signal_id": signal_id,
+                "shop_id": "market:1",
+                "shop_name": "rivbos",
+                "object_type": "search_term",
+                "stable_object_id": "search_term:1:beach essentials",
+                "object_label": "beach essentials",
+                "manual_action_preview": {
+                    "will_write": False,
+                    "signal_id": signal_id,
+                    "action_type": "add_to_review",
+                    "object_type": "search_term",
+                    "object_id": "search_term:1:beach essentials",
+                    "object_label": "beach essentials",
+                    "shop_id": "market:1",
+                    "shop_name": "rivbos",
+                    "market_id": 1,
+                    "review_windows": ["7d", "14d"],
+                },
+            },
+        },
+    )
+    mismatched_action = SimpleNamespace(
+        signal_id=signal_id,
+        action_type="add_to_review",
+        shop_id="market:1",
+        market_id=1,
+        object_type="search_term",
+        object_id="search_term:1:beach essentials",
+        object_label="beach essentials",
+        evidence_snapshot=[
+            {"label": label, "value": "boys sunglasses / sunglasses for kids"}
+            for label in required_labels
+        ],
+    )
+    monkeypatch.setattr(module, "load_manual_actions", lambda market_id=None: [mismatched_action])
+    monkeypatch.setattr(module, "build_review_todos", lambda market_id=None: [])
+    monkeypatch.setattr(module, "load_review_records", lambda market_id=None: [])
+
+    payload = module.build_manual_action_preflight_payload(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+        expected_object_id="search_term:1:beach essentials",
+        expected_object_type="search_term",
+        expected_action_type="add_to_review",
+    )
+
+    assert payload["status"] == "ready_for_explicit_manual_write"
+    assert payload["current_counts"]["target_manual_action_count"] == 1
+    assert payload["current_counts"]["target_review_todo_count"] == 0
+    assert payload["blockers"] == []
+
+
+def test_manual_action_preflight_post_write_accepts_new_complete_action_after_legacy_gap(monkeypatch) -> None:
+    module = load_manual_action_preflight_script()
+    from app.services.manual_action_preflight import SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS
+
+    signal_id = "sig-opportunity-search-term-1-beach-essentials"
+    complete_evidence = [
+        {"label": label, "value": f"beach essentials {label} 已保存"}
+        for label in SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS
+    ]
+
+    monkeypatch.setattr(
+        module,
+        "build_signal_triage_payload",
+        lambda selected_market_id=None, top=5, product_scope_id=None: {
+            "status": "ready_for_manual_confirmation",
+            "review_status": {
+                "manual_action_count": 19,
+                "review_record_count": 0,
+                "manual_action_identity_issue_count": 0,
+            },
+            "recommended_candidate": {
+                "signal_id": signal_id,
+                "shop_id": "market:1",
+                "shop_name": "rivbos",
+                "object_type": "search_term",
+                "stable_object_id": "search_term:1:beach essentials",
+                "object_label": "beach essentials",
+                "manual_action_preview": {
+                    "will_write": False,
+                    "signal_id": signal_id,
+                    "action_type": "add_to_review",
+                    "object_type": "search_term",
+                    "object_id": "search_term:1:beach essentials",
+                    "object_label": "beach essentials",
+                    "shop_id": "market:1",
+                    "shop_name": "rivbos",
+                    "market_id": 1,
+                    "review_windows": ["7d", "14d"],
+                },
+            },
+        },
+    )
+    legacy_action = SimpleNamespace(
+        signal_id=signal_id,
+        action_type="add_to_review",
+        shop_id="market:1",
+        market_id=1,
+        object_type="search_term",
+        object_id="search_term:1:beach essentials",
+        object_label="beach essentials",
+        evidence_snapshot=[
+            {"label": "排查路径", "value": "旧证据"},
+            {"label": "AI 准入", "value": "旧准入"},
+        ],
+    )
+    complete_action = SimpleNamespace(
+        signal_id=signal_id,
+        action_type="add_to_review",
+        shop_id="market:1",
+        market_id=1,
+        object_type="search_term",
+        object_id="search_term:1:beach essentials",
+        object_label="beach essentials",
+        evidence_snapshot=complete_evidence,
+    )
+    monkeypatch.setattr(module, "load_manual_actions", lambda market_id=None: [legacy_action, complete_action])
+    monkeypatch.setattr(
+        module,
+        "build_review_todos",
+        lambda market_id=None: [
+            SimpleNamespace(
+                signal_id=signal_id,
+                action_type="add_to_review",
+                shop_id="market:1",
+                market_id=1,
+                object_type="search_term",
+                object_id="search_term:1:beach essentials",
+                object_label="beach essentials",
+                review_window=window,
+                evidence_snapshot=complete_evidence,
+            )
+            for window in ("7d", "14d")
+        ],
+    )
+    monkeypatch.setattr(module, "load_review_records", lambda market_id=None: [])
+
+    payload = module.build_manual_action_preflight_payload(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+        expected_object_id="search_term:1:beach essentials",
+        expected_object_type="search_term",
+        expected_action_type="add_to_review",
+        expect_written=True,
+    )
+
+    assert payload["status"] == "post_write_verified"
+    assert payload["current_counts"]["target_manual_action_count"] == 2
+    assert payload["current_counts"]["target_review_todo_count"] == 2
+    assert payload["evidence_snapshot_preview"]["item_count"] == len(SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS)
+    saved_labels = {item["label"] for item in payload["evidence_snapshot_preview"]["items"]}
+    assert set(SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS).issubset(saved_labels)
+    assert payload["blockers"] == []
 
 
 def test_manual_action_preflight_reports_post_write_target_identities(monkeypatch, tmp_path) -> None:

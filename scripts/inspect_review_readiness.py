@@ -21,6 +21,7 @@ from app.services.snapshot_store import load_signal_rows_from_success_snapshots,
 
 
 REVIEW_WAIT_FORBIDDEN_ACTIONS = ["不拉取快照", "不保存复盘结论", "不自动改规则", "不自动执行广告动作"]
+REVIEW_GAP_FORBIDDEN_ACTIONS = ["不保存复盘结论", "不自动改规则", "不自动执行广告动作"]
 METRIC_REVIEW_OBJECT_TYPES = {"search_term", "advertised_product", "sales_product", "placement"}
 
 
@@ -40,6 +41,7 @@ def build_review_readiness_payload(*, selected_market_id: int | None = None) -> 
         if key in seen:
             continue
         seen.add(key)
+        evidence_snapshot_audit = review_todo_evidence_snapshot_audit(todo)
         effect = build_review_effect_result(
             todo.signal_id,
             review_window=todo.review_window,
@@ -67,14 +69,24 @@ def build_review_readiness_payload(*, selected_market_id: int | None = None) -> 
                 "before_end_date": effect.before_end_date,
                 "after_start_date": effect.after_start_date,
                 "after_end_date": effect.after_end_date,
+                **evidence_snapshot_audit,
             }
         )
 
     ready_count = sum(1 for effect in effects if effect["status"] == "ready")
     not_ready_count = len(effects) - ready_count
-    rule_improvement = rule_improvement_readiness(manual_actions, effects, ready_count, identity_issues, review_feedback)
     review_wait_summary = review_wait_summary_from_effects(effects, ready_count)
     review_identity_audit = review_identity_audit_summary(manual_actions, review_records, effects, ready_count, identity_issues)
+    review_audit_issues = [item for item in review_identity_audit.get("issues") or [] if isinstance(item, dict)]
+    review_wait_summary = review_wait_summary_with_identity_gate(review_wait_summary, review_audit_issues)
+    rule_improvement = rule_improvement_readiness(
+        manual_actions,
+        effects,
+        ready_count,
+        identity_issues,
+        review_feedback,
+        review_audit_issues=review_audit_issues,
+    )
     return {
         "status": "ready" if ready_count else "not_ready",
         "selected_market_id": selected_market_id,
@@ -97,7 +109,14 @@ def build_review_readiness_payload(*, selected_market_id: int | None = None) -> 
         "review_wait_summary": review_wait_summary,
         "review_identity_audit": review_identity_audit,
         "effects": effects,
-        "next_action": _next_action(manual_actions, effects, ready_count, identity_issues, review_feedback),
+        "next_action": _next_action(
+            manual_actions,
+            effects,
+            ready_count,
+            identity_issues,
+            review_feedback,
+            review_audit_issues=review_audit_issues,
+        ),
     }
 
 
@@ -158,6 +177,76 @@ def _object_label_as_stable_id(record: Any) -> str | None:
     return label or None
 
 
+def review_todo_evidence_snapshot_audit(todo: Any) -> dict[str, Any]:
+    if not hasattr(todo, "evidence_snapshot"):
+        return {
+            "evidence_snapshot_count": None,
+            "has_diagnosis_path": None,
+            "has_ai_admission": None,
+            "has_search_term_boundary": None,
+            "has_placement_boundary": None,
+            "has_targeting_evidence": None,
+            "has_aba_context": None,
+            "has_evidence_gap": None,
+            "has_action_boundary": None,
+            "has_object_reference": None,
+        }
+    evidence_snapshot = review_evidence_snapshot_items(getattr(todo, "evidence_snapshot", None))
+    return {
+        "evidence_snapshot_count": len(evidence_snapshot),
+        "has_diagnosis_path": review_evidence_snapshot_has_label(evidence_snapshot, "排查路径"),
+        "has_ai_admission": review_evidence_snapshot_has_label(evidence_snapshot, "AI 准入"),
+        "has_search_term_boundary": review_evidence_snapshot_has_label(evidence_snapshot, "搜索词边界"),
+        "has_placement_boundary": review_evidence_snapshot_has_label(evidence_snapshot, "广告位边界"),
+        "has_targeting_evidence": review_evidence_snapshot_has_label(evidence_snapshot, "投放词证据"),
+        "has_aba_context": review_evidence_snapshot_has_label(evidence_snapshot, "ABA 背景"),
+        "has_evidence_gap": review_evidence_snapshot_has_label(evidence_snapshot, "证据缺口"),
+        "has_action_boundary": review_evidence_snapshot_has_label(evidence_snapshot, "动作边界"),
+        "has_object_reference": review_evidence_snapshot_has_object_reference(evidence_snapshot, todo),
+    }
+
+
+def review_evidence_snapshot_items(items: Any) -> list[Any]:
+    return items if isinstance(items, list) else []
+
+
+def review_evidence_snapshot_has_label(items: list[Any], expected_label: str) -> bool:
+    for item in items:
+        label = str(item.get("label", "") if isinstance(item, dict) else getattr(item, "label", "")).strip()
+        value = str(item.get("value", "") if isinstance(item, dict) else getattr(item, "value", "")).strip()
+        if label == expected_label and value:
+            return True
+    return False
+
+
+def review_evidence_snapshot_has_object_reference(items: list[Any], todo: Any) -> bool | None:
+    references = review_object_reference_terms(todo)
+    if not references:
+        return None
+    snapshot_text = " ".join(
+        " ".join(
+            str(item.get(field, "") if isinstance(item, dict) else getattr(item, field, "")).strip()
+            for field in ("label", "value", "detail", "source")
+            if str(item.get(field, "") if isinstance(item, dict) else getattr(item, field, "")).strip()
+        )
+        for item in items
+    ).casefold()
+    return any(reference.casefold() in snapshot_text for reference in references)
+
+
+def review_object_reference_terms(record: Any) -> list[str]:
+    terms: list[str] = []
+    for value in (getattr(record, "object_id", None), getattr(record, "object_label", None)):
+        text = str(value or "").strip()
+        if text:
+            terms.append(text)
+        if ":" in text:
+            tail = text.rsplit(":", 1)[-1].strip()
+            if tail:
+                terms.append(tail)
+    return list(dict.fromkeys(terms))
+
+
 def review_identity_audit_summary(
     manual_actions: list[Any],
     review_records: list[Any],
@@ -169,8 +258,22 @@ def review_identity_audit_summary(
     missing_action_id_count = sum(1 for item in readback_keys if not item["action_id"])
     missing_object_id_count = sum(1 for item in readback_keys if not item["object_id"])
     missing_review_window_count = sum(1 for item in readback_keys if not item["review_window"])
+    snapshot_known_keys = [item for item in readback_keys if item.get("evidence_snapshot_count") is not None]
+    missing_evidence_snapshot_count = sum(1 for item in snapshot_known_keys if int(item.get("evidence_snapshot_count") or 0) == 0)
+    missing_diagnosis_path_count = sum(1 for item in snapshot_known_keys if not item.get("has_diagnosis_path"))
+    missing_ai_admission_count = sum(1 for item in snapshot_known_keys if not item.get("has_ai_admission"))
+    missing_search_term_boundary_count = sum(1 for item in snapshot_known_keys if not item.get("has_search_term_boundary"))
+    missing_placement_boundary_count = sum(1 for item in snapshot_known_keys if not item.get("has_placement_boundary"))
+    search_term_snapshot_keys = [item for item in snapshot_known_keys if item.get("object_type") == "search_term"]
+    missing_targeting_evidence_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_targeting_evidence"))
+    missing_aba_context_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_aba_context"))
+    missing_evidence_gap_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_evidence_gap"))
+    missing_action_boundary_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_action_boundary"))
+    missing_object_reference_count = sum(1 for item in snapshot_known_keys if item.get("has_object_reference") is False)
     unstable_object_id_count = len(identity_issues)
     issues = review_identity_audit_issues(readback_keys, identity_issues)
+    earliest_any_due_date = earliest_review_due_date(readback_keys)
+    earliest_metric_due_date = earliest_metric_review_due_date(readback_keys)
     return {
         "status": "blocked" if issues else "ready_for_readback",
         "manual_action_count": len(manual_actions),
@@ -179,18 +282,30 @@ def review_identity_audit_summary(
         "missing_action_id_count": missing_action_id_count,
         "missing_object_id_count": missing_object_id_count,
         "missing_review_window_count": missing_review_window_count,
+        "missing_evidence_snapshot_count": missing_evidence_snapshot_count,
+        "missing_diagnosis_path_count": missing_diagnosis_path_count,
+        "missing_ai_admission_count": missing_ai_admission_count,
+        "missing_search_term_boundary_count": missing_search_term_boundary_count,
+        "missing_placement_boundary_count": missing_placement_boundary_count,
+        "missing_targeting_evidence_count": missing_targeting_evidence_count,
+        "missing_aba_context_count": missing_aba_context_count,
+        "missing_evidence_gap_count": missing_evidence_gap_count,
+        "missing_action_boundary_count": missing_action_boundary_count,
+        "missing_object_reference_count": missing_object_reference_count,
         "unstable_object_id_count": unstable_object_id_count,
         "ready_review_count": ready_count,
         "can_save_review_records_now": ready_count > 0 and not issues,
-        "earliest_due_date": earliest_review_due_date(readback_keys),
-        "earliest_metric_due_date": earliest_metric_review_due_date(readback_keys),
+        "earliest_due_date": earliest_any_due_date,
+        "earliest_any_due_date": earliest_any_due_date,
+        "earliest_metric_due_date": earliest_metric_due_date,
+        "date_boundary": "earliest_due_date / earliest_any_due_date 包含数据质量和交叉待办；保存广告复盘记录时以 earliest_metric_due_date 为准。",
         "issues": issues,
         "readback_keys": readback_keys,
     }
 
 
 def review_readback_key(effect: dict[str, Any]) -> dict[str, Any]:
-    return {
+    item = {
         "signal_id": str(effect.get("signal_id") or "").strip(),
         "action_id": str(effect.get("action_id") or "").strip(),
         "object_type": str(effect.get("object_type") or "").strip(),
@@ -200,7 +315,23 @@ def review_readback_key(effect: dict[str, Any]) -> dict[str, Any]:
         "status": str(effect.get("status") or "").strip(),
         "is_due": effect.get("is_due"),
         "due_at": str(effect.get("due_at") or "").strip(),
+        "evidence_snapshot_count": effect.get("evidence_snapshot_count"),
+        "has_diagnosis_path": effect.get("has_diagnosis_path"),
+        "has_ai_admission": effect.get("has_ai_admission"),
+        "has_search_term_boundary": effect.get("has_search_term_boundary"),
+        "has_placement_boundary": effect.get("has_placement_boundary"),
+        "has_object_reference": effect.get("has_object_reference"),
     }
+    if item["object_type"] == "search_term":
+        item.update(
+            {
+                "has_targeting_evidence": effect.get("has_targeting_evidence"),
+                "has_aba_context": effect.get("has_aba_context"),
+                "has_evidence_gap": effect.get("has_evidence_gap"),
+                "has_action_boundary": effect.get("has_action_boundary"),
+            }
+        )
+    return item
 
 
 def review_identity_audit_issues(
@@ -221,6 +352,130 @@ def review_identity_audit_issues(
                     "object_id": item.get("object_id"),
                     "review_window": item.get("review_window"),
                     "note": "复盘读回缺少稳定键，不能保存 review_records。",
+                }
+            )
+        if item.get("evidence_snapshot_count") is None:
+            continue
+        if int(item.get("evidence_snapshot_count") or 0) == 0:
+            issues.append(
+                {
+                    "issue_type": "missing_evidence_snapshot",
+                    "signal_id": item.get("signal_id"),
+                    "action_id": item.get("action_id"),
+                    "object_type": item.get("object_type"),
+                    "object_id": item.get("object_id"),
+                    "review_window": item.get("review_window"),
+                    "note": "历史复盘待办缺少人工点击时保存的 evidence_snapshot；不能把后补文案伪装成原始证据，需先 dry-run 作废旧待办，再重新人工留痕。",
+                }
+            )
+            continue
+        if not item.get("has_diagnosis_path"):
+            issues.append(
+                {
+                    "issue_type": "missing_diagnosis_path",
+                    "signal_id": item.get("signal_id"),
+                    "action_id": item.get("action_id"),
+                    "object_type": item.get("object_type"),
+                    "object_id": item.get("object_id"),
+                    "review_window": item.get("review_window"),
+                    "note": "复盘待办缺少“排查路径”，不能只凭指标窗口保存 ReviewRecord。",
+                }
+            )
+        if not item.get("has_ai_admission"):
+            issues.append(
+                {
+                    "issue_type": "missing_ai_admission",
+                    "signal_id": item.get("signal_id"),
+                    "action_id": item.get("action_id"),
+                    "object_type": item.get("object_type"),
+                    "object_id": item.get("object_id"),
+                    "review_window": item.get("review_window"),
+                    "note": "复盘待办缺少“AI 准入”，不能证明当时为什么允许进入人工确认。",
+                }
+            )
+        if not item.get("has_search_term_boundary"):
+            issues.append(
+                {
+                    "issue_type": "missing_search_term_boundary",
+                    "signal_id": item.get("signal_id"),
+                    "action_id": item.get("action_id"),
+                    "object_type": item.get("object_type"),
+                    "object_id": item.get("object_id"),
+                    "review_window": item.get("review_window"),
+                    "note": "复盘待办缺少“搜索词边界”，不能证明当时人工判断已看过搜索词归因限制。",
+                }
+            )
+        if not item.get("has_placement_boundary"):
+            issues.append(
+                {
+                    "issue_type": "missing_placement_boundary",
+                    "signal_id": item.get("signal_id"),
+                    "action_id": item.get("action_id"),
+                    "object_type": item.get("object_type"),
+                    "object_id": item.get("object_id"),
+                    "review_window": item.get("review_window"),
+                    "note": "复盘待办缺少“广告位边界”，不能证明当时人工判断已看过广告位证据层级。",
+                }
+            )
+        if item.get("object_type") == "search_term":
+            if not item.get("has_targeting_evidence"):
+                issues.append(
+                    {
+                        "issue_type": "missing_targeting_evidence",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "搜索词复盘待办缺少“投放词证据”，不能证明当时人工判断已看过投放承接。",
+                    }
+                )
+            if not item.get("has_aba_context"):
+                issues.append(
+                    {
+                        "issue_type": "missing_aba_context",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "搜索词复盘待办缺少“ABA 背景”，不能证明当时人工判断已看过站点级市场背景和边界。",
+                    }
+                )
+            if not item.get("has_evidence_gap"):
+                issues.append(
+                    {
+                        "issue_type": "missing_evidence_gap",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "搜索词复盘待办缺少“证据缺口”，不能证明当时人工判断已保留不可证明项。",
+                    }
+                )
+            if not item.get("has_action_boundary"):
+                issues.append(
+                    {
+                        "issue_type": "missing_action_boundary",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "搜索词复盘待办缺少“动作边界”，不能证明当时已限制为人工留痕和复盘。",
+                    }
+                )
+        if item.get("has_object_reference") is False:
+            issues.append(
+                {
+                    "issue_type": "evidence_snapshot_object_mismatch",
+                    "signal_id": item.get("signal_id"),
+                    "action_id": item.get("action_id"),
+                    "object_type": item.get("object_type"),
+                    "object_id": item.get("object_id"),
+                    "review_window": item.get("review_window"),
+                    "note": "复盘待办 evidence_snapshot 未能回看目标对象，疑似混入其他候选证据；不能保存 ReviewRecord。",
                 }
             )
     for issue in identity_issues:
@@ -367,6 +622,15 @@ def review_closure_checklist(by_result: dict[str, int], records: list[dict[str, 
     evidence_status = "ready" if record_count > 0 and evidence_count == record_count else "partial" if evidence_count > 0 else "blocked"
     trace_count = sum(1 for record in records if review_record_trace_complete(record))
     trace_status = "ready" if record_count > 0 and trace_count == record_count else "partial" if trace_count > 0 else "blocked"
+    saved_snapshot_count = sum(1 for record in records if int(record.get("evidence_snapshot_count") or 0) > 0)
+    saved_ai_admission_count = sum(1 for record in records if record.get("ai_admission_snapshot"))
+    saved_snapshot_status = (
+        "ready"
+        if record_count > 0 and saved_snapshot_count == record_count and saved_ai_admission_count == record_count
+        else "partial"
+        if saved_snapshot_count > 0 or saved_ai_admission_count > 0
+        else "blocked"
+    )
     return [
         {
             "check_id": "result_distribution",
@@ -391,6 +655,12 @@ def review_closure_checklist(by_result: dict[str, int], records: list[dict[str, 
             "label": "复盘记录来源",
             "status": trace_status,
             "evidence": f"{trace_count} / {record_count} 条样本带 review_record_id / action_id / 指标窗口",
+        },
+        {
+            "check_id": "review_record_evidence_snapshot",
+            "label": "复盘证据快照",
+            "status": saved_snapshot_status,
+            "evidence": f"{saved_snapshot_count} / {record_count} 条样本带保存快照，{saved_ai_admission_count} / {record_count} 条可回看 AI 准入",
         },
         {
             "check_id": "action_boundary",
@@ -428,6 +698,7 @@ def review_feedback_record_items(review_records: list[Any], limit: int = 5) -> l
             result = "unclear"
         object_id = str(getattr(record, "object_id", "") or "").strip()
         object_label = str(getattr(record, "object_label", "") or "").strip() or object_id or "对象待补充"
+        evidence_snapshot = review_record_evidence_snapshot_items(record)
         items.append(
             {
                 "review_record_id": str(getattr(record, "id", "") or "").strip(),
@@ -443,11 +714,49 @@ def review_feedback_record_items(review_records: list[Any], limit: int = 5) -> l
                 "review_note": str(getattr(record, "review_note", "") or "").strip(),
                 "sort_reason": REVIEW_SAMPLE_RECORD_REASON.get(result, REVIEW_SAMPLE_RECORD_REASON["unclear"]),
                 "action_boundary": review_action_boundary(result),
+                "evidence_snapshot_count": len(evidence_snapshot),
+                "evidence_snapshot": evidence_snapshot,
+                "diagnosis_snapshot": review_record_snapshot_item(evidence_snapshot, "排查路径"),
+                "ai_admission_snapshot": review_record_snapshot_item(evidence_snapshot, "AI 准入"),
                 "evidence_drilldown": None,
                 "evidence_groups": [],
             }
         )
     return items
+
+
+def review_record_evidence_snapshot_items(record: Any) -> list[dict[str, str]]:
+    raw_items = _record_value(record, "evidence_snapshot")
+    if not isinstance(raw_items, list):
+        return []
+    items: list[dict[str, str]] = []
+    for item in raw_items:
+        label = str(_record_value(item, "label") or "").strip()
+        value = str(_record_value(item, "value") or "").strip()
+        if not (label and value):
+            continue
+        snapshot_item = {"label": label, "value": value}
+        detail = str(_record_value(item, "detail") or "").strip()
+        source = str(_record_value(item, "source") or "").strip()
+        if detail:
+            snapshot_item["detail"] = detail
+        if source:
+            snapshot_item["source"] = source
+        items.append(snapshot_item)
+    return items
+
+
+def review_record_snapshot_item(items: list[dict[str, str]], label: str) -> dict[str, str] | None:
+    for item in items:
+        if item.get("label") == label:
+            return item
+    return None
+
+
+def _record_value(record: Any, key: str) -> Any:
+    if isinstance(record, dict):
+        return record.get(key)
+    return getattr(record, key, None)
 
 
 def review_feedback_metric_window(record: Any) -> dict[str, str] | None:
@@ -466,9 +775,12 @@ def _next_action(
     ready_count: int,
     identity_issues: list[dict[str, Any]] | None = None,
     review_feedback: dict[str, Any] | None = None,
+    review_audit_issues: list[dict[str, Any]] | None = None,
 ) -> str:
     if identity_issues:
         return "先处理历史人工动作对象 ID 风险：存在广告商品 / 销售商品记录仍使用快照行 ID；只读确认后再人工迁移为稳定 ASIN / MSKU / SKU。"
+    if review_audit_issues:
+        return review_audit_issue_next_action(review_audit_issues)
     if int((review_feedback or {}).get("total") or 0) > 0:
         return "已有保存复盘记录；先用 improved / no_change / worse / unclear 结果校准同类信号解释，不自动调整广告动作或规则。"
     if not manual_actions:
@@ -491,6 +803,7 @@ def rule_improvement_readiness(
     ready_count: int,
     identity_issues: list[dict[str, Any]] | None = None,
     review_feedback: dict[str, Any] | None = None,
+    review_audit_issues: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     base = {"can_auto_change_rules": False, "can_auto_execute_ads": False}
     if identity_issues:
@@ -500,6 +813,14 @@ def rule_improvement_readiness(
             "title": "规则改进对象口径未通过",
             "reason": "存在人工动作对象 ID 风险，不能把快照行 ID 当作长期复盘对象。",
             "next_step": "先只读确认并人工迁移为稳定 ASIN / MSKU / SKU，再进入复盘或规则反馈。",
+        }
+    if review_audit_issues:
+        return {
+            **base,
+            "status": "blocked_by_review_evidence_gap",
+            "title": "规则改进证据快照未通过",
+            "reason": review_audit_issue_reason(review_audit_issues),
+            "next_step": "先补齐人工动作证据快照口径：历史待办不得伪造原始证据；当前可落地路径是先 dry-run 作废旧待办，再重新人工留痕生成新的 ReviewTodo；不能补写历史 evidence_snapshot。",
         }
     if int((review_feedback or {}).get("total") or 0) > 0:
         return {
@@ -553,6 +874,39 @@ def rule_improvement_readiness(
     }
 
 
+def review_audit_issue_reason(issues: list[dict[str, Any]]) -> str:
+    counts: dict[str, int] = {}
+    for issue in issues:
+        issue_type = str(issue.get("issue_type") or "").strip() or "unknown"
+        counts[issue_type] = counts.get(issue_type, 0) + 1
+
+    labels = {
+        "missing_evidence_snapshot": "缺少 evidence_snapshot",
+        "missing_diagnosis_path": "缺少排查路径",
+        "missing_ai_admission": "缺少 AI 准入",
+        "missing_search_term_boundary": "缺少搜索词边界",
+        "missing_placement_boundary": "缺少广告位边界",
+        "missing_targeting_evidence": "缺少投放词证据",
+        "missing_aba_context": "缺少 ABA 背景",
+        "missing_evidence_gap": "缺少证据缺口",
+        "missing_action_boundary": "缺少动作边界",
+        "evidence_snapshot_object_mismatch": "证据快照对象不一致",
+        "missing_action_id": "缺少 action_id",
+        "missing_object_id": "缺少 object_id",
+        "missing_review_window": "缺少 review_window",
+        "unstable_object_id": "对象 ID 不稳定",
+    }
+    parts = [f"{label} {counts[issue_type]} 条" for issue_type, label in labels.items() if counts.get(issue_type)]
+    return "复盘读回门禁未通过：" + "；".join(parts or ["存在未分类证据缺口"]) + "。"
+
+
+def review_audit_issue_next_action(issues: list[dict[str, Any]]) -> str:
+    return (
+        review_audit_issue_reason(issues)
+        + "到期后也不能直接保存复盘记录；先 dry-run 作废旧待办，再重新人工留痕生成新的 ReviewTodo；不能补写历史 evidence_snapshot，不自动改规则，不自动执行广告动作。"
+    )
+
+
 def _not_due_review_wait_message(effects: list[dict[str, Any]]) -> str | None:
     not_ready_effects = _metric_review_effects(effects)
     if not not_ready_effects or _actionable_review_effects(not_ready_effects):
@@ -571,19 +925,29 @@ def review_wait_summary_from_effects(effects: list[dict[str, Any]], ready_count:
     metric_not_ready_effects = _metric_review_effects(effects)
     wait_message = _not_due_review_wait_message(effects) if ready_count == 0 else None
     if not wait_message:
+        status = "ready" if ready_count else "waiting_review_todo" if not effects else "blocked_by_data_gap"
+        gap_effects = _actionable_review_effects(not_ready_effects) or not_ready_effects
+        gap_reasons = _prioritized_review_messages(gap_effects)[:3] if status == "blocked_by_data_gap" else []
+        gap_message = None
+        gap_next_step = None
+        if status == "blocked_by_data_gap":
+            gap_message = "当前没有 ready 复盘效果；" + ("；".join(gap_reasons) if gap_reasons else "复盘证据不足。")
+            gap_next_step = "先补齐复盘所需数据。" + _snapshot_gap_next_step(gap_effects)
         return {
-            "status": "ready" if ready_count else "waiting_review_todo" if not effects else "blocked_by_data_gap",
+            "status": status,
             "ready_count": ready_count,
             "not_ready_count": len(not_ready_effects),
             "earliest_due_at": None,
             "earliest_due_date": None,
             "review_windows": _review_window_labels(not_ready_effects),
+            "next_review_window": None,
             "next_object_type": None,
             "next_object_id": None,
             "next_object_label": None,
-            "message": None,
-            "next_step": None,
-            "forbidden_actions": list(REVIEW_WAIT_FORBIDDEN_ACTIONS),
+            "gap_reasons": gap_reasons,
+            "message": gap_message,
+            "next_step": gap_next_step,
+            "forbidden_actions": list(REVIEW_GAP_FORBIDDEN_ACTIONS if status == "blocked_by_data_gap" else REVIEW_WAIT_FORBIDDEN_ACTIONS),
         }
 
     sorted_effects = sorted(metric_not_ready_effects, key=_review_wait_priority)
@@ -596,13 +960,32 @@ def review_wait_summary_from_effects(effects: list[dict[str, Any]], ready_count:
         "earliest_due_at": earliest_due_at,
         "earliest_due_date": _date_part(earliest_due_at or ""),
         "review_windows": _review_window_labels(sorted_effects),
+        "next_review_window": first_effect.get("review_window"),
         "next_object_type": first_effect.get("object_type"),
         "next_object_id": first_effect.get("object_id"),
         "next_object_label": first_effect.get("object_label") or first_effect.get("object_id"),
+        "gap_reasons": [],
         "message": wait_message,
         "next_step": "等待复盘窗口完整后再复核处理后指标，未到期前不拉取快照、不保存复盘结论。",
         "forbidden_actions": list(REVIEW_WAIT_FORBIDDEN_ACTIONS),
     }
+
+
+def review_wait_summary_with_identity_gate(
+    wait_summary: dict[str, Any],
+    review_audit_issues: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if not review_audit_issues:
+        return wait_summary
+
+    reason = review_audit_issue_reason(review_audit_issues)
+    updated = dict(wait_summary or {})
+    updated["status"] = "blocked_by_review_evidence_gap"
+    updated["gap_reasons"] = [reason]
+    updated["message"] = f"{reason}即使复盘窗口到期，也不能保存复盘结论。"
+    updated["next_step"] = review_audit_issue_next_action(review_audit_issues)
+    updated["forbidden_actions"] = [*REVIEW_GAP_FORBIDDEN_ACTIONS, "不静默补写历史 evidence_snapshot"]
+    return updated
 
 
 def _actionable_review_effects(effects: list[dict[str, Any]]) -> list[dict[str, Any]]:

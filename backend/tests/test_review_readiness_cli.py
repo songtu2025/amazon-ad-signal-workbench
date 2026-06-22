@@ -122,6 +122,20 @@ def test_review_readiness_script_feedback_checks_review_record_trace() -> None:
                 before_end_date="2026-06-07",
                 after_start_date="2026-06-08",
                 after_end_date="2026-06-14",
+                evidence_snapshot=[
+                    SimpleNamespace(
+                        label="排查路径",
+                        value="Parent 经营盘子 -> 广告 ASIN -> 广告组 -> 投放词 / 搜索词 / 广告位",
+                        detail="保存复盘前必须回看原始广告诊断路径。",
+                        source="business_rule",
+                    ),
+                    SimpleNamespace(
+                        label="AI 准入",
+                        value="可进入人工确认 / ready_for_manual_confirmation / 候选 1 个 / 允许人工留痕",
+                        detail="准入只证明允许人工留痕，不代表系统会自动执行广告动作。",
+                        source="actionability_status",
+                    ),
+                ],
             ),
             SimpleNamespace(
                 signal_id="sig-opportunity",
@@ -138,8 +152,14 @@ def test_review_readiness_script_feedback_checks_review_record_trace() -> None:
     assert checklist["review_record_trace"]["status"] == "partial"
     assert "1 / 2" in checklist["review_record_trace"]["evidence"]
     assert "review_record_id / action_id / 指标窗口" in checklist["review_record_trace"]["evidence"]
+    assert checklist["review_record_evidence_snapshot"]["status"] == "partial"
+    assert "1 / 2 条样本带保存快照" in checklist["review_record_evidence_snapshot"]["evidence"]
+    assert "1 / 2 条可回看 AI 准入" in checklist["review_record_evidence_snapshot"]["evidence"]
     assert feedback["records"][0]["review_record_id"] == "review-record-worse-7d"
     assert feedback["records"][0]["action_id"] == "manual-action-worse"
+    assert feedback["records"][0]["evidence_snapshot_count"] == 2
+    assert feedback["records"][0]["diagnosis_snapshot"]["label"] == "排查路径"
+    assert feedback["records"][0]["ai_admission_snapshot"]["label"] == "AI 准入"
     assert feedback["records"][0]["metric_window"] == {
         "before": "2026-06-01 至 2026-06-07",
         "after": "2026-06-08 至 2026-06-14",
@@ -207,6 +227,7 @@ def test_review_readiness_prioritizes_actionable_ad_product_gap(monkeypatch) -> 
         if signal_id == "sig-data-quality":
             return SimpleNamespace(
                 signal_id=signal_id,
+                action_id="manual-action-data-quality",
                 market_id=market_id,
                 review_window=review_window,
                 status="not_ready",
@@ -224,6 +245,7 @@ def test_review_readiness_prioritizes_actionable_ad_product_gap(monkeypatch) -> 
         message = "复盘效果暂不可计算：缺少处理后 7 天快照" if review_window == "7d" else "复盘效果暂不可计算：处理前 14 天窗口不足"
         return SimpleNamespace(
             signal_id=signal_id,
+            action_id="manual-action-ad-product",
             market_id=market_id,
             review_window=review_window,
             status="not_ready",
@@ -329,9 +351,15 @@ def test_review_readiness_cli_reports_wait_summary_when_effects_are_not_due(monk
 
 def test_review_readiness_reports_identity_audit_for_readback_keys(monkeypatch) -> None:
     module = load_review_readiness_script()
+    evidence_snapshot = [
+        SimpleNamespace(label="排查路径", value="Parent ASIN -> 广告 ASIN"),
+        SimpleNamespace(label="AI 准入", value="ready_for_manual_confirmation"),
+        SimpleNamespace(label="搜索词边界", value="搜索词只说明同广告组上下文"),
+        SimpleNamespace(label="广告位边界", value="广告位证据缺口不能自动归因"),
+    ]
     todos = [
-        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="7d", is_due=False),
-        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="14d", is_due=False),
+        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="7d", is_due=False, evidence_snapshot=evidence_snapshot),
+        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="14d", is_due=False, evidence_snapshot=evidence_snapshot),
     ]
 
     def fake_effect(signal_id, *, review_window, market_id=None, signal_rows=None):
@@ -400,7 +428,80 @@ def test_review_readiness_reports_identity_audit_for_readback_keys(monkeypatch) 
         "status": "not_ready",
         "is_due": False,
         "due_at": "2026-06-22T00:00:00+00:00",
+        "evidence_snapshot_count": 4,
+        "has_diagnosis_path": True,
+        "has_ai_admission": True,
+        "has_search_term_boundary": True,
+        "has_placement_boundary": True,
+        "has_object_reference": None,
     }
+
+
+def test_review_readiness_script_blocks_legacy_todos_without_evidence_snapshot(monkeypatch) -> None:
+    module = load_review_readiness_script()
+    todos = [
+        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="7d", is_due=False, evidence_snapshot=[]),
+        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="14d", is_due=False, evidence_snapshot=[]),
+    ]
+
+    def fake_effect(signal_id, *, review_window, market_id=None, signal_rows=None):
+        return SimpleNamespace(
+            signal_id=signal_id,
+            action_id=f"manual-action-{review_window}",
+            action_type="add_to_review",
+            shop_id="market:1",
+            market_id=market_id,
+            review_window=review_window,
+            status="not_ready",
+            result="unclear",
+            message=f"复盘效果暂不可计算：{review_window} 复盘窗口尚未到期",
+            acted_at="2026-06-15T00:00:00+00:00",
+            due_at="2026-06-22T00:00:00+00:00" if review_window == "7d" else "2026-06-29T00:00:00+00:00",
+            object_type="advertised_product",
+            object_id="B016EXMW02",
+            object_label="B016EXMW02",
+            before_start_date=None,
+            before_end_date=None,
+            after_start_date=None,
+            after_end_date=None,
+        )
+
+    monkeypatch.setattr(module, "load_manual_actions", lambda market_id=None: [SimpleNamespace(signal_id="sig-ad-product")])
+    monkeypatch.setattr(module, "load_review_records", lambda market_id=None: [])
+    monkeypatch.setattr(module, "load_signal_rows_from_success_snapshots", lambda: [{"row_id": "row-1"}])
+    monkeypatch.setattr(module, "build_review_todos", lambda market_id=None: todos)
+    monkeypatch.setattr(module, "build_review_effect_result", fake_effect)
+    monkeypatch.setattr(
+        module,
+        "load_snapshot_status",
+        lambda: SimpleNamespace(
+            model_dump=lambda mode="json": {
+                "has_snapshot": True,
+                "snapshot_id": "snapshot-not-ready",
+                "status": "success",
+                "start_date": "2026-06-08",
+                "end_date": "2026-06-15",
+            }
+        ),
+    )
+
+    payload = module.build_review_readiness_payload(selected_market_id=1)
+    audit = payload["review_identity_audit"]
+
+    assert audit["status"] == "blocked"
+    assert audit["missing_evidence_snapshot_count"] == 2
+    assert audit["missing_diagnosis_path_count"] == 2
+    assert audit["missing_ai_admission_count"] == 2
+    assert audit["missing_search_term_boundary_count"] == 2
+    assert audit["missing_placement_boundary_count"] == 2
+    assert {issue["issue_type"] for issue in audit["issues"]} == {"missing_evidence_snapshot"}
+    assert "缺少 evidence_snapshot 2 条" in payload["next_action"]
+    assert payload["rule_improvement"]["status"] == "blocked_by_review_evidence_gap"
+    assert payload["review_wait_summary"]["status"] == "blocked_by_review_evidence_gap"
+    assert "缺少 evidence_snapshot 2 条" in payload["review_wait_summary"]["message"]
+    assert "到期后也不能直接保存复盘记录" in payload["review_wait_summary"]["next_step"]
+    assert "不静默补写历史 evidence_snapshot" in payload["review_wait_summary"]["forbidden_actions"]
+    assert "不拉取快照" not in payload["review_wait_summary"]["forbidden_actions"]
 
 
 def test_review_identity_audit_separates_metric_due_date_from_cross_due_date() -> None:
@@ -437,7 +538,10 @@ def test_review_identity_audit_separates_metric_due_date_from_cross_due_date() -
     )
 
     assert audit["earliest_due_date"] == "2026-06-21"
+    assert audit["earliest_any_due_date"] == "2026-06-21"
     assert audit["earliest_metric_due_date"] == "2026-06-22"
+    assert "earliest_any_due_date 包含数据质量和交叉待办" in audit["date_boundary"]
+    assert "earliest_metric_due_date 为准" in audit["date_boundary"]
 
 
 def test_review_wait_summary_ignores_cross_todos_for_metric_window() -> None:
@@ -475,6 +579,33 @@ def test_review_wait_summary_ignores_cross_todos_for_metric_window() -> None:
     assert wait_summary["next_object_type"] == "advertised_product"
     assert wait_summary["next_object_id"] == "B016EXMW02"
     assert "ABA 搜索词数据" not in wait_summary["message"]
+
+
+def test_review_wait_summary_explains_data_gap_after_due() -> None:
+    module = load_review_readiness_script()
+
+    effects = [
+        {
+            "signal_id": "sig-ad-product",
+            "review_window": "7d",
+            "status": "not_ready",
+            "is_due": True,
+            "due_at": "2026-06-22T00:00:00+00:00",
+            "object_type": "advertised_product",
+            "object_id": "B016EXMW02",
+            "object_label": "B016EXMW02",
+            "message": "复盘效果暂不可计算：缺少处理后 7 天快照",
+        }
+    ]
+
+    wait_summary = module.review_wait_summary_from_effects(effects, ready_count=0)
+
+    assert wait_summary["status"] == "blocked_by_data_gap"
+    assert wait_summary["gap_reasons"] == ["复盘效果暂不可计算：缺少处理后 7 天快照"]
+    assert "当前没有 ready 复盘效果" in wait_summary["message"]
+    assert "先查询积加 API 限流规则" in wait_summary["next_step"]
+    assert "不拉取快照" not in wait_summary["forbidden_actions"]
+    assert "不保存复盘结论" in wait_summary["forbidden_actions"]
 
 
 def test_review_readiness_cli_main_compact_outputs_counts_and_effects(monkeypatch, capsys) -> None:

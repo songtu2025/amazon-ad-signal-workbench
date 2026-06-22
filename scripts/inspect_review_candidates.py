@@ -115,6 +115,9 @@ def manual_action_preview(candidate: dict[str, Any] | None) -> dict[str, Any] | 
         asin=str(candidate.get("asin") or "") or None,
         msku=str(candidate.get("msku") or "") or None,
         sku=str(candidate.get("sku") or "") or None,
+        label=str(candidate.get("object_label") or "") or None,
+        search_term=str(candidate.get("search_term") or "") or None,
+        market_id=candidate.get("market_id"),
     )
     return {
         "will_write": False,

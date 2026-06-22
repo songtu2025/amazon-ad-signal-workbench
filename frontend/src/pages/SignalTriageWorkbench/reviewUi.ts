@@ -106,6 +106,7 @@ export interface ReviewRecordForUi {
   after_end_date?: string | null;
   before_metrics?: Partial<Record<"cost" | "orders" | "sales" | "acos" | "cvr" | "cpc", number | null>>;
   after_metrics?: Partial<Record<"cost" | "orders" | "sales" | "acos" | "cvr" | "cpc", number | null>>;
+  evidence_snapshot?: ManualActionEvidenceSnapshotForUi[] | null;
   result: "improved" | "no_change" | "worse" | "unclear";
   review_note?: string | null;
 }
@@ -131,12 +132,14 @@ export interface ReviewRecordRequestPayloadForUi {
   expected_object_type?: string | null;
   expected_object_id?: string | null;
   expected_review_window?: "7d" | "14d" | null;
+  expected_evidence_snapshot: ManualActionEvidenceSnapshotForUi[];
   expected_can_auto_change_rules: false;
   expected_can_auto_execute_ads: false;
 }
 
 export interface ManualActionForUi {
   id?: string | null;
+  signal_id?: string | null;
   action_type: "observe" | "handled" | "add_to_review" | "ignore";
   shop_id?: string | null;
   market_id?: number | null;
@@ -236,10 +239,18 @@ export interface ManualActionPreflightForUi {
   mode?: string | null;
   will_write?: boolean | null;
   requires_explicit_authorization?: boolean | null;
+  selected_market_id?: number | null;
+  selected_product_scope_id?: string | null;
   target?: {
+    signal_id?: string | null;
     action_type?: ManualActionForUi["action_type"] | string | null;
     object_type?: string | null;
     object_id?: string | null;
+    source_object_id?: string | null;
+    object_label?: string | null;
+    shop_id?: string | null;
+    shop_name?: string | null;
+    market_id?: number | null;
     review_windows?: string[];
   } | null;
   current_counts?: {
@@ -269,6 +280,12 @@ export interface ManualActionPreflightForUi {
   } | null;
 }
 
+export type ManualActionPreflightsByActionForUi = Partial<
+  Record<ManualActionForUi["action_type"], ManualActionPreflightForUi | null>
+>;
+
+export type ManualActionPreflightErrorsByActionForUi = Partial<Record<ManualActionForUi["action_type"], string | null>>;
+
 interface ManualActionPostWriteEvidenceSnapshotCountForUi {
   signal_id?: string | null;
   object_type?: string | null;
@@ -289,10 +306,146 @@ export interface ManualActionExpectedTargetForUi {
   actionType?: ManualActionForUi["action_type"] | string | null;
 }
 
+export function manualActionPreflightForAction(
+  actionType: ManualActionForUi["action_type"],
+  preflightsByAction: ManualActionPreflightsByActionForUi,
+  fallbackPreflight: ManualActionPreflightForUi | null = null,
+) {
+  const actionPreflight = preflightsByAction[actionType] ?? null;
+  if (actionPreflight) return actionPreflight;
+  const fallbackActionType = normalizedPreflightTargetValue(fallbackPreflight?.target?.action_type);
+  return fallbackActionType === actionType ? fallbackPreflight : null;
+}
+
+export function manualActionPreflightErrorForAction(
+  actionType: ManualActionForUi["action_type"],
+  errorsByAction: ManualActionPreflightErrorsByActionForUi,
+  fallbackError: string | null = null,
+) {
+  if (Object.prototype.hasOwnProperty.call(errorsByAction, actionType)) {
+    return errorsByAction[actionType] ?? null;
+  }
+  return fallbackError;
+}
+
 export interface ManualActionPostWriteContractItem {
   label: string;
   value: string;
   detail: string;
+}
+
+export interface ManualActionAuthorizationReadinessSummary {
+  title: string;
+  tone: "ready" | "blocked" | "waiting";
+  primary: string;
+  target: string;
+  currentState: string;
+  authorizedResult: string;
+  evidence: string;
+  boundary: string;
+}
+
+export interface ManualConfirmationEvidenceForUi {
+  label: string;
+  value: string;
+  detail?: string | null;
+}
+
+export interface ManualConfirmationEvidenceReadinessRow {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "ready" | "waiting" | "blocked";
+}
+
+export interface ManualConfirmationEvidenceReadinessSummary {
+  title: string;
+  tone: "ready" | "waiting" | "blocked";
+  summary: string;
+  rows: ManualConfirmationEvidenceReadinessRow[];
+  boundary: string;
+}
+
+export interface DiagnosisEvidenceSummaryForManualBridge {
+  title?: string | null;
+  businessQuestion?: string | null;
+  objectReadback?: string | null;
+  proves?: string | null;
+  doesNotProve?: string | null;
+  evidenceGap?: string | null;
+  nextManualStep?: string | null;
+}
+
+export interface ManualConfirmationDiagnosisBridgeRow {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "ready" | "waiting" | "blocked";
+}
+
+export interface ManualConfirmationDiagnosisBridgeSummary {
+  title: string;
+  tone: "ready" | "waiting" | "blocked";
+  summary: string;
+  rows: ManualConfirmationDiagnosisBridgeRow[];
+  boundary: string;
+}
+
+export interface ReviewTodoEvidenceReadbackRow {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "ready" | "waiting" | "blocked";
+}
+
+export interface ReviewTodoEvidenceReadbackSummary {
+  title: string;
+  tone: "ready" | "waiting" | "blocked";
+  summary: string;
+  rows: ReviewTodoEvidenceReadbackRow[];
+  boundary: string;
+}
+
+export interface ManualActionPathStep {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "ready" | "waiting" | "blocked" | "done";
+}
+
+export interface ManualActionPathStepInput {
+  preflight: ManualActionPreflightForUi | null;
+  preflightError: string | null;
+  latestManualAction: Pick<ManualActionForUi, "action_type" | "evidence_snapshot"> | null;
+  hasReviewTodo: boolean;
+}
+
+export interface ManualActionReadbackPathItem {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "empty" | "waiting" | "ready" | "blocked" | "saved";
+}
+
+export interface ManualActionReadbackPathInput {
+  latestManualAction: Pick<ManualActionForUi, "action_type" | "evidence_snapshot"> | null;
+  reviewTodos: ReviewTodoForUi[];
+  reviewRecords: ReviewRecordForUi[];
+}
+
+export interface ManualActionIdentityGateItem {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "ready" | "waiting" | "blocked";
+}
+
+export interface ManualActionIdentityGateInput {
+  signal: ReviewSignalForUi | null;
+  preflight: ManualActionPreflightForUi | null;
+  latestManualAction: ManualActionForUi | null;
+  nextReviewTodo: ReviewTodoForUi | null;
+  fallbackMarketId?: number | null;
 }
 
 export interface ManualReviewClosureLedgerInput {
@@ -367,10 +520,110 @@ export interface RuleFeedbackCandidate {
 }
 
 export interface ReviewRecordPreflightCheck {
-  id: "target_identity" | "action_evidence_snapshot" | "window_integrity" | "metric_basis" | "rule_feedback_boundary";
+  id:
+    | "target_identity"
+    | "action_evidence_snapshot"
+    | "diagnosis_path"
+    | "diagnosis_path_missing"
+    | "ai_admission"
+    | "ai_admission_missing"
+    | "search_term_boundary"
+    | "search_term_boundary_missing"
+    | "placement_boundary"
+    | "placement_boundary_missing"
+    | "targeting_evidence"
+    | "targeting_evidence_missing"
+    | "ad_group_synthesis"
+    | "ad_group_synthesis_missing"
+    | "aba_context"
+    | "aba_context_missing"
+    | "evidence_gap"
+    | "evidence_gap_missing"
+    | "manual_action_boundary"
+    | "manual_action_boundary_missing"
+    | "window_integrity"
+    | "metric_basis"
+    | "review_result_boundary"
+    | "rule_feedback_boundary"
+    | "todo_evidence_signature"
+    | "todo_evidence_signature_missing"
+    | "todo_object_reference"
+    | "todo_object_reference_missing";
   title: string;
   description: string;
 }
+
+export interface ReviewRecordSaveGateSummary {
+  tone: "blocked" | "ready" | "saved";
+  title: string;
+  detail: string;
+  canSave: boolean;
+}
+
+export interface ReviewEffectWindowLedger {
+  tone: "waiting" | "blocked" | "ready" | "saved";
+  title: string;
+  status: string;
+  beforeWindow: string;
+  afterWindow: string;
+  metricCoverage: string;
+  nextStep: string;
+  boundary: string;
+}
+
+const baseRequiredReviewRecordPreflightCheckIds: ReviewRecordPreflightCheck["id"][] = [
+  "target_identity",
+  "action_evidence_snapshot",
+  "diagnosis_path",
+  "ai_admission",
+  "search_term_boundary",
+  "placement_boundary",
+  "window_integrity",
+  "metric_basis",
+  "review_result_boundary",
+  "rule_feedback_boundary",
+  "todo_evidence_signature",
+  "todo_object_reference",
+];
+
+const searchTermRequiredReviewRecordPreflightCheckIds: ReviewRecordPreflightCheck["id"][] = [
+  "targeting_evidence",
+  "ad_group_synthesis",
+  "aba_context",
+  "evidence_gap",
+  "manual_action_boundary",
+];
+
+const requiredReviewRecordPreflightCheckLabels: Record<ReviewRecordPreflightCheck["id"], string> = {
+  target_identity: "复盘对象",
+  action_evidence_snapshot: "人工动作证据",
+  diagnosis_path: "原始诊断路径",
+  diagnosis_path_missing: "原始诊断路径缺失",
+  ai_admission: "AI 准入理由",
+  ai_admission_missing: "AI 准入理由缺失",
+  search_term_boundary: "搜索词边界",
+  search_term_boundary_missing: "搜索词边界缺失",
+  placement_boundary: "广告位边界",
+  placement_boundary_missing: "广告位边界缺失",
+  targeting_evidence: "投放词证据",
+  targeting_evidence_missing: "投放词证据缺失",
+  ad_group_synthesis: "广告组合流判断",
+  ad_group_synthesis_missing: "广告组合流判断缺失",
+  aba_context: "ABA 背景",
+  aba_context_missing: "ABA 背景缺失",
+  evidence_gap: "证据缺口",
+  evidence_gap_missing: "证据缺口缺失",
+  manual_action_boundary: "动作边界",
+  manual_action_boundary_missing: "动作边界缺失",
+  window_integrity: "复盘窗口",
+  metric_basis: "指标口径",
+  review_result_boundary: "结论边界",
+  rule_feedback_boundary: "规则反馈边界",
+  todo_evidence_signature: "待办证据一致性",
+  todo_evidence_signature_missing: "待办证据不一致",
+  todo_object_reference: "待办证据对象引用",
+  todo_object_reference_missing: "待办证据对象错配",
+};
 
 export interface BackendRuleImprovementForUi {
   status?: string | null;
@@ -409,7 +662,7 @@ export function reviewCheckpointText(todo: ReviewTodoForUi | null, effect: Revie
   if (!todo) return "暂无复盘待办：记录观察、标记已处理或加入复盘后才会生成 7/14 天复盘。";
   const statusText = reviewTodoStatusText(todo);
   if (!todo.is_due && effect?.status !== "ready") {
-    const suffix = effect ? "；当前复盘效果仅说明窗口尚未完整。" : "。";
+    const suffix = effect ? "；当前复盘效果仅说明窗口尚未完整，未到期前不保存复盘记录。" : "，未到期前不保存复盘记录。";
     return `${statusText}：到 ${String(todo.due_at).slice(0, 10)} 后再判断处理前后指标${suffix}`;
   }
   if (!effect) {
@@ -418,6 +671,69 @@ export function reviewCheckpointText(todo: ReviewTodoForUi | null, effect: Revie
   if (effect.status === "ready") return `${statusText}：已具备处理前后指标，可以保存复盘记录。`;
   if (effect.status === "not_ready") return `${statusText}：${effect.message}`;
   return `${statusText}：${effect.message}`;
+}
+
+export function manualActionEmptyStateText(preflight: ManualActionPreflightForUi | null) {
+  const evidenceCount = numberOrZero(preflight?.evidence_snapshot_preview?.item_count);
+  if (evidenceCount > 0) {
+    return `暂无人工处理记录：当前未产生证据快照留痕；后端预检已给出 ${evidenceCount} 条将保存的证据快照，本接口 will_write=${String(preflight?.will_write)}；人工点击后才保存留痕和复盘待办，不执行广告动作。`;
+  }
+  return "暂无人工处理记录：当前未产生证据快照留痕；先读取后端预检，确认目标对象、证据快照和 will_write=false，再由人工选择记录观察、标记已处理、加入复盘或忽略本次。";
+}
+
+export function reviewTodoEmptyStateText(latestManualAction: Pick<ManualActionForUi, "action_type" | "evidence_snapshot"> | null) {
+  if (!latestManualAction) {
+    return "暂无复盘待办：当前还没有人工留痕；先完成人工记录或加入复盘后，系统才会生成 7/14 天复盘排程。";
+  }
+  const evidenceText = latestManualAction.evidence_snapshot?.length
+    ? "已有留痕证据快照，但当前没有复盘排程"
+    : "该留痕缺少证据快照，不能反推当时判断依据";
+  return `暂无复盘待办：已有人工留痕但未读到 7/14 天待办；${evidenceText}；不能保存复盘结论。`;
+}
+
+export function buildManualActionPathSteps(input: ManualActionPathStepInput): ManualActionPathStep[] {
+  const blockers = input.preflight?.blockers ?? [];
+  const evidenceCount = numberOrZero(input.preflight?.evidence_snapshot_preview?.item_count);
+  const preflightBlocked = Boolean(input.preflightError || input.preflight?.status === "blocked" || blockers.length > 0);
+  const preflightReady = Boolean(input.preflight && !preflightBlocked && input.preflight.will_write === false);
+  const hasManualAction = Boolean(input.latestManualAction);
+
+  return [
+    {
+      label: "后端预检",
+      value: preflightBlocked ? "已阻塞" : preflightReady ? "已通过" : "读取中",
+      detail: preflightBlocked
+        ? "预检未通过时不会写入人工动作。"
+        : preflightReady
+          ? "已确认 will_write=false，只能由人工点击后写入留痕。"
+          : "读取完成前按钮保持受控，不写入人工动作。",
+      tone: preflightBlocked ? "blocked" : preflightReady ? "ready" : "waiting",
+    },
+    {
+      label: "证据快照",
+      value: evidenceCount > 0 ? `${evidenceCount} 条` : "待补证",
+      detail: evidenceCount > 0 ? "这些证据只会在人工点击后保存，用于后续复盘回看。" : "未读到可保存证据时，不应进入人工留痕。",
+      tone: evidenceCount > 0 ? "ready" : "waiting",
+    },
+    {
+      label: "人工留痕",
+      value: hasManualAction ? "已留痕" : preflightReady ? "待人工点击" : "等待预检",
+      detail: hasManualAction
+        ? "已存在人工动作记录，继续核对复盘待办和证据快照。"
+        : preflightReady
+          ? "人工可选择记录观察、标记已处理、加入复盘或忽略本次。"
+          : "预检通过前不开放写入路径。",
+      tone: hasManualAction ? "done" : preflightReady ? "waiting" : "blocked",
+    },
+    {
+      label: "7/14 天复盘",
+      value: input.hasReviewTodo ? "已排程" : hasManualAction ? "未读到待办" : "留痕后生成",
+      detail: input.hasReviewTodo
+        ? "复盘待办只表示进入排程，未到期不判断效果。"
+        : "没有复盘待办时不保存复盘结论。",
+      tone: input.hasReviewTodo ? "done" : hasManualAction ? "blocked" : "waiting",
+    },
+  ];
 }
 
 export function reviewTargetReadbackText(
@@ -551,7 +867,7 @@ function reviewTodoMatchesSignalContext(todo: ReviewTodoForUi, signal: ReviewSig
 function reviewSignalStableObjectForReviewRecord(signal: ReviewSignalForUi | null) {
   const primaryObject = signal?.evidence?.primary_object;
   const objectType = String(primaryObject?.object_type ?? signal?.object_type ?? "").trim();
-  const objectId = [primaryObject?.asin, primaryObject?.label, primaryObject?.object_id]
+  const objectId = [primaryObject?.asin, primaryObject?.object_id, primaryObject?.label]
     .map((value) => String(value ?? "").trim())
     .find(Boolean);
   if (!objectType || !objectId) return {};
@@ -587,12 +903,16 @@ export function buildReviewTodoQueueSummary<T extends ReviewTodoForUi>(todos: T[
           next?.is_due ? "已到期但仍需人工确认后保存复盘结论。" : "未到期前不保存复盘结论。"
         }`
       : "";
+  const boundaryDescription =
+    due > 0
+      ? " 到期待办仍需人工确认后保存 ReviewRecord；不自动改规则，不执行广告动作。"
+      : " 未到期前不拉取复盘快照，不保存 ReviewRecord，不自动改规则，不执行广告动作。";
   return {
     total,
     due,
     pending: total - due,
     text: `复盘待办 ${total} 条 / 到期 ${due} 条`,
-    description: `复盘待办只代表已进入复盘窗口；是否改善必须等处理前后指标对比或人工复盘确认。${nextDescription}${evidenceDescription}`,
+    description: `复盘待办只代表已进入复盘窗口；是否改善必须等处理前后指标对比或人工复盘确认。${nextDescription}${evidenceDescription}${boundaryDescription}`,
     next,
     nextLabel,
     nextDueDate,
@@ -659,8 +979,575 @@ export function reviewEffectWindowText(effect: ReviewEffectForUi | null) {
   return `复盘窗口：处理前 ${beforeWindow}；${afterWindow === "待补齐" ? "处理后待补齐" : `处理后 ${afterWindow}`}。`;
 }
 
+export function buildReviewEffectWindowLedger(
+  todo: ReviewTodoForUi | null,
+  effect: ReviewEffectForUi | null,
+  hasMatchingReviewRecord = false,
+): ReviewEffectWindowLedger {
+  if (hasMatchingReviewRecord) {
+    return {
+      tone: "saved",
+      title: "复盘记录已保存",
+      status: "已读回匹配 ReviewRecord，后续只作为规则反馈样本查看。",
+      beforeWindow: effect ? reviewEffectWindowRange(effect.before_start_date, effect.before_end_date) : "已保存记录为准",
+      afterWindow: effect ? reviewEffectWindowRange(effect.after_start_date, effect.after_end_date) : "已保存记录为准",
+      metricCoverage: "以已保存 ReviewRecord 的 before_metrics / after_metrics 为准。",
+      nextStep: "回看复盘记录和规则反馈候选，不重复保存同一 action_id / object_id / review_window。",
+      boundary: "已保存不代表自动改规则，也不代表系统执行过广告动作。",
+    };
+  }
+
+  if (!todo) {
+    return {
+      tone: "waiting",
+      title: "尚未进入复盘窗口",
+      status: "当前没有由人工留痕派生的 ReviewTodo。",
+      beforeWindow: "需要先人工授权写入 ManualAction",
+      afterWindow: "生成 7d / 14d ReviewTodo 后再计算",
+      metricCoverage: "暂无处理前 / 处理后指标窗口。",
+      nextStep: "先完成明确人工动作，系统再生成 7d / 14d 复盘待办。",
+      boundary: "没有人工动作和 ReviewTodo 时，不能判断建议有效、无效或恶化。",
+    };
+  }
+
+  if (!effect) {
+    const dueText = todo.due_at ? String(todo.due_at).slice(0, 10) : "到期日待补充";
+    return {
+      tone: todo.is_due ? "blocked" : "waiting",
+      title: todo.is_due ? "等待读取复盘效果" : "等待复盘窗口到期",
+      status: reviewTodoStatusText(todo),
+      beforeWindow: "待读取处理前窗口",
+      afterWindow: `到 ${dueText} 后读取处理后窗口`,
+      metricCoverage: "还没有拿到 review-effect，不能保存 ReviewRecord。",
+      nextStep: todo.is_due
+        ? "读取复盘效果；若缺处理后快照，先查询积加 API 限流规则，再人工触发低频快照。"
+        : `等待到 ${dueText} 后再复核处理后指标，未到期前不保存复盘结论。`,
+      boundary: "ReviewTodo 只代表进入复盘队列，不代表处理已经改善。",
+    };
+  }
+
+  const beforeWindow = reviewEffectWindowRange(effect.before_start_date, effect.before_end_date);
+  const afterWindow = reviewEffectWindowRange(effect.after_start_date, effect.after_end_date);
+  const metricLabels = reviewMetricComparisonRows(effect).map((row) => row.label);
+  const metricCoverage = metricLabels.length > 0 ? `已读取指标：${metricLabels.join("、")}。` : "暂无可对比指标行。";
+
+  if (effect.status !== "ready") {
+    const dueText = todo.due_at ? String(todo.due_at).slice(0, 10) : "到期日待补充";
+    return {
+      tone: "blocked",
+      title: "复盘窗口未完整",
+      status: effect.message,
+      beforeWindow,
+      afterWindow,
+      metricCoverage: `${metricCoverage}处理后窗口未完整时不能保存 ReviewRecord。`,
+      nextStep: todo.is_due
+        ? "先补齐处理后快照；触发快照前必须查询限流规则，且只能人工低频触发。"
+        : `等待到 ${dueText} 后再读取处理后窗口。`,
+      boundary: "未到 ready 前不判断改善、无变化或恶化，也不输出规则改进结论。",
+    };
+  }
+
+  return {
+    tone: "ready",
+    title: "复盘效果可人工保存",
+    status: effect.message,
+    beforeWindow,
+    afterWindow,
+    metricCoverage: `${metricCoverage}保存前仍需核对对象、证据快照和动作边界。`,
+    nextStep: "人工核对保存前检查后，只保存 ReviewRecord。",
+    boundary: "复盘结论只说明当前对象和当前窗口的指标变化，不证明所有业务变化都由本次人工处理导致。",
+  };
+}
+
 export function canSaveReviewEffect(effect: ReviewEffectForUi | null) {
   return effect?.status === "ready";
+}
+
+export function canSaveReviewRecordWithPreflight(
+  effect: ReviewEffectForUi | null,
+  checklist: ReviewRecordPreflightCheck[] | null | undefined,
+) {
+  if (!canSaveReviewEffect(effect)) return false;
+  const checklistIds = new Set((checklist ?? []).map((check) => check.id));
+  return requiredReviewRecordPreflightCheckIdsForEffect(effect).every((id) => checklistIds.has(id));
+}
+
+export function buildReviewRecordSaveGateSummary(
+  todo: ReviewTodoForUi | null,
+  effect: ReviewEffectForUi | null,
+  checklist: ReviewRecordPreflightCheck[] | null | undefined,
+  hasMatchingReviewRecord = false,
+): ReviewRecordSaveGateSummary {
+  if (hasMatchingReviewRecord) {
+    return {
+      tone: "saved",
+      title: "已保存匹配复盘记录",
+      detail: "已读回同一 action_id / object_id / review_window 的 ReviewRecord；该结论只来自人工保存，不自动改规则或执行广告动作。",
+      canSave: false,
+    };
+  }
+  if (!todo) {
+    return {
+      tone: "blocked",
+      title: "暂不能保存复盘记录",
+      detail: "当前没有 7/14 天复盘待办；必须先有人工留痕派生的 ReviewTodo，才能进入 ReviewRecord 保存。",
+      canSave: false,
+    };
+  }
+  if (!effect) {
+    return {
+      tone: "blocked",
+      title: "等待复盘效果",
+      detail: "已存在复盘待办，但还没有读取到 ready 复盘效果；先补齐处理前后指标窗口，再由人工保存 ReviewRecord。",
+      canSave: false,
+    };
+  }
+  if (effect.status !== "ready") {
+    return {
+      tone: "blocked",
+      title: "暂不能保存复盘记录",
+      detail: `${effect.message}；未到 ready 前不保存 ReviewRecord，也不判断改善、无变化或恶化。`,
+      canSave: false,
+    };
+  }
+
+  const checklistIds = new Set((checklist ?? []).map((check) => check.id));
+  const missingLabels = requiredReviewRecordPreflightCheckIdsForEffect(effect)
+    .filter((id) => !checklistIds.has(id))
+    .map((id) => requiredReviewRecordPreflightCheckLabels[id]);
+  if (missingLabels.length > 0) {
+    return {
+      tone: "blocked",
+      title: "保存前检查未通过",
+      detail: `复盘效果已 ready，但保存前检查缺少：${missingLabels.join("、")}；不能用当前页面缓存或其他对象证据保存 ReviewRecord。`,
+      canSave: false,
+    };
+  }
+
+  return {
+    tone: "ready",
+    title: "可人工保存复盘记录",
+    detail: `已满足 ready 复盘效果和 ${checklist?.length ?? 0} 项保存前检查；点击只保存 ReviewRecord，不自动改规则或执行广告动作。`,
+    canSave: true,
+  };
+}
+
+const reviewRecordDiagnosisPathLabels = ["排查路径", "人工动作路径"];
+const reviewRecordAiAdmissionLabels = ["AI 准入"];
+const reviewRecordSearchTermBoundaryLabels = ["搜索词边界"];
+const reviewRecordPlacementBoundaryLabels = ["广告位边界"];
+const reviewRecordTargetingEvidenceLabels = ["投放词证据"];
+const reviewRecordAdGroupSynthesisLabels = ["广告组合流判断"];
+const reviewRecordAbaContextLabels = ["ABA 背景"];
+const reviewRecordEvidenceGapLabels = ["证据缺口"];
+const reviewRecordManualActionBoundaryLabels = ["动作边界"];
+
+const reviewRecordDiagnosisSupportLabels = [
+  "广告组问题定位",
+  "投放词结构",
+  "搜索词市场背景",
+  "投放词证据",
+  "广告组合流判断",
+  "ABA 背景",
+  "证据缺口",
+  "动作边界",
+  "搜索词边界",
+  "广告位边界",
+  "上下文边界",
+  "广告位证据缺口",
+  "下钻证据缺口",
+  "广告商品覆盖",
+  "搜索词表现",
+  "投放上下文",
+];
+
+const reviewTodoBusinessJudgementLabels = ["人工确认判断依据", "能证明的事实", "不能证明的边界", "人工下一步"];
+
+function reviewTodoMissingLabelGroups(labels: Set<string>, labelGroups: string[][]) {
+  return labelGroups
+    .filter((group) => !group.some((label) => labels.has(label)))
+    .map((group) => group.join(" 或 "));
+}
+
+function reviewTodoReadbackRow(
+  label: string,
+  requiredGroups: string[][],
+  labels: Set<string>,
+  hasSnapshot: boolean,
+  readyDetail: string,
+): ReviewTodoEvidenceReadbackRow {
+  const missing = reviewTodoMissingLabelGroups(labels, requiredGroups);
+  const ready = hasSnapshot && missing.length === 0;
+  return {
+    label,
+    value: ready ? "已回读" : hasSnapshot ? `缺：${missing.join(" / ")}` : "等待证据快照",
+    detail: ready
+      ? readyDetail
+      : hasSnapshot
+        ? `${readyDetail} 当前缺少：${missing.join(" / ")}。`
+        : `${readyDetail} 当前待办没有 evidence_snapshot，不能回看当时判断。`,
+    tone: ready ? "ready" : hasSnapshot ? "blocked" : "waiting",
+  };
+}
+
+export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | null): ReviewTodoEvidenceReadbackSummary | null {
+  if (!todo) return null;
+
+  const snapshot = (todo.evidence_snapshot ?? []).filter(
+    (item) => String(item.label ?? "").trim() && String(item.value ?? "").trim(),
+  );
+  const hasSnapshot = snapshot.length > 0;
+  const labels = evidenceLabelSet(snapshot);
+  const objectType = normalizedPreflightTargetValue(todo.object_type);
+  const objectId = normalizedPreflightTargetValue(todo.object_id);
+  const objectLabel = normalizedPreflightTargetValue(todo.object_label);
+  const actionId = normalizedPreflightTargetValue(todo.action_id);
+  const objectReady = Boolean(objectType && objectId && actionId);
+  const isSearchTermTodo = objectType === "search_term";
+  const dueDate = todo.due_at ? String(todo.due_at).slice(0, 10) : "到期日待补充";
+  const adGroupSynthesisItem = snapshot.find((item) => reviewRecordAdGroupSynthesisLabels.includes(String(item.label ?? "").trim()));
+  const adGroupSynthesisText = adGroupSynthesisItem ? reviewRecordEvidenceItemText(adGroupSynthesisItem) : null;
+
+  const rows: ReviewTodoEvidenceReadbackRow[] = [
+    {
+      label: "待办对象",
+      value: objectReady ? `${objectType} / ${objectId}` : "对象不完整",
+      detail: objectReady
+        ? `ReviewTodo 可回读 action_id ${actionId}；${reviewWindowLabel[todo.review_window]}复盘到期 ${dueDate}；对象展示为 ${objectLabel || objectId}。`
+        : "ReviewTodo 缺少 action_id、object_type 或 object_id，不能确认复盘待办对应哪一次人工判断。",
+      tone: objectReady ? "ready" : "blocked",
+    },
+    reviewTodoReadbackRow(
+      "业务判断",
+      reviewTodoBusinessJudgementLabels.map((label) => [label]),
+      labels,
+      hasSnapshot,
+      "复盘时必须能回看当时为什么判断、能证明什么、不能证明什么，以及下一步人工动作。",
+    ),
+    reviewTodoReadbackRow(
+      "诊断路径",
+      [
+        reviewRecordDiagnosisPathLabels,
+        reviewRecordAiAdmissionLabels,
+        reviewRecordSearchTermBoundaryLabels,
+        reviewRecordPlacementBoundaryLabels,
+      ],
+      labels,
+      hasSnapshot,
+      "复盘待办必须继承 Parent ASIN、广告 ASIN、广告组、搜索词和广告位的原始诊断边界。",
+    ),
+    ...(isSearchTermTodo
+      ? [
+          reviewTodoReadbackRow(
+            "搜索词复核链",
+            [
+              reviewRecordTargetingEvidenceLabels,
+              reviewRecordAdGroupSynthesisLabels,
+              reviewRecordAbaContextLabels,
+              reviewRecordEvidenceGapLabels,
+              reviewRecordManualActionBoundaryLabels,
+            ],
+            labels,
+            hasSnapshot,
+            "搜索词待办必须保留投放词证据、广告组合流判断、ABA 背景、证据缺口和动作边界，避免复盘时把搜索词裸指标误判为自动加词或否词依据。",
+          ),
+          {
+            label: "广告组合流判断",
+            value: adGroupSynthesisText ? "已回读" : hasSnapshot ? "缺少判断" : "等待证据快照",
+            detail: adGroupSynthesisText
+              ? `${adGroupSynthesisText}。复盘时必须先回到广告组和同组广告 ASIN，再判断是否需要人工调整投放结构。`
+              : "当前待办没有广告组合流判断；不能只看搜索词裸指标就判断单个广告 ASIN、广告组或广告位出了问题。",
+            tone: (adGroupSynthesisText ? "ready" : hasSnapshot ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
+          },
+        ]
+      : []),
+    {
+      label: "复盘边界",
+      value: todo.is_due ? "可读取效果窗口" : "等待到期",
+      detail: "ReviewTodo 只代表等待 7/14 天后人工复核；到期后仍需 ReviewRecord 保存门禁，不自动改规则或执行广告动作。",
+      tone: "ready",
+    },
+  ];
+
+  const blockedCount = rows.filter((row) => row.tone === "blocked").length;
+  const waitingCount = rows.filter((row) => row.tone === "waiting").length;
+  const tone: ReviewTodoEvidenceReadbackSummary["tone"] =
+    blockedCount > 0 ? "blocked" : waitingCount > 0 ? "waiting" : "ready";
+  const summary =
+    tone === "ready"
+      ? "ReviewTodo 已回读人工点击时的 evidence_snapshot；到期后可按同一证据链进入 ReviewRecord 保存前门禁。"
+      : tone === "waiting"
+        ? "已读到复盘待办，但还没有证据快照，不能回看当时判断。"
+        : "复盘待办证据快照缺少关键标签，到期后不能直接保存可复盘结论。";
+
+  return {
+    title: "复盘待办证据回读核对",
+    tone,
+    summary,
+    rows,
+    boundary: "这里只做待办证据回读；不会保存 ReviewRecord，不改规则，也不执行广告动作。",
+  };
+}
+
+function requiredReviewRecordPreflightCheckIdsForEffect(effect: ReviewEffectForUi | null): ReviewRecordPreflightCheck["id"][] {
+  if (normalizedPreflightTargetValue(effect?.object_type) !== "search_term") {
+    return baseRequiredReviewRecordPreflightCheckIds;
+  }
+  return [...baseRequiredReviewRecordPreflightCheckIds, ...searchTermRequiredReviewRecordPreflightCheckIds];
+}
+
+function reviewRecordEvidenceItemText(item: ManualActionEvidenceSnapshotForUi) {
+  const label = String(item.label ?? "").trim();
+  const value = String(item.value ?? "").trim();
+  const detail = String(item.detail ?? "").trim();
+  if (!label || !value) return null;
+  return detail ? `${label}：${value}（${detail}）` : `${label}：${value}`;
+}
+
+function reviewRecordDiagnosisPathPreflightText(todo: ReviewTodoForUi | null) {
+  const snapshot = todo?.evidence_snapshot ?? [];
+  const diagnosisPathItem = snapshot.find((item) => reviewRecordDiagnosisPathLabels.includes(String(item.label ?? "").trim()));
+  const diagnosisPathText = diagnosisPathItem ? reviewRecordEvidenceItemText(diagnosisPathItem) : null;
+  const supportText = snapshot
+    .filter((item) => reviewRecordDiagnosisSupportLabels.includes(String(item.label ?? "").trim()))
+    .map(reviewRecordEvidenceItemText)
+    .filter((item): item is string => Boolean(item))
+    .slice(0, 3)
+    .join("；");
+
+  if (!diagnosisPathText) {
+    const supportSuffix = supportText ? `；可回看的支撑证据：${supportText}` : "";
+    return `当前待办缺少原始诊断路径${supportSuffix}；保存前只能核对指标事实，不能把复盘结论扩展成规则判断或自动广告动作。`;
+  }
+
+  const supportSuffix = supportText ? `；支撑证据：${supportText}` : "";
+  return `原始诊断链：${diagnosisPathText}${supportSuffix}。保存复盘前必须确认复盘对象仍沿用当时 Parent ASIN -> 广告 ASIN -> 广告组 -> 投放词 / 搜索词 / 广告位的判断路径。`;
+}
+
+function reviewTodoHasDiagnosisPath(todo: ReviewTodoForUi | null) {
+  return (todo?.evidence_snapshot ?? []).some((item) => String(item.label ?? "").trim() === "排查路径" && String(item.value ?? "").trim());
+}
+
+function reviewRecordAiAdmissionPreflightText(todo: ReviewTodoForUi | null) {
+  const snapshot = todo?.evidence_snapshot ?? [];
+  const admissionItem = snapshot.find((item) => reviewRecordAiAdmissionLabels.includes(String(item.label ?? "").trim()));
+  const admissionText = admissionItem ? reviewRecordEvidenceItemText(admissionItem) : null;
+  if (!admissionText) {
+    return "当前待办缺少 AI 准入理由；保存前只能核对指标事实，不能证明当时为什么允许进入人工确认，也不能扩展成规则判断或自动广告动作。";
+  }
+  return `AI 准入回看：${admissionText}。保存复盘前必须确认该记录只是人工留痕和复盘入口，不代表系统自动执行广告动作。`;
+}
+
+function reviewTodoHasAiAdmission(todo: ReviewTodoForUi | null) {
+  return (todo?.evidence_snapshot ?? []).some((item) => String(item.label ?? "").trim() === "AI 准入" && String(item.value ?? "").trim());
+}
+
+function reviewRecordBoundaryPreflightText(
+  todo: ReviewTodoForUi | null,
+  labels: string[],
+  missingText: string,
+  readyPrefix: string,
+) {
+  const snapshot = todo?.evidence_snapshot ?? [];
+  const boundaryItem = snapshot.find((item) => labels.includes(String(item.label ?? "").trim()));
+  const boundaryText = boundaryItem ? reviewRecordEvidenceItemText(boundaryItem) : null;
+  if (!boundaryText) {
+    return `${missingText}；保存前只能核对处理前后指标，不能证明当时人工判断已经看过该证据边界。`;
+  }
+  return `${readyPrefix}：${boundaryText}。保存复盘前必须确认该边界只用于人工复核，不代表系统自动归因、加词、否词、调价或调整广告位。`;
+}
+
+function reviewRecordSearchTermBoundaryPreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordBoundaryPreflightText(
+    todo,
+    reviewRecordSearchTermBoundaryLabels,
+    "当前待办缺少搜索词边界",
+    "搜索词边界回看",
+  );
+}
+
+function reviewRecordPlacementBoundaryPreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordBoundaryPreflightText(
+    todo,
+    reviewRecordPlacementBoundaryLabels,
+    "当前待办缺少广告位边界",
+    "广告位边界回看",
+  );
+}
+
+function reviewRecordSearchTermReviewChainPreflightText(
+  todo: ReviewTodoForUi | null,
+  labels: string[],
+  missingText: string,
+  readyPrefix: string,
+) {
+  const snapshot = todo?.evidence_snapshot ?? [];
+  const item = snapshot.find((evidenceItem) => labels.includes(String(evidenceItem.label ?? "").trim()));
+  const itemText = item ? reviewRecordEvidenceItemText(item) : null;
+  if (!itemText) {
+    return `${missingText}；保存前只能核对处理前后指标，不能证明当时人工判断已经看过搜索词机会的投放词、广告组合流、ABA、证据缺口或动作边界。`;
+  }
+  return `${readyPrefix}：${itemText}。保存复盘前必须确认它只作为人工复盘依据，不自动加词、否词、调价或暂停广告。`;
+}
+
+function reviewRecordTargetingEvidencePreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordSearchTermReviewChainPreflightText(
+    todo,
+    reviewRecordTargetingEvidenceLabels,
+    "当前待办缺少投放词证据",
+    "投放词证据回看",
+  );
+}
+
+function reviewRecordAdGroupSynthesisPreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordSearchTermReviewChainPreflightText(
+    todo,
+    reviewRecordAdGroupSynthesisLabels,
+    "当前待办缺少广告组合流判断",
+    "广告组合流判断回看",
+  );
+}
+
+function reviewRecordAbaContextPreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordSearchTermReviewChainPreflightText(
+    todo,
+    reviewRecordAbaContextLabels,
+    "当前待办缺少 ABA 背景",
+    "ABA 背景回看",
+  );
+}
+
+function reviewRecordEvidenceGapPreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordSearchTermReviewChainPreflightText(
+    todo,
+    reviewRecordEvidenceGapLabels,
+    "当前待办缺少证据缺口",
+    "证据缺口回看",
+  );
+}
+
+function reviewRecordManualActionBoundaryPreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordSearchTermReviewChainPreflightText(
+    todo,
+    reviewRecordManualActionBoundaryLabels,
+    "当前待办缺少动作边界",
+    "动作边界回看",
+  );
+}
+
+function reviewTodoHasSearchTermBoundary(todo: ReviewTodoForUi | null) {
+  return (todo?.evidence_snapshot ?? []).some((item) => String(item.label ?? "").trim() === "搜索词边界" && String(item.value ?? "").trim());
+}
+
+function reviewTodoHasPlacementBoundary(todo: ReviewTodoForUi | null) {
+  return (todo?.evidence_snapshot ?? []).some((item) => String(item.label ?? "").trim() === "广告位边界" && String(item.value ?? "").trim());
+}
+
+function reviewTodoHasSnapshotLabel(todo: ReviewTodoForUi | null, expectedLabel: string) {
+  return (todo?.evidence_snapshot ?? []).some(
+    (item) => String(item.label ?? "").trim() === expectedLabel && String(item.value ?? "").trim(),
+  );
+}
+
+function reviewTodoHasEvidenceSnapshot(todo: ReviewTodoForUi | null) {
+  return (todo?.evidence_snapshot ?? []).some((item) => String(item.label ?? "").trim() !== "" && String(item.value ?? "").trim() !== "");
+}
+
+function reviewTodoEvidenceMatchesEffect(todo: ReviewTodoForUi | null, effect: ReviewEffectForUi) {
+  if (!todo || !reviewTodoHasEvidenceSnapshot(todo)) return false;
+  const todoActionId = normalizedPreflightTargetValue(todo.action_id);
+  const todoObjectType = normalizedPreflightTargetValue(todo.object_type);
+  const todoObjectId = normalizedPreflightTargetValue(todo.object_id);
+  const effectActionId = normalizedPreflightTargetValue(effect.action_id);
+  const effectObjectType = normalizedPreflightTargetValue(effect.object_type);
+  const effectObjectId = normalizedPreflightTargetValue(effect.object_id);
+  if (!todoActionId || !todoObjectType || !todoObjectId) return false;
+  if (effectActionId && todoActionId !== effectActionId) return false;
+  if (effectObjectType && todoObjectType !== effectObjectType) return false;
+  if (effectObjectId && todoObjectId !== effectObjectId) return false;
+  return todo.review_window === effect.review_window;
+}
+
+function reviewTodoEvidenceSignaturePreflightText(todo: ReviewTodoForUi | null, effect: ReviewEffectForUi) {
+  const issues: string[] = [];
+  const todoActionId = normalizedPreflightTargetValue(todo?.action_id);
+  const todoObjectType = normalizedPreflightTargetValue(todo?.object_type);
+  const todoObjectId = normalizedPreflightTargetValue(todo?.object_id);
+  const effectActionId = normalizedPreflightTargetValue(effect.action_id);
+  const effectObjectType = normalizedPreflightTargetValue(effect.object_type);
+  const effectObjectId = normalizedPreflightTargetValue(effect.object_id);
+  const snapshotCount = (todo?.evidence_snapshot ?? []).filter(
+    (item) => String(item.label ?? "").trim() !== "" && String(item.value ?? "").trim() !== "",
+  ).length;
+
+  if (!todo) issues.push("缺少复盘待办");
+  if (!todoActionId) issues.push("待办缺少 action_id");
+  if (!todoObjectType || !todoObjectId) issues.push("待办缺少 stable object");
+  if (snapshotCount === 0) issues.push("待办缺少证据快照");
+  if (effectActionId && todoActionId && effectActionId !== todoActionId) issues.push("action_id 与 ready effect 不一致");
+  if (effectObjectType && todoObjectType && effectObjectType !== todoObjectType) issues.push("object_type 与 ready effect 不一致");
+  if (effectObjectId && todoObjectId && effectObjectId !== todoObjectId) issues.push("object_id 与 ready effect 不一致");
+  if (todo?.review_window && todo.review_window !== effect.review_window) issues.push("review_window 与 ready effect 不一致");
+
+  if (issues.length > 0) {
+    return `待办证据不一致：${issues.join("；")}；不能用页面缓存、其他待办或当前重新计算证据保存 ReviewRecord。`;
+  }
+  return `待办证据一致：action_id ${todoActionId}；对象 ${todoObjectType} / ${todoObjectId}；窗口 ${
+    reviewWindowLabel[effect.review_window]
+  }；证据快照 ${snapshotCount} 条。前端只提交这份 ReviewTodo 证据，后端仍会按签名校验。`;
+}
+
+function reviewTodoObjectReferenceTerms(todo: ReviewTodoForUi | null, effect: ReviewEffectForUi | null) {
+  const terms: string[] = [];
+  for (const value of [todo?.object_id, todo?.object_label, effect?.object_id, effect?.object_label]) {
+    const text = String(value ?? "").trim();
+    if (!text) continue;
+    terms.push(text);
+    if (text.includes(":")) {
+      const tail = text.split(":").pop()?.trim();
+      if (tail) terms.push(tail);
+    }
+  }
+  return Array.from(new Set(terms));
+}
+
+function reviewEvidenceSnapshotTextForObjectReference(todo: ReviewTodoForUi | null) {
+  return (todo?.evidence_snapshot ?? [])
+    .map((item) => [item.label, item.value, item.detail, item.source].map((value) => String(value ?? "").trim()).filter(Boolean).join(" "))
+    .join(" ")
+    .toLocaleLowerCase();
+}
+
+function reviewTodoHasObjectReference(todo: ReviewTodoForUi | null, effect: ReviewEffectForUi | null) {
+  if (!todo || !reviewTodoHasEvidenceSnapshot(todo)) return false;
+  const terms = reviewTodoObjectReferenceTerms(todo, effect);
+  if (terms.length === 0) return false;
+  const snapshotText = reviewEvidenceSnapshotTextForObjectReference(todo);
+  return terms.some((term) => snapshotText.includes(term.toLocaleLowerCase()));
+}
+
+function reviewTodoObjectReferencePreflightText(todo: ReviewTodoForUi | null, effect: ReviewEffectForUi) {
+  const terms = reviewTodoObjectReferenceTerms(todo, effect);
+  const objectText =
+    normalizedPreflightTargetValue(todo?.object_type || effect.object_type) &&
+    normalizedPreflightTargetValue(todo?.object_id || effect.object_id)
+      ? `${normalizedPreflightTargetValue(todo?.object_type || effect.object_type)} / ${normalizedPreflightTargetValue(
+          todo?.object_id || effect.object_id,
+        )}`
+      : "对象待补充";
+  if (!todo) {
+    return "缺少复盘待办，无法确认待办证据快照是否属于当前复盘对象；不能用当前页面缓存保存 ReviewRecord。";
+  }
+  if (!reviewTodoHasEvidenceSnapshot(todo)) {
+    return `待办证据对象错配：${objectText} 缺少可回看的 evidence_snapshot；不能保存 ReviewRecord。`;
+  }
+  if (terms.length === 0) {
+    return `待办证据对象错配：${objectText} 缺少稳定 object_id / object_label；不能证明证据快照属于当前复盘对象。`;
+  }
+  if (!reviewTodoHasObjectReference(todo, effect)) {
+    return `待办证据对象错配：证据快照未能回看 ${objectText}；可能混入其他候选证据，不能保存 ReviewRecord。`;
+  }
+  return `待办证据对象引用可回看：${objectText}；证据快照包含 ${terms.slice(0, 3).join(" / ")}，保存前仍只作为人工复盘依据，不自动执行广告动作。`;
 }
 
 export function buildReviewRecordPreflightChecklist(
@@ -681,8 +1568,20 @@ export function buildReviewRecordPreflightChecklist(
   const metricLabels = reviewMetricComparisonRows(effect).map((row) => row.label);
   const metricText = metricLabels.length > 0 ? `已核对 ${metricLabels.join("、")}。` : "暂无可展示指标行。";
   const evidenceSnapshotText = manualActionEvidenceSnapshotText(todo);
+  const hasDiagnosisPath = reviewTodoHasDiagnosisPath(todo);
+  const hasAiAdmission = reviewTodoHasAiAdmission(todo);
+  const hasSearchTermBoundary = reviewTodoHasSearchTermBoundary(todo);
+  const hasPlacementBoundary = reviewTodoHasPlacementBoundary(todo);
+  const requiresSearchTermReviewChain = normalizedPreflightTargetValue(effect.object_type) === "search_term";
+  const hasTargetingEvidence = reviewTodoHasSnapshotLabel(todo, "投放词证据");
+  const hasAdGroupSynthesis = reviewTodoHasSnapshotLabel(todo, "广告组合流判断");
+  const hasAbaContext = reviewTodoHasSnapshotLabel(todo, "ABA 背景");
+  const hasEvidenceGap = reviewTodoHasSnapshotLabel(todo, "证据缺口");
+  const hasManualActionBoundary = reviewTodoHasSnapshotLabel(todo, "动作边界");
+  const hasTodoEvidenceSignature = reviewTodoEvidenceMatchesEffect(todo, effect);
+  const hasTodoObjectReference = reviewTodoHasObjectReference(todo, effect);
 
-  return [
+  const checks: ReviewRecordPreflightCheck[] = [
     {
       id: "target_identity",
       title: "确认复盘对象",
@@ -696,6 +1595,59 @@ export function buildReviewRecordPreflightChecklist(
         : "当前待办没有证据快照；只能保存指标复盘事实，不能反推当时证据或自动调整规则。",
     },
     {
+      id: hasDiagnosisPath ? "diagnosis_path" : "diagnosis_path_missing",
+      title: "回看原始诊断路径",
+      description: reviewRecordDiagnosisPathPreflightText(todo),
+    },
+    {
+      id: hasAiAdmission ? "ai_admission" : "ai_admission_missing",
+      title: "回看 AI 准入理由",
+      description: reviewRecordAiAdmissionPreflightText(todo),
+    },
+    {
+      id: hasSearchTermBoundary ? "search_term_boundary" : "search_term_boundary_missing",
+      title: "回看搜索词边界",
+      description: reviewRecordSearchTermBoundaryPreflightText(todo),
+    },
+    {
+      id: hasPlacementBoundary ? "placement_boundary" : "placement_boundary_missing",
+      title: "回看广告位边界",
+      description: reviewRecordPlacementBoundaryPreflightText(todo),
+    },
+  ];
+
+  if (requiresSearchTermReviewChain) {
+    checks.push(
+      {
+        id: hasTargetingEvidence ? "targeting_evidence" : "targeting_evidence_missing",
+        title: "回看投放词证据",
+        description: reviewRecordTargetingEvidencePreflightText(todo),
+      },
+      {
+        id: hasAdGroupSynthesis ? "ad_group_synthesis" : "ad_group_synthesis_missing",
+        title: "回看广告组合流判断",
+        description: reviewRecordAdGroupSynthesisPreflightText(todo),
+      },
+      {
+        id: hasAbaContext ? "aba_context" : "aba_context_missing",
+        title: "回看 ABA 背景",
+        description: reviewRecordAbaContextPreflightText(todo),
+      },
+      {
+        id: hasEvidenceGap ? "evidence_gap" : "evidence_gap_missing",
+        title: "回看证据缺口",
+        description: reviewRecordEvidenceGapPreflightText(todo),
+      },
+      {
+        id: hasManualActionBoundary ? "manual_action_boundary" : "manual_action_boundary_missing",
+        title: "回看动作边界",
+        description: reviewRecordManualActionBoundaryPreflightText(todo),
+      },
+    );
+  }
+
+  checks.push(
+    {
       id: "window_integrity",
       title: "确认复盘窗口",
       description: `保存 ${reviewWindowLabel[effect.review_window]}复盘；效果状态：${effect.status}${dueText}。`,
@@ -706,11 +1658,28 @@ export function buildReviewRecordPreflightChecklist(
       description: `${reviewEffectWindowText(effect) ?? "复盘窗口待补齐。"}${metricText}该对比只说明处理前后窗口变化，不等同于归因所有业务变化。`,
     },
     {
+      id: "review_result_boundary",
+      title: "确认复盘结论边界",
+      description: `${reviewEffectSummaryText(effect)}；该结论只保存当前对象、当前动作和 ${reviewWindowLabel[effect.review_window]}窗口的指标变化，不证明所有业务变化都由本次人工处理导致。`,
+    },
+    {
       id: "rule_feedback_boundary",
       title: "确认规则反馈边界",
       description: "保存后只形成规则反馈候选；不自动改规则，不自动执行广告动作。",
     },
-  ];
+    {
+      id: hasTodoEvidenceSignature ? "todo_evidence_signature" : "todo_evidence_signature_missing",
+      title: "核对待办证据一致性",
+      description: reviewTodoEvidenceSignaturePreflightText(todo, effect),
+    },
+    {
+      id: hasTodoObjectReference ? "todo_object_reference" : "todo_object_reference_missing",
+      title: "核对待办证据对象引用",
+      description: reviewTodoObjectReferencePreflightText(todo, effect),
+    },
+  );
+
+  return checks;
 }
 
 export function buildReviewRecordRequestPayload(
@@ -729,6 +1698,7 @@ export function buildReviewRecordRequestPayload(
     expected_object_type: objectType || null,
     expected_object_id: objectId || null,
     expected_review_window: effect.review_window,
+    expected_evidence_snapshot: todo?.evidence_snapshot ?? [],
     expected_can_auto_change_rules: false,
     expected_can_auto_execute_ads: false,
   };
@@ -893,7 +1863,8 @@ export function reviewMetricComparisonRows(effect: ReviewEffectForUi | null): Re
 
 export function reviewRecordStatusText(record: ReviewRecordForUi | null) {
   if (!record) return "暂无复盘记录";
-  return `最近复盘：${record.result} / ${record.review_note || "未填写备注"}`;
+  const evidenceReadback = reviewRecordEvidenceSnapshotReadbackText([record]);
+  return `最近复盘：${record.result} / ${record.review_note || "未填写备注"}；${evidenceReadback ?? "复盘证据快照待核对"}`;
 }
 
 function reviewRuleFeedbackText(result: ReviewRecordForUi["result"]) {
@@ -1114,7 +2085,10 @@ export function manualActionEvidenceSnapshotText(
 ) {
   const snapshot = action?.evidence_snapshot ?? [];
   const contextText = reviewContextText(action);
-  if (!snapshot.length) return contextText ? `复盘上下文：${contextText}` : null;
+  if (!snapshot.length) {
+    const missingSnapshotText = "历史旧留痕缺少证据快照；只能说明曾有人工动作或复盘上下文，不能证明当前证据闭环";
+    return contextText ? `${missingSnapshotText}；复盘上下文：${contextText}` : missingSnapshotText;
+  }
   const evidenceText = snapshot
     .slice(0, 4)
     .map((item) => `${item.label}：${item.value}`)
@@ -1127,6 +2101,12 @@ const manualActionEvidenceReasonPriority = [
   "广告聚合指标",
   "广告指标汇总",
   "搜索词市场背景",
+  "搜索词边界",
+  "广告位边界",
+  "人工确认判断依据",
+  "能证明的事实",
+  "不能证明的边界",
+  "人工下一步",
   "上下文边界",
   "人工动作路径",
   "复盘指标",
@@ -1211,15 +2191,32 @@ export function manualActionIntentText(actionType: ManualActionForUi["action_typ
   return intentText[actionType];
 }
 
+export function manualActionButtonExpectationText(
+  actionType: ManualActionForUi["action_type"],
+  preflight: ManualActionPreflightForUi | null,
+) {
+  if (!preflight?.expected_after_write || !preflight.current_counts) return null;
+  const currentManualActionCount = numberOrZero(preflight.current_counts.target_manual_action_count);
+  const currentReviewTodoCount = numberOrZero(preflight.current_counts.target_review_todo_count);
+  const expectedManualActionCount = numberOrZero(preflight.expected_after_write.target_manual_action_count);
+  const expectedReviewTodoCount = numberOrZero(preflight.expected_after_write.target_review_todo_count);
+  const manualActionDelta = Math.max(0, expectedManualActionCount - currentManualActionCount);
+  const reviewTodoDelta = Math.max(0, expectedReviewTodoCount - currentReviewTodoCount);
+  if (actionType === "ignore") {
+    return `预期写入：留痕 +${manualActionDelta}，复盘待办 +${reviewTodoDelta}；忽略本次不进入当前 7/14 天待办；不执行广告动作，不保存复盘结论。`;
+  }
+  return `预期写入：留痕 +${manualActionDelta}，复盘待办 +${reviewTodoDelta}；不执行广告动作，不保存复盘结论。`;
+}
+
 export function manualActionPostWriteExpectationText(actionType: ManualActionForUi["action_type"]) {
   if (actionType === "ignore") {
-    return "写后预期：只写 1 条人工留痕，不生成当前复盘待办；不会保存复盘结论。";
+    return "写后预期：只写 1 条人工留痕，不生成当前复盘待办；不会保存复盘结论，不执行广告动作。";
   }
-  return "写后预期：只写 1 条人工留痕，生成 7 天和 14 天复盘待办；不会保存复盘结论。";
+  return "写后预期：只写 1 条人工留痕，生成 7 天和 14 天复盘待办；不会保存复盘结论，不执行广告动作。";
 }
 
 export function manualActionPostWriteExpectationSummaryText() {
-  return "写后预期：复盘类 -> 7d / 14d；忽略 -> 0 条；不保存结论。";
+  return "写后预期：复盘类只生成 7d/14d 待办（排程）；忽略 0 条；未到 ready 不保存结论，不执行广告动作。";
 }
 
 export function manualActionPostWriteContractItems(preflight: ManualActionPreflightForUi | null): ManualActionPostWriteContractItem[] {
@@ -1252,7 +2249,7 @@ export function manualActionPostWriteContractItems(preflight: ManualActionPrefli
     {
       label: "复盘待办",
       value: `预计 ${targetReviewTodoCount} 条`,
-      detail: targetReviewTodoCount > 0 ? `应生成 ${reviewWindows} 复盘待办，${evidenceText}。` : "该动作不生成当前复盘待办。",
+      detail: targetReviewTodoCount > 0 ? `应生成 ${reviewWindows} 复盘待办，${evidenceText}；待办只表示排程。` : "该动作不生成当前复盘待办。",
     },
     {
       label: "复盘结论",
@@ -1267,6 +2264,48 @@ export function manualActionPostWriteContractItems(preflight: ManualActionPrefli
   ];
 }
 
+export function manualActionAuthorizationReadinessSummary(
+  preflight: ManualActionPreflightForUi | null,
+): ManualActionAuthorizationReadinessSummary | null {
+  if (!preflight) return null;
+  const blockers = preflight.blockers ?? [];
+  const target = preflight.target;
+  const objectText = [target?.object_type, target?.object_id].filter(Boolean).join(" / ") || "对象待补充";
+  const label = target?.object_label && !objectText.includes(target.object_label) ? ` / ${target.object_label}` : "";
+  const targetText = `${objectText}${label}`;
+  const windows = target?.review_windows?.length ? target.review_windows.join(" / ") : "7d / 14d";
+  const currentManualActions = numberOrZero(preflight.current_counts?.target_manual_action_count);
+  const currentReviewTodos = numberOrZero(preflight.current_counts?.target_review_todo_count);
+  const expectedManualActions = numberOrZero(preflight.expected_after_write?.target_manual_action_count);
+  const expectedReviewTodos = numberOrZero(preflight.expected_after_write?.target_review_todo_count);
+  const evidenceCount = numberOrZero(preflight.evidence_snapshot_preview?.item_count);
+  const willSaveEvidence = preflight.evidence_snapshot_preview?.will_save_on_authorized_write === true;
+  const ready =
+    preflight.status === "ready_for_explicit_manual_write" &&
+    preflight.will_write === false &&
+    preflight.requires_explicit_authorization === true &&
+    blockers.length === 0;
+  const blocked = preflight.status === "blocked" || blockers.length > 0;
+
+  return {
+    title: "待授权写入状态",
+    tone: blocked ? "blocked" : ready ? "ready" : "waiting",
+    primary: ready
+      ? "后端只读预检已通过，但当前没有写入；必须人工点击并通过授权门禁后才会生成留痕。"
+      : blocked
+        ? "当前人工动作被后端预检阻断，不能写入人工留痕。"
+        : "后端预检尚未进入可授权写入状态，当前不要写入人工留痕。",
+    target: `目标：${targetText}`,
+    currentState: `当前：ManualAction ${currentManualActions} 条 / ReviewTodo ${currentReviewTodos} 条`,
+    authorizedResult: `授权后预期：ManualAction ${expectedManualActions} 条 / ReviewTodo ${expectedReviewTodos} 条 / 窗口 ${windows}`,
+    evidence:
+      evidenceCount > 0
+        ? `证据快照：${evidenceCount} 条${willSaveEvidence ? "，授权写入时会随 ManualAction 保存并继承到 ReviewTodo。" : "，当前仅作预览。"}`
+        : "证据快照：未生成可保存预览，不能进入真实写入。",
+    boundary: "ready 只代表可人工确认，不代表已处理；未授权前不写 manual_actions，不生成 ReviewTodo，不保存 ReviewRecord，不执行广告动作。",
+  };
+}
+
 export function buildManualReviewClosureLedger(input: ManualReviewClosureLedgerInput): ManualReviewClosureLedger {
   const manualActionCount = Math.max(0, input.manualActionCount);
   const reviewTodoCount = Math.max(0, input.reviewTodoCount);
@@ -1275,7 +2314,7 @@ export function buildManualReviewClosureLedger(input: ManualReviewClosureLedgerI
 
   const summary = (() => {
     if (reviewRecordCount > 0) return "已形成可回看的人工闭环：留痕、待办和复盘结论均可读回。";
-    if (manualActionCount > 0 && reviewTodoCount > 0) return "当前已留痕并进入 7/14 天复盘，但还没有效果结论。";
+    if (manualActionCount > 0 && reviewTodoCount > 0) return "当前已留痕并进入 7/14 天复盘待办；这只是排程，未到期不判断效果。";
     if (manualActionCount > 0) return "当前只有人工留痕，没有进入 7/14 天复盘待办。";
     return "当前还不能落地到复盘：未产生人工留痕。";
   })();
@@ -1302,7 +2341,7 @@ export function buildManualReviewClosureLedger(input: ManualReviewClosureLedgerI
         value: reviewTodoCount > 0 ? `已生成 ${reviewTodoCount} 条` : "未生成",
         detail:
           reviewTodoCount > 0
-            ? `review_todos 只表示等待 7/14 天窗口${nextReviewDueDate ? `，下一项到期 ${nextReviewDueDate}` : ""}。`
+            ? `review_todos 只表示等待 7/14 天窗口，不代表已判定改善${nextReviewDueDate ? `，下一项到期 ${nextReviewDueDate}` : ""}。`
             : "记录观察、标记已处理或加入复盘后才会生成 7/14 天复盘待办。",
         tone: reviewTodoCount > 0 ? "waiting" : "empty",
       },
@@ -1347,7 +2386,11 @@ export function manualActionPreflightStatusText(preflight: ManualActionPreflight
   if (isPostWrite) {
     const evidenceReadbackText = manualActionPostWriteEvidenceReadbackText(preflight);
     const evidenceReadbackSegment = evidenceReadbackText ? `；${evidenceReadbackText}` : "";
-    return `写后验收通过：${objectText} 当前 ${currentManualActionCount} 条留痕、${currentReviewTodoCount} 条待办${evidenceReadbackSegment}；${forbiddenText}，${reviewRecordText}。`;
+    const reviewTodoBoundarySegment =
+      currentReviewTodoCount > 0 && numberOrZero(preflight.current_counts?.target_review_record_count) === 0
+        ? `；${reviewTodoPendingEffectBoundaryText}`
+        : "";
+    return `写后验收通过：${objectText} 当前 ${currentManualActionCount} 条留痕、${currentReviewTodoCount} 条待办${reviewTodoBoundarySegment}${evidenceReadbackSegment}；${forbiddenText}，${reviewRecordText}。`;
   }
   const preWriteTitle = preflight.requires_explicit_authorization ? "后端预检通过，待人工授权" : "后端预检通过";
   const writeExpectation = preflight.requires_explicit_authorization ? "授权点击后预计" : "人工确认后预计";
@@ -1392,6 +2435,198 @@ export function manualActionPreflightEvidenceRows(preflight: ManualActionPreflig
     preflight,
     fallbackEvidenceSnapshot: [],
   }).slice(0, limit);
+}
+
+const manualActionPreflightPriorityEvidenceLabels = [
+  "AI 准入",
+  "投放词证据",
+  "广告组合流判断",
+  "ABA 背景",
+  "搜索词边界",
+  "广告位边界",
+  "证据缺口",
+  "广告位证据缺口",
+  "诊断证据缺口",
+  "需要补证",
+  "动作边界",
+  "人工下一步",
+];
+
+export function manualActionPreflightPriorityEvidenceRows(preflight: ManualActionPreflightForUi | null, limit = 6) {
+  if (!preflight?.evidence_snapshot_preview) return [];
+  const priorityRank = new Map(manualActionPreflightPriorityEvidenceLabels.map((label, index) => [label, index]));
+  const rows = buildManualActionDisplayEvidenceSnapshot({
+    preflight,
+    fallbackEvidenceSnapshot: [],
+  });
+  return rows
+    .map((item, index) => ({ item, index, priority: priorityRank.get(item.label) }))
+    .filter((entry): entry is { item: ManualActionEvidenceSnapshotForUi; index: number; priority: number } => entry.priority !== undefined)
+    .sort((left, right) => left.priority - right.priority || left.index - right.index)
+    .slice(0, limit)
+    .map((entry) => entry.item);
+}
+
+export function manualConfirmationEvidenceReadinessSummary(
+  manualEvidenceItems: ManualConfirmationEvidenceForUi[],
+  preflightEvidenceRows: ManualActionEvidenceSnapshotForUi[],
+): ManualConfirmationEvidenceReadinessSummary | null {
+  if (manualEvidenceItems.length === 0) return null;
+  const manualLabels = evidenceLabelSet(manualEvidenceItems);
+  const snapshotLabels = evidenceLabelSet(preflightEvidenceRows);
+  const hasPreflightSnapshot = preflightEvidenceRows.length > 0;
+  const searchTermReviewChainLabels = ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "动作边界"];
+  const needsSearchTermReviewChain = searchTermReviewChainLabels.some((label) =>
+    manualLabels.has(label),
+  );
+  const checks = [
+    {
+      label: "业务判断",
+      manual: ["业务问题", "当前判断"],
+      snapshot: ["人工确认判断依据"],
+      detail: "确认页面读到的业务问题和当前判断会进入点击时证据快照。",
+    },
+    {
+      label: "证明边界",
+      manual: ["能证明", "不能证明", "人工下一步"],
+      snapshot: ["能证明的事实", "不能证明的边界", "人工下一步"],
+      detail: "确认能证明、不能证明和人工下一步会被保留下来，避免复盘时只剩裸指标。",
+    },
+    ...(needsSearchTermReviewChain
+      ? [
+          {
+            label: "搜索词复核链",
+            manual: searchTermReviewChainLabels,
+            snapshot: searchTermReviewChainLabels,
+            detail: "确认搜索词进入人工确认前，投放词、广告组合流判断、ABA、缺口和动作边界会一起保存。",
+          },
+        ]
+      : []),
+  ];
+
+  const rows = checks.map<ManualConfirmationEvidenceReadinessRow>((check) => {
+    const missingManual = missingEvidenceLabels(manualLabels, check.manual);
+    const missingSnapshot = hasPreflightSnapshot ? missingEvidenceLabels(snapshotLabels, check.snapshot) : check.snapshot;
+    const missingLabels = Array.from(new Set([...missingManual, ...missingSnapshot]));
+    const ready = missingManual.length === 0 && missingSnapshot.length === 0;
+    const waiting = !hasPreflightSnapshot;
+    return {
+      label: check.label,
+      value: ready ? "已对齐" : waiting ? "等待只读预检" : `缺：${missingLabels.join(" / ")}`,
+      detail: `${check.detail}${missingManual.length ? ` 页面缺少：${missingManual.join(" / ")}。` : ""}${
+        missingSnapshot.length ? ` 快照缺少：${missingSnapshot.join(" / ")}。` : ""
+      }`,
+      tone: ready ? "ready" : waiting ? "waiting" : "blocked",
+    };
+  });
+  const blockedCount = rows.filter((row) => row.tone === "blocked").length;
+  const waitingCount = rows.filter((row) => row.tone === "waiting").length;
+  const tone: ManualConfirmationEvidenceReadinessSummary["tone"] =
+    blockedCount > 0 ? "blocked" : waitingCount > 0 ? "waiting" : "ready";
+  const summary =
+    tone === "ready"
+      ? "页面证据依据已和将保存的 evidence_snapshot 对齐；人工点击后可以回看当时判断。"
+      : tone === "waiting"
+        ? "页面已生成证据依据，但还在等待后端只读预检返回将保存的 evidence_snapshot。"
+        : "页面证据依据和将保存的 evidence_snapshot 不一致，不能把当前点击当成可复盘留痕。";
+
+  return {
+    title: "人工确认证据写入核对",
+    tone,
+    summary,
+    rows,
+    boundary:
+      "这里只做点击前只读核对；未授权前不写 manual_actions，不生成 ReviewTodo，不保存 ReviewRecord，也不执行广告动作。",
+  };
+}
+
+export function manualConfirmationDiagnosisBridgeSummary(
+  diagnosisSummary: DiagnosisEvidenceSummaryForManualBridge | null,
+  manualEvidenceItems: ManualConfirmationEvidenceForUi[],
+  readinessSummary: ManualConfirmationEvidenceReadinessSummary | null,
+): ManualConfirmationDiagnosisBridgeSummary | null {
+  if (!diagnosisSummary) return null;
+  const manualLabels = evidenceLabelSet(manualEvidenceItems);
+  const readinessRows = readinessSummary?.rows ?? [];
+  const businessQuestion = diagnosisSummary.businessQuestion?.trim() ?? "";
+  const objectReadback = diagnosisSummary.objectReadback?.trim() ?? "";
+  const proves = diagnosisSummary.proves?.trim() ?? "";
+  const doesNotProve = diagnosisSummary.doesNotProve?.trim() ?? "";
+  const evidenceGap = diagnosisSummary.evidenceGap?.trim() ?? "";
+  const nextManualStep = diagnosisSummary.nextManualStep?.trim() ?? "";
+
+  const businessTone = bridgeRowTone(
+    Boolean(businessQuestion && objectReadback && manualLabels.has("业务问题") && manualLabels.has("当前判断")),
+    readinessToneForLabel(readinessRows, "业务判断"),
+  );
+  const boundaryTone = bridgeRowTone(
+    Boolean(
+      proves &&
+        doesNotProve &&
+        nextManualStep &&
+        manualLabels.has("能证明") &&
+        manualLabels.has("不能证明") &&
+        manualLabels.has("人工下一步"),
+    ),
+    readinessToneForLabel(readinessRows, "证明边界"),
+  );
+  const evidenceGapTone = evidenceGap
+    ? bridgeRowTone(
+        manualLabels.has("证据缺口"),
+        readinessToneForLabel(readinessRows, "搜索词复核链") ?? readinessToneForLabel(readinessRows, "证明边界"),
+      )
+    : "ready";
+  const snapshotTone = readinessSummary?.tone ?? "waiting";
+  const rows: ManualConfirmationDiagnosisBridgeRow[] = [
+    {
+      label: "业务问题",
+      value: bridgeRowValue(businessTone),
+      detail: businessQuestion
+        ? `中间诊断问题：${businessQuestion}；诊断对象：${objectReadback || "未读到对象回读"}。`
+        : "中间诊断缺少业务问题，不能确认右侧人工留痕对应哪一个判断。",
+      tone: businessTone,
+    },
+    {
+      label: "证明边界",
+      value: bridgeRowValue(boundaryTone),
+      detail:
+        proves && doesNotProve
+          ? `能证明：${proves} 不能证明：${doesNotProve}`
+          : "中间诊断缺少能证明或不能证明，人工点击前不能闭环。",
+      tone: boundaryTone,
+    },
+    {
+      label: "证据缺口",
+      value: bridgeRowValue(evidenceGapTone),
+      detail: evidenceGap ? `中间证据缺口：${evidenceGap}` : "中间诊断未声明额外证据缺口。",
+      tone: evidenceGapTone,
+    },
+    {
+      label: "点击快照",
+      value: snapshotTone === "ready" ? "已进入 evidence_snapshot 核对" : snapshotTone === "waiting" ? "等待只读预检" : "快照核对阻断",
+      detail: readinessSummary?.summary ?? "右侧证据依据已生成，但还没有后端只读预检返回将保存的 evidence_snapshot。",
+      tone: snapshotTone,
+    },
+  ];
+  const blockedCount = rows.filter((row) => row.tone === "blocked").length;
+  const waitingCount = rows.filter((row) => row.tone === "waiting").length;
+  const tone: ManualConfirmationDiagnosisBridgeSummary["tone"] =
+    blockedCount > 0 ? "blocked" : waitingCount > 0 ? "waiting" : "ready";
+  const summary =
+    tone === "ready"
+      ? "中间诊断、右侧证据依据和将保存的 evidence_snapshot 已贯通；人工点击后可回看业务问题、证明边界、证据缺口和下一步。"
+      : tone === "waiting"
+        ? "中间诊断和右侧证据依据已生成，但还在等待后端只读预检确认 evidence_snapshot。"
+        : "中间诊断和人工留痕证据未贯通，当前不能把点击解释成可复盘闭环。";
+
+  return {
+    title: "诊断到人工留痕同步",
+    tone,
+    summary,
+    rows,
+    boundary:
+      "该同步只核对读到的诊断是否能进入人工留痕；未授权前不写 manual_actions，不生成 ReviewTodo，不保存 ReviewRecord，也不执行广告动作。",
+  };
 }
 
 export function manualActionButtonGate(
@@ -1440,6 +2675,15 @@ export function manualActionButtonGate(
       compactReason: "预检目标待刷新",
     };
   }
+  const expectedActionType = normalizedPreflightTargetValue(expectedTarget?.actionType ?? actionType);
+  const actualActionType = normalizedPreflightTargetValue(preflight.target?.action_type);
+  if (expectedActionType && actualActionType && expectedActionType !== actualActionType) {
+    return {
+      disabled: true,
+      reason: `后端预检动作与当前按钮不一致：预检为 ${actualActionType}，当前为 ${expectedActionType}；不会写入人工动作。`,
+      compactReason: "预检动作待刷新",
+    };
+  }
   return { disabled: false, reason: null, compactReason: null };
 }
 
@@ -1456,6 +2700,7 @@ const manualActionReadbackLabel: Record<ManualActionForUi["action_type"], string
 };
 
 const reviewWindowOrder: ReviewTodoForUi["review_window"][] = ["7d", "14d"];
+const reviewTodoPendingEffectBoundaryText = "复盘待办只表示进入排程，未到期不判断效果";
 
 function hasReviewMetricWindow(record: ReviewRecordForUi) {
   return Boolean(
@@ -1468,25 +2713,48 @@ function hasReviewMetricWindow(record: ReviewRecordForUi) {
   );
 }
 
+function hasReviewRecordEvidenceSnapshot(record: ReviewRecordForUi) {
+  return (
+    reviewRecordHasEvidenceSnapshot(record) &&
+    reviewRecordHasObjectReference(record) &&
+    reviewRecordHasSnapshotLabel(record, "排查路径") &&
+    reviewRecordHasSnapshotLabel(record, "AI 准入") &&
+    reviewRecordHasSnapshotLabel(record, "搜索词边界") &&
+    reviewRecordHasSnapshotLabel(record, "广告位边界")
+  );
+}
+
 function reviewRecordMatchesExpectation(record: ReviewRecordForUi, expectation: ReviewRecordReadbackExpectation) {
   const actionMatches = !expectation.actionId || record.action_id === expectation.actionId;
   const objectTypeMatches = !expectation.objectType || record.object_type === expectation.objectType;
   const objectIdMatches = !expectation.objectId || record.object_id === expectation.objectId;
   const windowMatches = !expectation.reviewWindow || record.review_window === expectation.reviewWindow;
-  return actionMatches && objectTypeMatches && objectIdMatches && windowMatches && hasReviewMetricWindow(record);
+  return actionMatches && objectTypeMatches && objectIdMatches && windowMatches && hasReviewMetricWindow(record) && hasReviewRecordEvidenceSnapshot(record);
 }
 
 export function reviewRecordReadbackStatus(records: ReviewRecordForUi[], expectation: ReviewRecordReadbackExpectation | null = null) {
   if (records.length === 0) return "尚未保存复盘结论";
+  const evidenceReadback = reviewRecordEvidenceSnapshotReadbackText(records);
   if (expectation) {
     const matchedRecord = records.find((record) => reviewRecordMatchesExpectation(record, expectation));
     if (matchedRecord) {
       const windowText = expectation.reviewWindow ? `${reviewWindowLabel[expectation.reviewWindow]}窗口` : "复盘窗口";
-      return `已读回匹配复盘记录：action_id / object_id / ${windowText} / 指标窗口一致`;
+      const matchedEvidenceReadback = reviewRecordEvidenceSnapshotReadbackText([matchedRecord]);
+      return `已读回匹配复盘记录：action_id / object_id / ${windowText} / 指标窗口 / 证据快照一致；${matchedEvidenceReadback}`;
     }
-    return `复盘记录待读回核对：已读回 ${records.length} 条，但未命中 action_id / object_id / review_window / 指标窗口。`;
+    return `复盘记录待读回核对：已读回 ${records.length} 条，但未命中 action_id / object_id / review_window / 指标窗口 / 证据快照；${
+      evidenceReadback ?? "复盘证据快照待核对"
+    }。`;
   }
-  return `已有复盘记录 ${records.length} 条`;
+  return `已有复盘记录 ${records.length} 条；${evidenceReadback}`;
+}
+
+export function hasReviewRecordReadbackMatch(
+  records: ReviewRecordForUi[],
+  expectation: ReviewRecordReadbackExpectation | null = null,
+) {
+  if (!expectation) return false;
+  return records.some((record) => reviewRecordMatchesExpectation(record, expectation));
 }
 
 export function buildReviewRecordReadbackExpectation(
@@ -1503,6 +2771,291 @@ export function buildReviewRecordReadbackExpectation(
 
 function readbackReviewWindows(todos: ReviewTodoForUi[]) {
   return reviewWindowOrder.filter((window) => todos.some((todo) => todo.review_window === window));
+}
+
+function reviewRecordEvidenceSnapshotCount(record: ReviewRecordForUi | null | undefined) {
+  return (record?.evidence_snapshot ?? []).filter(
+    (item) => String(item.label ?? "").trim() !== "" && String(item.value ?? "").trim() !== "",
+  ).length;
+}
+
+function reviewRecordHasEvidenceSnapshot(record: ReviewRecordForUi | null | undefined) {
+  return reviewRecordEvidenceSnapshotCount(record) > 0;
+}
+
+function reviewRecordHasSnapshotLabel(record: ReviewRecordForUi | null | undefined, expectedLabel: string) {
+  return (record?.evidence_snapshot ?? []).some(
+    (item) => String(item.label ?? "").trim() === expectedLabel && String(item.value ?? "").trim() !== "",
+  );
+}
+
+function reviewRecordObjectReferenceTerms(record: ReviewRecordForUi | null | undefined) {
+  const terms: string[] = [];
+  for (const value of [record?.object_id, record?.object_label]) {
+    const text = String(value ?? "").trim();
+    if (!text) continue;
+    terms.push(text);
+    if (text.includes(":")) {
+      const tail = text.split(":").pop()?.trim();
+      if (tail) terms.push(tail);
+    }
+  }
+  return Array.from(new Set(terms));
+}
+
+function reviewRecordEvidenceSnapshotTextForObjectReference(record: ReviewRecordForUi | null | undefined) {
+  return (record?.evidence_snapshot ?? [])
+    .map((item) => [item.label, item.value, item.detail, item.source].map((value) => String(value ?? "").trim()).filter(Boolean).join(" "))
+    .join(" ")
+    .toLocaleLowerCase();
+}
+
+function reviewRecordHasObjectReference(record: ReviewRecordForUi | null | undefined) {
+  if (!record || !reviewRecordHasEvidenceSnapshot(record)) return false;
+  const terms = reviewRecordObjectReferenceTerms(record);
+  if (terms.length === 0) return false;
+  const snapshotText = reviewRecordEvidenceSnapshotTextForObjectReference(record);
+  return terms.some((term) => snapshotText.includes(term.toLocaleLowerCase()));
+}
+
+function reviewRecordEvidenceSnapshotReadbackText(records: ReviewRecordForUi[]) {
+  if (records.length === 0) return null;
+  const countText = records
+    .map((record) => `${record.review_window ?? "复盘"} ${reviewRecordEvidenceSnapshotCount(record)} 条`)
+    .join(" / ");
+  const missingParts = records.flatMap((record) => {
+    const window = record.review_window ?? "复盘";
+    const missing = [
+      reviewRecordHasEvidenceSnapshot(record) ? "" : "证据快照",
+      reviewRecordHasObjectReference(record) ? "" : "对象引用",
+      reviewRecordHasSnapshotLabel(record, "排查路径") ? "" : "排查路径",
+      reviewRecordHasSnapshotLabel(record, "AI 准入") ? "" : "AI 准入",
+      reviewRecordHasSnapshotLabel(record, "搜索词边界") ? "" : "搜索词边界",
+      reviewRecordHasSnapshotLabel(record, "广告位边界") ? "" : "广告位边界",
+    ].filter(Boolean);
+    return missing.length > 0 ? [`${window} 缺${missing.join(" / ")}`] : [];
+  });
+
+  if (missingParts.length > 0) {
+    return `复盘证据快照待核对：${countText}；缺口：${missingParts.join("；")}`;
+  }
+  return `复盘证据快照：${countText}；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界`;
+}
+
+function reviewTodoEvidenceSnapshotCount(todo: ReviewTodoForUi | null | undefined) {
+  return (todo?.evidence_snapshot ?? []).filter(
+    (item) => String(item.label ?? "").trim() !== "" && String(item.value ?? "").trim() !== "",
+  ).length;
+}
+
+function reviewTodoEvidenceSnapshotReadbackText(todos: ReviewTodoForUi[]) {
+  const windowTodos = reviewWindowOrder
+    .map((window) => todos.find((todo) => todo.review_window === window))
+    .filter((todo): todo is ReviewTodoForUi => Boolean(todo));
+  if (windowTodos.length === 0) return null;
+
+  const countText = windowTodos
+    .map((todo) => `${todo.review_window} ${reviewTodoEvidenceSnapshotCount(todo)} 条`)
+    .join(" / ");
+  const missingParts = windowTodos.flatMap((todo) => {
+    const missing = [
+      reviewTodoHasEvidenceSnapshot(todo) ? "" : "证据快照",
+      reviewTodoHasObjectReference(todo, null) ? "" : "对象引用",
+      reviewTodoHasDiagnosisPath(todo) ? "" : "排查路径",
+      reviewTodoHasAiAdmission(todo) ? "" : "AI 准入",
+      reviewTodoHasSearchTermBoundary(todo) ? "" : "搜索词边界",
+      reviewTodoHasPlacementBoundary(todo) ? "" : "广告位边界",
+    ].filter(Boolean);
+    return missing.length > 0 ? [`${todo.review_window} 缺${missing.join(" / ")}`] : [];
+  });
+
+  if (missingParts.length > 0) {
+    return `待办证据快照待核对：${countText}；缺口：${missingParts.join("；")}`;
+  }
+  return `待办证据快照：${countText}；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界`;
+}
+
+function compactIdentityParts(parts: Array<string | null | undefined>) {
+  return parts.map((part) => String(part ?? "").trim()).filter(Boolean).join("；");
+}
+
+function identityIssueTexts(
+  expected: { signalId?: string | null; objectType?: string | null; objectId?: string | null; marketId?: number | null },
+  actual: { signalId?: string | null; objectType?: string | null; objectId?: string | null; marketId?: number | null },
+) {
+  const issues: string[] = [];
+  const expectedSignalId = String(expected.signalId ?? "").trim();
+  const actualSignalId = String(actual.signalId ?? "").trim();
+  if (expectedSignalId && actualSignalId && expectedSignalId !== actualSignalId) issues.push("signal_id 不一致");
+
+  const expectedObjectType = String(expected.objectType ?? "").trim();
+  const actualObjectType = String(actual.objectType ?? "").trim();
+  if (expectedObjectType && actualObjectType && expectedObjectType !== actualObjectType) issues.push("object_type 不一致");
+
+  const expectedObjectId = String(expected.objectId ?? "").trim();
+  const actualObjectId = String(actual.objectId ?? "").trim();
+  if (expectedObjectId && actualObjectId && expectedObjectId !== actualObjectId) issues.push("object_id 不一致");
+
+  if (expected.marketId != null && actual.marketId != null && expected.marketId !== actual.marketId) issues.push("market_id 不一致");
+  return issues;
+}
+
+export function buildManualActionIdentityGateItems(input: ManualActionIdentityGateInput): ManualActionIdentityGateItem[] {
+  const stableObject = reviewSignalStableObjectForReviewRecord(input.signal);
+  const expectedIdentity = {
+    signalId: input.signal?.id ?? null,
+    objectType: stableObject.objectType ?? input.signal?.object_type ?? null,
+    objectId: stableObject.objectId ?? null,
+    marketId: input.signal?.market_id ?? input.fallbackMarketId ?? null,
+  };
+  const signalDetail = compactIdentityParts([
+    input.signal?.shop_id ? `shop_id ${input.signal.shop_id}` : null,
+    expectedIdentity.marketId != null ? `market_id ${expectedIdentity.marketId}` : null,
+    expectedIdentity.objectType && expectedIdentity.objectId ? `${expectedIdentity.objectType} / ${expectedIdentity.objectId}` : null,
+  ]);
+
+  const target = input.preflight?.target ?? null;
+  const preflightIssues = identityIssueTexts(expectedIdentity, {
+    signalId: target?.signal_id,
+    objectType: target?.object_type,
+    objectId: target?.object_id,
+    marketId: target?.market_id ?? input.preflight?.selected_market_id ?? null,
+  });
+  const preflightTargetText = compactIdentityParts([
+    target?.signal_id ? `signal_id ${target.signal_id}` : null,
+    target?.object_type && target?.object_id ? `${target.object_type} / ${target.object_id}` : null,
+    target?.market_id != null ? `market_id ${target.market_id}` : input.preflight?.selected_market_id != null ? `market_id ${input.preflight.selected_market_id}` : null,
+    `will_write=${String(input.preflight?.will_write ?? false)}`,
+  ]);
+
+  const action = input.latestManualAction;
+  const actionIssues = identityIssueTexts(expectedIdentity, {
+    signalId: action?.signal_id,
+    objectType: action?.object_type,
+    objectId: action?.object_id,
+    marketId: action?.market_id ?? null,
+  });
+  const actionDetail = compactIdentityParts([
+    action?.id ? `action_id ${action.id}` : null,
+    action?.signal_id ? `signal_id ${action.signal_id}` : null,
+    action?.object_type && action?.object_id ? `${action.object_type} / ${action.object_id}` : null,
+    action?.market_id != null ? `market_id ${action.market_id}` : null,
+    actionIssues.length > 0 ? actionIssues.join("；") : null,
+  ]);
+
+  const todo = input.nextReviewTodo;
+  const todoIssues = identityIssueTexts(expectedIdentity, {
+    signalId: todo?.signal_id,
+    objectType: todo?.object_type,
+    objectId: todo?.object_id,
+    marketId: todo?.market_id ?? null,
+  });
+  const todoEvidenceReadback = todo ? reviewTodoEvidenceSnapshotReadbackText([todo]) : null;
+  const todoDetail = compactIdentityParts([
+    todo?.action_id ? `action_id ${todo.action_id}` : null,
+    todo?.signal_id ? `signal_id ${todo.signal_id}` : null,
+    todo?.object_type && todo?.object_id ? `${todo.object_type} / ${todo.object_id}` : null,
+    todo?.market_id != null ? `market_id ${todo.market_id}` : null,
+    todoEvidenceReadback,
+    todoIssues.length > 0 ? todoIssues.join("；") : null,
+  ]);
+
+  return [
+    {
+      label: "当前信号",
+      value: expectedIdentity.signalId || "未选择",
+      detail: signalDetail || "未选择信号时不允许写入人工动作。",
+      tone: expectedIdentity.signalId ? "ready" : "blocked",
+    },
+    {
+      label: "预检目标",
+      value: !input.preflight ? "未读取" : preflightIssues.length > 0 ? "待核对" : "身份一致",
+      detail: input.preflight
+        ? `${preflightTargetText || "预检目标待补充"}${preflightIssues.length > 0 ? `；${preflightIssues.join("；")}` : ""}`
+        : "后端只读预检未返回前，不写入人工动作。",
+      tone: !input.preflight ? "waiting" : preflightIssues.length > 0 ? "blocked" : "ready",
+    },
+    {
+      label: "留痕读回",
+      value: !action ? "未读回" : actionIssues.length > 0 ? "待核对" : "已读回",
+      detail: action ? actionDetail || "已读回人工留痕，但对象字段待补充。" : "人工点击后应读回同一 signal_id / object_id / market_id。",
+      tone: !action ? "waiting" : actionIssues.length > 0 ? "blocked" : "ready",
+    },
+    {
+      label: "复盘待办",
+      value: !todo ? "未生成" : todoIssues.length > 0 ? "待核对" : `${todo.review_window} 已读回`,
+      detail: todo ? todoDetail || "已读回复盘待办，但对象字段待补充。" : "复盘类动作应生成同一对象的 7d / 14d 待办。",
+      tone: !todo ? "waiting" : todoIssues.length > 0 ? "blocked" : "ready",
+    },
+  ];
+}
+
+export function buildManualActionReadbackPathItems(input: ManualActionReadbackPathInput): ManualActionReadbackPathItem[] {
+  const action = input.latestManualAction;
+  const windows = readbackReviewWindows(input.reviewTodos);
+  const windowText = windows.length > 0 ? windows.join(" / ") : "无待办";
+  const reviewRecordCount = input.reviewRecords.length;
+  const evidenceCount = numberOrZero(action?.evidence_snapshot?.length);
+
+  if (!action) {
+    return [
+      {
+        label: "留痕读回",
+        value: "未触发",
+        detail: "尚未产生人工留痕；此时不应出现广告动作、复盘待办或复盘结论。",
+        tone: "empty",
+      },
+      {
+        label: "待办读回",
+        value: "无待办",
+        detail: "未触发人工动作前，不生成 7/14 天复盘排程。",
+        tone: "empty",
+      },
+      {
+        label: "复盘结论",
+        value: "未保存",
+        detail: "没有人工留痕和完整复盘窗口，不能保存 review_records。",
+        tone: "empty",
+      },
+    ];
+  }
+
+  const actionLabel = manualActionReadbackLabel[action.action_type];
+  const isIgnoreAction = action.action_type === "ignore";
+  const todoValue = isIgnoreAction ? (input.reviewTodos.length === 0 ? "0 条" : `${input.reviewTodos.length} 条待核对`) : windowText;
+  const todoComplete = isIgnoreAction ? input.reviewTodos.length === 0 : windows.length === reviewWindowOrder.length;
+  const todoEvidenceReadback = reviewTodoEvidenceSnapshotReadbackText(input.reviewTodos);
+  const reviewRecordEvidenceReadback = reviewRecordEvidenceSnapshotReadbackText(input.reviewRecords);
+
+  return [
+    {
+      label: "留痕读回",
+      value: "已读回",
+      detail: `${actionLabel}已读回；证据快照 ${evidenceCount} 条，只证明人工判断依据已留存，不代表广告动作已执行。`,
+      tone: "ready",
+    },
+    {
+      label: "待办读回",
+      value: todoValue,
+      detail: isIgnoreAction
+        ? todoComplete
+          ? "忽略本次不生成 7/14 天排程，符合预期；这不代表误报或删除信号。"
+          : "忽略本次应为 0 条待办，需核对对象范围。"
+        : todoComplete
+          ? `${todoEvidenceReadback ?? "7/14 天待办已读回"}；只表示进入排程，未到期不判断效果。`
+          : `${todoEvidenceReadback ?? "复盘类动作应读回 7d / 14d"}；缺口未补齐前不能保存结论。`,
+      tone: todoComplete ? "ready" : "blocked",
+    },
+    {
+      label: "复盘结论",
+      value: reviewRecordCount > 0 ? "已保存" : "未保存结论",
+      detail:
+        reviewRecordCount > 0
+          ? `已读回 ${reviewRecordCount} 条复盘结论；${reviewRecordEvidenceReadback ?? "复盘证据快照待核对"}；只作为规则解释反馈，不自动执行广告动作。`
+          : "未到 7/14 天完整窗口前不保存 review_records，不判断广告效果。",
+      tone: reviewRecordCount > 0 ? "saved" : "waiting",
+    },
+  ];
 }
 
 export function manualActionReadbackConsistencyText(
@@ -1523,8 +3076,11 @@ export function manualActionReadbackConsistencyText(
   }
 
   const windows = readbackReviewWindows(reviewTodosForSelectedObject);
+  const todoEvidenceReadback = reviewTodoEvidenceSnapshotReadbackText(reviewTodosForSelectedObject);
   if (windows.length === reviewWindowOrder.length) {
-    return `点击后读回一致：${actionLabel}已读回留痕 + 7d / 14d，${reviewRecordReadbackStatus(
+    const pendingEffectBoundary = reviewRecordsForSelectedObject.length === 0 ? `${reviewTodoPendingEffectBoundaryText}，` : "";
+    const todoEvidenceSegment = todoEvidenceReadback ? `${todoEvidenceReadback}，` : "";
+    return `点击后读回一致：${actionLabel}已读回留痕 + 7d / 14d，${todoEvidenceSegment}${pendingEffectBoundary}${reviewRecordReadbackStatus(
       reviewRecordsForSelectedObject,
       reviewRecordExpectation,
     )}。`;
@@ -1574,12 +3130,16 @@ function manualActionPostWriteReadbackSummary(
   const snapshotCount = action.evidence_snapshot?.length ?? 0;
   const windows = readbackReviewWindows(reviewTodosForSelectedObject);
   const windowText = windows.length > 0 ? windows.join(" / ") : "0 条";
+  const todoEvidenceReadback = reviewTodoEvidenceSnapshotReadbackText(reviewTodosForSelectedObject);
   const reviewRecordCount =
     postWritePreflight?.current_counts?.target_review_record_count ?? reviewRecordsForSelectedObject.length;
+  const reviewTodoBoundaryText =
+    windows.length > 0 && numberOrZero(reviewRecordCount) === 0 ? "（只表示进入排程，未到期不判断效果）" : "";
   const forbiddenText = postWritePreflight?.forbidden_effects?.some((effect) => effect.includes("不执行广告动作"))
     ? "不执行广告动作"
     : "禁止副作用需继续核对";
-  return `${objectType} / ${objectId} 写后读回：证据快照 ${snapshotCount} 条，复盘待办 ${windowText}，review_records ${reviewRecordCount} 条，${forbiddenText}`;
+  const todoEvidenceSegment = todoEvidenceReadback ? `，${todoEvidenceReadback}` : "";
+  return `${objectType} / ${objectId} 写后读回：证据快照 ${snapshotCount} 条，复盘待办 ${windowText}${reviewTodoBoundaryText}${todoEvidenceSegment}，review_records ${reviewRecordCount} 条，${forbiddenText}`;
 }
 
 export function manualActionReadbackCompactText(
@@ -1587,19 +3147,25 @@ export function manualActionReadbackCompactText(
   reviewTodosForSelectedObject: ReviewTodoForUi[],
   reviewRecordsForSelectedObject: ReviewRecordForUi[],
 ) {
-  const recordText = reviewRecordsForSelectedObject.length > 0 ? `复盘记录 ${reviewRecordsForSelectedObject.length}` : "未存结论";
-  if (!action) return "预期：复盘类 7d/14d，忽略 0；读回：暂无留痕";
+  const hasReadableReviewRecordEvidence =
+    reviewRecordsForSelectedObject.length > 0 && reviewRecordsForSelectedObject.every((record) => hasReviewRecordEvidenceSnapshot(record));
+  const recordText =
+    reviewRecordsForSelectedObject.length > 0
+      ? `复盘记录 ${reviewRecordsForSelectedObject.length}${hasReadableReviewRecordEvidence ? "（证据可回看）" : "（证据待核对）"}`
+      : "未存结论";
+  if (!action) return "预期：复盘类 7d/14d 待办（排程），忽略 0；读回：暂无留痕";
   if (action.action_type === "ignore") {
-    if (reviewTodosForSelectedObject.length === 0) return `预期：忽略 0；读回一致：0 条待办，${recordText}`;
+    if (reviewTodosForSelectedObject.length === 0) return `预期：忽略 0；读回一致：0 条待办，${recordText}（不代表误报）`;
     return `预期：忽略 0；待读回核对：${reviewTodosForSelectedObject.length} 条待办`;
   }
 
   const windows = readbackReviewWindows(reviewTodosForSelectedObject);
   if (windows.length === reviewWindowOrder.length) {
-    return `预期：复盘类 7d/14d；读回一致：留痕 + 7d/14d，${recordText}`;
+    const todoBoundary = reviewRecordsForSelectedObject.length > 0 ? "" : "（仅排程）";
+    return `预期：复盘类 7d/14d 待办；读回一致：留痕 + 7d/14d待办${todoBoundary}，${recordText}`;
   }
   const currentWindowsText = windows.length > 0 ? windows.join(" / ") : "0";
-  return `预期：复盘类 7d/14d；待读回补齐：${currentWindowsText}`;
+  return `预期：复盘类 7d/14d 待办；待读回补齐：${currentWindowsText}`;
 }
 
 export function reviewApplicabilityBoundaryText(signal: ReviewApplicabilityForUi | null) {
@@ -1624,6 +3190,14 @@ function numberOrZero(value: number | null | undefined) {
   return value ?? 0;
 }
 
+function evidenceLabelSet(items: Array<{ label?: string | null }>) {
+  return new Set(items.map((item) => item.label?.trim()).filter((label): label is string => Boolean(label)));
+}
+
+function missingEvidenceLabels(labels: Set<string>, requiredLabels: string[]) {
+  return requiredLabels.filter((label) => !labels.has(label));
+}
+
 function compareReviewWindowEvidenceCounts(
   left: ManualActionPostWriteEvidenceSnapshotCountForUi,
   right: ManualActionPostWriteEvidenceSnapshotCountForUi,
@@ -1634,6 +3208,21 @@ function compareReviewWindowEvidenceCounts(
 
 function trimFinalPunctuation(value: string) {
   return value.replace(/[。.]$/, "");
+}
+
+function readinessToneForLabel(rows: ManualConfirmationEvidenceReadinessRow[], label: string) {
+  return rows.find((row) => row.label === label)?.tone ?? null;
+}
+
+function bridgeRowTone(hasPageEvidence: boolean, snapshotTone: "ready" | "waiting" | "blocked" | null) {
+  if (!hasPageEvidence) return "blocked";
+  return snapshotTone ?? "waiting";
+}
+
+function bridgeRowValue(tone: "ready" | "waiting" | "blocked") {
+  if (tone === "ready") return "已贯通";
+  if (tone === "waiting") return "等待快照核对";
+  return "未贯通";
 }
 
 function preflightBlockerText(blockers: NonNullable<ManualActionPreflightForUi["blockers"]>) {

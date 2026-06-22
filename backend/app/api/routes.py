@@ -7,6 +7,8 @@ from app.models.manual_actions import (
     ReviewRecord,
     ReviewRecordRequest,
     ReviewTodo,
+    ReviewTodoDecisionRecord,
+    ReviewTodoDecisionRequest,
     ReviewWindow,
 )
 from app.models.product_scope import ProductScopeSummary
@@ -33,14 +35,16 @@ from app.services.manual_actions import (
     load_manual_actions,
     load_review_records,
     manual_action_object_id,
-    REVIEWABLE_ACTION_TYPES,
+    manual_action_object_id_matches,
     save_manual_action,
     save_review_record,
+    save_review_todo_decision,
 )
 from app.services.manual_action_preflight import build_manual_action_preflight_payload
 from app.services.market_options import load_market_options, save_probe_market_option
 from app.services.promotion_strategy_profiles import load_promotion_strategy_profiles
 from app.services.product_scope import build_product_scope_summary
+from app.services.review_evidence_repair import build_review_evidence_repair_payload
 from app.services.signal_detection import detect_data_quality_signals, detect_signals, search_intent_summaries
 from app.services.signal_scan_summary import build_signal_scan_summary
 from app.services.signal_triage import build_signal_triage_payload
@@ -116,6 +120,17 @@ def get_signal_triage(market_id: int | None = None, top: int = 5, product_scope_
     if REVIEW_RECORD_ROOT != DEFAULT_REVIEW_RECORD_ROOT:
         triage_kwargs["review_root"] = REVIEW_RECORD_ROOT
     return build_signal_triage_payload(**triage_kwargs)
+
+
+@router.get("/review-evidence-repair")
+def get_review_evidence_repair(market_id: int | None = None, top: int = 5, product_scope_id: str | None = None) -> dict:
+    return build_review_evidence_repair_payload(
+        selected_market_id=market_id,
+        top=top,
+        product_scope_id=product_scope_id,
+        action_root=MANUAL_ACTION_ROOT,
+        review_root=REVIEW_RECORD_ROOT,
+    )
 
 
 @router.get("/manual-action/preflight")
@@ -205,6 +220,8 @@ def create_signal_review_record(
         signal_rows=load_signal_rows_from_success_snapshots(),
     )
     try:
+        if effect.status == "ready":
+            _validate_review_record_evidence_snapshot_preflight(signal_id, request, market_id=market_id)
         return save_review_record(
             effect,
             review_note=request.review_note,
@@ -213,6 +230,7 @@ def create_signal_review_record(
             expected_object_type=request.expected_object_type,
             expected_object_id=request.expected_object_id,
             expected_review_window=request.expected_review_window,
+            expected_evidence_snapshot=request.expected_evidence_snapshot,
             expected_can_auto_change_rules=request.expected_can_auto_change_rules,
             expected_can_auto_execute_ads=request.expected_can_auto_execute_ads,
             review_root=REVIEW_RECORD_ROOT,
@@ -224,14 +242,224 @@ def create_signal_review_record(
             "review_record_preflight_required",
             "review_record_preflight_mismatch",
             "review_record_forbidden_effect",
+            "review_record_missing_diagnosis_path",
+            "review_record_missing_ai_admission",
+            "review_record_missing_search_term_boundary",
+            "review_record_missing_placement_boundary",
+            "review_record_missing_ad_group_synthesis",
+            "review_record_missing_targeting_evidence",
+            "review_record_missing_aba_context",
+            "review_record_missing_evidence_gap",
+            "review_record_missing_action_boundary",
+            "review_record_evidence_snapshot_object_mismatch",
+            "review_record_evidence_snapshot_mismatch",
         }:
             raise HTTPException(status_code=409, detail=str(error)) from error
         raise
 
 
+def _validate_review_record_evidence_snapshot_preflight(
+    signal_id: str,
+    request: ReviewRecordRequest,
+    *,
+    market_id: int | None,
+) -> None:
+    if not request.expected_evidence_snapshot:
+        raise HTTPException(status_code=409, detail="review_record_preflight_required")
+    if not _review_record_evidence_snapshot_has_diagnosis_path(request.expected_evidence_snapshot):
+        raise HTTPException(status_code=409, detail="review_record_missing_diagnosis_path")
+    if not _review_record_evidence_snapshot_has_ai_admission(request.expected_evidence_snapshot):
+        raise HTTPException(status_code=409, detail="review_record_missing_ai_admission")
+    if not _review_record_evidence_snapshot_has_search_term_boundary(request.expected_evidence_snapshot):
+        raise HTTPException(status_code=409, detail="review_record_missing_search_term_boundary")
+    if not _review_record_evidence_snapshot_has_placement_boundary(request.expected_evidence_snapshot):
+        raise HTTPException(status_code=409, detail="review_record_missing_placement_boundary")
+    if request.expected_object_type == "search_term":
+        if not _review_record_evidence_snapshot_has_ad_group_synthesis(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_ad_group_synthesis")
+        if not _review_record_evidence_snapshot_has_targeting_evidence(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_targeting_evidence")
+        if not _review_record_evidence_snapshot_has_aba_context(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_aba_context")
+        if not _review_record_evidence_snapshot_has_evidence_gap(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_evidence_gap")
+        if not _review_record_evidence_snapshot_has_action_boundary(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_action_boundary")
+    if request.expected_object_id and not _review_record_evidence_snapshot_has_expected_object(
+        request.expected_evidence_snapshot,
+        request.expected_object_id,
+    ):
+        raise HTTPException(status_code=409, detail="review_record_evidence_snapshot_object_mismatch")
+    if not all([request.expected_action_id, request.expected_object_type, request.expected_object_id, request.expected_review_window]):
+        return
+
+    matching_todo = next(
+        (
+            todo
+            for todo in build_review_todos(signal_id, market_id=market_id, action_root=MANUAL_ACTION_ROOT)
+            if todo.action_id == request.expected_action_id
+            and todo.object_type == request.expected_object_type
+            and manual_action_object_id_matches(
+                object_type=todo.object_type,
+                object_id=todo.object_id,
+                expected_object_id=request.expected_object_id,
+                object_label=todo.object_label,
+                market_id=todo.market_id,
+            )
+            and todo.review_window == request.expected_review_window
+        ),
+        None,
+    )
+    if matching_todo is None:
+        raise HTTPException(status_code=409, detail="review_record_preflight_mismatch")
+    if _manual_action_evidence_snapshot_signature(request.expected_evidence_snapshot) != _manual_action_evidence_snapshot_signature(
+        matching_todo.evidence_snapshot
+    ):
+        raise HTTPException(status_code=409, detail="review_record_evidence_snapshot_mismatch")
+
+
+def _review_record_evidence_snapshot_has_diagnosis_path(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "排查路径")
+
+
+def _review_record_evidence_snapshot_has_ai_admission(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "AI 准入")
+
+
+def _review_record_evidence_snapshot_has_search_term_boundary(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "搜索词边界")
+
+
+def _review_record_evidence_snapshot_has_placement_boundary(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "广告位边界")
+
+
+def _review_record_evidence_snapshot_has_ad_group_synthesis(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "广告组合流判断")
+
+
+def _review_record_evidence_snapshot_has_targeting_evidence(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "投放词证据")
+
+
+def _review_record_evidence_snapshot_has_aba_context(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "ABA 背景")
+
+
+def _review_record_evidence_snapshot_has_evidence_gap(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "证据缺口")
+
+
+def _review_record_evidence_snapshot_has_action_boundary(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "动作边界")
+
+
+def _review_record_evidence_snapshot_has_label(items: object, expected_label: str) -> bool:
+    if not isinstance(items, list):
+        return False
+    for item in items:
+        if hasattr(item, "model_dump"):
+            item = item.model_dump()
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("label") or "").strip() == expected_label and str(item.get("value") or "").strip():
+            return True
+    return False
+
+
+def _review_record_evidence_snapshot_has_expected_object(items: object, expected_object_id: str) -> bool:
+    references = _review_record_expected_object_terms(expected_object_id)
+    if not references:
+        return True
+    snapshot_text = " ".join(
+        " ".join(
+            str(getattr(item, field, "") or "").strip()
+            for field in ("label", "value", "detail", "source")
+            if str(getattr(item, field, "") or "").strip()
+        )
+        for item in items
+    ).casefold()
+    return any(reference.casefold() in snapshot_text for reference in references)
+
+
+def _review_record_expected_object_terms(expected_object_id: str) -> list[str]:
+    text = str(expected_object_id or "").strip()
+    terms = [text] if text else []
+    if ":" in text:
+        tail = text.rsplit(":", 1)[-1].strip()
+        if tail:
+            terms.append(tail)
+    return list(dict.fromkeys(terms))
+
+
 @router.get("/review-todos", response_model=list[ReviewTodo])
 def list_review_todos(market_id: int | None = None) -> list[ReviewTodo]:
     return build_review_todos(market_id=market_id, action_root=MANUAL_ACTION_ROOT)
+
+
+@router.post("/review-todos/void", response_model=ReviewTodoDecisionRecord)
+def void_review_todo(request: ReviewTodoDecisionRequest, market_id: int | None = None) -> ReviewTodoDecisionRecord:
+    if request.expected_can_auto_change_rules is None or request.expected_can_auto_execute_ads is None:
+        raise HTTPException(status_code=409, detail="review_todo_decision_preflight_required")
+    if request.expected_can_auto_change_rules or request.expected_can_auto_execute_ads:
+        raise HTTPException(status_code=409, detail="review_todo_decision_forbidden_effect")
+
+    target_todos = [
+        todo
+        for todo in build_review_todos(market_id=market_id, action_root=MANUAL_ACTION_ROOT)
+        if todo.action_id == request.action_id
+        and (request.review_window is None or todo.review_window == request.review_window)
+    ]
+    if not target_todos:
+        raise HTTPException(status_code=404, detail="review_todo_not_found")
+
+    first_todo = target_todos[0]
+    if request.expected_object_type and request.expected_object_type != first_todo.object_type:
+        raise HTTPException(status_code=409, detail="review_todo_decision_preflight_mismatch")
+    if request.expected_object_id and not manual_action_object_id_matches(
+        object_type=first_todo.object_type,
+        object_id=first_todo.object_id,
+        expected_object_id=request.expected_object_id,
+        object_label=first_todo.object_label,
+        market_id=first_todo.market_id,
+    ):
+        raise HTTPException(status_code=409, detail="review_todo_decision_preflight_mismatch")
+    if any(not _review_todo_missing_required_evidence(todo) for todo in target_todos):
+        raise HTTPException(status_code=409, detail="review_todo_has_required_evidence")
+
+    return save_review_todo_decision(
+        action_id=first_todo.action_id,
+        signal_id=first_todo.signal_id,
+        review_window=request.review_window,
+        reason=request.reason,
+        operator_name=request.operator_name,
+        shop_id=first_todo.shop_id,
+        market_id=first_todo.market_id,
+        object_type=first_todo.object_type,
+        object_id=first_todo.object_id,
+        object_label=first_todo.object_label,
+        action_root=MANUAL_ACTION_ROOT,
+    )
+
+
+def _review_todo_missing_required_evidence(todo: ReviewTodo) -> bool:
+    has_base_evidence = (
+        _review_record_evidence_snapshot_has_diagnosis_path(todo.evidence_snapshot)
+        and _review_record_evidence_snapshot_has_ai_admission(todo.evidence_snapshot)
+        and _review_record_evidence_snapshot_has_search_term_boundary(todo.evidence_snapshot)
+        and _review_record_evidence_snapshot_has_placement_boundary(todo.evidence_snapshot)
+    )
+    if not has_base_evidence:
+        return True
+    if todo.object_type != "search_term":
+        return False
+    return not (
+        _review_record_evidence_snapshot_has_ad_group_synthesis(todo.evidence_snapshot)
+        and _review_record_evidence_snapshot_has_targeting_evidence(todo.evidence_snapshot)
+        and _review_record_evidence_snapshot_has_aba_context(todo.evidence_snapshot)
+        and _review_record_evidence_snapshot_has_evidence_gap(todo.evidence_snapshot)
+        and _review_record_evidence_snapshot_has_action_boundary(todo.evidence_snapshot)
+    )
 
 
 @router.post("/signals/{signal_id}/manual-actions", response_model=ManualActionRecord)
@@ -240,17 +468,25 @@ def create_signal_manual_action(signal_id: str, request: ManualActionRequest, ma
     source = signal.data_sources[0] if signal.data_sources else None
     primary_object = signal.evidence.primary_object
     object_type = primary_object.object_type.value
-    object_id = manual_action_object_id(primary_object)
+    object_id = manual_action_object_id(primary_object, market_id=signal.market_id)
+    if request.expected_can_auto_change_rules is None or request.expected_can_auto_execute_ads is None:
+        raise HTTPException(status_code=409, detail="manual_action_preflight_required")
     if request.expected_can_auto_change_rules or request.expected_can_auto_execute_ads:
         raise HTTPException(status_code=409, detail="manual_action_forbidden_effect")
-    if request.action_type in REVIEWABLE_ACTION_TYPES and not request.evidence_snapshot:
+    if not request.evidence_snapshot:
         raise HTTPException(status_code=409, detail="manual_action_missing_evidence_snapshot")
     if request.expected_object_type and request.expected_object_type != object_type:
         raise HTTPException(status_code=409, detail="manual_action_preflight_mismatch")
-    if request.expected_object_id and request.expected_object_id != object_id:
+    if request.expected_object_id and not manual_action_object_id_matches(
+        object_type=object_type,
+        object_id=object_id,
+        expected_object_id=request.expected_object_id,
+        object_label=primary_object.label,
+        search_term=primary_object.search_term,
+        market_id=signal.market_id,
+    ):
         raise HTTPException(status_code=409, detail="manual_action_preflight_mismatch")
-    if request.action_type in REVIEWABLE_ACTION_TYPES:
-        _validate_manual_action_preflight(request, market_id=market_id)
+    _validate_manual_action_preflight(request, market_id=market_id)
     return save_manual_action(
         signal_id=signal.id,
         action_type=request.action_type,
@@ -292,7 +528,13 @@ def _validate_manual_action_preflight(request: ManualActionRequest, *, market_id
         raise HTTPException(status_code=409, detail="manual_action_preflight_mismatch")
 
     target = preflight.get("target") if isinstance(preflight.get("target"), dict) else {}
-    if target.get("object_type") != request.expected_object_type or target.get("object_id") != request.expected_object_id:
+    if target.get("object_type") != request.expected_object_type or not manual_action_object_id_matches(
+        object_type=target.get("object_type"),
+        object_id=target.get("object_id"),
+        expected_object_id=request.expected_object_id,
+        object_label=target.get("object_label"),
+        market_id=target.get("market_id"),
+    ):
         raise HTTPException(status_code=409, detail="manual_action_preflight_mismatch")
     if target.get("action_type") and target.get("action_type") != request.action_type:
         raise HTTPException(status_code=409, detail="manual_action_preflight_mismatch")

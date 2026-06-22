@@ -32,6 +32,29 @@ def make_candidate() -> dict[str, object]:
     }
 
 
+def test_review_todo_evidence_snapshot_audit_detects_object_reference_mismatch() -> None:
+    todo = SimpleNamespace(
+        object_id="search_term:1:beach essentials",
+        object_label="beach essentials",
+        evidence_snapshot=[
+            SimpleNamespace(label="排查路径", value="搜索词 -> 广告组 -> 人工复核"),
+            SimpleNamespace(label="AI 准入", value="可进入人工确认"),
+            SimpleNamespace(label="搜索词边界", value="搜索词只说明同广告组上下文"),
+            SimpleNamespace(label="广告位边界", value="只有活动级广告位背景"),
+            SimpleNamespace(label="人工确认判断依据", value="boys sunglasses 产生 3 单，可进入人工扩量复核"),
+        ],
+    )
+
+    audit = signal_triage._review_todo_evidence_snapshot_audit(todo)
+
+    assert audit["evidence_snapshot_count"] == 5
+    assert audit["has_diagnosis_path"] is True
+    assert audit["has_ai_admission"] is True
+    assert audit["has_search_term_boundary"] is True
+    assert audit["has_placement_boundary"] is True
+    assert audit["has_object_reference"] is False
+
+
 def test_review_wait_summary_ignores_cross_todos_for_metric_window() -> None:
     effects = [
         {
@@ -62,9 +85,128 @@ def test_review_wait_summary_ignores_cross_todos_for_metric_window() -> None:
 
     assert wait_summary["status"] == "waiting_review_window"
     assert wait_summary["earliest_due_date"] == "2026-06-22"
+    assert wait_summary["next_review_window"] == "7d"
     assert wait_summary["next_object_type"] == "advertised_product"
     assert wait_summary["next_object_id"] == "B016EXMW02"
     assert "ABA 搜索词数据" not in wait_summary["message"]
+
+
+def test_review_wait_summary_explains_data_gap_after_due() -> None:
+    effects = [
+        {
+            "signal_id": "sig-ad-product",
+            "review_window": "7d",
+            "status": "not_ready",
+            "is_due": True,
+            "due_at": "2026-06-22T00:00:00+00:00",
+            "object_type": "advertised_product",
+            "object_id": "B016EXMW02",
+            "object_label": "B016EXMW02",
+            "message": "复盘效果暂不可计算：缺少处理后 7 天快照",
+        }
+    ]
+
+    wait_summary = signal_triage._review_wait_summary(effects, ready_count=0)
+
+    assert wait_summary["status"] == "blocked_by_data_gap"
+    assert wait_summary["gap_reasons"] == ["复盘效果暂不可计算：缺少处理后 7 天快照"]
+    assert "当前没有 ready 复盘效果" in wait_summary["message"]
+    assert "先查询积加 API 限流规则" in wait_summary["next_step"]
+    assert "不拉取快照" not in wait_summary["forbidden_actions"]
+    assert "不保存复盘结论" in wait_summary["forbidden_actions"]
+
+
+def test_review_identity_audit_separates_metric_due_date_from_cross_due_date() -> None:
+    audit = signal_triage._review_identity_audit_summary(
+        [],
+        [],
+        [
+            {
+                "signal_id": "sig-data-quality",
+                "action_id": "manual-action-data-quality",
+                "object_type": "cross",
+                "object_id": "aba_search_term_snapshot",
+                "object_label": "ABA 搜索词数据",
+                "review_window": "7d",
+                "status": "not_ready",
+                "is_due": False,
+                "due_at": "2026-06-21T00:00:00+00:00",
+            },
+            {
+                "signal_id": "sig-ad-product",
+                "action_id": "manual-action-ad-product",
+                "object_type": "advertised_product",
+                "object_id": "B016EXMVZS",
+                "object_label": "B016EXMVZS",
+                "review_window": "7d",
+                "status": "not_ready",
+                "is_due": False,
+                "due_at": "2026-06-22T00:00:00+00:00",
+            },
+        ],
+        ready_count=0,
+        identity_issues=[],
+    )
+
+    assert audit["earliest_due_date"] == "2026-06-21"
+    assert audit["earliest_any_due_date"] == "2026-06-21"
+    assert audit["earliest_metric_due_date"] == "2026-06-22"
+    assert "earliest_any_due_date 包含数据质量和交叉待办" in audit["date_boundary"]
+    assert "earliest_metric_due_date 为准" in audit["date_boundary"]
+
+
+def test_signal_triage_exposes_review_identity_audit_from_readiness(monkeypatch) -> None:
+    identity_audit = {
+        "status": "ready_for_readback",
+        "earliest_any_due_date": "2026-06-21",
+        "earliest_metric_due_date": "2026-06-22",
+        "date_boundary": "保存广告复盘记录时以 earliest_metric_due_date 为准。",
+    }
+
+    monkeypatch.setattr(
+        signal_triage,
+        "build_review_candidates_payload",
+        lambda **kwargs: {
+            "status": "empty",
+            "selected_market_id": kwargs.get("selected_market_id"),
+            "selected_product_scope_id": None,
+            "signal_row_count": 0,
+            "signal_count": 0,
+            "candidate_count": 0,
+            "excluded_count": 0,
+            "excluded_summary": {},
+            "snapshot": {},
+            "candidates": [],
+            "candidate_layers": [],
+            "recommended_candidate": None,
+            "recommended_evidence_drilldown": None,
+            "product_scope_drilldown": None,
+            "recommendation_reason": "等待经营对象。",
+            "manual_action_preview": None,
+        },
+    )
+    monkeypatch.setattr(
+        signal_triage,
+        "build_review_readiness_payload",
+        lambda **kwargs: {
+            "status": "not_ready",
+            "manual_action_count": 1,
+            "review_record_count": 0,
+            "ready_count": 0,
+            "not_ready_count": 2,
+            "manual_action_identity_issue_count": 0,
+            "review_feedback": {},
+            "rule_improvement": {},
+            "review_wait_summary": {"earliest_due_date": "2026-06-22"},
+            "review_identity_audit": identity_audit,
+            "next_action": "等待广告指标复盘窗口。",
+        },
+    )
+
+    payload = signal_triage.build_signal_triage_payload(selected_market_id=1)
+
+    assert payload["review_status"]["review_identity_audit"] == identity_audit
+    assert payload["review_status"]["review_identity_audit"]["earliest_metric_due_date"] == "2026-06-22"
 
 
 def make_signal(
@@ -852,6 +994,239 @@ def test_review_candidates_include_recommended_evidence_drilldown(monkeypatch) -
     assert "广告商品投放行 1 条" in drilldown["summary"]
     assert "同广告组搜索词上下文 1 条" in drilldown["summary"]
     assert "不能自动归因" in drilldown["boundary"]
+
+
+def test_signal_triage_payload_adds_diagnosis_contract_for_search_term_path(monkeypatch, tmp_path) -> None:
+    candidate = make_signal(
+        "sig-opportunity-search-term-1-beach-essentials",
+        "beach essentials",
+        object_type="search_term",
+        signal_category="search_term_opportunity",
+        priority="P0",
+        severity=4,
+        source_rows=[
+            {
+                "source_table": "ad_search_term_daily_metrics",
+                "campaign_name": "RBK004-beach essentials-精准（测试）",
+                "ad_group_name": "RBK004-beach essentials-精准（测试）",
+                "search_term": "beach essentials",
+                "targeting_text": "beach essentials",
+                "spend": 18.08,
+                "clicks": 19,
+                "orders": 13,
+                "sales": 116.88,
+            },
+            {
+                "source_table": "ad_search_term_daily_metrics",
+                "campaign_name": "RBK004-扩展-beach essentials（旺季前夕开）",
+                "ad_group_name": "RBK004-扩展-beach essentials",
+                "search_term": "beach essentials",
+                "targeting_text": "beach essentials",
+                "spend": 16.03,
+                "clicks": 19,
+                "orders": 8,
+                "sales": 76.32,
+            },
+        ],
+    )
+    snapshot_rows = [
+        *candidate.evidence.source_rows,
+        {
+            "source_table": "advertised_products",
+            "campaign_name": "RBK004-beach essentials-精准（测试）",
+            "ad_group_name": "RBK004-beach essentials-精准（测试）",
+            "asin": "B016EXMW02",
+            "spend": 18.08,
+            "clicks": 19,
+            "orders": 13,
+            "sales": 116.88,
+        },
+        {
+            "source_table": "advertised_products",
+            "campaign_name": "RBK004-扩展-beach essentials（旺季前夕开）",
+            "ad_group_name": "RBK004-扩展-beach essentials",
+            "asin": "B016EXMVZS",
+            "spend": 16.03,
+            "clicks": 19,
+            "orders": 8,
+            "sales": 76.32,
+        },
+        {
+            "source_table": "ad_placement_daily_metrics",
+            "campaign_name": "RBK004-beach essentials-精准（测试）",
+            "placement": "Top of Search on-Amazon",
+            "spend": 12.0,
+            "clicks": 10,
+            "orders": 5,
+            "sales": 50.0,
+        },
+        {
+            "source_table": "ad_placement_daily_metrics",
+            "campaign_name": "RBK004-扩展-beach essentials（旺季前夕开）",
+            "placement": "Product Pages on-Amazon",
+            "spend": 8.0,
+            "clicks": 9,
+            "orders": 3,
+            "sales": 30.0,
+        },
+    ]
+
+    monkeypatch.setattr(signal_triage, "load_signal_rows_from_latest_snapshot", lambda: list(snapshot_rows))
+    monkeypatch.setattr(
+        signal_triage,
+        "load_aba_rows_from_latest_snapshot",
+        lambda: [
+            {
+                "search_term": "beach essentials",
+                "normalized_query": "beach essentials",
+                "search_frequency_rank": 208,
+                "rank_change_type": "上升",
+                "rank_change_value": 16,
+                "start_date": "2026-06-07",
+                "end_date": "2026-06-13",
+                "source_type": "ABA导出",
+            }
+        ],
+    )
+    monkeypatch.setattr(signal_triage, "_current_signals", lambda signal_rows, selected_market_id=None: [candidate])
+    monkeypatch.setattr(
+        signal_triage,
+        "load_snapshot_status",
+        lambda: SimpleNamespace(model_dump=lambda mode="json": {"has_snapshot": True, "snapshot_id": "snapshot-30d", "status": "success"}),
+    )
+    monkeypatch.setattr(
+        signal_triage,
+        "build_product_scope_summary",
+        lambda: SimpleNamespace(
+            options=[
+                SimpleNamespace(
+                    scope_id="parent_asin:B00K4W4AAA",
+                    scope_type="parent_asin",
+                    label="Parent ASIN B00K4W4AAA",
+                    parent_asin="B00K4W4AAA",
+                    child_asins=["B016EXMW02", "B016EXMVZS", "B016EXMW1G"],
+                    sales_orders=120,
+                    sales_amount=1299.0,
+                ),
+                SimpleNamespace(
+                    scope_id="ad_asin:B016EXMW02",
+                    scope_type="advertised_asin",
+                    asin="B016EXMW02",
+                    parent_asin="B00K4W4AAA",
+                    strategy_notes=[],
+                ),
+            ],
+        ),
+    )
+
+    payload = signal_triage.build_signal_triage_payload(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+        action_root=tmp_path / "actions",
+        review_root=tmp_path / "reviews",
+    )
+
+    contract = payload["diagnosis_contract"]
+    assert contract["object_label"] == "beach essentials"
+    assert contract["status"] == "ready_for_manual_confirmation"
+    sections = {section["section_id"]: section for section in contract["sections"]}
+    assert set(sections) >= {
+        "parent_asin_scope",
+        "ad_asin_coverage",
+        "ad_group_boundary",
+        "search_term_opportunity",
+        "placement_gap",
+        "manual_review",
+    }
+    for section in sections.values():
+        assert section["business_question"]
+        assert section["object_grain"]
+        assert section["metrics"]
+        assert section["current_judgement"]
+        assert section["proves"]
+        assert section["does_not_prove"]
+        assert section["next_manual_step"]
+        assert section["evidence_gap"]
+        assert section["required_evidence"]
+
+    ad_asin_section = sections["ad_asin_coverage"]
+    ad_asin_metrics = {metric["name"]: metric["value"] for metric in ad_asin_section["metrics"]}
+    assert ad_asin_metrics["广告 ASIN 数"] == "2"
+    assert ad_asin_metrics["广告 ASIN 花费"] == "34.11"
+    assert ad_asin_metrics["广告 ASIN 订单"] == "21"
+    assert "B016EXMW02" in ad_asin_metrics["优先复核 ASIN"]
+    assert ad_asin_metrics["直接广告商品行"] == "0"
+    assert "不能直接归因到某个广告 ASIN" in ad_asin_section["current_judgement"]
+    assert "搜索词到广告 ASIN 的归因边界" in ad_asin_section["evidence_gap"]
+    assert "投放商品清单" in ad_asin_section["required_evidence"]
+    assert "记录观察" in ad_asin_section["next_manual_step"]
+
+    search_term_section = sections["search_term_opportunity"]
+    search_term_metrics = {metric["name"]: metric["value"] for metric in search_term_section["metrics"]}
+    search_term_metric_purposes = {metric["name"]: metric["purpose"] for metric in search_term_section["metrics"]}
+    assert search_term_section["object_grain"] == "SearchTerm + 同广告活动 / 广告组上下文 + 站点级 ABA 背景"
+    assert "是否存在可人工复核的扩量机会" in search_term_section["business_question"]
+    assert "不是自动加词" in search_term_section["business_question"]
+    assert search_term_metrics["花费"] == "34.11"
+    assert search_term_metrics["订单"] == "21"
+    assert search_term_metrics["销售额"] == "193.20"
+    assert search_term_metrics["ACOS"] == "17.7%"
+    assert search_term_metrics["CVR"] == "55.3%"
+    assert "零成本偶然样本" in search_term_metric_purposes["花费"]
+    assert "真实店内广告转化" in search_term_metric_purposes["订单"]
+    assert "不是自动调价依据" in search_term_metric_purposes["ACOS"]
+    assert search_term_metrics["投放上下文"] == "广告组 2 个 / 搜索词表现行 2 条"
+    assert search_term_metrics["投放词证据"] == "beach essentials / 1 个"
+    assert search_term_metrics["广告位证据"] == "广告组级广告位 0 条 / 同广告活动广告位 2 条"
+    assert search_term_metrics["ABA市场热度"] == "排名 208 / 2026-06-07 至 2026-06-13 / 上升16"
+    assert search_term_metrics["广告组承接边界"] == "2/2 已匹配 / 最大同组 ASIN 1"
+    assert "ACOS 17.7%" in search_term_section["current_judgement"]
+    assert "ABA 排名 208" in search_term_section["current_judgement"]
+    assert "广告位证据：广告组级广告位 0 条 / 同广告活动广告位 2 条" in search_term_section["current_judgement"]
+    assert "投放词、广告组结构、广告位层级和广告 ASIN 承接" in search_term_section["current_judgement"]
+    assert "站点级 ABA 市场热度" in search_term_section["proves"]
+    assert "广告位证据层级" in search_term_section["proves"]
+    assert "不能证明应该自动加词" in search_term_section["does_not_prove"]
+    assert "不能证明广告位造成该搜索词表现差异" in search_term_section["does_not_prove"]
+    assert "缺少搜索词直连广告位和广告组级广告位" in search_term_section["evidence_gap"]
+    assert "同广告活动 2 条广告位只能作背景" in search_term_section["evidence_gap"]
+    assert "advertised_products" in search_term_section["required_evidence"]
+    assert "ad_placement_daily_metrics" in search_term_section["required_evidence"]
+    assert "ABA 搜索词快照" in search_term_section["required_evidence"]
+    assert "核对投放词 beach essentials" in search_term_section["next_manual_step"]
+    assert "广告位层级" in search_term_section["next_manual_step"]
+    ad_group_section = sections["ad_group_boundary"]
+    ad_group_metrics = {metric["name"]: metric["value"] for metric in ad_group_section["metrics"]}
+    assert ad_group_metrics["广告组数"] == "2"
+    assert ad_group_metrics["已匹配广告组结构"] == "2/2"
+    assert ad_group_metrics["多商品广告组"] == "0/2"
+    assert ad_group_metrics["最大同组 ASIN"] == "1"
+    assert ad_group_metrics["有效/无订单词"] == "2/0"
+    assert ad_group_metrics["广告位层级"] == "广告活动级 2"
+    assert "RBK004-beach essentials-精准（测试）" in ad_group_section["current_judgement"]
+    assert "RBK004-扩展-beach essentials" in ad_group_section["current_judgement"]
+    assert "已匹配 2/2 个广告组结构" in ad_group_section["current_judgement"]
+    assert "单 ASIN 投放" in ad_group_section["current_judgement"]
+    assert "广告组是投放容器" in sections["ad_group_boundary"]["evidence_gap"]
+    assert "同广告活动广告位证据" in sections["ad_group_boundary"]["evidence_gap"]
+    assert "投放商品清单" in sections["ad_group_boundary"]["required_evidence"]
+    assert "advertised_products" in sections["ad_group_boundary"]["required_evidence"]
+    assert "同组 ASIN" in sections["ad_group_boundary"]["next_manual_step"]
+    placement_section = sections["placement_gap"]
+    placement_metrics = {metric["name"]: metric["value"] for metric in placement_section["metrics"]}
+    assert placement_metrics["推荐对象广告位"] == "0"
+    assert placement_metrics["匹配广告组"] == "2/2"
+    assert placement_metrics["广告组级广告位"] == "0"
+    assert placement_metrics["广告活动级背景"] == "2"
+    assert placement_metrics["缺广告位广告组"] == "0"
+    assert "同广告活动广告位背景" in placement_section["current_judgement"]
+    assert "不能证明该搜索词或该广告组由广告位导致" in placement_section["current_judgement"]
+    assert "广告活动级证据不能替代广告组级归因" in placement_section["does_not_prove"]
+    assert "缺搜索词直连广告位和广告组级广告位" in placement_section["evidence_gap"]
+    assert "ad_placement_daily_metrics" in sections["placement_gap"]["required_evidence"]
+    assert "campaign_id + ad_group_id" in placement_section["required_evidence"]
+    assert "广告组级广告位数据" in placement_section["next_manual_step"]
+    assert "记录观察" in sections["manual_review"]["next_manual_step"]
 
 
 def test_sales_product_candidate_evidence_drilldown_uses_sales_product_scope() -> None:
@@ -2139,6 +2514,13 @@ def test_signal_triage_points_to_next_unhandled_candidate_when_recommended_is_wa
     assert payload["next_unhandled_candidate"]["manual_action_preview"]["object_id"] == "B06VW5SQ97"
     assert payload["next_unhandled_candidate"]["manual_action_preview"]["preflight_checklist"][1]["check_id"] == "ad_product_coverage"
     assert payload["next_unhandled_evidence_drilldown"]["object_label"] == "RBK004-RBK004-2 深蓝"
+    assert payload["diagnosis_contract"]["signal_id"] == "sig-unhandled"
+    assert payload["diagnosis_contract"]["object_id"] == "B06VW5SQ97"
+    assert payload["diagnosis_contract"]["object_label"] == "RBK004-RBK004-2 深蓝"
+    contract_sections = {section["section_id"]: section for section in payload["diagnosis_contract"]["sections"]}
+    assert "RBK004-RBK004-2 深蓝" in contract_sections["search_term_opportunity"]["current_judgement"]
+    assert "251 单" in contract_sections["search_term_opportunity"]["current_judgement"]
+    assert "自动" in contract_sections["search_term_opportunity"]["does_not_prove"]
     sibling_comparison = payload["next_unhandled_evidence_drilldown"]["sibling_comparison"]
     assert sibling_comparison["parent_asin"] == "B00K4W4AAA"
     assert sibling_comparison["sibling_asin_count"] == 3
@@ -2259,6 +2641,7 @@ def test_review_readiness_next_action_prioritizes_actionable_ad_product_gap(monk
         if signal_id == "sig-data-quality":
             return SimpleNamespace(
                 signal_id=signal_id,
+                action_id="manual-action-data-quality",
                 market_id=market_id,
                 review_window=review_window,
                 status="not_ready",
@@ -2324,9 +2707,15 @@ def test_review_readiness_next_action_prioritizes_actionable_ad_product_gap(monk
 
 
 def test_review_readiness_next_action_waits_when_review_effects_are_not_due(monkeypatch) -> None:
+    evidence_snapshot = [
+        SimpleNamespace(label="排查路径", value="Parent ASIN -> 广告 ASIN"),
+        SimpleNamespace(label="AI 准入", value="ready_for_manual_confirmation"),
+        SimpleNamespace(label="搜索词边界", value="搜索词只说明同广告组上下文"),
+        SimpleNamespace(label="广告位边界", value="广告位证据缺口不能自动归因"),
+    ]
     todos = [
-        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="7d", is_due=False),
-        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="14d", is_due=False),
+        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="7d", is_due=False, evidence_snapshot=evidence_snapshot),
+        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="14d", is_due=False, evidence_snapshot=evidence_snapshot),
     ]
 
     def fake_effect(signal_id, *, review_window, market_id=None, signal_rows=None):
@@ -2389,11 +2778,154 @@ def test_review_readiness_next_action_waits_when_review_effects_are_not_due(monk
     assert wait_summary["not_ready_count"] == 2
     assert wait_summary["earliest_due_date"] == "2026-06-22"
     assert wait_summary["review_windows"] == ["7 天", "14 天"]
+    assert wait_summary["next_review_window"] == "7d"
     assert wait_summary["next_object_type"] == "advertised_product"
     assert wait_summary["next_object_id"] == "B016EXMW02"
     assert "不拉取快照" in wait_summary["forbidden_actions"]
     assert "不保存复盘结论" in wait_summary["forbidden_actions"]
     assert "不自动执行广告动作" in wait_summary["forbidden_actions"]
+
+
+def test_review_readiness_blocks_legacy_todos_missing_search_term_and_placement_boundary(monkeypatch) -> None:
+    legacy_snapshot = [
+        SimpleNamespace(label="排查路径", value="Parent ASIN -> 广告 ASIN"),
+        SimpleNamespace(label="AI 准入", value="ready_for_manual_confirmation"),
+    ]
+    todos = [
+        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="7d", is_due=False, evidence_snapshot=legacy_snapshot),
+        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="14d", is_due=False, evidence_snapshot=legacy_snapshot),
+    ]
+
+    def fake_effect(signal_id, *, review_window, market_id=None, signal_rows=None):
+        return SimpleNamespace(
+            signal_id=signal_id,
+            action_id=f"manual-action-{review_window}",
+            action_type="add_to_review",
+            shop_id="market:1",
+            market_id=market_id,
+            review_window=review_window,
+            status="not_ready",
+            result="unclear",
+            message=f"复盘效果暂不可计算：{review_window} 复盘窗口尚未到期",
+            acted_at="2026-06-15T00:00:00+00:00",
+            due_at="2026-06-22T00:00:00+00:00" if review_window == "7d" else "2026-06-29T00:00:00+00:00",
+            object_type="advertised_product",
+            object_id="B016EXMW02",
+            object_label="B016EXMW02",
+            before_start_date=None,
+            before_end_date=None,
+            after_start_date=None,
+            after_end_date=None,
+        )
+
+    monkeypatch.setattr(signal_triage, "load_manual_actions", lambda market_id=None: [SimpleNamespace(signal_id="sig-ad-product")])
+    monkeypatch.setattr(signal_triage, "load_review_records", lambda market_id=None: [])
+    monkeypatch.setattr(signal_triage, "load_signal_rows_from_success_snapshots", lambda: [{"row_id": "row-1"}])
+    monkeypatch.setattr(signal_triage, "build_review_todos", lambda market_id=None: todos)
+    monkeypatch.setattr(signal_triage, "build_review_effect_result", fake_effect)
+    monkeypatch.setattr(
+        signal_triage,
+        "load_snapshot_status",
+        lambda: SimpleNamespace(
+            model_dump=lambda mode="json": {
+                "has_snapshot": True,
+                "snapshot_id": "snapshot-not-ready",
+                "status": "success",
+                "start_date": "2026-06-08",
+                "end_date": "2026-06-15",
+            }
+        ),
+    )
+
+    payload = signal_triage.build_review_readiness_payload(selected_market_id=1)
+    audit = payload["review_identity_audit"]
+
+    assert audit["status"] == "blocked"
+    assert audit["missing_evidence_snapshot_count"] == 0
+    assert audit["missing_diagnosis_path_count"] == 0
+    assert audit["missing_ai_admission_count"] == 0
+    assert audit["missing_search_term_boundary_count"] == 2
+    assert audit["missing_placement_boundary_count"] == 2
+    assert {issue["issue_type"] for issue in audit["issues"]} == {"missing_search_term_boundary", "missing_placement_boundary"}
+    assert "缺少搜索词边界 2 条" in payload["review_wait_summary"]["message"]
+    assert "缺少广告位边界 2 条" in payload["review_wait_summary"]["message"]
+    assert payload["review_wait_summary"]["status"] == "blocked_by_review_evidence_gap"
+    assert "到期后也不能直接保存复盘记录" in payload["next_action"]
+
+
+def test_review_readiness_blocks_legacy_todos_without_evidence_snapshot(monkeypatch) -> None:
+    todos = [
+        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="7d", is_due=False, evidence_snapshot=[]),
+        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="14d", is_due=False, evidence_snapshot=[]),
+    ]
+
+    def fake_effect(signal_id, *, review_window, market_id=None, signal_rows=None):
+        return SimpleNamespace(
+            signal_id=signal_id,
+            action_id=f"manual-action-{review_window}",
+            action_type="add_to_review",
+            shop_id="market:1",
+            market_id=market_id,
+            review_window=review_window,
+            status="not_ready",
+            result="unclear",
+            message=f"复盘效果暂不可计算：{review_window} 复盘窗口尚未到期",
+            acted_at="2026-06-15T00:00:00+00:00",
+            due_at="2026-06-22T00:00:00+00:00" if review_window == "7d" else "2026-06-29T00:00:00+00:00",
+            object_type="advertised_product",
+            object_id="B016EXMW02",
+            object_label="B016EXMW02",
+            before_start_date=None,
+            before_end_date=None,
+            after_start_date=None,
+            after_end_date=None,
+        )
+
+    monkeypatch.setattr(signal_triage, "load_manual_actions", lambda market_id=None: [SimpleNamespace(signal_id="sig-ad-product")])
+    monkeypatch.setattr(signal_triage, "load_review_records", lambda market_id=None: [])
+    monkeypatch.setattr(signal_triage, "load_signal_rows_from_success_snapshots", lambda: [{"row_id": "row-1"}])
+    monkeypatch.setattr(signal_triage, "build_review_todos", lambda market_id=None: todos)
+    monkeypatch.setattr(signal_triage, "build_review_effect_result", fake_effect)
+    monkeypatch.setattr(
+        signal_triage,
+        "load_snapshot_status",
+        lambda: SimpleNamespace(
+            model_dump=lambda mode="json": {
+                "has_snapshot": True,
+                "snapshot_id": "snapshot-not-ready",
+                "status": "success",
+                "start_date": "2026-06-08",
+                "end_date": "2026-06-15",
+            }
+        ),
+    )
+
+    payload = signal_triage.build_review_readiness_payload(selected_market_id=1)
+    audit = payload["review_identity_audit"]
+
+    assert audit["status"] == "blocked"
+    assert audit["missing_evidence_snapshot_count"] == 2
+    assert audit["missing_diagnosis_path_count"] == 2
+    assert audit["missing_ai_admission_count"] == 2
+    assert audit["missing_search_term_boundary_count"] == 2
+    assert audit["missing_placement_boundary_count"] == 2
+    assert audit["can_save_review_records_now"] is False
+    assert {issue["issue_type"] for issue in audit["issues"]} == {"missing_evidence_snapshot"}
+    assert "缺少 evidence_snapshot 2 条" in payload["next_action"]
+    assert "到期后也不能直接保存复盘记录" in payload["next_action"]
+    assert payload["rule_improvement"]["status"] == "blocked_by_review_evidence_gap"
+    assert "dry-run 作废旧待办" in payload["rule_improvement"]["next_step"]
+    assert "重新人工留痕" in payload["rule_improvement"]["next_step"]
+    assert "不能补写历史 evidence_snapshot" in payload["rule_improvement"]["next_step"]
+    assert "补录" not in payload["rule_improvement"]["next_step"]
+    assert payload["review_wait_summary"]["status"] == "blocked_by_review_evidence_gap"
+    assert "缺少 evidence_snapshot 2 条" in payload["review_wait_summary"]["message"]
+    assert "到期后也不能直接保存复盘记录" in payload["review_wait_summary"]["next_step"]
+    assert "dry-run 作废旧待办" in payload["review_wait_summary"]["next_step"]
+    assert "补录" not in payload["review_wait_summary"]["next_step"]
+    assert "不静默补写历史 evidence_snapshot" in payload["review_wait_summary"]["forbidden_actions"]
+    assert "不拉取快照" not in payload["review_wait_summary"]["forbidden_actions"]
+    assert payload["effects"][0]["evidence_snapshot_count"] == 0
 
 
 def test_review_readiness_summarizes_saved_review_records_as_rule_feedback(monkeypatch) -> None:
@@ -2415,6 +2947,20 @@ def test_review_readiness_summarizes_saved_review_records_as_rule_feedback(monke
             after_end_date="2026-06-14",
             before_metrics={"spend": 28.5, "orders": 0},
             after_metrics={"spend": 31.2, "orders": 0},
+            evidence_snapshot=[
+                SimpleNamespace(
+                    label="排查路径",
+                    value="Parent 经营盘子 -> 广告 ASIN -> 广告组 -> 投放词 / 搜索词 / 广告位",
+                    detail="保存复盘前必须回看原始广告诊断路径。",
+                    source="business_rule",
+                ),
+                SimpleNamespace(
+                    label="AI 准入",
+                    value="可进入人工确认 / ready_for_manual_confirmation / 候选 1 个 / 允许人工留痕",
+                    detail="准入只证明允许人工留痕，不代表系统会自动执行广告动作。",
+                    source="actionability_status",
+                ),
+            ],
             review_note="建议没有改善",
         ),
         SimpleNamespace(signal_id="sig-missing", result="unclear", object_type="sales_product", object_id="B06VW5SQ97", object_label="RBK004-RBK004-2 深蓝", review_window="7d", review_note="证据不足"),
@@ -2500,6 +3046,9 @@ def test_review_readiness_summarizes_saved_review_records_as_rule_feedback(monke
     assert checklist["review_record_trace"]["status"] == "partial"
     assert "1 / 4" in checklist["review_record_trace"]["evidence"]
     assert "review_record_id / action_id / 指标窗口" in checklist["review_record_trace"]["evidence"]
+    assert checklist["review_record_evidence_snapshot"]["status"] == "partial"
+    assert "1 / 4 条样本带保存快照" in checklist["review_record_evidence_snapshot"]["evidence"]
+    assert "1 / 4 条可回看 AI 准入" in checklist["review_record_evidence_snapshot"]["evidence"]
     assert checklist["evidence_trace"]["status"] == "partial"
     assert "1 / 4" in checklist["evidence_trace"]["evidence"]
     assert checklist["action_boundary"]["status"] == "ready"
@@ -2518,6 +3067,10 @@ def test_review_readiness_summarizes_saved_review_records_as_rule_feedback(monke
     assert feedback["records"][0]["metric_snapshot"]["after"]["spend"] == 31.2
     assert feedback["records"][0]["review_note"] == "建议没有改善"
     assert "排序依据：worse 优先" in feedback["records"][0]["sort_reason"]
+    assert feedback["records"][0]["evidence_snapshot_count"] == 2
+    assert feedback["records"][0]["diagnosis_snapshot"]["label"] == "排查路径"
+    assert feedback["records"][0]["ai_admission_snapshot"]["value"].startswith("可进入人工确认")
+    assert feedback["records"][0]["ai_admission_snapshot"]["source"] == "actionability_status"
     assert feedback["records"][0]["action_boundary"]["result"] == "worse"
     assert feedback["records"][0]["action_boundary"]["allowed_reviews"] == ["复核阈值", "复核证据来源", "复核建议动作"]
     assert "不自动改规则" in feedback["records"][0]["action_boundary"]["boundary"]
@@ -2539,12 +3092,22 @@ def test_review_readiness_summarizes_saved_review_records_as_rule_feedback(monke
     assert feedback["records"][0]["evidence_groups"][1]["value"] == "1 条"
     assert feedback["records"][0]["evidence_groups"][2]["value"] == "0 条"
     assert "不能自动归因" in feedback["records"][0]["evidence_groups"][3]["value"]
+    assert feedback["records"][0]["diagnosis_path"]["path"].startswith("搜索词 -> 广告活动 / 广告组")
+    diagnosis_steps = {step["step_id"]: step for step in feedback["records"][0]["diagnosis_path"]["steps"]}
+    assert "search_term_metric_summary" in diagnosis_steps
+    assert "search_term_context" in diagnosis_steps
+    assert "targeting_context" in diagnosis_steps
+    assert "placement_context_gap" in diagnosis_steps
+    assert "不能自动归因" in feedback["records"][0]["diagnosis_path"]["boundary"]
+    assert "不自动执行广告动作" in feedback["records"][0]["diagnosis_path"]["next_manual_step"]
     assert feedback["candidate_groups"][0]["group_type"] == "search_intent"
     assert feedback["candidate_groups"][0]["group_label"] == "规则语义：海滩出行用品"
     assert feedback["candidate_groups"][0]["aba_reference_term"] == "beach essentials"
     assert feedback["candidate_groups"][0]["aba_period"] == "2026-05-10 到 2026-05-16"
     assert feedback["candidate_groups"][0]["by_result"] == {"worse": 1}
     assert "复核该语义组的阈值、证据来源和建议动作" in feedback["candidate_groups"][0]["recommendation"]
+    assert feedback["candidate_groups"][0]["action_boundary"]["allowed_reviews"] == ["复核阈值", "复核证据来源", "复核建议动作"]
+    assert "自动改规则" in feedback["candidate_groups"][0]["action_boundary"]["forbidden_actions"]
     assert "不自动改规则" in feedback["candidate_groups"][0]["boundary"]
     assert "不自动执行广告动作" in feedback["candidate_groups"][0]["boundary"]
     assert feedback["records"][1]["result"] == "unclear"
@@ -2567,6 +3130,70 @@ def test_review_readiness_summarizes_saved_review_records_as_rule_feedback(monke
     assert payload["rule_improvement"]["can_auto_change_rules"] is False
     assert payload["rule_improvement"]["can_auto_execute_ads"] is False
     assert "只进入解释层" in payload["rule_improvement"]["reason"]
+
+
+def test_review_readiness_groups_saved_review_record_snapshot_without_manual_action(monkeypatch) -> None:
+    review_records = [
+        SimpleNamespace(
+            id="review-record-snapshot-only",
+            signal_id="sig-search-term",
+            action_id="manual-action-missing",
+            result="worse",
+            object_type="search_term",
+            object_id="beach essentials",
+            object_label="beach essentials",
+            review_window="7d",
+            before_start_date="2026-06-01",
+            before_end_date="2026-06-07",
+            after_start_date="2026-06-08",
+            after_end_date="2026-06-14",
+            before_metrics={"spend": 22.0, "orders": 2},
+            after_metrics={"spend": 35.0, "orders": 1},
+            evidence_snapshot=[
+                SimpleNamespace(label="排查路径", value="Parent 经营盘子 -> 广告 ASIN -> 广告组 -> 搜索词"),
+                SimpleNamespace(label="AI 准入", value="可进入人工确认 / ready_for_manual_confirmation / 候选 1 个"),
+                SimpleNamespace(label="语义组", value="规则语义：海滩出行用品"),
+                SimpleNamespace(label="ABA语义参考词", value="beach essentials"),
+                SimpleNamespace(label="ABA周期", value="2026-05-10 到 2026-05-16"),
+                SimpleNamespace(label="ABA匹配边界", value="ABA 是站点级，只按站点 + 周期 + 搜索词匹配。"),
+            ],
+            review_note="复盘后表现变差",
+        )
+    ]
+
+    monkeypatch.setattr(signal_triage, "load_manual_actions", lambda market_id=None: [])
+    monkeypatch.setattr(signal_triage, "load_review_records", lambda market_id=None: review_records)
+    monkeypatch.setattr(signal_triage, "load_signal_rows_from_success_snapshots", lambda: [])
+    monkeypatch.setattr(signal_triage, "build_review_todos", lambda market_id=None: [])
+    monkeypatch.setattr(
+        signal_triage,
+        "load_snapshot_status",
+        lambda: SimpleNamespace(
+            model_dump=lambda mode="json": {
+                "has_snapshot": True,
+                "snapshot_id": "snapshot-with-review-record-only",
+                "status": "success",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-15",
+            }
+        ),
+    )
+
+    payload = signal_triage.build_review_readiness_payload(selected_market_id=1)
+
+    feedback = payload["review_feedback"]
+    assert feedback["total"] == 1
+    assert feedback["manual_action_context_coverage"]["total"] == 0
+    assert feedback["candidate_groups"][0]["group_type"] == "search_intent"
+    assert feedback["candidate_groups"][0]["group_label"] == "规则语义：海滩出行用品"
+    assert feedback["candidate_groups"][0]["aba_reference_term"] == "beach essentials"
+    assert feedback["candidate_groups"][0]["aba_period"] == "2026-05-10 到 2026-05-16"
+    assert feedback["candidate_groups"][0]["aba_match_boundary"] == "ABA 是站点级，只按站点 + 周期 + 搜索词匹配。"
+    assert feedback["candidate_groups"][0]["sample_review_record_ids"] == ["review-record-snapshot-only"]
+    assert feedback["candidate_groups"][0]["sample_action_ids"] == ["manual-action-missing"]
+    assert feedback["candidate_groups"][0]["by_result"] == {"worse": 1}
+    assert "复核该语义组" in feedback["candidate_groups"][0]["recommendation"]
+    assert "不自动执行广告动作" in feedback["candidate_groups"][0]["boundary"]
 
 
 def test_review_readiness_shows_manual_action_context_coverage_without_saved_review_records(monkeypatch) -> None:

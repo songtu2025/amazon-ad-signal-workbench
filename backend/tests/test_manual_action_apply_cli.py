@@ -1,3 +1,4 @@
+import json
 import importlib.util
 import sys
 from pathlib import Path
@@ -12,6 +13,18 @@ def load_manual_action_apply_script():
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     sys.modules["apply_manual_action_once_script"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def load_review_todo_void_script():
+    project_root = Path(__file__).resolve().parents[2]
+    script_path = project_root / "scripts" / "apply_review_todo_void_once.py"
+    spec = importlib.util.spec_from_file_location("apply_review_todo_void_once_for_apply_test", script_path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["apply_review_todo_void_once_for_apply_test"] = module
     spec.loader.exec_module(module)
     return module
 
@@ -207,6 +220,7 @@ def test_manual_action_apply_writes_once_then_verifies_post_write(monkeypatch) -
         "target_review_record_count": 0,
         "written_evidence_snapshot_count": 2,
         "post_write_manual_action_evidence_snapshot_count": 2,
+        "post_write_max_manual_action_evidence_snapshot_count": 2,
         "post_write_review_todo_evidence_snapshot_counts": {"7d": 2, "14d": 2},
         "post_write_review_todos_with_evidence_snapshot": 2,
         "review_todos_expected_to_inherit_evidence_snapshot": True,
@@ -367,6 +381,99 @@ def test_manual_action_apply_uses_custom_runtime_roots(monkeypatch, tmp_path) ->
     assert saved_calls[0]["action_root"] == action_root
 
 
+def test_manual_action_apply_smoke_reads_actual_review_todos_from_isolated_root(monkeypatch, tmp_path) -> None:
+    module = load_manual_action_apply_script()
+    action_root = tmp_path / "manual-actions"
+    review_root = tmp_path / "review-records"
+    stale_source_object_id = "gerpgo_market_1_20260616_120443:507942344"
+    search_term_preflight = ready_preflight_payload()
+    search_term_preflight["target"] = {
+        **search_term_preflight["target"],
+        "signal_id": "sig-opportunity-search-term-1-boys-sunglasses",
+        "object_type": "search_term",
+        "object_id": "search_term:1:boys sunglasses",
+        "source_object_id": stale_source_object_id,
+        "object_label": "boys sunglasses",
+    }
+    search_term_preflight["evidence_snapshot_preview"]["items"] = [
+        {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组", "source": "diagnosis_path"},
+        {"label": "AI 准入", "value": "ready_for_manual_confirmation", "source": "actionability_status"},
+        {"label": "搜索词边界", "value": "boys sunglasses 不能自动归因到单个 ASIN", "source": "business_rule"},
+        {"label": "广告位边界", "value": "广告位证据只作背景", "source": "business_rule"},
+    ]
+    search_term_preflight["evidence_snapshot_preview"]["item_count"] = 4
+
+    def fake_preflight(**kwargs):
+        if kwargs.get("expect_written"):
+            return {
+                "status": "post_write_verified",
+                "mode": "post_write",
+                "target": search_term_preflight["target"],
+                "current_counts": {
+                    "manual_action_count": 1,
+                    "target_manual_action_count": 1,
+                    "target_review_todo_count": 2,
+                    "review_record_count": 0,
+                    "target_review_record_count": 0,
+                },
+                "post_write_checks": {
+                    "target_manual_action_evidence_snapshot_counts": [
+                        {
+                            "signal_id": search_term_preflight["target"]["signal_id"],
+                            "object_type": "search_term",
+                            "object_id": "search_term:1:boys sunglasses",
+                            "evidence_snapshot_count": 4,
+                        }
+                    ],
+                    "target_review_todo_evidence_snapshot_counts": [
+                        {
+                            "signal_id": search_term_preflight["target"]["signal_id"],
+                            "object_type": "search_term",
+                            "object_id": "search_term:1:boys sunglasses",
+                            "review_window": "7d",
+                            "evidence_snapshot_count": 4,
+                        },
+                        {
+                            "signal_id": search_term_preflight["target"]["signal_id"],
+                            "object_type": "search_term",
+                            "object_id": "search_term:1:boys sunglasses",
+                            "review_window": "14d",
+                            "evidence_snapshot_count": 4,
+                        },
+                    ],
+                    "target_review_record_count": 0,
+                },
+                "blockers": [],
+            }
+        return search_term_preflight
+
+    monkeypatch.setattr(module, "build_manual_action_preflight_payload", fake_preflight)
+
+    payload = module.build_manual_action_apply_payload(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+        expected_object_id="search_term:1:boys sunglasses",
+        expected_object_type="search_term",
+        action_type="add_to_review",
+        execute=True,
+        authorization_code="WRITE_ONCE:search_term:search_term:1:boys sunglasses",
+        action_root=action_root,
+        review_root=review_root,
+    )
+
+    assert payload["status"] == "written_and_verified"
+    assert payload["written_record"]["object_id"] == "search_term:1:boys sunglasses"
+    smoke = payload["smoke_assertions"]
+    assert smoke["actual_review_todo_count"] == 2
+    assert smoke["actual_review_todo_object_ids"] == ["search_term:1:boys sunglasses"]
+    assert smoke["actual_review_todo_evidence_snapshot_counts"] == {"7d": 4, "14d": 4}
+    assert smoke["actual_review_todos_match_manual_action_object"] is True
+    assert smoke["actual_review_todos_match_manual_action_id"] is True
+    assert smoke["actual_review_todos_inherit_evidence_snapshot"] is True
+    assert smoke["source_object_id_not_used_as_review_object"] is True
+    assert stale_source_object_id not in json.dumps(payload["written_record"], ensure_ascii=False)
+
+
 def test_manual_action_apply_blocks_reviewable_write_without_evidence_snapshot(monkeypatch) -> None:
     module = load_manual_action_apply_script()
     payload_without_evidence = ready_preflight_payload()
@@ -392,3 +499,114 @@ def test_manual_action_apply_blocks_reviewable_write_without_evidence_snapshot(m
     assert payload["status"] == "blocked"
     assert payload["will_write"] is False
     assert payload["blockers"][0]["code"] == "missing_evidence_snapshot"
+
+
+def test_manual_action_apply_rewrites_after_voided_legacy_todo_with_isolated_roots(tmp_path: Path) -> None:
+    apply_module = load_manual_action_apply_script()
+    void_module = load_review_todo_void_script()
+    action_root = tmp_path / "manual_actions"
+    review_root = tmp_path / "review_records"
+    action_root.mkdir(parents=True)
+    legacy_payload = {
+        "id": "manual-action-legacy-gap",
+        "signal_id": "sig-opportunity-search-term-1-beach-essentials",
+        "action_type": "add_to_review",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-01T00:00:00+00:00",
+        "manual_status": "pending",
+        "shop_id": "market:1",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "search_term:1:beach essentials",
+        "object_label": "beach essentials",
+        "evidence_snapshot": [
+            {"label": "排查路径", "value": "Parent -> 广告 ASIN -> 广告组 -> beach essentials"},
+            {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
+            {"label": "搜索词边界", "value": "beach essentials 不能自动归因到单个广告 ASIN"},
+            {"label": "广告位边界", "value": "beach essentials 缺少广告位归因证据"},
+        ],
+    }
+    (action_root / "manual_actions.jsonl").write_text(
+        json.dumps(legacy_payload, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+    pre_before = apply_module.build_manual_action_apply_payload(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+        expected_object_id="search_term:1:beach essentials",
+        expected_object_type="search_term",
+        action_type="add_to_review",
+        action_root=action_root,
+        review_root=review_root,
+    )
+
+    assert pre_before["status"] == "blocked"
+    assert pre_before["blockers"][0]["code"] == "duplicate_manual_action"
+    assert pre_before["preflight"]["current_counts"]["target_review_todo_count"] == 2
+
+    void_payload = void_module.build_review_todo_void_payload(
+        selected_market_id=1,
+        action_id="manual-action-legacy-gap",
+        expected_object_type="search_term",
+        expected_object_id="search_term:1:beach essentials",
+        execute=True,
+        authorization_code="VOID_TODO:manual-action-legacy-gap:all",
+        action_root=action_root,
+    )
+
+    assert void_payload["status"] == "written_and_verified"
+    assert void_payload["will_write"] is True
+    assert void_payload["post_write_todo_count"] == 0
+    assert (action_root / "review_todo_decisions.jsonl").exists()
+
+    pre_after = apply_module.build_manual_action_apply_payload(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+        expected_object_id="search_term:1:beach essentials",
+        expected_object_type="search_term",
+        action_type="add_to_review",
+        action_root=action_root,
+        review_root=review_root,
+    )
+
+    assert pre_after["status"] == "dry_run_ready", json.dumps(
+        {
+            "status": pre_after.get("status"),
+            "blockers": pre_after.get("blockers"),
+            "current_counts": pre_after.get("preflight", {}).get("current_counts"),
+            "expected_after_write": pre_after.get("preflight", {}).get("expected_after_write"),
+        },
+        ensure_ascii=False,
+    )
+    assert pre_after["blockers"] == []
+    assert pre_after["preflight"]["current_counts"]["target_manual_action_count"] == 1
+    assert pre_after["preflight"]["current_counts"]["target_review_todo_count"] == 0
+    assert pre_after["preflight"]["expected_after_write"]["target_manual_action_count"] == 2
+    assert pre_after["preflight"]["expected_after_write"]["target_review_todo_count"] == 2
+
+    written = apply_module.build_manual_action_apply_payload(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+        expected_object_id="search_term:1:beach essentials",
+        expected_object_type="search_term",
+        action_type="add_to_review",
+        execute=True,
+        authorization_code="WRITE_ONCE:search_term:search_term:1:beach essentials",
+        action_root=action_root,
+        review_root=review_root,
+    )
+
+    assert written["status"] == "written_and_verified"
+    assert written["will_write"] is True
+    assert written["written_record"]["object_id"] == "search_term:1:beach essentials"
+    assert len(written["written_record"]["evidence_snapshot"]) == 22
+    smoke = written["smoke_assertions"]
+    assert smoke["target_manual_action_count"] == 2
+    assert smoke["target_review_todo_count"] == 2
+    assert smoke["target_review_record_count"] == 0
+    assert smoke["written_evidence_snapshot_count"] == 22
+    assert smoke["post_write_max_manual_action_evidence_snapshot_count"] == 22
+    assert smoke["post_write_review_todo_evidence_snapshot_counts"] == {"7d": 22, "14d": 22}
+    assert smoke["review_records_not_saved"] is True
+    assert smoke["ad_actions_not_executed"] is True

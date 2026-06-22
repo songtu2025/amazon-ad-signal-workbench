@@ -201,8 +201,8 @@ def test_review_readiness_cli_summarizes_saved_review_records_as_rule_feedback(m
 def test_review_readiness_cli_waits_when_review_effects_are_not_due(monkeypatch) -> None:
     module = load_review_readiness_script()
     todos = [
-        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="7d", is_due=False),
-        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="14d", is_due=False),
+        SimpleNamespace(signal_id="sig-ad-product", action_id="manual-action-fixed", market_id=1, review_window="7d", is_due=False),
+        SimpleNamespace(signal_id="sig-ad-product", action_id="manual-action-fixed", market_id=1, review_window="14d", is_due=False),
     ]
 
     def fake_effect(signal_id, *, review_window, market_id=None, signal_rows=None):
@@ -213,6 +213,7 @@ def test_review_readiness_cli_waits_when_review_effects_are_not_due(monkeypatch)
             status="not_ready",
             result="unclear",
             message="复盘效果暂不可计算：缺少处理后 7 天快照",
+            action_id="manual-action-fixed",
             acted_at="2026-06-15T00:00:00+00:00",
             due_at="2026-06-22T00:00:00+00:00" if review_window == "7d" else "2026-06-29T00:00:00+00:00",
             object_type="advertised_product",
@@ -253,8 +254,8 @@ def test_review_readiness_cli_waits_when_review_effects_are_not_due(monkeypatch)
 def test_review_readiness_cli_points_due_snapshot_gap_to_rate_limit_check(monkeypatch) -> None:
     module = load_review_readiness_script()
     todos = [
-        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="7d", is_due=True),
-        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="14d", is_due=True),
+        SimpleNamespace(signal_id="sig-ad-product", action_id="manual-action-fixed", market_id=1, review_window="7d", is_due=True),
+        SimpleNamespace(signal_id="sig-ad-product", action_id="manual-action-fixed", market_id=1, review_window="14d", is_due=True),
     ]
 
     def fake_effect(signal_id, *, review_window, market_id=None, signal_rows=None):
@@ -266,6 +267,7 @@ def test_review_readiness_cli_points_due_snapshot_gap_to_rate_limit_check(monkey
             status="not_ready",
             result="unclear",
             message=message,
+            action_id="manual-action-fixed",
             acted_at="2026-06-15T00:00:00+00:00",
             due_at="2026-06-22T00:00:00+00:00",
             object_type="advertised_product",

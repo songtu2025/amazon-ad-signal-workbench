@@ -1,6 +1,7 @@
 import {
   marketScopedPath,
   manualActionPreflightPath,
+  reviewEvidenceRepairPath,
   type SignalReviewRecordLookup,
   reviewTodosPath,
   signalManualActionsPath,
@@ -621,6 +622,31 @@ export interface SignalTriageRecommendedEvidenceDrilldown {
   summary?: string | null;
 }
 
+export interface SignalTriageDiagnosisContract {
+  status?: string | null;
+  signal_id?: string | null;
+  object_type?: string | null;
+  object_id?: string | null;
+  object_label?: string | null;
+  sections?: {
+    section_id?: string | null;
+    title?: string | null;
+    business_question?: string | null;
+    object_grain?: string | null;
+    metrics?: {
+      name?: string | null;
+      value?: string | null;
+      purpose?: string | null;
+    }[] | null;
+    current_judgement?: string | null;
+    proves?: string | null;
+    does_not_prove?: string | null;
+    evidence_gap?: string | null;
+    required_evidence?: string | null;
+    next_manual_step?: string | null;
+  }[] | null;
+}
+
 export interface SignalTriageProductScopeSearchTerm {
   search_term?: string | null;
   normalized_query?: string | null;
@@ -819,6 +845,8 @@ export interface SignalTriageSummary {
   candidate_layers: SignalTriageCandidateLayer[];
   recommended_candidate?: SignalTriageCandidateSummary | null;
   recommended_evidence_drilldown?: SignalTriageRecommendedEvidenceDrilldown | null;
+  recommended_diagnosis_contract?: SignalTriageDiagnosisContract | null;
+  diagnosis_contract?: SignalTriageDiagnosisContract | null;
   product_scope_drilldown?: SignalTriageProductScopeDrilldown | null;
   recommendation_reason?: string | null;
   manual_action_preview?: SignalTriageManualActionPreview | null;
@@ -827,6 +855,7 @@ export interface SignalTriageSummary {
     manual_action_preview?: SignalTriageManualActionPreview | null;
   }) | null;
   next_unhandled_evidence_drilldown?: SignalTriageRecommendedEvidenceDrilldown | null;
+  next_unhandled_diagnosis_contract?: SignalTriageDiagnosisContract | null;
   top_candidates: (SignalTriageCandidateSummary | null)[];
   review_status: {
     status?: string | null;
@@ -868,6 +897,10 @@ export interface SignalTriageSummary {
         review_window?: string | null;
         review_note?: string | null;
         sort_reason?: string | null;
+        evidence_snapshot_count?: number | null;
+        evidence_snapshot?: ManualActionEvidenceSnapshot[];
+        diagnosis_snapshot?: ManualActionEvidenceSnapshot | null;
+        ai_admission_snapshot?: ManualActionEvidenceSnapshot | null;
         action_boundary?: {
           result?: string | null;
           allowed_reviews?: string[];
@@ -878,11 +911,44 @@ export interface SignalTriageSummary {
           summary?: string | null;
           boundary?: string | null;
         } | null;
+        diagnosis_path?: {
+          path?: string | null;
+          steps?: {
+            step_id?: string | null;
+            label?: string | null;
+            value?: string | null;
+            detail?: string | null;
+            source?: string | null;
+          }[];
+          boundary?: string | null;
+          next_manual_step?: string | null;
+        } | null;
         evidence_groups?: {
           group_id?: string | null;
           label?: string | null;
           value?: string | null;
         }[];
+      }[];
+      candidate_groups?: {
+        group_id?: string | null;
+        group_type?: string | null;
+        group_label?: string | null;
+        aba_reference_term?: string | null;
+        aba_period?: string | null;
+        aba_match_boundary?: string | null;
+        total?: number | null;
+        by_result?: Record<string, number>;
+        priority_result?: string | null;
+        sample_review_record_ids?: string[];
+        sample_action_ids?: string[];
+        recommendation?: string | null;
+        action_boundary?: {
+          result?: string | null;
+          allowed_reviews?: string[];
+          forbidden_actions?: string[];
+          boundary?: string | null;
+        } | null;
+        boundary?: string | null;
       }[];
       summary?: string | null;
       rule_feedback?: string | null;
@@ -894,9 +960,11 @@ export interface SignalTriageSummary {
       earliest_due_at?: string | null;
       earliest_due_date?: string | null;
       review_windows?: string[];
+      next_review_window?: string | null;
       next_object_type?: string | null;
       next_object_id?: string | null;
       next_object_label?: string | null;
+      gap_reasons?: string[];
       message?: string | null;
       next_step?: string | null;
       forbidden_actions?: string[];
@@ -909,11 +977,16 @@ export interface SignalTriageSummary {
       missing_action_id_count?: number | null;
       missing_object_id_count?: number | null;
       missing_review_window_count?: number | null;
+      missing_evidence_snapshot_count?: number | null;
+      missing_diagnosis_path_count?: number | null;
+      missing_ai_admission_count?: number | null;
       unstable_object_id_count?: number | null;
       ready_review_count?: number | null;
       can_save_review_records_now?: boolean | null;
       earliest_due_date?: string | null;
+      earliest_any_due_date?: string | null;
       earliest_metric_due_date?: string | null;
+      date_boundary?: string | null;
       issues?: {
         issue_type?: string | null;
         signal_id?: string | null;
@@ -933,6 +1006,9 @@ export interface SignalTriageSummary {
         status?: string | null;
         is_due?: boolean | null;
         due_at?: string | null;
+        evidence_snapshot_count?: number | null;
+        has_diagnosis_path?: boolean | null;
+        has_ai_admission?: boolean | null;
       }[] | null;
     };
     rule_improvement?: {
@@ -947,6 +1023,77 @@ export interface SignalTriageSummary {
   };
   blockers: { code: string; message: string }[];
   next_action: string;
+}
+
+export interface ReviewEvidenceRepairItem {
+  action_id?: string | null;
+  signal_id?: string | null;
+  action_type?: string | null;
+  shop_id?: string | null;
+  market_id?: number | null;
+  object_type?: string | null;
+  object_id?: string | null;
+  object_label?: string | null;
+  review_windows?: string[] | null;
+  issue_types?: string[] | null;
+  todo_count?: number | null;
+  current_preflight?: {
+    status?: string | null;
+    target_matches_legacy?: boolean | null;
+    target?: Record<string, unknown> | null;
+    blockers?: { code?: string | null; message?: string | null }[] | null;
+    evidence_snapshot_status?: string | null;
+    evidence_snapshot_item_count?: number | null;
+    has_diagnosis_path?: boolean | null;
+    has_ai_admission?: boolean | null;
+    has_search_term_boundary?: boolean | null;
+    has_placement_boundary?: boolean | null;
+    has_targeting_evidence?: boolean | null;
+    has_aba_context?: boolean | null;
+    has_evidence_gap?: boolean | null;
+    has_action_boundary?: boolean | null;
+    has_object_reference?: boolean | null;
+    missing_required_labels?: string[] | null;
+  } | null;
+  can_rebuild_evidence_preview?: boolean | null;
+  can_recreate_from_current_signal?: boolean | null;
+  can_patch_legacy_record?: boolean | null;
+  patch_policy?: string | null;
+  void_plan?: {
+    status?: string | null;
+    action_id?: string | null;
+    review_window?: string | null;
+    review_windows?: string[] | null;
+    expected_object_type?: string | null;
+    expected_object_id?: string | null;
+    required_authorization_code?: string | null;
+    dry_run_command?: string | null;
+    execute_command?: string | null;
+    boundary?: string | null;
+  } | null;
+  recommended_next_step?: string | null;
+  will_write?: boolean | null;
+}
+
+export interface ReviewEvidenceRepairPayload {
+  status: string;
+  will_write: boolean;
+  requires_explicit_authorization?: boolean;
+  selected_market_id?: number | null;
+  selected_product_scope_id?: string | null;
+  readiness_status?: string | null;
+  rule_improvement_status?: string | null;
+  counts: {
+    manual_actions?: number | null;
+    review_todos?: number | null;
+    repair_issue_count?: number | null;
+    legacy_action_gap_count?: number | null;
+    preview_rebuildable_count?: number | null;
+    recreatable_count?: number | null;
+  };
+  items: ReviewEvidenceRepairItem[];
+  forbidden_effects?: string[] | null;
+  next_action?: string | null;
 }
 
 export interface SnapshotPipelineResult {
@@ -990,8 +1137,8 @@ export interface ManualActionRequest {
   expected_product_scope_id?: string | null;
   expected_object_type?: string | null;
   expected_object_id?: string | null;
-  expected_can_auto_change_rules?: boolean;
-  expected_can_auto_execute_ads?: boolean;
+  expected_can_auto_change_rules: boolean;
+  expected_can_auto_execute_ads: boolean;
 }
 
 export interface ManualActionRecord {
@@ -1016,6 +1163,7 @@ export interface ManualActionPreflightTarget {
   action_type?: ManualActionType | string | null;
   object_type?: string | null;
   object_id?: string | null;
+  source_object_id?: string | null;
   object_label?: string | null;
   shop_id?: string | null;
   shop_name?: string | null;
@@ -1110,6 +1258,7 @@ export interface ReviewEffectResult {
   object_type?: string | null;
   object_id?: string | null;
   object_label?: string | null;
+  evidence_snapshot?: ManualActionEvidenceSnapshot[];
   review_window: ReviewWindow;
   status: "not_ready" | "ready";
   result: "improved" | "no_change" | "worse" | "unclear";
@@ -1129,8 +1278,9 @@ export interface ReviewRecordRequest {
   expected_object_type?: string | null;
   expected_object_id?: string | null;
   expected_review_window?: ReviewWindow | null;
-  expected_can_auto_change_rules?: boolean;
-  expected_can_auto_execute_ads?: boolean;
+  expected_evidence_snapshot: ManualActionEvidenceSnapshot[];
+  expected_can_auto_change_rules: boolean;
+  expected_can_auto_execute_ads: boolean;
 }
 
 export interface ReviewRecord {
@@ -1152,6 +1302,7 @@ export interface ReviewRecord {
   after_end_date?: string | null;
   before_metrics: Partial<MetricSnapshot>;
   after_metrics: Partial<MetricSnapshot>;
+  evidence_snapshot?: ManualActionEvidenceSnapshot[];
   result: "improved" | "no_change" | "worse" | "unclear";
   review_note?: string | null;
   reviewer_name: string;
@@ -1246,6 +1397,14 @@ export function fetchSignalScanSummary(marketId?: number | null): Promise<Signal
 
 export function fetchSignalTriageSummary(marketId?: number | null, top = 5, productScopeId?: string | null): Promise<SignalTriageSummary> {
   return request<SignalTriageSummary>(signalTriagePath(marketId, top, productScopeId));
+}
+
+export function fetchReviewEvidenceRepair(
+  marketId?: number | null,
+  top = 5,
+  productScopeId?: string | null,
+): Promise<ReviewEvidenceRepairPayload> {
+  return request<ReviewEvidenceRepairPayload>(reviewEvidenceRepairPath(marketId, top, productScopeId));
 }
 
 export function fetchManualActionPreflight(options: {

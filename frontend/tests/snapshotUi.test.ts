@@ -152,6 +152,7 @@ const waitingReviewStatus = {
   review_wait_summary: {
     status: "waiting_review_window",
     earliest_due_date: "2026-06-22",
+    next_review_window: "7d",
     next_step: "等待复盘窗口完整后再复核处理后指标，未到期前不拉取快照、不保存复盘结论。",
     forbidden_actions: ["不拉取快照", "不保存复盘结论", "不自动改规则", "不自动执行广告动作"],
   },
@@ -238,7 +239,7 @@ assertEqual(marketOptionLabel(sampleMarketOption), "market-1 / 待探测 / marke
 assertBoolean(shouldPauseSnapshotPullForReview(waitingReviewStatus), true);
 
 assertIncludes(snapshotActionBoundaryText(waitingReviewStatus), "复盘窗口未到期");
-assertIncludes(snapshotActionBoundaryText(waitingReviewStatus), "2026-06-22 后再只读检查复盘效果");
+assertIncludes(snapshotActionBoundaryText(waitingReviewStatus), "2026-06-22 后再只读检查 7 天广告指标复盘效果");
 assertIncludes(snapshotActionBoundaryText(waitingReviewStatus), "未到期前不拉取快照、不保存复盘结论");
 
 assertBoolean(shouldPauseSnapshotPullForReview({ manual_action_count: 0, ready_count: 0 }), false);

@@ -13,7 +13,7 @@ SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
 sys.path.insert(0, str(BACKEND_ROOT))
 sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from app.services.manual_actions import save_manual_action  # noqa: E402
+from app.services.manual_actions import build_review_todos, save_manual_action  # noqa: E402
 from inspect_manual_action_preflight import build_manual_action_preflight_payload  # noqa: E402
 
 
@@ -120,6 +120,13 @@ def build_manual_action_apply_payload(
         evidence_snapshot=evidence_snapshot,
         **_action_root_kwargs(action_root),
     )
+    actual_review_todos = None
+    if action_root is not None:
+        actual_review_todos = build_review_todos(
+            str(target.get("signal_id") or ""),
+            market_id=_int(target.get("market_id")) or selected_market_id,
+            action_root=action_root,
+        )
     post_write = build_manual_action_preflight_payload(
         selected_market_id=selected_market_id,
         product_scope_id=product_scope_id,
@@ -143,9 +150,11 @@ def build_manual_action_apply_payload(
         "post_write_validation": post_write,
         "smoke_assertions": _build_smoke_assertions(
             target=target,
+            record=record_dict,
             action_type=action_to_write,
             evidence_snapshot=evidence_snapshot,
             post_write=post_write,
+            actual_review_todos=actual_review_todos,
             forbidden_effects=base["forbidden_effects"],
             verified=verified,
         ),
@@ -177,9 +186,11 @@ def _record_to_dict(record: Any) -> dict[str, Any]:
 def _build_smoke_assertions(
     *,
     target: dict[str, Any],
+    record: dict[str, Any],
     action_type: str,
     evidence_snapshot: list[dict[str, str | None]],
     post_write: dict[str, Any],
+    actual_review_todos: list[Any] | None,
     forbidden_effects: list[str],
     verified: bool,
 ) -> dict[str, Any]:
@@ -191,10 +202,13 @@ def _build_smoke_assertions(
     manual_action_evidence_snapshot_count = _sum_evidence_snapshot_counts(
         _list(checks.get("target_manual_action_evidence_snapshot_counts"))
     )
+    max_manual_action_evidence_snapshot_count = _max_evidence_snapshot_count(
+        _list(checks.get("target_manual_action_evidence_snapshot_counts"))
+    )
     review_todo_evidence_snapshot_counts = _evidence_snapshot_counts_by_review_window(
         _list(checks.get("target_review_todo_evidence_snapshot_counts"))
     )
-    return {
+    assertions = {
         "status": "passed" if verified else "blocked",
         "target": {
             "object_type": str(target.get("object_type") or ""),
@@ -207,6 +221,7 @@ def _build_smoke_assertions(
         "target_review_record_count": target_review_record_count,
         "written_evidence_snapshot_count": written_evidence_snapshot_count,
         "post_write_manual_action_evidence_snapshot_count": manual_action_evidence_snapshot_count,
+        "post_write_max_manual_action_evidence_snapshot_count": max_manual_action_evidence_snapshot_count,
         "post_write_review_todo_evidence_snapshot_counts": review_todo_evidence_snapshot_counts,
         "post_write_review_todos_with_evidence_snapshot": sum(
             1 for count in review_todo_evidence_snapshot_counts.values() if count > 0
@@ -215,10 +230,69 @@ def _build_smoke_assertions(
         "review_records_not_saved": target_review_record_count == 0 and "不保存 review_records" in forbidden_effects,
         "ad_actions_not_executed": "不执行广告动作" in forbidden_effects,
     }
+    if actual_review_todos is not None:
+        assertions.update(
+            _actual_review_todo_smoke_assertions(
+                target=target,
+                record=record,
+                evidence_snapshot=evidence_snapshot,
+                actual_review_todos=actual_review_todos,
+            )
+        )
+    return assertions
+
+
+def _actual_review_todo_smoke_assertions(
+    *,
+    target: dict[str, Any],
+    record: dict[str, Any],
+    evidence_snapshot: list[dict[str, str | None]],
+    actual_review_todos: list[Any],
+) -> dict[str, Any]:
+    todo_rows = [_record_to_dict(todo) for todo in actual_review_todos]
+    target_object_type = str(target.get("object_type") or "")
+    target_object_id = str(target.get("object_id") or "")
+    source_object_id = str(target.get("source_object_id") or "").strip()
+    record_id = str(record.get("id") or "")
+    record_object_id = str(record.get("object_id") or "")
+    evidence_labels = [item.get("label") for item in evidence_snapshot]
+    todo_counts_by_window = {
+        str(row.get("review_window") or ""): len(_list(row.get("evidence_snapshot"))) for row in todo_rows
+    }
+    todo_object_ids = sorted({str(row.get("object_id") or "") for row in todo_rows if str(row.get("object_id") or "")})
+    return {
+        "actual_review_todo_count": len(todo_rows),
+        "actual_review_todo_object_ids": todo_object_ids,
+        "actual_review_todo_evidence_snapshot_counts": todo_counts_by_window,
+        "actual_review_todos_match_manual_action_object": bool(todo_rows)
+        and all(
+            str(row.get("object_type") or "") == target_object_type and str(row.get("object_id") or "") == target_object_id
+            for row in todo_rows
+        ),
+        "actual_review_todos_match_manual_action_id": bool(todo_rows)
+        and all(str(row.get("action_id") or "") == record_id for row in todo_rows),
+        "actual_review_todos_inherit_evidence_snapshot": bool(todo_rows)
+        and all(
+            [item.get("label") for item in _list(row.get("evidence_snapshot"))] == evidence_labels
+            and len(_list(row.get("evidence_snapshot"))) == len(evidence_snapshot)
+            for row in todo_rows
+        ),
+        "source_object_id_not_used_as_review_object": (
+            True
+            if not source_object_id
+            else record_object_id != source_object_id
+            and all(str(row.get("object_id") or "") != source_object_id for row in todo_rows)
+        ),
+    }
 
 
 def _sum_evidence_snapshot_counts(items: list[Any]) -> int:
     return sum(_int(_dict(item).get("evidence_snapshot_count")) or 0 for item in items)
+
+
+def _max_evidence_snapshot_count(items: list[Any]) -> int:
+    counts = [_int(_dict(item).get("evidence_snapshot_count")) or 0 for item in items]
+    return max(counts, default=0)
 
 
 def _evidence_snapshot_counts_by_review_window(items: list[Any]) -> dict[str, int]:

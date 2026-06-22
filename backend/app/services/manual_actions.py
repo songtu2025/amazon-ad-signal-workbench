@@ -12,6 +12,8 @@ from app.models.manual_actions import (
     ReviewEffectResult,
     ReviewRecord,
     ReviewTodo,
+    ReviewTodoDecisionRecord,
+    ReviewTodoDecisionType,
     ReviewWindow,
 )
 from app.models.signals import AdObjectRef, AiSignal, ObjectType, SignalStatus
@@ -22,8 +24,10 @@ DEFAULT_MANUAL_ACTION_ROOT = PROJECT_ROOT / "data" / "runtime" / "manual_actions
 DEFAULT_REVIEW_RECORD_ROOT = PROJECT_ROOT / "data" / "runtime" / "review_records"
 MANUAL_ACTION_FILE_NAME = "manual_actions.jsonl"
 REVIEW_RECORD_FILE_NAME = "review_records.jsonl"
+REVIEW_TODO_DECISION_FILE_NAME = "review_todo_decisions.jsonl"
 REVIEW_WINDOWS: tuple[tuple[ReviewWindow, int], ...] = (("7d", 7), ("14d", 14))
 REVIEWABLE_ACTION_TYPES: set[ManualActionType] = {"observe", "handled", "add_to_review"}
+VOID_REVIEW_TODO_DECISION_TYPES: set[ReviewTodoDecisionType] = {"void_legacy_missing_evidence"}
 
 
 def manual_action_object_id_for_values(
@@ -33,13 +37,25 @@ def manual_action_object_id_for_values(
     asin: str | None = None,
     msku: str | None = None,
     sku: str | None = None,
+    label: str | None = None,
+    search_term: str | None = None,
+    market_id: int | str | None = None,
 ) -> str | None:
-    if object_type in {ObjectType.ADVERTISED_PRODUCT.value, ObjectType.SALES_PRODUCT.value}:
+    object_type_value = object_type.value if isinstance(object_type, ObjectType) else str(object_type or "")
+    if object_type_value in {ObjectType.ADVERTISED_PRODUCT.value, ObjectType.SALES_PRODUCT.value}:
         return asin or msku or sku or object_id
+    if object_type_value == ObjectType.SEARCH_TERM.value:
+        query = str(search_term or label or object_id or "").strip()
+        if not query:
+            return object_id
+        if query.startswith("search_term:"):
+            return query
+        market = str(market_id).strip() if market_id is not None else ""
+        return f"search_term:{market}:{query}" if market else f"search_term:{query}"
     return object_id
 
 
-def manual_action_object_id(primary_object: AdObjectRef) -> str:
+def manual_action_object_id(primary_object: AdObjectRef, *, market_id: int | str | None = None) -> str:
     return (
         manual_action_object_id_for_values(
             object_type=primary_object.object_type.value,
@@ -47,9 +63,80 @@ def manual_action_object_id(primary_object: AdObjectRef) -> str:
             asin=primary_object.asin,
             msku=primary_object.msku,
             sku=primary_object.sku,
+            label=primary_object.label,
+            search_term=primary_object.search_term,
+            market_id=market_id,
         )
         or primary_object.object_id
     )
+
+
+def manual_action_object_id_aliases(
+    *,
+    object_type: str | None,
+    object_id: str | None,
+    object_label: str | None = None,
+    search_term: str | None = None,
+    market_id: int | str | None = None,
+) -> set[str]:
+    values = {
+        str(value).strip()
+        for value in (object_id, object_label, search_term)
+        if str(value or "").strip()
+    }
+    stable_id = manual_action_object_id_for_values(
+        object_type=object_type,
+        object_id=object_id,
+        label=object_label,
+        search_term=search_term,
+        market_id=market_id,
+    )
+    if stable_id:
+        values.add(stable_id)
+    for value in list(values):
+        if value.startswith("search_term:"):
+            values.add(value.rsplit(":", 1)[-1])
+    return values
+
+
+def manual_action_object_id_matches(
+    *,
+    object_type: str | None,
+    object_id: str | None,
+    expected_object_id: str | None,
+    object_label: str | None = None,
+    search_term: str | None = None,
+    market_id: int | str | None = None,
+) -> bool:
+    expected_values = {
+        _normalized(value)
+        for value in _search_term_identity_values(expected_object_id)
+    }
+    if not expected_values:
+        return True
+    actual_values = {
+        _normalized(value)
+        for value in manual_action_object_id_aliases(
+            object_type=object_type,
+            object_id=object_id,
+            object_label=object_label,
+            search_term=search_term,
+            market_id=market_id,
+        )
+    }
+    return bool(expected_values & actual_values)
+
+
+def _search_term_identity_values(value: str | None) -> set[str]:
+    text = str(value or "").strip()
+    if not text:
+        return set()
+    values = {text}
+    if ":" in text:
+        tail = text.rsplit(":", 1)[-1].strip()
+        if tail:
+            values.add(tail)
+    return values
 
 
 def save_manual_action(
@@ -108,6 +195,66 @@ def load_manual_actions(
             continue
         record = _normalize_manual_action_record(record)
         if (signal_id is None or record.signal_id == signal_id) and (market_id is None or record.market_id == market_id):
+            records.append(record)
+    return records
+
+
+def save_review_todo_decision(
+    *,
+    action_id: str,
+    signal_id: str,
+    decision_type: ReviewTodoDecisionType = "void_legacy_missing_evidence",
+    review_window: ReviewWindow | None = None,
+    reason: str | None = None,
+    operator_name: str = "本地运营",
+    shop_id: str | None = None,
+    market_id: int | None = None,
+    object_type: str | None = None,
+    object_id: str | None = None,
+    object_label: str | None = None,
+    action_root: Path = DEFAULT_MANUAL_ACTION_ROOT,
+) -> ReviewTodoDecisionRecord:
+    record = ReviewTodoDecisionRecord(
+        id=f"review-todo-decision-{uuid4().hex}",
+        decision_type=decision_type,
+        action_id=action_id,
+        signal_id=signal_id,
+        review_window=review_window,
+        reason=reason,
+        operator_name=operator_name or "本地运营",
+        decided_at=datetime.now(UTC).isoformat(),
+        shop_id=shop_id,
+        market_id=market_id,
+        object_type=object_type,
+        object_id=object_id,
+        object_label=object_label,
+        can_auto_change_rules=False,
+        can_auto_execute_ads=False,
+    )
+    action_root.mkdir(parents=True, exist_ok=True)
+    with _review_todo_decision_file(action_root).open("a", encoding="utf-8") as file:
+        file.write(json.dumps(record.model_dump(mode="json"), ensure_ascii=False) + "\n")
+    return record
+
+
+def load_review_todo_decisions(
+    *,
+    action_id: str | None = None,
+    market_id: int | None = None,
+    action_root: Path = DEFAULT_MANUAL_ACTION_ROOT,
+) -> list[ReviewTodoDecisionRecord]:
+    path = _review_todo_decision_file(action_root)
+    if not path.exists():
+        return []
+    records: list[ReviewTodoDecisionRecord] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            record = ReviewTodoDecisionRecord.model_validate(json.loads(line))
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if (action_id is None or record.action_id == action_id) and (market_id is None or record.market_id == market_id):
             records.append(record)
     return records
 
@@ -173,6 +320,7 @@ def build_review_todos(
 
     todo_records = load_manual_actions(signal_id, market_id=market_id, action_root=action_root)
     context_records = load_manual_actions(market_id=market_id, action_root=action_root)
+    review_todo_decisions = load_review_todo_decisions(market_id=market_id, action_root=action_root)
 
     latest_by_signal: dict[tuple[str, int | None], ManualActionRecord] = {}
     for record in todo_records:
@@ -188,6 +336,8 @@ def build_review_todos(
         acted_at = _parse_action_time(record.acted_at)
         days_since_action = max(0, int((current_time - acted_at).total_seconds() // 86400))
         for review_window, window_days in REVIEW_WINDOWS:
+            if _review_todo_voided(record, review_window, review_todo_decisions):
+                continue
             due_at = acted_at + timedelta(days=window_days)
             todos.append(
                 ReviewTodo(
@@ -213,6 +363,22 @@ def build_review_todos(
                 )
             )
     return sorted(todos, key=lambda todo: (todo.due_at, todo.signal_id, todo.review_window))
+
+
+def _review_todo_voided(
+    record: ManualActionRecord,
+    review_window: ReviewWindow,
+    decisions: list[ReviewTodoDecisionRecord],
+) -> bool:
+    for decision in decisions:
+        if decision.decision_type not in VOID_REVIEW_TODO_DECISION_TYPES:
+            continue
+        if decision.action_id != record.id:
+            continue
+        if decision.review_window is not None and decision.review_window != review_window:
+            continue
+        return True
+    return False
 
 
 def review_context_for_manual_action(record: ManualActionRecord, records: list[ManualActionRecord]) -> ReviewContext | None:
@@ -360,6 +526,7 @@ def build_review_effect_result(
         "object_type": record.object_type,
         "object_id": record.object_id,
         "object_label": record.object_label,
+        "evidence_snapshot": record.evidence_snapshot,
         "review_window": review_window,
     }
     if record.object_type == "cross":
@@ -446,16 +613,19 @@ def save_review_record(
     expected_object_type: str | None = None,
     expected_object_id: str | None = None,
     expected_review_window: ReviewWindow | None = None,
-    expected_can_auto_change_rules: bool = False,
-    expected_can_auto_execute_ads: bool = False,
+    expected_evidence_snapshot: list[ManualActionEvidenceSnapshot] | None = None,
+    expected_can_auto_change_rules: bool | None = None,
+    expected_can_auto_execute_ads: bool | None = None,
     review_root: Path = DEFAULT_REVIEW_RECORD_ROOT,
 ) -> ReviewRecord:
     if effect.status != "ready":
         raise ValueError("review_effect_not_ready")
-    if expected_can_auto_change_rules or expected_can_auto_execute_ads:
-        raise ValueError("review_record_forbidden_effect")
     if not all([expected_action_id, expected_object_type, expected_object_id, expected_review_window]):
         raise ValueError("review_record_preflight_required")
+    if expected_can_auto_change_rules is None or expected_can_auto_execute_ads is None:
+        raise ValueError("review_record_preflight_required")
+    if expected_can_auto_change_rules or expected_can_auto_execute_ads:
+        raise ValueError("review_record_forbidden_effect")
     if not _review_record_expectation_matches(
         effect,
         expected_action_id=expected_action_id,
@@ -464,6 +634,27 @@ def save_review_record(
         expected_review_window=expected_review_window,
     ):
         raise ValueError("review_record_preflight_mismatch")
+    if not _review_record_has_diagnosis_path(expected_evidence_snapshot):
+        raise ValueError("review_record_missing_diagnosis_path")
+    if not _review_record_has_ai_admission(expected_evidence_snapshot):
+        raise ValueError("review_record_missing_ai_admission")
+    if not _review_record_has_search_term_boundary(expected_evidence_snapshot):
+        raise ValueError("review_record_missing_search_term_boundary")
+    if not _review_record_has_placement_boundary(expected_evidence_snapshot):
+        raise ValueError("review_record_missing_placement_boundary")
+    if _normalized(expected_object_type) == ObjectType.SEARCH_TERM.value:
+        if not _review_record_has_ad_group_synthesis(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_ad_group_synthesis")
+        if not _review_record_has_targeting_evidence(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_targeting_evidence")
+        if not _review_record_has_aba_context(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_aba_context")
+        if not _review_record_has_evidence_gap(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_evidence_gap")
+        if not _review_record_has_action_boundary(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_action_boundary")
+    if not _review_record_evidence_snapshot_matches_effect(effect, expected_evidence_snapshot):
+        raise ValueError("review_record_evidence_snapshot_mismatch")
     record = ReviewRecord(
         id=f"review-record-{uuid4().hex}",
         signal_id=effect.signal_id,
@@ -483,6 +674,7 @@ def save_review_record(
         after_end_date=effect.after_end_date,
         before_metrics=effect.before_metrics,
         after_metrics=effect.after_metrics,
+        evidence_snapshot=expected_evidence_snapshot or [],
         result=effect.result,
         review_note=review_note,
         reviewer_name=reviewer_name or "本地运营",
@@ -506,11 +698,93 @@ def _review_record_expectation_matches(
         return False
     if expected_object_type and _normalized(effect.object_type) != _normalized(expected_object_type):
         return False
-    if expected_object_id and _normalized(effect.object_id) != _normalized(expected_object_id):
+    if expected_object_id and not manual_action_object_id_matches(
+        object_type=effect.object_type,
+        object_id=effect.object_id,
+        expected_object_id=expected_object_id,
+        object_label=effect.object_label,
+        market_id=effect.market_id,
+    ):
         return False
     if expected_review_window and effect.review_window != expected_review_window:
         return False
     return True
+
+
+def _review_record_has_diagnosis_path(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "排查路径")
+
+
+def _review_record_has_ai_admission(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "AI 准入")
+
+
+def _review_record_has_search_term_boundary(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "搜索词边界")
+
+
+def _review_record_has_placement_boundary(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "广告位边界")
+
+
+def _review_record_has_ad_group_synthesis(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "广告组合流判断")
+
+
+def _review_record_has_targeting_evidence(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "投放词证据")
+
+
+def _review_record_has_aba_context(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "ABA 背景")
+
+
+def _review_record_has_evidence_gap(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "证据缺口")
+
+
+def _review_record_has_action_boundary(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "动作边界")
+
+
+def _review_record_has_snapshot_label(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None, expected_label: str) -> bool:
+    for item in evidence_snapshot or []:
+        if hasattr(item, "model_dump"):
+            item = item.model_dump()
+        label = item.get("label") if isinstance(item, dict) else item.label
+        value = item.get("value") if isinstance(item, dict) else item.value
+        if str(label or "").strip() == expected_label and str(value or "").strip():
+            return True
+    return False
+
+
+def _review_record_evidence_snapshot_matches_effect(
+    effect: ReviewEffectResult,
+    expected_evidence_snapshot: list[ManualActionEvidenceSnapshot] | None,
+) -> bool:
+    return _review_record_evidence_snapshot_signature(expected_evidence_snapshot) == _review_record_evidence_snapshot_signature(
+        effect.evidence_snapshot
+    )
+
+
+def _review_record_evidence_snapshot_signature(
+    evidence_snapshot: list[ManualActionEvidenceSnapshot] | None,
+) -> list[tuple[str, str, str, str]]:
+    signature: list[tuple[str, str, str, str]] = []
+    for item in evidence_snapshot or []:
+        if hasattr(item, "model_dump"):
+            item = item.model_dump()
+        if not isinstance(item, dict):
+            continue
+        signature.append(
+            (
+                str(item.get("label") or "").strip(),
+                str(item.get("value") or "").strip(),
+                str(item.get("detail") or "").strip(),
+                str(item.get("source") or "").strip(),
+            )
+        )
+    return signature
 
 
 def load_review_records(
@@ -643,6 +917,10 @@ def _review_file(review_root: Path) -> Path:
     return review_root / REVIEW_RECORD_FILE_NAME
 
 
+def _review_todo_decision_file(action_root: Path) -> Path:
+    return action_root / REVIEW_TODO_DECISION_FILE_NAME
+
+
 def _parse_action_time(value: str) -> datetime:
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if parsed.tzinfo is None:
@@ -661,7 +939,26 @@ def _row_matches_action(row: dict[str, Any], record: ManualActionRecord) -> bool
 
     target = _normalized(record.object_id)
     if record.object_type == "search_term":
-        return target in {_normalized(row.get("search_term")), _normalized(row.get("normalized_query"))}
+        target_values = {
+            _normalized(value)
+            for value in manual_action_object_id_aliases(
+                object_type=record.object_type,
+                object_id=record.object_id,
+                object_label=record.object_label,
+                market_id=record.market_id,
+            )
+        }
+        row_values = {
+            _normalized(value)
+            for value in manual_action_object_id_aliases(
+                object_type=record.object_type,
+                object_id=str(row.get("row_id") or row.get("source_record_id") or ""),
+                object_label=str(row.get("search_term") or row.get("normalized_query") or ""),
+                search_term=str(row.get("search_term") or row.get("normalized_query") or ""),
+                market_id=row_market_id,
+            )
+        }
+        return bool(target_values & row_values)
     if record.object_type == "ad_group":
         return target in {_normalized(row.get("ad_group_id")), _normalized(row.get("row_id")), _normalized(row.get("source_record_id"))}
     if record.object_type == "placement":
