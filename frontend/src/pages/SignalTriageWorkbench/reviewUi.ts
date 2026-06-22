@@ -2476,8 +2476,8 @@ export function manualConfirmationEvidenceReadinessSummary(
   const snapshotLabels = evidenceLabelSet(preflightEvidenceRows);
   const hasPreflightSnapshot = preflightEvidenceRows.length > 0;
   const searchTermReviewChainLabels = ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "动作边界"];
-  const needsSearchTermReviewChain = searchTermReviewChainLabels.some((label) =>
-    manualLabels.has(label),
+  const needsSearchTermReviewChain = searchTermReviewChainLabels.some(
+    (label) => manualLabels.has(label) || snapshotLabels.has(label),
   );
   const checks = [
     {

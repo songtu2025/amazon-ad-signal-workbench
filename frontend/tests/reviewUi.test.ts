@@ -1929,6 +1929,32 @@ const blockedManualConfirmationEvidenceReadiness = manualConfirmationEvidenceRea
 assertEqual(blockedManualConfirmationEvidenceReadiness?.tone, "blocked");
 assertIncludes(JSON.stringify(blockedManualConfirmationEvidenceReadiness), "缺：广告组合流判断 / ABA 背景 / 证据缺口 / 动作边界");
 assertIncludes(blockedManualConfirmationEvidenceReadiness?.summary ?? "", "不能把当前点击当成可复盘留痕");
+const snapshotOnlySearchTermChainReadiness = manualConfirmationEvidenceReadinessSummary(
+  [
+    { label: "业务问题", value: "搜索词是否可复核？" },
+    { label: "当前判断", value: "待确认" },
+    { label: "能证明", value: "有广告表现" },
+    { label: "不能证明", value: "不能自动执行" },
+    { label: "人工下一步", value: "记录观察" },
+  ],
+  [
+    { label: "人工确认判断依据", value: "当前判断可读回" },
+    { label: "能证明的事实", value: "有广告表现" },
+    { label: "不能证明的边界", value: "不能自动执行" },
+    { label: "人工下一步", value: "记录观察" },
+    { label: "投放词证据", value: "投放上下文" },
+    { label: "广告组合流判断", value: "同广告组证据" },
+    { label: "ABA 背景", value: "站点级市场背景" },
+    { label: "证据缺口", value: "缺广告位层级" },
+    { label: "动作边界", value: "只允许人工留痕" },
+  ],
+);
+assertEqual(snapshotOnlySearchTermChainReadiness?.tone, "blocked");
+assertIncludes(snapshotOnlySearchTermChainReadiness?.summary ?? "", "不一致");
+assertIncludes(
+  JSON.stringify(snapshotOnlySearchTermChainReadiness),
+  "页面缺少：投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 动作边界",
+);
 const blockedManualConfirmationDiagnosisBridge = manualConfirmationDiagnosisBridgeSummary(
   {
     title: "搜索词机会",
