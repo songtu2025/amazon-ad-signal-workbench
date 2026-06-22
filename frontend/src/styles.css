@@ -2632,6 +2632,14 @@ button.reviewTodoQueueNext:focus-visible {
 .searchIntentActiveFilter span {
   min-width: 0;
   overflow-wrap: anywhere;
+  display: grid;
+  gap: 2px;
+}
+
+.searchIntentActiveFilter small {
+  color: #52647a;
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .searchIntentActiveFilter button {

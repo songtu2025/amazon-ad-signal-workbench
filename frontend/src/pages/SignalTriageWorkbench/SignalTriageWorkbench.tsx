@@ -612,8 +612,11 @@ export function SignalTriageWorkbench() {
     return displayProductScopedSignals.filter((signal) => signalQueueKind(signal) === filter);
   }, [displayProductScopedSignals, filter]);
   const filteredSignals = useMemo(
-    () => filterSignalsBySearchIntent(queueFilteredSignals, selectedSearchIntentLabel),
-    [queueFilteredSignals, selectedSearchIntentLabel],
+    () =>
+      selectedSearchIntentLabel
+        ? filterSignalsBySearchIntent(displayProductScopedSignals, selectedSearchIntentLabel)
+        : queueFilteredSignals,
+    [displayProductScopedSignals, queueFilteredSignals, selectedSearchIntentLabel],
   );
   const productScopeQueueHeader = useMemo(
     () => buildProductScopeQueueHeader(selectedProductScopeOption, filteredSignals.length),
@@ -715,9 +718,13 @@ export function SignalTriageWorkbench() {
   const latestManualActionReadback = reviewTargetReadbackText(latestManualAction);
   const nextReviewTodo = selectNextReviewTodo(selectedReviewTodos);
 
+  function handleSelectQueueFilter(nextFilter: QueueFilter) {
+    setSelectedSearchIntentLabel(null);
+    setFilter(nextFilter);
+  }
+
   function handleSelectSearchIntent(intentLabel: string) {
     setSelectedSearchIntentLabel((current) => (current === intentLabel ? null : intentLabel));
-    setFilter("opportunity_expansion");
     const nextSignals = filterSignalsBySearchIntent(displayProductScopedSignals, intentLabel);
     if (nextSignals.length > 0) {
       setSelectedId(nextSignals[0].id);
@@ -1840,7 +1847,10 @@ export function SignalTriageWorkbench() {
               </div>
               {selectedSearchIntentLabel && (
                 <div className="searchIntentActiveFilter" aria-label="当前语义组筛选">
-                  <span>已筛选：{selectedSearchIntentLabel}</span>
+                  <span>
+                    已聚焦：{selectedSearchIntentLabel}
+                    <small>诊断入口保持不变，仅显示同组 SearchTerm 机会；ABA 只作站点级背景。</small>
+                  </span>
                   <button type="button" onClick={() => setSelectedSearchIntentLabel(null)}>
                     清除
                   </button>
@@ -1876,18 +1886,25 @@ export function SignalTriageWorkbench() {
           )}
 
           <div className="queueTabs" aria-label="队列筛选">
-            <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>
+            <button className={!selectedSearchIntentLabel && filter === "all" ? "active" : ""} onClick={() => handleSelectQueueFilter("all")}>
               全部
             </button>
-            <button className={filter === "high" ? "active" : ""} onClick={() => setFilter("high")}>
+            <button className={!selectedSearchIntentLabel && filter === "high" ? "active" : ""} onClick={() => handleSelectQueueFilter("high")}>
               高优先级
             </button>
             {queueBusinessFilters.map((item) => (
-              <button key={item.value} className={filter === item.value ? "active" : ""} onClick={() => setFilter(item.value)}>
+              <button
+                key={item.value}
+                className={!selectedSearchIntentLabel && filter === item.value ? "active" : ""}
+                onClick={() => handleSelectQueueFilter(item.value)}
+              >
                 {item.label}
               </button>
             ))}
-            <button className={filter === "observing" ? "active" : ""} onClick={() => setFilter("observing")}>
+            <button
+              className={!selectedSearchIntentLabel && filter === "observing" ? "active" : ""}
+              onClick={() => handleSelectQueueFilter("observing")}
+            >
               观察中
             </button>
           </div>
@@ -1900,7 +1917,7 @@ export function SignalTriageWorkbench() {
               title={selectedSearchIntentLabel ? "当前语义组暂无对应搜索词机会" : productScopeSignalExplanation?.title ?? "暂无真实快照信号"}
               description={
                 selectedSearchIntentLabel
-                  ? "该筛选只联动 search_term_opportunity；如果需要看全部信号，请清除语义组筛选。"
+                  ? "语义组聚焦不切换经营商品或广告组，只在当前诊断入口内显示同组 SearchTerm 机会；如果需要看全部信号，请清除语义组聚焦。"
                   : productScopeSignalExplanation?.description
                     ? productScopeSignalExplanation.description
                   : "旧样例已移除，后续信号只从真实快照或明确标记的测试 fixture 生成。"
