@@ -3227,6 +3227,42 @@ assertIncludes(searchTermOpportunityReviewChain?.requiredEvidence ?? "", "广告
 assertIncludes(searchTermOpportunityReviewChain?.nextManualStep ?? "", "加入 7/14 天复盘");
 assertIncludes(searchTermOpportunityReviewChain?.actionBoundary ?? "", "不得自动加词");
 
+const thinSearchTermOpportunityReviewChain = buildSearchTermOpportunityReviewChain(diagnosisContractItems, [
+  {
+    blockId: "targeting_context",
+    label: "投放词结构",
+    value: "优先广告组投放词 1 个：beach essentials",
+    detail: "来自广告搜索词上下文。",
+    source: "ad_targeting",
+  },
+  {
+    blockId: "ad_group_context",
+    label: "广告组上下文",
+    value: "优先广告组 RBK004-Exact，同组广告 ASIN 2 个",
+    detail: "用于人工复核结构。",
+    source: "ad_groups",
+  },
+  {
+    blockId: "search_term_market_context",
+    label: "搜索词市场背景",
+    value: "ABA 匹配 beach essentials，排名 208",
+    detail: "用于参考市场热度。",
+    source: "ABA导出",
+  },
+]);
+
+assertIncludes(thinSearchTermOpportunityReviewChain?.targetingEvidence ?? "", "不代表完整关键词库覆盖");
+assertIncludes(thinSearchTermOpportunityReviewChain?.adGroupSynthesis ?? "", "搜索词只说明同广告组上下文");
+assertIncludes(thinSearchTermOpportunityReviewChain?.adGroupSynthesis ?? "", "不能判断广告位影响");
+assertIncludes(thinSearchTermOpportunityReviewChain?.marketContext ?? "", "站点级市场背景");
+assertIncludes(thinSearchTermOpportunityReviewChain?.marketContext ?? "", "不能当作店铺");
+const thinManualConfirmationSearchTermItems = buildManualConfirmationEvidenceItems(
+  diagnosisContractItems,
+  thinSearchTermOpportunityReviewChain,
+);
+assertIncludes(thinManualConfirmationSearchTermItems.find((item) => item.label === "广告组合流判断")?.value ?? "", "不能判断广告位影响");
+assertIncludes(thinManualConfirmationSearchTermItems.find((item) => item.label === "ABA 背景")?.value ?? "", "站点级市场背景");
+
 const searchTermFallbackReviewChain = buildSearchTermOpportunityReviewChain(
   [
     {

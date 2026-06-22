@@ -3774,6 +3774,30 @@ export function buildSearchTermOpportunityReviewChain(
     boundaryBlock?.detail,
     marketBlock ? null : "缺少可匹配的 ABA 站点级市场背景时，只能用广告搜索词表现做人工观察。",
   ]).join("；");
+  const targetingEvidence = appendBoundaryIfMissing(
+    businessEvidenceBlockSentence(
+      targetingBlock,
+      "投放词结构待补：需要核对关键词 / 商品定向 / 自动投放上下文。",
+    ),
+    "投放词证据只说明当前投放上下文，不代表完整关键词库覆盖。",
+    ["完整关键词库"],
+  );
+  const adGroupSynthesis = appendBoundaryIfMissing(
+    businessEvidenceBlockSentence(
+      adGroupBlock,
+      "广告组合流判断待补：搜索词不能自动归因到单个广告 ASIN，需回到同广告组广告 ASIN、广告组结构和广告位证据缺口。",
+    ),
+    "搜索词只说明同广告组上下文，不能自动归因到单个广告 ASIN；缺少广告组级广告位证据时，不能判断广告位影响。",
+    ["不能自动归因", "广告位"],
+  );
+  const marketContext = appendBoundaryIfMissing(
+    businessEvidenceBlockSentence(
+      marketBlock,
+      "ABA 市场背景待补：ABA 只能按站点 + 周期 + 标准化搜索词匹配，不能当作店铺或广告组数据。",
+    ),
+    "ABA 只能作为站点级市场背景，不能当作店铺、商品、广告组或广告 ASIN 数据。",
+    ["站点级", "ABA"],
+  );
 
   return {
     title: directSearchTermContract?.title ?? "搜索词机会复核链",
@@ -3781,18 +3805,9 @@ export function buildSearchTermOpportunityReviewChain(
       directSearchTermContract?.businessQuestion ?? "这个搜索词是否只是广告上下文，还是值得人工复核扩量或治理？",
     objectGrain:
       directSearchTermContract?.objectGrain ?? "SearchTerm + 同广告活动 / 广告组上下文 + 站点级 ABA 背景",
-    targetingEvidence: businessEvidenceBlockSentence(
-      targetingBlock,
-      "投放词结构待补：需要核对关键词 / 商品定向 / 自动投放上下文。",
-    ),
-    adGroupSynthesis: businessEvidenceBlockSentence(
-      adGroupBlock,
-      "广告组合流判断待补：搜索词不能自动归因到单个广告 ASIN，需回到同广告组广告 ASIN、广告组结构和广告位证据缺口。",
-    ),
-    marketContext: businessEvidenceBlockSentence(
-      marketBlock,
-      "ABA 市场背景待补：ABA 只能按站点 + 周期 + 标准化搜索词匹配，不能当作店铺或广告组数据。",
-    ),
+    targetingEvidence,
+    adGroupSynthesis,
+    marketContext,
     currentJudgement: searchTermContract?.currentJudgement ?? marketBlock?.value ?? targetingBlock?.value ?? "等待补充搜索词机会判断。",
     proves:
       searchTermContract?.proves ??
@@ -3812,6 +3827,11 @@ export function buildSearchTermOpportunityReviewChain(
 function businessEvidenceBlockSentence(block: SignalTriageBusinessEvidenceItem | undefined, fallback: string): string {
   if (!block) return fallback;
   return `${block.label}：${block.value}${block.detail ? `；${block.detail}` : ""}`;
+}
+
+function appendBoundaryIfMissing(value: string, boundary: string, requiredMarkers: string[]): string {
+  if (requiredMarkers.every((marker) => value.includes(marker))) return value;
+  return uniqueNonEmpty([value, boundary]).join("；");
 }
 
 const manualConfirmationPreferredSections = [
