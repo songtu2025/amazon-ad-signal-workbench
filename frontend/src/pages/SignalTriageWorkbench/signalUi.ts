@@ -99,6 +99,15 @@ export interface SelectedSignalScopeContext {
   tone: SignalQueueScopeTone;
 }
 
+export interface SearchIntentFocusContext {
+  title: string;
+  focusLabel: string;
+  signalObject: string;
+  relation: string;
+  boundary: string;
+  tone: SignalQueueScopeTone;
+}
+
 export interface SignalQueueObjectStatusTodo {
   object_id?: string | null;
   review_window?: string | null;
@@ -6282,6 +6291,31 @@ export function buildSelectedSignalScopeContext(
       diagnosticScope.boundary,
     ]).join("；"),
     tone: scopeBadge.tone,
+  };
+}
+
+export function buildSearchIntentFocusContext(
+  selectedIntentLabel: string | null | undefined,
+  signal: ProductScopedSignalForUi | null | undefined,
+): SearchIntentFocusContext | null {
+  const focusLabel = selectedIntentLabel?.trim();
+  if (!focusLabel || !signal) return null;
+  if (filterSignalsBySearchIntent([signal], focusLabel).length === 0) return null;
+
+  const primaryObject = signal.evidence?.primary_object;
+  const searchTerm =
+    primaryObject?.search_term?.trim() ||
+    primaryObject?.label?.trim() ||
+    signal.id;
+  const signalObject = `SearchTerm：${searchTerm}`;
+
+  return {
+    title: "搜索词语义聚焦承接",
+    focusLabel,
+    signalObject,
+    relation: `左侧聚焦只缩小当前入口下的 SearchTerm 机会队列；中间仍诊断 ${signalObject}，右侧人工动作也必须落到这条 SearchTerm 的稳定对象。`,
+    boundary: `语义组 ${focusLabel} 不是人工动作对象；ABA 只作站点级背景，实际写入以后端 preflight evidence_snapshot_preview 为准。`,
+    tone: "container",
   };
 }
 

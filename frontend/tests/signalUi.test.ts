@@ -37,6 +37,7 @@ import {
   buildSignalEvidenceSupport,
   buildSignalDiagnosticScope,
   buildSelectedSignalScopeContext,
+  buildSearchIntentFocusContext,
   buildSignalLayerOverview,
   buildSignalQueueMeta,
   buildSignalQueueObjectStatus,
@@ -4557,6 +4558,33 @@ assertIncludes(selectedSearchTermScopeContext.relation, "不能自动归因");
 assertIncludes(selectedSearchTermScopeContext.boundary, "当前诊断入口仍是 Parent ASIN B0PARENT");
 assertIncludes(selectedSearchTermScopeContext.boundary, "选中信号只决定中间证据和右侧人工确认对象");
 assertEqual(selectedSearchTermScopeContext.tone, "unattributed");
+
+const selectedSearchIntentFocusContext = buildSearchIntentFocusContext("规则语义：海滩出行用品", {
+  ...searchTermSignalWithoutAsin,
+  signal_category: "search_term_opportunity",
+  object_type: "search_term",
+  evidence: {
+    primary_object: {
+      object_type: "search_term",
+      label: "beach essentials",
+      search_term: "beach essentials",
+      intent_label: "规则语义：海滩出行用品",
+    },
+  },
+});
+
+if (!selectedSearchIntentFocusContext) {
+  throw new Error("当前语义聚焦命中搜索词信号时应生成承接提示");
+}
+
+assertEqual(selectedSearchIntentFocusContext.title, "搜索词语义聚焦承接");
+assertEqual(selectedSearchIntentFocusContext.focusLabel, "规则语义：海滩出行用品");
+assertIncludes(selectedSearchIntentFocusContext.signalObject, "SearchTerm：beach essentials");
+assertIncludes(selectedSearchIntentFocusContext.relation, "左侧聚焦只缩小当前入口下的 SearchTerm 机会队列");
+assertIncludes(selectedSearchIntentFocusContext.relation, "右侧人工动作也必须落到这条 SearchTerm 的稳定对象");
+assertIncludes(selectedSearchIntentFocusContext.boundary, "语义组 规则语义：海滩出行用品 不是人工动作对象");
+assertIncludes(selectedSearchIntentFocusContext.boundary, "实际写入以后端 preflight evidence_snapshot_preview 为准");
+assertEqual(buildSearchIntentFocusContext("规则语义：太阳镜", searchTermSignalWithoutAsin), null);
 
 const selectedAdGroupScopeContext = buildSelectedSignalScopeContext(selectedParentScopeForSignalContext, adGroupSignal);
 assertIncludes(selectedAdGroupScopeContext?.relation ?? "", "投放容器");

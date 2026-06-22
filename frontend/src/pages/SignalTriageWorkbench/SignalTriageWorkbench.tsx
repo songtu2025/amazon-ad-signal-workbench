@@ -154,6 +154,7 @@ import {
   buildDiagnosisContextSummary,
   buildDiagnosisPathSummary,
   buildSearchIntentReviewCards,
+  buildSearchIntentFocusContext,
   buildSelectedSignalScopeContext,
   buildSignalDiagnosticScope,
   buildSignalLayerOverview,
@@ -206,6 +207,7 @@ import {
   SignalMetricDecisionItem,
   SignalTriageDiagnosisPathItem,
   SelectedSignalScopeContext,
+  SearchIntentFocusContext,
   triggerEvidenceCountText,
   filterEvidenceBySource,
   filterSignalsBySearchIntent,
@@ -671,6 +673,10 @@ export function SignalTriageWorkbench() {
   const selectedSignalScopeContext = useMemo(
     () => buildSelectedSignalScopeContext(selectedProductScopeOption, selectedSignal),
     [selectedProductScopeOption, selectedSignal],
+  );
+  const selectedSearchIntentFocusContext = useMemo(
+    () => buildSearchIntentFocusContext(selectedSearchIntentLabel, selectedSignal),
+    [selectedSearchIntentLabel, selectedSignal],
   );
   const selectedTriageBusinessEvidenceItems =
     selectedSignal?.id && selectedSignal.id === signalTriageSummary?.recommended_candidate?.signal_id
@@ -2101,6 +2107,7 @@ export function SignalTriageWorkbench() {
           {selectedSignal ? (
             <>
               {selectedSignalScopeContext && <SelectedSignalScopeContextStrip context={selectedSignalScopeContext} />}
+              {selectedSearchIntentFocusContext && <SearchIntentFocusContextStrip context={selectedSearchIntentFocusContext} />}
               <SignalDiagnosis
                 signal={selectedSignal}
                 triageBusinessEvidenceItems={selectedTriageBusinessEvidenceItems}
@@ -2320,8 +2327,8 @@ export function SignalTriageWorkbench() {
                   </div>
                 )}
                 {selectedSearchIntentManualActionEvidenceSnapshot.length > 0 && (
-                  <div className="manualActionContextSnapshot" aria-label="当前语义组留痕上下文">
-                    <strong>当前语义组留痕</strong>
+                  <div className="manualActionContextSnapshot" aria-label="搜索词语义上下文核对">
+                    <strong>搜索词语义上下文核对</strong>
                     <ul>
                       {selectedSearchIntentManualActionEvidenceSnapshot.map((item) => (
                         <li key={`${item.label}-${item.value}`}>
@@ -2330,7 +2337,7 @@ export function SignalTriageWorkbench() {
                         </li>
                       ))}
                     </ul>
-                    <p>随人工动作写入证据快照，只用于 7/14 天复盘回看。</p>
+                    <p>只核对当前 SearchTerm 的语义背景；实际写入以后端 preflight evidence_snapshot_preview 为准，语义组不是人工动作对象。</p>
                   </div>
                 )}
                 {selectedBackendManualActionPreview?.preflightChecks.length ? (
@@ -3097,6 +3104,29 @@ function SelectedSignalScopeContextStrip({ context }: { context: SelectedSignalS
         </span>
         <span>
           <b>选中信号</b>
+          <strong>{context.signalObject}</strong>
+        </span>
+      </div>
+      <p>{context.relation}</p>
+      <small>{context.boundary}</small>
+    </div>
+  );
+}
+
+function SearchIntentFocusContextStrip({ context }: { context: SearchIntentFocusContext }) {
+  return (
+    <div className={`selectedSignalScopeContext searchIntentFocusContext ${context.tone}`} aria-label="搜索词语义聚焦与当前信号关系">
+      <div className="selectedSignalScopeContextHeader">
+        <strong>{context.title}</strong>
+        <span>只做二级筛选</span>
+      </div>
+      <div className="selectedSignalScopeContextGrid">
+        <span>
+          <b>当前聚焦</b>
+          <strong>{context.focusLabel}</strong>
+        </span>
+        <span>
+          <b>诊断对象</b>
           <strong>{context.signalObject}</strong>
         </span>
       </div>
