@@ -506,6 +506,7 @@ interface ProductScopeDrilldownAdGroupDiagnosisForUi {
   current_scope_advertised_asin_count?: number | null;
   ad_group_advertised_asin_count?: number | null;
   ad_group_advertised_asins?: string[] | null;
+  advertised_product_performance?: ProductScopeDrilldownAdGroupProductPerformanceForUi[] | null;
   search_term_count?: number | null;
   effective_search_term_count?: number | null;
   zero_order_search_term_count?: number | null;
@@ -521,6 +522,20 @@ interface ProductScopeDrilldownAdGroupDiagnosisForUi {
   attribution_boundary?: string | null;
   forbidden_actions?: string[] | null;
   search_term_diagnosis?: ProductScopeSearchTermDiagnosisForUi | null;
+}
+
+interface ProductScopeDrilldownAdGroupProductPerformanceForUi {
+  asin?: string | null;
+  msku?: string | null;
+  label?: string | null;
+  spend?: number | null;
+  clicks?: number | null;
+  orders?: number | null;
+  sales?: number | null;
+  acos?: number | null;
+  cvr?: number | null;
+  row_count?: number | null;
+  sample_boundary?: string | null;
 }
 
 interface ProductScopeDrilldownForUi {
@@ -3657,6 +3672,7 @@ export interface ProductScopeAdGroupDiagnosisRow {
   trafficContext: string;
   reason: string;
   advertisedAsins: string[];
+  advertisedProductPerformance: ProductScopeAdGroupAdvertisedProductPerformance[];
   ownershipDecision: ProductScopeAdGroupOwnershipDecision;
   problemLocator: ProductScopeAdGroupProblemLocator;
   evidenceSynthesis: ProductScopeAdGroupEvidenceSynthesis;
@@ -3666,6 +3682,15 @@ export interface ProductScopeAdGroupDiagnosisRow {
   boundary: string;
   forbiddenActions: string[];
   searchTermDiagnosis: ProductScopeSearchTermDiagnosis | null;
+}
+
+export interface ProductScopeAdGroupAdvertisedProductPerformance {
+  key: string;
+  label: string;
+  asin: string;
+  msku: string | null;
+  metrics: string;
+  sampleBoundary: string | null;
 }
 
 export interface ProductScopeSearchTermDiagnosisTerm {
@@ -4308,6 +4333,7 @@ export function productScopeAdGroupDiagnosisRows(summary: SignalTriageSummaryFor
       } 条 / 活动广告位 ${row.campaign_placement_count ?? 0} 条`,
       reason: row.reason?.trim() || "等待后端补充广告组诊断原因。",
       advertisedAsins: row.ad_group_advertised_asins?.map((asin) => asin.trim()).filter(Boolean) ?? [],
+      advertisedProductPerformance: productScopeAdGroupAdvertisedProductPerformance(row),
       ownershipDecision: productScopeAdGroupOwnershipDecision(row, canWriteManualAction),
       problemLocator: productScopeAdGroupProblemLocator(row, candidateCount, canWriteManualAction),
       evidenceSynthesis: productScopeAdGroupEvidenceSynthesis(row, canWriteManualAction),
@@ -4318,6 +4344,29 @@ export function productScopeAdGroupDiagnosisRows(summary: SignalTriageSummaryFor
       forbiddenActions: row.forbidden_actions?.length ? row.forbidden_actions : ["自动调价", "自动暂停广告", "自动否词", "自动新增关键词"],
       searchTermDiagnosis: productScopeSearchTermDiagnosis(row),
     }));
+}
+
+function productScopeAdGroupAdvertisedProductPerformance(
+  row: ProductScopeDrilldownAdGroupDiagnosisForUi,
+): ProductScopeAdGroupAdvertisedProductPerformance[] {
+  return (row.advertised_product_performance ?? [])
+    .filter((item) => item?.asin || item?.label)
+    .slice(0, 8)
+    .map((item, index) => {
+      const asin = item.asin?.trim() || item.label?.trim() || "未知 ASIN";
+      const label = item.label?.trim() || asin;
+      const msku = item.msku?.trim() || null;
+      return {
+        key: `${asin}-${msku ?? "no-msku"}-${index}`,
+        label,
+        asin,
+        msku,
+        metrics: `花费 ${formatEvidenceNumber(item.spend)} / 点击 ${Math.round(item.clicks ?? 0)} / 订单 ${Math.round(
+          item.orders ?? 0,
+        )} / 销售额 ${formatEvidenceNumber(item.sales)} / ACOS ${formatEvidencePercent(item.acos)} / CVR ${formatEvidencePercent(item.cvr)}`,
+        sampleBoundary: item.sample_boundary?.trim() || null,
+      };
+    });
 }
 
 function productScopeAdGroupEvidenceSynthesis(

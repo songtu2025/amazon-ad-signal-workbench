@@ -45,6 +45,8 @@ assertIncludes(workbenchSource, "matrix={productScopeEvidenceMatrix}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupDiagnosisPanel rows={productScopeAdGroupDiagnosis}");
 assertIncludes(workbenchSource, "function ProductScopeEvidenceMatrixPanel");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupDiagnosisPanel");
+assertIncludes(workbenchSource, 'aria-label="广告组内投放商品表现"');
+assertIncludes(workbenchSource, "row.advertisedProductPerformance");
 assertIncludes(workbenchSource, "function ProductScopeEvidenceRouteGuidePanel");
 assertIncludes(workbenchSource, "function ProductScopeCandidateGapExplanationPanel");
 assertIncludes(workbenchSource, "function NoActionableManualGatePanel");

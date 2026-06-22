@@ -1396,6 +1396,33 @@ const parentDiagnosisSummary = {
         cvr: 0.4964,
         ad_group_advertised_asin_count: 2,
         ad_group_advertised_asins: ["B016EXMVZS", "B016EXMW02"],
+        advertised_product_performance: [
+          {
+            asin: "B016EXMVZS",
+            msku: "RBK004-1",
+            label: "B016EXMVZS",
+            spend: 100,
+            clicks: 50,
+            orders: 20,
+            sales: 400,
+            acos: 0.25,
+            cvr: 0.4,
+            row_count: 1,
+          },
+          {
+            asin: "B016EXMW02",
+            msku: "RBK004-2",
+            label: "B016EXMW02",
+            spend: 40,
+            clicks: 20,
+            orders: 8,
+            sales: 160,
+            acos: 0.25,
+            cvr: 0.4,
+            row_count: 1,
+            sample_boundary: "点击样本少，仅适合观察。",
+          },
+        ],
         search_term_count: 18,
         effective_search_term_count: 3,
         zero_order_search_term_count: 3,
@@ -1597,6 +1624,15 @@ assertIncludes(adGroupDiagnosisRows[0].trafficContext, "广告 ASIN 2 个");
 assertIncludes(adGroupDiagnosisRows[0].trafficContext, "搜索词 18 条");
 assertIncludes(adGroupDiagnosisRows[0].reason, "无订单花费词");
 assertIncludes(adGroupDiagnosisRows[0].advertisedAsins.join(" / "), "B016EXMW02");
+assertEqual(adGroupDiagnosisRows[0].advertisedProductPerformance.length, 2);
+assertEqual(adGroupDiagnosisRows[0].advertisedProductPerformance[0].asin, "B016EXMVZS");
+assertIncludes(adGroupDiagnosisRows[0].advertisedProductPerformance[0].metrics, "花费 100");
+assertIncludes(adGroupDiagnosisRows[0].advertisedProductPerformance[0].metrics, "点击 50");
+assertIncludes(adGroupDiagnosisRows[0].advertisedProductPerformance[0].metrics, "订单 20");
+assertIncludes(adGroupDiagnosisRows[0].advertisedProductPerformance[0].metrics, "销售额 400");
+assertIncludes(adGroupDiagnosisRows[0].advertisedProductPerformance[0].metrics, "ACOS 25.0%");
+assertIncludes(adGroupDiagnosisRows[0].advertisedProductPerformance[0].metrics, "CVR 40.0%");
+assertEqual(adGroupDiagnosisRows[0].advertisedProductPerformance[1].sampleBoundary, "点击样本少，仅适合观察。");
 assertEqual(adGroupDiagnosisRows[0].ownershipDecision.statusLabel, "先归属到广告组容器");
 assertIncludes(adGroupDiagnosisRows[0].ownershipDecision.businessQuestion, "能不能归到单个广告 ASIN");
 assertIncludes(adGroupDiagnosisRows[0].ownershipDecision.currentJudgement, "广告 ASIN 2 个");

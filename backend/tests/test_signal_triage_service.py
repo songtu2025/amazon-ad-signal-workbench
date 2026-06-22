@@ -887,6 +887,14 @@ def test_signal_triage_empty_parent_scope_includes_ad_drilldown(monkeypatch) -> 
     assert drilldown["ad_group_diagnosis"][0]["ad_group_name"] == "RBK004-kids sunglasses-广泛"
     assert drilldown["ad_group_diagnosis"][0]["diagnosis_status"] == "observe"
     assert drilldown["ad_group_diagnosis"][0]["diagnosis_label"] == "观察"
+    product_performance = drilldown["ad_group_diagnosis"][0]["advertised_product_performance"]
+    assert product_performance[0]["asin"] == "B016EXMVZS"
+    assert product_performance[0]["spend"] == 100.0
+    assert product_performance[0]["orders"] == 20
+    assert product_performance[0]["acos"] == 0.25
+    assert product_performance[0]["cvr"] == 0.4
+    assert product_performance[1]["asin"] == "B016EXMW02"
+    assert product_performance[1]["sample_boundary"] == "点击样本少，仅适合观察。"
     assert "无订单花费词" in drilldown["ad_group_diagnosis"][0]["reason"]
     assert "搜索词和广告位只能说明广告组上下文" in drilldown["ad_group_diagnosis"][0]["attribution_boundary"]
     assert "自动调价" in drilldown["ad_group_diagnosis"][0]["forbidden_actions"]

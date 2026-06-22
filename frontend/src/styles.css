@@ -2035,6 +2035,7 @@ h3 {
 }
 
 .productScopeAdGroupOwnership,
+.productScopeAdGroupAdvertisedProducts,
 .productScopeAdGroupProblemLocator,
 .productScopeAdGroupEvidenceSynthesis {
   display: grid;
@@ -2090,6 +2091,8 @@ h3 {
 .productScopeAdGroupOwnership strong,
 .productScopeAdGroupOwnership p,
 .productScopeAdGroupOwnership li,
+.productScopeAdGroupAdvertisedProducts strong,
+.productScopeAdGroupAdvertisedProducts li,
 .productScopeAdGroupProblemLocator strong,
 .productScopeAdGroupProblemLocator p,
 .productScopeAdGroupProblemLocator li,
@@ -2102,6 +2105,7 @@ h3 {
 }
 
 .productScopeAdGroupOwnership strong,
+.productScopeAdGroupAdvertisedProducts strong,
 .productScopeAdGroupProblemLocator strong,
 .productScopeAdGroupEvidenceSynthesis strong {
   color: #14273e;
@@ -2110,6 +2114,7 @@ h3 {
 
 .productScopeAdGroupOwnership p,
 .productScopeAdGroupOwnership li,
+.productScopeAdGroupAdvertisedProducts li,
 .productScopeAdGroupProblemLocator p,
 .productScopeAdGroupProblemLocator li,
 .productScopeAdGroupEvidenceSynthesis p,
@@ -2120,6 +2125,7 @@ h3 {
 }
 
 .productScopeAdGroupOwnership ul,
+.productScopeAdGroupAdvertisedProducts ul,
 .productScopeAdGroupProblemLocator ul,
 .productScopeAdGroupEvidenceSynthesis ul {
   display: grid;
@@ -2130,6 +2136,7 @@ h3 {
 }
 
 .productScopeAdGroupOwnership li,
+.productScopeAdGroupAdvertisedProducts li,
 .productScopeAdGroupProblemLocator li,
 .productScopeAdGroupEvidenceSynthesis li {
   display: grid;
@@ -2138,6 +2145,7 @@ h3 {
 }
 
 .productScopeAdGroupOwnership b,
+.productScopeAdGroupAdvertisedProducts b,
 .productScopeAdGroupProblemLocator b,
 .productScopeAdGroupEvidenceSynthesis b {
   color: #294b6a;

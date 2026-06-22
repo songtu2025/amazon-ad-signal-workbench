@@ -3608,6 +3608,7 @@ def _ad_group_diagnosis_item(item: dict[str, Any], signal_rows: list[dict[str, A
         "current_scope_advertised_asin_count": len(item.get("current_scope_advertised_asins") or []),
         "ad_group_advertised_asin_count": len(same_group_asins),
         "ad_group_advertised_asins": same_group_asins,
+        "advertised_product_performance": _scope_ad_group_advertised_product_performance(same_group_ad_rows),
         "search_term_count": len(search_rows),
         "effective_search_term_count": len(effective_search_terms),
         "zero_order_search_term_count": len(zero_order_search_terms),
@@ -3773,6 +3774,54 @@ def _scope_ad_group_asins(rows: list[dict[str, Any]]) -> list[str]:
             continue
         asin_spend[asin] = round(asin_spend.get(asin, 0.0) + (_number(row.get("spend") if row.get("spend") is not None else row.get("cost")) or 0), 2)
     return sorted(asin_spend, key=lambda asin: (asin_spend[asin], asin), reverse=True)[:8]
+
+
+def _scope_ad_group_advertised_product_performance(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    products: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for row in rows:
+        asin = _string(row.get("asin")) or "未知 ASIN"
+        msku = _string(row.get("msku")) or _string(row.get("sku")) or ""
+        label = _string(row.get("product_name")) or asin
+        key = (asin, msku, label)
+        item = products.setdefault(
+            key,
+            {
+                "asin": asin,
+                "msku": msku,
+                "label": label,
+                "spend": 0.0,
+                "clicks": 0,
+                "orders": 0,
+                "sales": 0.0,
+                "row_count": 0,
+            },
+        )
+        item["spend"] = round(item["spend"] + (_number(row.get("spend") if row.get("spend") is not None else row.get("cost")) or 0), 2)
+        item["clicks"] += _int(row.get("clicks")) or 0
+        item["orders"] += _int(row.get("orders")) or 0
+        item["sales"] = round(item["sales"] + (_number(row.get("sales")) or 0), 2)
+        item["row_count"] += 1
+
+    performance: list[dict[str, Any]] = []
+    for item in products.values():
+        spend = _number(item.get("spend")) or 0
+        clicks = _int(item.get("clicks")) or 0
+        orders = _int(item.get("orders")) or 0
+        sales = _number(item.get("sales")) or 0
+        sample_boundary = ""
+        if clicks == 0:
+            sample_boundary = "无点击，不能判断 CVR。"
+        elif clicks < 30:
+            sample_boundary = "点击样本少，仅适合观察。"
+        performance.append(
+            {
+                **item,
+                "acos": round(spend / sales, 4) if sales > 0 else None,
+                "cvr": round(orders / clicks, 4) if clicks > 0 else None,
+                "sample_boundary": sample_boundary,
+            }
+        )
+    return sorted(performance, key=lambda item: (_number(item.get("spend")) or 0, _int(item.get("orders")) or 0), reverse=True)[:8]
 
 
 def _scope_ad_group_attribution_boundary(advertised_asin_count: int) -> str:

@@ -3275,6 +3275,23 @@ function ProductScopeAdGroupDiagnosisPanel({ rows }: { rows: ProductScopeAdGroup
               <span>{row.metrics}</span>
               <span>{row.trafficContext}</span>
             </div>
+            {row.advertisedProductPerformance.length > 0 && (
+              <div className="productScopeAdGroupAdvertisedProducts" aria-label="广告组内投放商品表现">
+                <strong>广告组内投放商品表现</strong>
+                <ul>
+                  {row.advertisedProductPerformance.map((product) => (
+                    <li key={product.key}>
+                      <b>{product.asin}</b>
+                      <span>
+                        {product.msku ? `${product.msku} / ` : ""}
+                        {product.metrics}
+                        {product.sampleBoundary ? `；${product.sampleBoundary}` : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="productScopeAdGroupOwnership" aria-label="广告组问题归属判定">
               <div>
                 <strong>{row.ownershipDecision.title}</strong>
