@@ -1419,6 +1419,97 @@ h3 {
   overflow-wrap: anywhere;
 }
 
+.selectedSignalScopeContext {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+  border: 1px solid #d8e2ee;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #f8fbff;
+  box-shadow: inset 3px 0 0 #9fb2c8;
+}
+
+.selectedSignalScopeContext.product {
+  border-color: #bfd8ee;
+  background: #f5f9ff;
+  box-shadow: inset 3px 0 0 #5d99d6;
+}
+
+.selectedSignalScopeContext.unattributed,
+.selectedSignalScopeContext.container {
+  border-color: #efc9be;
+  background: #fff8f6;
+  box-shadow: inset 3px 0 0 #e88c74;
+}
+
+.selectedSignalScopeContext.data_quality {
+  border-color: #d8e2ee;
+  background: #f9fbfd;
+  box-shadow: inset 3px 0 0 #98a8ba;
+}
+
+.selectedSignalScopeContextHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.selectedSignalScopeContextHeader strong {
+  color: #25354a;
+  font-size: 13px;
+}
+
+.selectedSignalScopeContextHeader span {
+  color: #607186;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.selectedSignalScopeContextGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.selectedSignalScopeContextGrid span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  border: 1px solid #dde7f2;
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: #ffffff;
+}
+
+.selectedSignalScopeContextGrid b,
+.selectedSignalScopeContextGrid strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.selectedSignalScopeContextGrid b {
+  color: #62758b;
+  font-size: 11px;
+}
+
+.selectedSignalScopeContextGrid strong {
+  color: #223149;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.selectedSignalScopeContext p,
+.selectedSignalScopeContext small {
+  margin: 0;
+  color: #64758a;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
 .queueDecisionStrip {
   display: grid;
   gap: 8px;
@@ -6445,6 +6536,10 @@ button.reviewTodoQueueNext:focus-visible {
 
   .productScopeBusinessPreviewPath {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .selectedSignalScopeContextGrid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .productScopeLandingGates {

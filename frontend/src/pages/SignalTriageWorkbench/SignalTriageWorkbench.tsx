@@ -154,6 +154,7 @@ import {
   buildDiagnosisContextSummary,
   buildDiagnosisPathSummary,
   buildSearchIntentReviewCards,
+  buildSelectedSignalScopeContext,
   buildSignalDiagnosticScope,
   buildSignalLayerOverview,
   buildSignalQueueMeta,
@@ -204,6 +205,7 @@ import {
   SignalTriageDiagnosisContractItem,
   SignalMetricDecisionItem,
   SignalTriageDiagnosisPathItem,
+  SelectedSignalScopeContext,
   triggerEvidenceCountText,
   filterEvidenceBySource,
   filterSignalsBySearchIntent,
@@ -666,6 +668,10 @@ export function SignalTriageWorkbench() {
   );
 
   const selectedSignal = filteredSignals.find((signal) => signal.id === selectedId) ?? filteredSignals[0] ?? null;
+  const selectedSignalScopeContext = useMemo(
+    () => buildSelectedSignalScopeContext(selectedProductScopeOption, selectedSignal),
+    [selectedProductScopeOption, selectedSignal],
+  );
   const selectedTriageBusinessEvidenceItems =
     selectedSignal?.id && selectedSignal.id === signalTriageSummary?.recommended_candidate?.signal_id
       ? recommendedTriageBusinessEvidenceItems
@@ -2091,15 +2097,18 @@ export function SignalTriageWorkbench() {
             <ProductScopeCandidateGapExplanationPanel explanation={productScopeCandidateGapExplanation} />
           )}
           {selectedSignal ? (
-            <SignalDiagnosis
-              signal={selectedSignal}
-              triageBusinessEvidenceItems={selectedTriageBusinessEvidenceItems}
-              diagnosisContractItems={selectedDiagnosisContractItems}
-              reviewEvidenceSnapshot={selectedReviewEvidenceSnapshot?.items ?? []}
-              reviewEvidenceSnapshotTitle={selectedReviewEvidenceSnapshot?.title ?? null}
-              reviewEvidenceSnapshotSource={selectedReviewEvidenceSnapshot?.source ?? null}
-              reviewEvidenceSnapshotBoundary={selectedReviewEvidenceSnapshot?.boundary ?? null}
-            />
+            <>
+              {selectedSignalScopeContext && <SelectedSignalScopeContextStrip context={selectedSignalScopeContext} />}
+              <SignalDiagnosis
+                signal={selectedSignal}
+                triageBusinessEvidenceItems={selectedTriageBusinessEvidenceItems}
+                diagnosisContractItems={selectedDiagnosisContractItems}
+                reviewEvidenceSnapshot={selectedReviewEvidenceSnapshot?.items ?? []}
+                reviewEvidenceSnapshotTitle={selectedReviewEvidenceSnapshot?.title ?? null}
+                reviewEvidenceSnapshotSource={selectedReviewEvidenceSnapshot?.source ?? null}
+                reviewEvidenceSnapshotBoundary={selectedReviewEvidenceSnapshot?.boundary ?? null}
+              />
+            </>
           ) : productScopeAdmissionCard ? (
             <ProductScopeDrilldownEvidencePanel
               admissionCard={productScopeAdmissionCard}
@@ -3069,6 +3078,29 @@ function QueueDiagnosisPathPanel({ summary }: { summary: DiagnosisPathSummary })
       </div>
       <p>{summary.boundary}</p>
     </section>
+  );
+}
+
+function SelectedSignalScopeContextStrip({ context }: { context: SelectedSignalScopeContext }) {
+  return (
+    <div className={`selectedSignalScopeContext ${context.tone}`} aria-label="选中信号与当前诊断入口关系">
+      <div className="selectedSignalScopeContextHeader">
+        <strong>{context.title}</strong>
+        <span>{context.statusLabel}</span>
+      </div>
+      <div className="selectedSignalScopeContextGrid">
+        <span>
+          <b>当前入口</b>
+          <strong>{context.scopeLabel}</strong>
+        </span>
+        <span>
+          <b>选中信号</b>
+          <strong>{context.signalObject}</strong>
+        </span>
+      </div>
+      <p>{context.relation}</p>
+      <small>{context.boundary}</small>
+    </div>
   );
 }
 

@@ -89,6 +89,16 @@ export interface SignalQueueMeta {
   decision: string;
 }
 
+export interface SelectedSignalScopeContext {
+  title: string;
+  statusLabel: string;
+  scopeLabel: string;
+  signalObject: string;
+  relation: string;
+  boundary: string;
+  tone: SignalQueueScopeTone;
+}
+
 export interface SignalQueueObjectStatusTodo {
   object_id?: string | null;
   review_window?: string | null;
@@ -6235,6 +6245,71 @@ const queueObjectTypeLabel: Record<NonNullable<SignalForUi["object_type"]>, stri
   search_intent: "语义聚合",
   cross: "交叉信号",
 };
+
+export function buildSelectedSignalScopeContext(
+  selectedScope: ProductScopeFilterOption | null,
+  signal: ProductScopedSignalForUi | null | undefined,
+): SelectedSignalScopeContext | null {
+  if (!signal) return null;
+
+  const diagnosticScope = buildSignalDiagnosticScope(signal);
+  const scopeBadge = buildSignalQueueScopeBadge(signal);
+  const scopeLabel = diagnosisScopeLabel(selectedScope);
+  const primaryObject = signal.evidence?.primary_object;
+  const objectType = signal.object_type ?? primaryObject?.object_type;
+  const objectTypeLabel = objectType ? queueObjectTypeLabel[objectType] ?? "信号对象" : "信号对象";
+  const objectLabel =
+    primaryObject?.label?.trim() ||
+    primaryObject?.search_term?.trim() ||
+    primaryObject?.placement?.trim() ||
+    primaryObject?.asin?.trim() ||
+    signal.id;
+  const signalObject = `${objectTypeLabel}：${objectLabel}`;
+  const relation = selectedSignalScopeRelationText(selectedScope, signal, scopeLabel, signalObject);
+
+  return {
+    title: "选中信号与当前入口",
+    statusLabel: diagnosticScope.label,
+    scopeLabel,
+    signalObject,
+    relation,
+    boundary: uniqueNonEmpty([
+      `当前诊断入口仍是 ${scopeLabel}；选中信号只决定中间证据和右侧人工确认对象。`,
+      diagnosticScope.boundary,
+    ]).join("；"),
+    tone: scopeBadge.tone,
+  };
+}
+
+function selectedSignalScopeRelationText(
+  selectedScope: ProductScopeFilterOption | null,
+  signal: ProductScopedSignalForUi,
+  scopeLabel: string,
+  signalObject: string,
+): string {
+  if (signal.signal_category === "data_quality") {
+    return `${signalObject} 只解释当前快照、字段或新鲜度，不代表 ${scopeLabel} 已经出现经营异常。`;
+  }
+  if (signal.object_type === "ad_group") {
+    return `${signalObject} 是投放容器，用来定位结构和归因边界；经营入口仍是 ${scopeLabel}。`;
+  }
+  if (signal.object_type === "search_term") {
+    return `${signalObject} 用来解释同广告组 / 投放上下文里的搜索表现；不能自动归因到 ${scopeLabel} 下某个单一 ASIN。`;
+  }
+  if (signal.object_type === "placement") {
+    return `${signalObject} 只说明流量位置表现；需要结合广告 ASIN、广告组和搜索词后再判断 ${scopeLabel}。`;
+  }
+  if (signal.object_type === "advertised_product") {
+    return `${signalObject} 是广告商品诊断点；可下钻广告表现，但人工动作仍要通过稳定对象预检。`;
+  }
+  if (signal.object_type === "sales_product") {
+    return `${signalObject} 是销售商品诊断点；广告动作仍需回到广告 ASIN 或搜索词等可处理对象。`;
+  }
+  if (selectedScope?.scope_type === "all" || selectedScope?.scope_id === "all") {
+    return `${signalObject} 来自全量排查；只作为辅助排查对象，不替代 Parent ASIN / ASIN 经营入口。`;
+  }
+  return `${signalObject} 是当前入口下的一个诊断对象；先看证据链，再决定是否进入人工确认。`;
+}
 
 const queueStatusLabel: Record<SignalForUi["status"], string> = {
   pending: "待确认",

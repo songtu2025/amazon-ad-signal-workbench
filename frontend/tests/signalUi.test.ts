@@ -36,6 +36,7 @@ import {
   buildProductScopeCandidateGapExplanation,
   buildSignalEvidenceSupport,
   buildSignalDiagnosticScope,
+  buildSelectedSignalScopeContext,
   buildSignalLayerOverview,
   buildSignalQueueMeta,
   buildSignalQueueObjectStatus,
@@ -4524,6 +4525,48 @@ const advertisedProductDiagnosticScope = buildSignalDiagnosticScope({
 assertEqual(advertisedProductDiagnosticScope.label, "商品视角");
 assertIncludes(advertisedProductDiagnosticScope.boundary, "ASIN");
 assertIncludes(advertisedProductDiagnosticScope.boundary, "底层证据");
+
+const selectedParentScopeForSignalContext: ProductScopeFilterOption = {
+  scope_id: "parent_asin:B0PARENT",
+  scope_type: "parent_asin",
+  label: "Parent ASIN B0PARENT",
+  parent_asin: "B0PARENT",
+  child_asins: ["B000TEST01"],
+};
+
+const selectedSearchTermScopeContext = buildSelectedSignalScopeContext(selectedParentScopeForSignalContext, {
+  ...searchTermSignalWithoutAsin,
+  evidence: {
+    primary_object: {
+      object_type: "search_term",
+      label: "beach essentials",
+      search_term: "beach essentials",
+    },
+    source_rows: [{ source_table: "ad_search_term_daily_metrics", search_term: "beach essentials" }],
+  },
+});
+
+if (!selectedSearchTermScopeContext) {
+  throw new Error("选中搜索词信号应生成入口关系提示");
+}
+
+assertEqual(selectedSearchTermScopeContext.title, "选中信号与当前入口");
+assertEqual(selectedSearchTermScopeContext.scopeLabel, "Parent ASIN B0PARENT");
+assertIncludes(selectedSearchTermScopeContext.signalObject, "搜索词：beach essentials");
+assertIncludes(selectedSearchTermScopeContext.relation, "不能自动归因");
+assertIncludes(selectedSearchTermScopeContext.boundary, "当前诊断入口仍是 Parent ASIN B0PARENT");
+assertIncludes(selectedSearchTermScopeContext.boundary, "选中信号只决定中间证据和右侧人工确认对象");
+assertEqual(selectedSearchTermScopeContext.tone, "unattributed");
+
+const selectedAdGroupScopeContext = buildSelectedSignalScopeContext(selectedParentScopeForSignalContext, adGroupSignal);
+assertIncludes(selectedAdGroupScopeContext?.relation ?? "", "投放容器");
+assertIncludes(selectedAdGroupScopeContext?.relation ?? "", "经营入口仍是 Parent ASIN B0PARENT");
+assertEqual(selectedAdGroupScopeContext?.tone, "container");
+
+const selectedDataQualityScopeContext = buildSelectedSignalScopeContext(selectedParentScopeForSignalContext, dataQualitySignal);
+assertIncludes(selectedDataQualityScopeContext?.relation ?? "", "不代表 Parent ASIN B0PARENT 已经出现经营异常");
+assertEqual(selectedDataQualityScopeContext?.tone, "data_quality");
+assertEqual(buildSelectedSignalScopeContext(selectedParentScopeForSignalContext, null), null);
 
 const searchTermQueueScope = buildSignalQueueScopeBadge(searchTermSignalWithoutAsin);
 

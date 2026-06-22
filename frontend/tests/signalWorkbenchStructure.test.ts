@@ -74,11 +74,25 @@ const adGroupDiagnosisRenderIndex = workbenchSource.indexOf(
   "{productScopeAdGroupDiagnosis.length > 0 && <ProductScopeAdGroupDiagnosisPanel rows={productScopeAdGroupDiagnosis} />}",
 );
 const selectedSignalBranchIndex = workbenchSource.indexOf("{selectedSignal ? (");
+const selectedSignalScopeContextRenderIndex = workbenchSource.indexOf(
+  "<SelectedSignalScopeContextStrip context={selectedSignalScopeContext} />",
+);
+const signalDiagnosisRenderIndex = workbenchSource.indexOf("<SignalDiagnosis");
 assert(diagnosisPanelIndex >= 0, "诊断区必须存在");
 assert(routeGuideRenderIndex > diagnosisPanelIndex, "广告证据链导览必须渲染在诊断区内");
 assert(routeGuideRenderIndex < selectedSignalBranchIndex, "广告证据链导览不能被单条信号选中状态挡住");
 assert(adGroupDiagnosisRenderIndex > diagnosisPanelIndex, "广告组问题定位必须渲染在诊断区内");
 assert(adGroupDiagnosisRenderIndex < selectedSignalBranchIndex, "广告组问题定位不能被单条信号选中状态挡住");
+assertIncludes(workbenchSource, "buildSelectedSignalScopeContext");
+assertIncludes(workbenchSource, "selectedSignalScopeContext");
+assertIncludes(workbenchSource, "function SelectedSignalScopeContextStrip");
+assertIncludes(workbenchSource, 'aria-label="选中信号与当前诊断入口关系"');
+assertIncludes(signalUiSource, "buildSelectedSignalScopeContext");
+assertIncludes(signalUiSource, "当前诊断入口仍是");
+assertIncludes(signalUiSource, "选中信号只决定中间证据和右侧人工确认对象");
+assertIncludes(signalUiSource, "不能自动归因");
+assert(selectedSignalScopeContextRenderIndex > selectedSignalBranchIndex, "选中信号入口关系必须渲染在信号详情分支内");
+assert(selectedSignalScopeContextRenderIndex < signalDiagnosisRenderIndex, "选中信号入口关系必须先于信号详情展示");
 
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 经营诊断路径"');
 assertIncludes(workbenchSource, "productScopePathPreview");
