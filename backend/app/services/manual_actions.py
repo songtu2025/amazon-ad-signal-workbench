@@ -666,6 +666,15 @@ def save_review_record(
             raise ValueError("review_record_missing_required_evidence")
         if not _review_record_has_action_boundary(expected_evidence_snapshot):
             raise ValueError("review_record_missing_action_boundary")
+    if _normalized(expected_object_type) == ObjectType.PLACEMENT.value:
+        if not _review_record_has_placement_performance(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_placement_performance")
+        if not _review_record_has_evidence_gap(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_evidence_gap")
+        if not _review_record_has_required_evidence(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_required_evidence")
+        if not _review_record_has_action_boundary(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_action_boundary")
     if not _review_record_evidence_snapshot_matches_effect(effect, expected_evidence_snapshot):
         raise ValueError("review_record_evidence_snapshot_mismatch")
     record = ReviewRecord(
@@ -742,6 +751,10 @@ def _review_record_has_placement_boundary(evidence_snapshot: list[ManualActionEv
 
 def _review_record_has_ad_product_coverage(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
     return _review_record_has_snapshot_label(evidence_snapshot, "广告商品覆盖")
+
+
+def _review_record_has_placement_performance(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "广告位表现")
 
 
 def _review_record_has_ad_group_synthesis(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:

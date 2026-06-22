@@ -247,6 +247,7 @@ def create_signal_review_record(
             "review_record_missing_search_term_boundary",
             "review_record_missing_placement_boundary",
             "review_record_missing_ad_product_coverage",
+            "review_record_missing_placement_performance",
             "review_record_missing_ad_group_synthesis",
             "review_record_missing_targeting_evidence",
             "review_record_missing_aba_context",
@@ -294,6 +295,15 @@ def _validate_review_record_evidence_snapshot_preflight(
             raise HTTPException(status_code=409, detail="review_record_missing_targeting_evidence")
         if not _review_record_evidence_snapshot_has_aba_context(request.expected_evidence_snapshot):
             raise HTTPException(status_code=409, detail="review_record_missing_aba_context")
+        if not _review_record_evidence_snapshot_has_evidence_gap(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_evidence_gap")
+        if not _review_record_evidence_snapshot_has_required_evidence(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_required_evidence")
+        if not _review_record_evidence_snapshot_has_action_boundary(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_action_boundary")
+    if request.expected_object_type == "placement":
+        if not _review_record_evidence_snapshot_has_placement_performance(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_placement_performance")
         if not _review_record_evidence_snapshot_has_evidence_gap(request.expected_evidence_snapshot):
             raise HTTPException(status_code=409, detail="review_record_missing_evidence_gap")
         if not _review_record_evidence_snapshot_has_required_evidence(request.expected_evidence_snapshot):
@@ -351,6 +361,10 @@ def _review_record_evidence_snapshot_has_placement_boundary(items: object) -> bo
 
 def _review_record_evidence_snapshot_has_ad_product_coverage(items: object) -> bool:
     return _review_record_evidence_snapshot_has_label(items, "广告商品覆盖")
+
+
+def _review_record_evidence_snapshot_has_placement_performance(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "广告位表现")
 
 
 def _review_record_evidence_snapshot_has_ad_group_synthesis(items: object) -> bool:

@@ -447,6 +447,104 @@ def test_manual_action_preflight_snapshots_diagnosis_contract_gaps(monkeypatch) 
     assert "不得自动加词" in action_boundary_item["detail"]
 
 
+def test_manual_action_preflight_snapshots_placement_review_chain(monkeypatch) -> None:
+    module = load_manual_action_preflight_script()
+    signal_id = "sig-placement-gap:1:top-of-search"
+
+    monkeypatch.setattr(
+        module,
+        "build_signal_triage_payload",
+        lambda selected_market_id=None, top=5, product_scope_id=None: {
+            "status": "ready_for_manual_confirmation",
+            "review_status": {
+                "manual_action_count": 0,
+                "review_record_count": 0,
+                "manual_action_identity_issue_count": 0,
+            },
+            "actionability_status": {
+                "status": "ready_for_manual_confirmation",
+                "can_write_manual_action": True,
+                "manual_gate_title": "可进入人工确认",
+                "boundary": "只允许人工记录观察、标记已处理、加入复盘或忽略本次；不会自动执行广告动作。",
+            },
+            "diagnosis_contract": {
+                "signal_id": signal_id,
+                "object_type": "placement",
+                "object_id": "Top of Search",
+                "object_label": "Top of Search",
+                "sections": [
+                    {
+                        "section_id": "placement_gap",
+                        "title": "广告位表现",
+                        "current_judgement": "Top of Search 花费高但订单承接弱，只能进入人工广告位复核。",
+                        "proves": "能证明当前广告位层级存在花费和订单承接差异。",
+                        "does_not_prove": "不能证明应该自动调整广告位加价或归因到单个 ASIN。",
+                        "evidence_gap": "缺少同广告活动 / 广告组搜索词和广告商品承接证据。",
+                        "required_evidence": "补齐同广告活动广告位对比、搜索词上下文和广告商品承接证据。",
+                        "next_manual_step": "人工核对广告位、搜索词和广告商品后再加入复盘。",
+                    }
+                ],
+            },
+            "recommended_candidate": {
+                "signal_id": signal_id,
+                "shop_id": "market:1",
+                "shop_name": "rivbos",
+                "object_type": "placement",
+                "stable_object_id": "Top of Search",
+                "object_label": "Top of Search",
+                "manual_action_preview": {
+                    "will_write": False,
+                    "signal_id": signal_id,
+                    "action_type": "add_to_review",
+                    "object_type": "placement",
+                    "object_id": "Top of Search",
+                    "object_label": "Top of Search",
+                    "shop_id": "market:1",
+                    "shop_name": "rivbos",
+                    "market_id": 1,
+                    "review_windows": ["7d", "14d"],
+                },
+            },
+            "recommended_evidence_drilldown": {
+                "business_evidence_blocks": [
+                    {
+                        "block_id": "diagnosis_path",
+                        "label": "排查路径",
+                        "value": "Parent 经营盘子 -> 广告活动 -> 广告位 -> 人工复盘",
+                        "detail": "广告位只作为人工观察和复盘对象，不自动执行广告动作。",
+                        "source": "business_rule",
+                    }
+                ],
+            },
+        },
+    )
+    monkeypatch.setattr(module, "load_manual_actions", lambda market_id=None: [])
+    monkeypatch.setattr(module, "build_review_todos", lambda market_id=None: [])
+    monkeypatch.setattr(module, "load_review_records", lambda market_id=None: [])
+
+    payload = module.build_manual_action_preflight_payload(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+        expected_object_id="Top of Search",
+        expected_object_type="placement",
+        expected_action_type="add_to_review",
+    )
+
+    snapshot_by_label = {item["label"]: item for item in payload["evidence_snapshot_preview"]["items"]}
+    assert "广告位表现" in snapshot_by_label
+    assert "证据缺口" in snapshot_by_label
+    assert "需要补证" in snapshot_by_label
+    assert "动作边界" in snapshot_by_label
+    assert "Top of Search 花费高" in snapshot_by_label["广告位表现"]["value"]
+    assert "层级存在花费和订单承接差异" in snapshot_by_label["广告位表现"]["detail"]
+    assert "搜索词和广告商品承接证据" in snapshot_by_label["证据缺口"]["value"]
+    assert "同广告活动广告位对比" in snapshot_by_label["需要补证"]["value"]
+    assert "不得自动调整广告位加价" in snapshot_by_label["动作边界"]["detail"]
+    assert payload["target"]["object_type"] == "placement"
+    assert payload["target"]["object_id"] == "Top of Search"
+    assert payload["evidence_snapshot_preview"]["will_save_on_authorized_write"] is True
+
+
 def test_manual_action_preflight_snapshots_next_unhandled_diagnosis_contract(monkeypatch) -> None:
     module = load_manual_action_preflight_script()
     recommended_signal_id = "sig-opportunity-search-term-1-beach-essentials"

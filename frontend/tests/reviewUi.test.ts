@@ -1077,6 +1077,88 @@ for (const label of ["投放词证据", "广告组合流判断", "ABA 背景", "
   );
   assertEqual(canSaveReviewRecordWithPreflight(searchTermReviewEffect, checklist), false);
 }
+const placementReviewEffect: ReviewEffectForUi = {
+  ...improvedEffect,
+  signal_id: "sig-placement-gap:1:top-of-search",
+  action_id: "manual-action-placement",
+  action_type: "add_to_review",
+  object_type: "placement",
+  object_id: "Top of Search",
+  object_label: "Top of Search",
+  before_metrics: { cost: 120, orders: 2, sales: 80, acos: 1.5 },
+  after_metrics: { cost: 90, orders: 4, sales: 180, acos: 0.5 },
+};
+const placementReviewTodoWithFullChain: ReviewTodoForUi = {
+  ...dueTodo,
+  signal_id: "sig-placement-gap:1:top-of-search",
+  shop_id: "market:1",
+  market_id: 1,
+  object_type: "placement",
+  object_id: "Top of Search",
+  object_label: "Top of Search",
+  action_id: "manual-action-placement",
+  action_type: "add_to_review",
+  evidence_snapshot: [
+    { label: "排查路径", value: "Parent 经营盘子 -> 广告活动 -> 广告位 -> 人工复盘", source: "business_rule" },
+    { label: "AI 准入", value: "可进入人工确认 / ready_for_manual_confirmation / 允许人工留痕", source: "actionability_status" },
+    { label: "搜索词边界", value: "搜索词只说明同广告组上下文，不能自动归因到单个广告 ASIN。", source: "business_rule" },
+    { label: "广告位边界", value: "Top of Search 是广告位层级对象，不能替代广告组级证据。", source: "ad_placement_daily_metrics" },
+    { label: "人工确认判断依据", value: "Top of Search 花费高但订单承接弱，只能进入人工广告位复核。", source: "diagnosis_contract" },
+    { label: "能证明的事实", value: "当前广告位层级存在花费和订单承接差异。", source: "diagnosis_contract" },
+    { label: "不能证明的边界", value: "不能证明应该自动调整广告位加价或归因到单个 ASIN。", source: "diagnosis_contract" },
+    { label: "人工下一步", value: "人工核对广告位、搜索词和广告商品后再加入复盘。", source: "diagnosis_contract" },
+    {
+      label: "广告位表现",
+      value: "Top of Search：花费 120 / 订单 2 / ACOS 150.00%",
+      detail: "只能说明广告位层级表现差异，不能自动归因到单个搜索词、广告组或广告 ASIN。",
+      source: "diagnosis_contract + ad_placement_daily_metrics",
+    },
+    { label: "证据缺口", value: "缺少同广告活动 / 广告组搜索词和广告商品承接证据。", source: "diagnosis_contract" },
+    { label: "需要补证", value: "补齐同广告活动广告位对比、搜索词上下文和广告商品承接证据。", source: "diagnosis_contract" },
+    {
+      label: "动作边界",
+      value: "只允许记录观察、标记已处理、加入复盘或忽略本次。",
+      detail: "不得自动调整广告位加价、自动调价、自动暂停、自动加词或自动否词。",
+      source: "business_rule",
+    },
+  ],
+};
+const readyPlacementReviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary(placementReviewTodoWithFullChain);
+assertEqual(readyPlacementReviewTodoEvidenceReadback?.tone, "ready");
+assertIncludes(JSON.stringify(readyPlacementReviewTodoEvidenceReadback), "广告位复核链");
+assertIncludes(JSON.stringify(readyPlacementReviewTodoEvidenceReadback), "广告位表现");
+assertIncludes(JSON.stringify(readyPlacementReviewTodoEvidenceReadback), "自动调整广告位加价");
+const placementReviewRecordPreflightChecklist = buildReviewRecordPreflightChecklist(
+  placementReviewTodoWithFullChain,
+  placementReviewEffect,
+  {
+    requestSignalId: "sig-placement-gap:1:top-of-search",
+    stateSignalId: "sig-placement-gap:1:top-of-search",
+    objectType: "placement",
+    objectId: "Top of Search",
+  },
+);
+assertEqual(placementReviewRecordPreflightChecklist.length, 16);
+assertEqual(placementReviewRecordPreflightChecklist[6].id, "placement_performance");
+assertIncludes(placementReviewRecordPreflightChecklist[6].description, "Top of Search");
+assertEqual(placementReviewRecordPreflightChecklist[7].id, "evidence_gap");
+assertIncludes(placementReviewRecordPreflightChecklist[7].description, "广告商品承接证据");
+assertEqual(placementReviewRecordPreflightChecklist[8].id, "required_evidence");
+assertIncludes(placementReviewRecordPreflightChecklist[8].description, "同广告活动广告位对比");
+assertEqual(placementReviewRecordPreflightChecklist[9].id, "manual_action_boundary");
+assertIncludes(placementReviewRecordPreflightChecklist[9].description, "不得自动调整广告位加价");
+assertEqual(canSaveReviewRecordWithPreflight(placementReviewEffect, placementReviewRecordPreflightChecklist), true);
+for (const label of ["广告位表现", "证据缺口", "需要补证", "动作边界"]) {
+  const checklist = buildReviewRecordPreflightChecklist(
+    {
+      ...placementReviewTodoWithFullChain,
+      evidence_snapshot: placementReviewTodoWithFullChain.evidence_snapshot?.filter((item) => item.label !== label),
+    },
+    placementReviewEffect,
+    null,
+  );
+  assertEqual(canSaveReviewRecordWithPreflight(placementReviewEffect, checklist), false);
+}
 const reviewRecordRequestPayload = buildReviewRecordRequestPayload(
   {
     ...improvedEffect,
