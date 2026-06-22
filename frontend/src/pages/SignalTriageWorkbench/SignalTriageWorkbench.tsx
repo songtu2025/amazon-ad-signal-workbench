@@ -3012,6 +3012,10 @@ function SearchTermOpportunityReviewChainPanel({ chain }: { chain: SearchTermOpp
           <span>{chain.targetingEvidence}</span>
         </li>
         <li>
+          <b>广告组合流判断</b>
+          <span>{chain.adGroupSynthesis}</span>
+        </li>
+        <li>
           <b>ABA 背景</b>
           <span>{chain.marketContext}</span>
         </li>

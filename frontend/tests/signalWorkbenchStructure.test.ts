@@ -213,8 +213,15 @@ assertIncludes(workbenchSource, 'aria-label="搜索词业务判断"');
 assertIncludes(workbenchSource, 'aria-label="搜索词机会复核链"');
 assertIncludes(workbenchSource, "buildSearchTermOpportunityReviewChain");
 assertIncludes(workbenchSource, "SearchTermOpportunityReviewChainPanel");
+assertIncludes(workbenchSource, "<b>广告组合流判断</b>");
+assertIncludes(workbenchSource, "chain.adGroupSynthesis");
 assertIncludes(workbenchSource, "chain.marketContext");
 assertIncludes(workbenchSource, "chain.actionBoundary");
+assert(
+  workbenchSource.indexOf("chain.targetingEvidence") < workbenchSource.indexOf("chain.adGroupSynthesis") &&
+    workbenchSource.indexOf("chain.adGroupSynthesis") < workbenchSource.indexOf("chain.marketContext"),
+  "搜索词机会复核链必须按 投放词证据 -> 广告组合流判断 -> ABA 背景 的顺序展示。",
+);
 assertIncludes(workbenchSource, "diagnosis.decision.businessQuestion");
 assertIncludes(workbenchSource, "diagnosis.decision.targetingEvidence");
 assertIncludes(workbenchSource, "diagnosis.decision.proves");
