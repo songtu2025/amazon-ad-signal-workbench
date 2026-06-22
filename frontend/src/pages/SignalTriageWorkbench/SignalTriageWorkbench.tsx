@@ -716,15 +716,7 @@ export function SignalTriageWorkbench() {
   function handleSelectSearchIntent(intentLabel: string) {
     setSelectedSearchIntentLabel((current) => (current === intentLabel ? null : intentLabel));
     setFilter("opportunity_expansion");
-    let nextSignals = filterSignalsBySearchIntent(displayProductScopedSignals, intentLabel);
-    if (nextSignals.length === 0) {
-      const allScope = productScopeOptions.find((option) => option.scope_id === "all");
-      const allScopedSignals = filterSignalsBySearchIntent(normalizedSignals, intentLabel);
-      if (allScope && allScopedSignals.length > 0) {
-        setSelectedProductScopeId(allScope.scope_id);
-        nextSignals = allScopedSignals;
-      }
-    }
+    const nextSignals = filterSignalsBySearchIntent(displayProductScopedSignals, intentLabel);
     if (nextSignals.length > 0) {
       setSelectedId(nextSignals[0].id);
     }

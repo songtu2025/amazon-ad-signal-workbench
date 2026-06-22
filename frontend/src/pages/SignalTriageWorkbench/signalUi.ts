@@ -404,6 +404,37 @@ interface ProductScopeSearchTermDiagnosisForUi {
   forbidden_actions?: string[] | null;
 }
 
+interface ProductScopeTargetingItemForUi {
+  targeting_text?: string | null;
+  source_report_type?: string | null;
+  source_label?: string | null;
+  keyword_id?: string | null;
+  target_id?: string | null;
+  keyword_id_count?: number | null;
+  target_id_count?: number | null;
+  search_term_count?: number | null;
+  sample_search_terms?: string[] | null;
+  spend?: number | null;
+  clicks?: number | null;
+  orders?: number | null;
+  sales?: number | null;
+}
+
+interface ProductScopeTargetingContextForUi {
+  basis?: string | null;
+  context_ad_group_label?: string | null;
+  targeting_count?: number | null;
+  report_row_count?: number | null;
+  keyword_targeting_count?: number | null;
+  auto_targeting_count?: number | null;
+  top_targetings?: ProductScopeTargetingItemForUi[] | null;
+  effective_targetings?: ProductScopeTargetingItemForUi[] | null;
+  zero_order_spend_targetings?: ProductScopeTargetingItemForUi[] | null;
+  diagnosis_summary?: string | null;
+  next_review_focus?: string | null;
+  boundary?: string | null;
+}
+
 interface ProductScopeDrilldownTopAdGroupForUi {
   campaign_id?: string | null;
   campaign_name?: string | null;
@@ -423,6 +454,7 @@ interface ProductScopeDrilldownTopAdGroupForUi {
   effective_search_terms?: ProductScopeDrilldownTermForUi[] | null;
   zero_order_search_terms?: ProductScopeDrilldownTermForUi[] | null;
   placement_context_level?: string | null;
+  targeting_context?: ProductScopeTargetingContextForUi | null;
 }
 
 interface ProductScopeDrilldownItemForUi {
@@ -4105,13 +4137,30 @@ export function productScopeDrilldownEvidenceItems(summary: SignalTriageSummaryF
   ];
 
   if (topGroup) {
+    const targetingContext = topGroup.targeting_context;
+    const targetingCount = targetingContext?.targeting_count ?? 0;
+    const targetingNames = productScopeTargetingNames(targetingContext);
     evidence.push({
       blockId: "product_scope_top_ad_group",
       label: "优先广告组",
       value: topGroup.ad_group_name || topGroup.ad_group_id || "未知广告组",
-      detail: `搜索词 ${topGroup.search_term_count ?? 0} 条 / 广告组级广告位 ${topGroup.placement_count ?? 0} 条 / 同广告活动广告位 ${topGroup.campaign_placement_count ?? 0} 条`,
+      detail: `投放词 ${targetingCount} 个 / 搜索词 ${topGroup.search_term_count ?? 0} 条 / 广告组级广告位 ${topGroup.placement_count ?? 0} 条 / 同广告活动广告位 ${topGroup.campaign_placement_count ?? 0} 条`,
       source: "积加API / ad_search_term_daily_metrics / ad_placement_daily_metrics",
     });
+
+    if (targetingCount > 0) {
+      evidence.push({
+        blockId: "product_scope_targeting_context",
+        label: "投放词结构",
+        value: targetingContext?.diagnosis_summary ?? `${targetingCount} 个投放词`,
+        detail: uniqueNonEmpty([
+          targetingNames.length > 0 ? `投放词：${targetingNames.join("、")}` : null,
+          targetingContext?.next_review_focus,
+          targetingContext?.boundary ?? "投放词来自搜索词表现行，不代表完整关键词库，不能自动加词、否词或调价。",
+        ]).join("；"),
+        source: "积加API / ad_search_term_daily_metrics",
+      });
+    }
 
     const adGroupAsins = uniqueNonEmpty(topGroup.ad_group_advertised_asins ?? []);
     if ((topGroup.ad_group_advertised_asin_count ?? 0) > 0 || adGroupAsins.length > 0) {
@@ -4780,6 +4829,7 @@ export function buildDiagnosisPathSummary(
   const adAsinCount = drilldown?.advertised_asin_count ?? drilldown?.items?.length ?? 0;
   const candidateCount = summary?.signal_status?.candidate_count ?? 0;
   const topAdGroupName = topGroup?.ad_group_name?.trim() || topGroup?.ad_group_id?.trim();
+  const targetingCount = topGroup?.targeting_context?.targeting_count ?? 0;
   const searchTermCount = topGroup?.search_term_count ?? 0;
   const placementCount = topGroup?.placement_count ?? 0;
 
@@ -4803,8 +4853,8 @@ export function buildDiagnosisPathSummary(
         tone: "context",
       },
       {
-        label: "搜索词/广告位",
-        value: topGroup ? `搜索词 ${searchTermCount} 条 / 广告位 ${placementCount} 条` : "等待广告组上下文",
+        label: "投放词/搜索词/广告位",
+        value: topGroup ? `投放词 ${targetingCount} 个 / 搜索词 ${searchTermCount} 条 / 广告位 ${placementCount} 条` : "等待广告组上下文",
         tone: "context",
       },
       {
@@ -4833,12 +4883,21 @@ export function buildProductScopeEvidenceMatrix(
   const topAdAsin = topItem?.asin?.trim() || "待选择广告 ASIN";
   const topAdGroupName = topGroup?.ad_group_name?.trim() || topGroup?.ad_group_id?.trim() || "等待广告组上下文";
   const adGroupAsinCount = topGroup?.ad_group_advertised_asin_count ?? uniqueNonEmpty(topGroup?.ad_group_advertised_asins ?? []).length;
+  const targetingContext = topGroup?.targeting_context;
+  const targetingCount = targetingContext?.targeting_count ?? 0;
+  const targetingNames = productScopeTargetingNames(targetingContext);
   const effectiveTerms = productScopeTermNames(topGroup?.effective_search_terms);
   const zeroOrderTerms = productScopeTermNames(topGroup?.zero_order_search_terms);
   const trafficParts = [
+    targetingNames.length > 0 ? `投放词：${targetingNames.join("、")}` : "",
     effectiveTerms.length > 0 ? `有效搜索词：${effectiveTerms.join("、")}` : "",
     zeroOrderTerms.length > 0 ? `无订单花费词：${zeroOrderTerms.join("、")}` : "",
   ].filter(Boolean);
+  const trafficBoundary = uniqueNonEmpty([
+    targetingContext?.next_review_focus,
+    targetingContext?.boundary,
+    "搜索词和广告位用于定位问题来源，不能自动归因到单个 ASIN，也不能自动否词或调价。",
+  ]).join("；");
 
   const rows: ProductScopeEvidenceMatrixRow[] = [
     {
@@ -4876,11 +4935,11 @@ export function buildProductScopeEvidenceMatrix(
     },
     {
       layerId: "traffic_context",
-      layerLabel: "搜索词/广告位",
-      objectLabel: `搜索词 ${topGroup?.search_term_count ?? 0} 条 / 广告位 ${topGroup?.placement_count ?? 0} 条`,
+      layerLabel: "投放词/搜索词/广告位",
+      objectLabel: `投放词 ${targetingCount} 个 / 搜索词 ${topGroup?.search_term_count ?? 0} 条 / 广告位 ${topGroup?.placement_count ?? 0} 条`,
       evidenceLabel: "流量上下文",
-      value: trafficParts.length > 0 ? trafficParts.join("；") : "等待有效词、无订单词或广告位明细",
-      detail: "搜索词和广告位用于定位问题来源，不能自动归因到单个 ASIN，也不能自动否词或调价。",
+      value: trafficParts.length > 0 ? trafficParts.join("；") : "等待投放词、有效词、无订单词或广告位明细",
+      detail: trafficBoundary,
       source: "积加API / ad_search_term_daily_metrics / ad_placement_daily_metrics",
       tone: "context",
     },
@@ -5107,10 +5166,10 @@ function diagnosisScopeLabel(selectedScope: ProductScopeFilterOption | null): st
 
 function diagnosisPathDescription(selectedScope: ProductScopeFilterOption | null): string {
   if (selectedScope?.scope_type === "parent_asin" || selectedScope?.scope_id.startsWith("parent_asin:")) {
-    return "Parent ASIN -> 广告 ASIN -> 广告组 -> 搜索词/广告位 -> AI 准入";
+    return "Parent ASIN -> 广告 ASIN -> 广告组 -> 投放词/搜索词/广告位 -> AI 准入";
   }
   if (selectedScope?.scope_type === "advertised_asin") {
-    return "广告 ASIN -> 广告组 -> 搜索词/广告位 -> AI 准入";
+    return "广告 ASIN -> 广告组 -> 投放词/搜索词/广告位 -> AI 准入";
   }
   return "经营入口 -> 广告证据 -> AI 准入";
 }
@@ -5727,6 +5786,14 @@ function productScopeSearchTermText(topGroup: ProductScopeDrilldownTopAdGroupFor
 
 function productScopeTermNames(terms: ProductScopeDrilldownTermForUi[] | null | undefined): string[] {
   return uniqueNonEmpty((terms ?? []).map((term) => term.search_term || term.normalized_query)).slice(0, 3);
+}
+
+function productScopeTargetingNames(context: ProductScopeTargetingContextForUi | null | undefined): string[] {
+  return uniqueNonEmpty([
+    ...(context?.effective_targetings ?? []).map((item) => item.targeting_text),
+    ...(context?.zero_order_spend_targetings ?? []).map((item) => item.targeting_text),
+    ...(context?.top_targetings ?? []).map((item) => item.targeting_text),
+  ]).slice(0, 3);
 }
 
 function manualActionEvidenceGapText(summary: SignalTriageSummaryForUi | null | undefined): string | null {

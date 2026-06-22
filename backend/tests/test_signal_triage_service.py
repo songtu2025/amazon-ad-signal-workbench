@@ -752,6 +752,11 @@ def test_signal_triage_empty_parent_scope_includes_ad_drilldown(monkeypatch) -> 
     assert drilldown["items"][0]["top_ad_group"]["placement_count"] == 1
     assert drilldown["items"][0]["top_ad_group"]["effective_search_terms"][0]["search_term"] == "kids sunglasses"
     assert drilldown["items"][0]["top_ad_group"]["zero_order_search_terms"][0]["search_term"] == "baby sunglasses"
+    targeting_context = drilldown["items"][0]["top_ad_group"]["targeting_context"]
+    assert targeting_context["targeting_count"] == 1
+    assert targeting_context["report_row_count"] == 2
+    assert targeting_context["top_targetings"][0]["targeting_text"] == "kids sunglasses"
+    assert "不代表完整关键词库" in targeting_context["boundary"]
     assert "广告 ASIN 2 个" in drilldown["summary"]
     assert "搜索词和广告位只说明同广告组上下文" in drilldown["boundary"]
     candidate_gap = drilldown["candidate_gap_analysis"]

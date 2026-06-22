@@ -1260,6 +1260,16 @@ const noActionableAdmissionCard = buildProductScopeAdmissionCard({
           ad_group_attribution_boundary: "同广告组投放 2 个广告 ASIN；搜索词和广告位只能说明广告组上下文，不能自动归因到单个 ASIN。",
           effective_search_terms: [{ search_term: "kids sunglasses", spend: 8, clicks: 12, orders: 2, sales: 40 }],
           zero_order_search_terms: [{ search_term: "baby sunglasses", spend: 5, clicks: 8, orders: 0, sales: 0 }],
+          targeting_context: {
+            targeting_count: 1,
+            report_row_count: 2,
+            diagnosis_summary: "投放词 1 个 / 有效投放词 1 个 / 无订单消耗投放词 0 个",
+            next_review_focus: "先把有效投放词作为正向样本，再对比其带来的搜索词是否稳定。",
+            boundary: "投放词来自搜索词表现行，不代表完整关键词库；不能自动加词、否词或调价。",
+            top_targetings: [{ targeting_text: "kids sunglasses", spend: 13, clicks: 20, orders: 2, sales: 40 }],
+            effective_targetings: [{ targeting_text: "kids sunglasses", spend: 13, clicks: 20, orders: 2, sales: 40 }],
+            zero_order_spend_targetings: [],
+          },
         },
       },
     ],
@@ -1348,6 +1358,16 @@ const parentDiagnosisSummary = {
           ad_group_attribution_boundary: "同广告组投放 2 个广告 ASIN；搜索词和广告位只能说明广告组上下文，不能自动归因到单个 ASIN。",
           effective_search_terms: [{ search_term: "kids sunglasses", spend: 18, clicks: 42, orders: 9, sales: 120 }],
           zero_order_search_terms: [{ search_term: "baby sunglasses", spend: 9, clicks: 20, orders: 0, sales: 0 }],
+          targeting_context: {
+            targeting_count: 1,
+            report_row_count: 2,
+            diagnosis_summary: "投放词 1 个 / 有效投放词 1 个 / 无订单消耗投放词 0 个",
+            next_review_focus: "先把有效投放词作为正向样本，再对比其带来的搜索词是否稳定。",
+            boundary: "投放词来自搜索词表现行中的 keyword_text / target_id，不代表完整关键词库；只能用于人工复核同广告组结构。",
+            top_targetings: [{ targeting_text: "kids sunglasses", spend: 27, clicks: 62, orders: 9, sales: 120, source_label: "关键词" }],
+            effective_targetings: [{ targeting_text: "kids sunglasses", spend: 27, clicks: 62, orders: 9, sales: 120, source_label: "关键词" }],
+            zero_order_spend_targetings: [],
+          },
         },
       },
     ],
@@ -1439,10 +1459,14 @@ if (!diagnosisPathSummary) {
   throw new Error("Parent ASIN 应返回左侧诊断路径摘要");
 }
 assertEqual(diagnosisPathSummary.title, "当前诊断路径");
-assertIncludes(diagnosisPathSummary.description, "Parent ASIN -> 广告 ASIN -> 广告组 -> 搜索词/广告位 -> AI 准入");
+assertIncludes(diagnosisPathSummary.description, "Parent ASIN -> 广告 ASIN -> 广告组 -> 投放词/搜索词/广告位 -> AI 准入");
 assertIncludes(
   diagnosisPathSummary.steps.map((step) => `${step.label} ${step.value}`).join(" / "),
   "RBK004-kids sunglasses-广泛",
+);
+assertIncludes(
+  diagnosisPathSummary.steps.map((step) => `${step.label} ${step.value}`).join(" / "),
+  "投放词 1 个",
 );
 assertIncludes(
   diagnosisPathSummary.steps.map((step) => `${step.label} ${step.value}`).join(" / "),
@@ -1459,7 +1483,7 @@ if (!productScopeEvidenceMatrix) {
   throw new Error("Parent ASIN 应返回对象证据矩阵");
 }
 assertEqual(productScopeEvidenceMatrix.title, "对象证据矩阵");
-assertIncludes(productScopeEvidenceMatrix.summary, "Parent ASIN -> 广告 ASIN -> 广告组 -> 搜索词/广告位 -> AI 准入");
+assertIncludes(productScopeEvidenceMatrix.summary, "Parent ASIN -> 广告 ASIN -> 广告组 -> 投放词/搜索词/广告位 -> AI 准入");
 assertEqual(productScopeEvidenceMatrix.rows.length, 5);
 assertIncludes(
   productScopeEvidenceMatrix.rows.map((row) => `${row.layerLabel} ${row.objectLabel} ${row.evidenceLabel} ${row.value} ${row.detail}`).join(" / "),
@@ -1480,6 +1504,14 @@ assertIncludes(
 assertIncludes(
   productScopeEvidenceMatrix.rows.map((row) => `${row.layerLabel} ${row.objectLabel} ${row.evidenceLabel} ${row.value} ${row.detail}`).join(" / "),
   "同组 2 个广告 ASIN",
+);
+assertIncludes(
+  productScopeEvidenceMatrix.rows.map((row) => `${row.layerLabel} ${row.objectLabel} ${row.evidenceLabel} ${row.value} ${row.detail}`).join(" / "),
+  "投放词/搜索词/广告位 投放词 1 个 / 搜索词 18 条 / 广告位 0 条",
+);
+assertIncludes(
+  productScopeEvidenceMatrix.rows.map((row) => `${row.layerLabel} ${row.objectLabel} ${row.evidenceLabel} ${row.value} ${row.detail}`).join(" / "),
+  "投放词：kids sunglasses",
 );
 assertIncludes(
   productScopeEvidenceMatrix.rows.map((row) => `${row.layerLabel} ${row.objectLabel} ${row.evidenceLabel} ${row.value} ${row.detail}`).join(" / "),
@@ -1526,7 +1558,7 @@ assertIncludes(
 );
 assertIncludes(
   productScopeEvidenceRouteGuide.steps.map((step) => `${step.order} ${step.label} ${step.objectLabel} ${step.primaryEvidence} ${step.nextFocus}`).join(" / "),
-  "4 投放词 / 搜索词 / 广告位 搜索词 18 条 / 广告位 0 条",
+  "4 投放词 / 搜索词 / 广告位 投放词 1 个 / 搜索词 18 条 / 广告位 0 条",
 );
 assertIncludes(
   productScopeEvidenceRouteGuide.steps.map((step) => `${step.order} ${step.label} ${step.objectLabel} ${step.primaryEvidence} ${step.nextFocus}`).join(" / "),
@@ -3965,6 +3997,16 @@ const parentScopeDrilldownEvidence = productScopeDrilldownEvidenceItems({
           ad_group_attribution_boundary: "同广告组投放 2 个广告 ASIN；搜索词和广告位只能说明广告组上下文，不能自动归因到单个 ASIN。",
           effective_search_terms: [{ search_term: "kids sunglasses", spend: 8, clicks: 12, orders: 2, sales: 40 }],
           zero_order_search_terms: [{ search_term: "baby sunglasses", spend: 5, clicks: 8, orders: 0, sales: 0 }],
+          targeting_context: {
+            targeting_count: 1,
+            report_row_count: 2,
+            diagnosis_summary: "投放词 1 个 / 有效投放词 1 个 / 无订单消耗投放词 0 个",
+            next_review_focus: "先把有效投放词作为正向样本，再对比其带来的搜索词是否稳定。",
+            boundary: "投放词来自搜索词表现行，不代表完整关键词库；不能自动加词、否词或调价。",
+            top_targetings: [{ targeting_text: "kids sunglasses", spend: 13, clicks: 20, orders: 2, sales: 40 }],
+            effective_targetings: [{ targeting_text: "kids sunglasses", spend: 13, clicks: 20, orders: 2, sales: 40 }],
+            zero_order_spend_targetings: [],
+          },
         },
         next_review_focus: "优先复核 RBK004-kids sunglasses-广泛 的投放词和搜索词分化。",
       },
@@ -3978,6 +4020,9 @@ assertIncludes(parentScopeDrilldownEvidenceText, "优先广告 ASIN");
 assertIncludes(parentScopeDrilldownEvidenceText, "B000TEST01");
 assertIncludes(parentScopeDrilldownEvidenceText, "优先广告组");
 assertIncludes(parentScopeDrilldownEvidenceText, "RBK004-kids sunglasses-广泛");
+assertIncludes(parentScopeDrilldownEvidenceText, "投放词结构");
+assertIncludes(parentScopeDrilldownEvidenceText, "投放词 1 个");
+assertIncludes(parentScopeDrilldownEvidenceText, "不代表完整关键词库");
 assertIncludes(parentScopeDrilldownEvidenceText, "广告组投放结构");
 assertIncludes(parentScopeDrilldownEvidenceText, "B000TEST01、B000TEST02");
 assertIncludes(parentScopeDrilldownEvidenceText, "同广告组投放 2 个广告 ASIN");

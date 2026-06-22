@@ -3680,6 +3680,7 @@ def _top_ad_group_for_scope(ad_rows: list[dict[str, Any]], signal_rows: list[dic
         if _string(row.get("source_table")) == "advertised_products" and _scope_context_key(row) == context_key
     ]
     same_group_asins = _scope_ad_group_asins(same_group_ad_rows)
+    targeting_context = _ad_product_targeting_context(signal_rows, same_group_ad_rows)
     top_group["search_term_count"] = len(search_rows)
     top_group["placement_count"] = len(placement_rows)
     top_group["campaign_placement_count"] = len(campaign_placement_rows)
@@ -3689,6 +3690,7 @@ def _top_ad_group_for_scope(ad_rows: list[dict[str, Any]], signal_rows: list[dic
     top_group["effective_search_terms"] = _scope_search_term_summaries([row for row in search_rows if (_int(row.get("orders")) or 0) > 0], order_key="orders")
     top_group["zero_order_search_terms"] = _scope_search_term_summaries([row for row in search_rows if (_int(row.get("orders")) or 0) == 0 and (_number(row.get("spend")) or 0) > 0], order_key="spend")
     top_group["placement_context_level"] = "ad_group" if placement_rows else ("campaign" if campaign_placement_rows else "missing")
+    top_group["targeting_context"] = targeting_context
     return top_group
 
 

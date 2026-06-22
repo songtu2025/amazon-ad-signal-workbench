@@ -667,6 +667,37 @@ export interface SignalTriageProductScopeSearchTermDiagnosis {
   forbidden_actions?: string[] | null;
 }
 
+export interface SignalTriageProductScopeTargetingItem {
+  targeting_text?: string | null;
+  source_report_type?: string | null;
+  source_label?: string | null;
+  keyword_id?: string | null;
+  target_id?: string | null;
+  keyword_id_count?: number | null;
+  target_id_count?: number | null;
+  search_term_count?: number | null;
+  sample_search_terms?: string[] | null;
+  spend?: number | null;
+  clicks?: number | null;
+  orders?: number | null;
+  sales?: number | null;
+}
+
+export interface SignalTriageProductScopeTargetingContext {
+  basis?: string | null;
+  context_ad_group_label?: string | null;
+  targeting_count?: number | null;
+  report_row_count?: number | null;
+  keyword_targeting_count?: number | null;
+  auto_targeting_count?: number | null;
+  top_targetings?: SignalTriageProductScopeTargetingItem[] | null;
+  effective_targetings?: SignalTriageProductScopeTargetingItem[] | null;
+  zero_order_spend_targetings?: SignalTriageProductScopeTargetingItem[] | null;
+  diagnosis_summary?: string | null;
+  next_review_focus?: string | null;
+  boundary?: string | null;
+}
+
 export interface SignalTriageProductScopeTopAdGroup {
   campaign_id?: string | null;
   campaign_name?: string | null;
@@ -686,6 +717,7 @@ export interface SignalTriageProductScopeTopAdGroup {
   effective_search_terms?: SignalTriageProductScopeSearchTerm[] | null;
   zero_order_search_terms?: SignalTriageProductScopeSearchTerm[] | null;
   placement_context_level?: string | null;
+  targeting_context?: SignalTriageProductScopeTargetingContext | null;
 }
 
 export interface SignalTriageProductScopeDrilldownItem {
