@@ -2052,7 +2052,7 @@ export function buildManualActionRequestPayload(input: ManualActionRequestPayloa
   const evidenceSnapshot =
     previewItems.length > 0 && preview?.will_save_on_authorized_write !== false
       ? buildManualActionEvidenceSnapshot(previewItems, previewItems.length)
-      : input.evidenceSnapshot ?? [];
+      : [];
   return {
     action_type: input.actionType,
     action_note: input.actionLabel,
@@ -2684,6 +2684,13 @@ export function manualActionButtonGate(
       compactReason: "预检动作待刷新",
     };
   }
+  if (!manualActionPreflightHasSavableEvidenceSnapshotPreview(preflight)) {
+    return {
+      disabled: true,
+      reason: "后端预检未返回可保存的 evidence_snapshot_preview；不能用前端临时证据写入人工留痕。",
+      compactReason: "证据快照待核对",
+    };
+  }
   return { disabled: false, reason: null, compactReason: null };
 }
 
@@ -3240,6 +3247,15 @@ function manualActionPreflightTargetMismatch(
   const actualObjectType = normalizedPreflightTargetValue(preflight.target?.object_type);
   const actualObjectId = normalizedPreflightTargetValue(preflight.target?.object_id);
   return actualObjectType !== expectedObjectType || actualObjectId !== expectedObjectId;
+}
+
+function manualActionPreflightHasSavableEvidenceSnapshotPreview(preflight: ManualActionPreflightForUi) {
+  const preview = preflight.evidence_snapshot_preview;
+  return Boolean(
+    preview &&
+      preview.will_save_on_authorized_write !== false &&
+      (preview.items?.length ?? 0) > 0,
+  );
 }
 
 function normalizedPreflightTargetValue(value: string | number | null | undefined) {

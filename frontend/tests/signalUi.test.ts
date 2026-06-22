@@ -241,6 +241,15 @@ const matchedManualActionGate = manualActionButtonGate(
       object_type: "search_term",
       object_id: "search_term:1:beach essentials",
     },
+    evidence_snapshot_preview: {
+      will_write: false,
+      will_save_on_authorized_write: true,
+      item_count: 2,
+      items: [
+        { label: "AI 准入", value: "允许人工留痕，不会自动执行广告动作", source: "actionability_status" },
+        { label: "动作边界", value: "只允许人工留痕和复盘", source: "business_rule" },
+      ],
+    },
   },
   null,
   false,

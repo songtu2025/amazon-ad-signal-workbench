@@ -1607,6 +1607,15 @@ const readyManualActionPreflight = {
   },
   blockers: [],
   forbidden_effects: ["不执行广告动作"],
+  evidence_snapshot_preview: {
+    will_write: false,
+    will_save_on_authorized_write: true,
+    item_count: 2,
+    items: [
+      { label: "AI 准入", value: "允许人工留痕，不会自动执行广告动作", source: "actionability_status" },
+      { label: "动作边界", value: "只允许人工留痕和复盘", source: "business_rule" },
+    ],
+  },
 };
 assertEqual(manualActionButtonGate("add_to_review", null, null, false).disabled, true);
 assertIncludes(manualActionButtonGate("add_to_review", null, null, false).reason ?? "", "正在读取后端只读预检");
@@ -1643,6 +1652,22 @@ const mismatchedManualActionTypeGate = manualActionButtonGate("observe", readyMa
 });
 assertEqual(mismatchedManualActionTypeGate.disabled, true);
 assertIncludes(mismatchedManualActionTypeGate.reason ?? "", "后端预检动作与当前按钮不一致");
+const missingEvidencePreviewGate = manualActionButtonGate(
+  "add_to_review",
+  {
+    ...readyManualActionPreflight,
+    evidence_snapshot_preview: null,
+  },
+  null,
+  false,
+  {
+    objectType: "sales_product",
+    objectId: "B06VW5SQ97",
+    actionType: "add_to_review",
+  },
+);
+assertEqual(missingEvidencePreviewGate.disabled, true);
+assertIncludes(missingEvidencePreviewGate.reason ?? "", "不能用前端临时证据写入人工留痕");
 assertEqual(
   manualActionButtonGate("add_to_review", readyManualActionPreflight, null, false, {
     objectType: "sales_product",
@@ -2151,9 +2176,7 @@ assertEqual(manualActionRequestPayload.expected_object_type, "search_term");
 assertEqual(manualActionRequestPayload.expected_object_id, "beach essentials for toddlers 1-3");
 assertEqual(manualActionRequestPayload.expected_can_auto_execute_ads, false);
 assertEqual(manualActionRequestPayload.expected_can_auto_change_rules, false);
-assertEqual(manualActionRequestPayload.evidence_snapshot.length, 7);
-assertEqual(manualActionRequestPayload.evidence_snapshot[0].label, "语义组");
-assertEqual(manualActionRequestPayload.evidence_snapshot[5].label, "ABA匹配边界");
+assertEqual(manualActionRequestPayload.evidence_snapshot.length, 0);
 const manualActionReasonText = manualActionEvidenceReasonText([
   { label: "广告商品覆盖", value: "覆盖 raw 投放行 6/7 / 证据行 6 条" },
   { label: "广告指标汇总", value: "花费 $64.92 / 订单 18 / ACOS 38.0%" },
