@@ -504,6 +504,61 @@ def test_review_readiness_script_blocks_legacy_todos_without_evidence_snapshot(m
     assert "不拉取快照" not in payload["review_wait_summary"]["forbidden_actions"]
 
 
+def test_review_audit_issue_reason_reports_ad_group_synthesis_gap() -> None:
+    module = load_review_readiness_script()
+
+    reason = module.review_audit_issue_reason(
+        [
+            {"issue_type": "missing_targeting_evidence"},
+            {"issue_type": "missing_ad_group_synthesis"},
+            {"issue_type": "missing_ad_group_synthesis"},
+            {"issue_type": "missing_aba_context"},
+        ]
+    )
+
+    assert "缺少投放词证据 1 条" in reason
+    assert "缺少广告组合流判断 2 条" in reason
+    assert "缺少 ABA 背景 1 条" in reason
+
+
+def test_review_identity_audit_reports_ad_group_synthesis_gap() -> None:
+    module = load_review_readiness_script()
+
+    audit = module.review_identity_audit_summary(
+        [SimpleNamespace(signal_id="sig-search-term")],
+        [],
+        [
+            {
+                "signal_id": "sig-search-term",
+                "action_id": "manual-action-search-term",
+                "object_type": "search_term",
+                "object_id": "search_term:1:boys sunglasses",
+                "object_label": "boys sunglasses",
+                "review_window": "7d",
+                "status": "not_ready",
+                "is_due": False,
+                "due_at": "2026-06-29T00:00:00+00:00",
+                "evidence_snapshot_count": 8,
+                "has_diagnosis_path": True,
+                "has_ai_admission": True,
+                "has_search_term_boundary": True,
+                "has_placement_boundary": True,
+                "has_targeting_evidence": True,
+                "has_ad_group_synthesis": False,
+                "has_aba_context": True,
+                "has_evidence_gap": True,
+                "has_action_boundary": True,
+            }
+        ],
+        ready_count=0,
+        identity_issues=[],
+    )
+
+    assert audit["status"] == "blocked"
+    assert audit["missing_ad_group_synthesis_count"] == 1
+    assert [issue["issue_type"] for issue in audit["issues"]] == ["missing_ad_group_synthesis"]
+
+
 def test_review_identity_audit_separates_metric_due_date_from_cross_due_date() -> None:
     module = load_review_readiness_script()
     audit = module.review_identity_audit_summary(
