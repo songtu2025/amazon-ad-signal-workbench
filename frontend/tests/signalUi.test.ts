@@ -2007,6 +2007,7 @@ const separatedReviewQueueGate = buildReviewReadinessGateSummary({
           has_ad_group_synthesis: true,
           has_aba_context: true,
           has_evidence_gap: true,
+          has_required_evidence: true,
           has_action_boundary: true,
         },
         {
@@ -2024,6 +2025,7 @@ const separatedReviewQueueGate = buildReviewReadinessGateSummary({
           has_ad_group_synthesis: true,
           has_aba_context: true,
           has_evidence_gap: true,
+          has_required_evidence: true,
           has_action_boundary: true,
         },
       ],
@@ -2323,6 +2325,7 @@ const missingSearchTermRepairEvidence = buildReviewEvidenceRepairSummary({
         "missing_ad_group_synthesis",
         "missing_aba_context",
         "missing_evidence_gap",
+        "missing_required_evidence",
         "missing_action_boundary",
       ],
       current_preflight: {
@@ -2337,16 +2340,17 @@ const missingSearchTermRepairEvidence = buildReviewEvidenceRepairSummary({
         has_ad_group_synthesis: false,
         has_aba_context: false,
         has_evidence_gap: false,
+        has_required_evidence: false,
         has_action_boundary: false,
         has_object_reference: true,
-        missing_required_labels: ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "动作边界"],
+        missing_required_labels: ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "需要补证", "动作边界"],
       },
       can_patch_legacy_record: false,
       can_rebuild_evidence_preview: false,
       can_recreate_from_current_signal: false,
       patch_policy:
         "当前重建证据只能作为人工核对参考，不能静默写回旧记录；MVP 不提供补写历史 evidence_snapshot 的执行入口。",
-      recommended_next_step: "当前预检目标匹配历史对象，但当前证据预览仍缺：投放词证据、广告组合流判断、ABA 背景、证据缺口、动作边界。",
+      recommended_next_step: "当前预检目标匹配历史对象，但当前证据预览仍缺：投放词证据、广告组合流判断、ABA 背景、证据缺口、需要补证、动作边界。",
       will_write: false,
     },
   ],
@@ -2357,10 +2361,11 @@ assertIncludes(missingSearchTermRepairEvidence?.sampleItems[0] ?? "", "缺投放
 assertIncludes(missingSearchTermRepairEvidence?.sampleItems[0] ?? "", "缺广告组合流判断");
 assertIncludes(missingSearchTermRepairEvidence?.sampleItems[0] ?? "", "缺 ABA 背景");
 assertIncludes(missingSearchTermRepairEvidence?.sampleItems[0] ?? "", "缺证据缺口");
+assertIncludes(missingSearchTermRepairEvidence?.sampleItems[0] ?? "", "缺需要补证");
 assertIncludes(missingSearchTermRepairEvidence?.sampleItems[0] ?? "", "缺动作边界");
 assertIncludes(
   missingSearchTermRepairEvidence?.sampleItems[0] ?? "",
-  "当前预览仍缺：投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 动作边界",
+  "当前预览仍缺：投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
 );
 
 const searchTermChainBlockedReviewEvidenceRepair = buildReviewEvidenceRepairSummary({
@@ -3381,7 +3386,7 @@ const manualConfirmationSearchTermEvidenceItems = buildManualConfirmationEvidenc
 );
 assertEqual(
   manualConfirmationSearchTermEvidenceItems.map((item) => item.label).join(" / "),
-  "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 动作边界",
+  "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
 );
 assertIncludes(manualConfirmationSearchTermEvidenceItems[5].value, "投放词结构");
 assertIncludes(manualConfirmationSearchTermEvidenceItems[5].detail ?? "", "不代表完整关键词库");
@@ -3389,8 +3394,10 @@ assertIncludes(manualConfirmationSearchTermEvidenceItems[6].value, "搜索词不
 assertIncludes(manualConfirmationSearchTermEvidenceItems[6].detail ?? "", "同广告组上下文");
 assertIncludes(manualConfirmationSearchTermEvidenceItems[7].value, "ABA排名 208");
 assertIncludes(manualConfirmationSearchTermEvidenceItems[7].detail ?? "", "站点 + 周期 + 标准化搜索词");
-assertIncludes(manualConfirmationSearchTermEvidenceItems[9].value, "不得自动加词");
-assertIncludes(manualConfirmationSearchTermEvidenceItems[9].detail ?? "", "不能把 ABA 当作店铺数据");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[9].value, "广告商品、投放词、广告组策略");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[9].detail ?? "", "7/14 天复盘回看");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[10].value, "不得自动加词");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[10].detail ?? "", "不能把 ABA 当作店铺数据");
 
 const diagnosisEvidenceSummary = buildSignalDiagnosisEvidenceSummary(
   {

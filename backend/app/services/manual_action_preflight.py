@@ -20,6 +20,7 @@ SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS = (
     "投放词证据",
     "ABA 背景",
     "证据缺口",
+    "需要补证",
     "动作边界",
 )
 ACTIONABLE_EVIDENCE_BLOCK_ORDER = (

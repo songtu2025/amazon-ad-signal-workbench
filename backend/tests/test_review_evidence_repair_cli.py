@@ -99,7 +99,7 @@ def test_review_evidence_repair_rebuilds_preview_without_patching_legacy(monkeyp
             },
             "evidence_snapshot_preview": {
                 "status": "ready",
-                "item_count": 9,
+                "item_count": 10,
                 "items": [
                     {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组", "source": "business_rule"},
                     {"label": "AI 准入", "value": "ready_for_manual_confirmation", "source": "actionability_status"},
@@ -109,6 +109,7 @@ def test_review_evidence_repair_rebuilds_preview_without_patching_legacy(monkeyp
                     {"label": "广告组合流判断", "value": "同广告组多广告 ASIN 不能把搜索词自动归因到单个 ASIN", "source": "ad_group_metrics"},
                     {"label": "ABA 背景", "value": "ABA Top1000 匹配 beach essentials", "source": "aba_search_term"},
                     {"label": "证据缺口", "value": "不能证明应自动加词", "source": "business_rule"},
+                    {"label": "需要补证", "value": "补齐投放词维护状态、广告商品承接和主推策略", "source": "business_rule"},
                     {"label": "动作边界", "value": "只允许人工留痕和复盘", "source": "business_rule"},
                 ],
             },
@@ -182,7 +183,7 @@ def test_review_evidence_repair_handles_object_mismatch_gap(monkeypatch) -> None
             },
             "evidence_snapshot_preview": {
                 "status": "ready",
-                "item_count": 10,
+                "item_count": 11,
                 "items": [
                     {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组"},
                     {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
@@ -192,6 +193,7 @@ def test_review_evidence_repair_handles_object_mismatch_gap(monkeypatch) -> None
                     {"label": "广告组合流判断", "value": "同广告组多广告 ASIN 不能把搜索词自动归因到单个 ASIN"},
                     {"label": "ABA 背景", "value": "ABA Top1000 匹配 beach essentials"},
                     {"label": "证据缺口", "value": "不能证明应自动加词"},
+                    {"label": "需要补证", "value": "补齐投放词维护状态、广告商品承接和主推策略"},
                     {"label": "动作边界", "value": "只允许人工留痕和复盘"},
                     {"label": "搜索词表现", "value": "beach essentials 花费 34.11 / 订单 21"},
                 ],
@@ -279,11 +281,12 @@ def test_review_evidence_repair_blocks_preview_without_search_term_or_placement_
         "广告组合流判断",
         "ABA 背景",
         "证据缺口",
+        "需要补证",
         "动作边界",
     ]
     assert item["can_rebuild_evidence_preview"] is False
     assert item["can_recreate_from_current_signal"] is False
-    assert "搜索词边界、广告位边界、投放词证据、广告组合流判断、ABA 背景、证据缺口、动作边界" in item["recommended_next_step"]
+    assert "搜索词边界、广告位边界、投放词证据、广告组合流判断、ABA 背景、证据缺口、需要补证、动作边界" in item["recommended_next_step"]
 
 
 def test_review_evidence_repair_treats_search_term_review_chain_gaps_as_repair_items(monkeypatch) -> None:
@@ -303,6 +306,7 @@ def test_review_evidence_repair_treats_search_term_review_chain_gaps_as_repair_i
             "missing_ad_group_synthesis",
             "missing_aba_context",
             "missing_evidence_gap",
+            "missing_required_evidence",
             "missing_action_boundary",
         )
     ]
@@ -341,23 +345,25 @@ def test_review_evidence_repair_treats_search_term_review_chain_gaps_as_repair_i
     item = payload["items"][0]
 
     assert payload["status"] == "blocked_by_legacy_evidence_gap"
-    assert payload["counts"]["repair_issue_count"] == 5
+    assert payload["counts"]["repair_issue_count"] == 6
     assert payload["counts"]["legacy_action_gap_count"] == 1
     assert item["issue_types"] == [
         "missing_aba_context",
         "missing_action_boundary",
         "missing_ad_group_synthesis",
         "missing_evidence_gap",
+        "missing_required_evidence",
         "missing_targeting_evidence",
     ]
     assert item["current_preflight"]["has_targeting_evidence"] is False
     assert item["current_preflight"]["has_ad_group_synthesis"] is False
     assert item["current_preflight"]["has_aba_context"] is False
     assert item["current_preflight"]["has_evidence_gap"] is False
+    assert item["current_preflight"]["has_required_evidence"] is False
     assert item["current_preflight"]["has_action_boundary"] is False
-    assert item["current_preflight"]["missing_required_labels"] == ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "动作边界"]
+    assert item["current_preflight"]["missing_required_labels"] == ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "需要补证", "动作边界"]
     assert item["can_rebuild_evidence_preview"] is False
-    assert "投放词证据、广告组合流判断、ABA 背景、证据缺口、动作边界" in item["recommended_next_step"]
+    assert "投放词证据、广告组合流判断、ABA 背景、证据缺口、需要补证、动作边界" in item["recommended_next_step"]
 
 
 def test_review_evidence_repair_blocks_current_signal_mismatch(monkeypatch) -> None:

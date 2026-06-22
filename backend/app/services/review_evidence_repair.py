@@ -21,11 +21,12 @@ REPAIR_ISSUE_TYPES = {
     "missing_ad_group_synthesis",
     "missing_aba_context",
     "missing_evidence_gap",
+    "missing_required_evidence",
     "missing_action_boundary",
     "evidence_snapshot_object_mismatch",
 }
 BASE_REPAIR_LABELS = ("排查路径", "AI 准入", "搜索词边界", "广告位边界")
-SEARCH_TERM_REPAIR_LABELS = (*BASE_REPAIR_LABELS, "投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "动作边界")
+SEARCH_TERM_REPAIR_LABELS = (*BASE_REPAIR_LABELS, "投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "需要补证", "动作边界")
 
 
 def build_review_evidence_repair_payload(
@@ -225,6 +226,7 @@ def _repair_item(
             "has_ad_group_synthesis": _preview_has_label(preview_items, "广告组合流判断"),
             "has_aba_context": _preview_has_label(preview_items, "ABA 背景"),
             "has_evidence_gap": _preview_has_label(preview_items, "证据缺口"),
+            "has_required_evidence": _preview_has_label(preview_items, "需要补证"),
             "has_action_boundary": _preview_has_label(preview_items, "动作边界"),
             "has_object_reference": has_object_reference,
             "missing_required_labels": missing_preview_labels,

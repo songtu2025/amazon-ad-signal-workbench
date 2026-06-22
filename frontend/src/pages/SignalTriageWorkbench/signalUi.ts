@@ -1036,6 +1036,7 @@ export interface ReviewIdentityAuditForUi {
   missing_ad_group_synthesis_count?: number | null;
   missing_aba_context_count?: number | null;
   missing_evidence_gap_count?: number | null;
+  missing_required_evidence_count?: number | null;
   missing_action_boundary_count?: number | null;
   missing_object_reference_count?: number | null;
   unstable_object_id_count?: number | null;
@@ -1110,6 +1111,7 @@ export interface ReviewEvidenceRepairPayloadForUi {
       has_ad_group_synthesis?: boolean | null;
       has_aba_context?: boolean | null;
       has_evidence_gap?: boolean | null;
+      has_required_evidence?: boolean | null;
       has_action_boundary?: boolean | null;
       has_object_reference?: boolean | null;
       missing_required_labels?: string[] | null;
@@ -2373,6 +2375,7 @@ function buildReviewIdentityAuditSummary(
   const missingAdGroupSynthesisCount = audit.missing_ad_group_synthesis_count ?? 0;
   const missingAbaContextCount = audit.missing_aba_context_count ?? 0;
   const missingEvidenceGapCount = audit.missing_evidence_gap_count ?? 0;
+  const missingRequiredEvidenceCount = audit.missing_required_evidence_count ?? 0;
   const missingActionBoundaryCount = audit.missing_action_boundary_count ?? 0;
   const missingObjectReferenceCount = audit.missing_object_reference_count ?? 0;
   const missingSearchTermReviewChainCount =
@@ -2380,6 +2383,7 @@ function buildReviewIdentityAuditSummary(
     missingAdGroupSynthesisCount +
     missingAbaContextCount +
     missingEvidenceGapCount +
+    missingRequiredEvidenceCount +
     missingActionBoundaryCount;
   const missingEvidenceGateCount =
     missingEvidenceSnapshotCount +
@@ -2414,7 +2418,7 @@ function buildReviewIdentityAuditSummary(
   return {
     title: "复盘读回身份门禁",
     status: isBlocked ? "blocked" : "ready",
-    summary: `${statusText}；缺失 action_id / object_id / review_window：${missingActionIdCount} / ${missingObjectIdCount} / ${missingReviewWindowCount}；证据快照缺口：${missingEvidenceSnapshotCount} / 排查路径 ${missingDiagnosisPathCount} / AI 准入 ${missingAiAdmissionCount} / 搜索词边界 ${missingSearchTermBoundaryCount} / 广告位边界 ${missingPlacementBoundaryCount} / 搜索词复核链 ${missingSearchTermReviewChainCount}（投放词 ${missingTargetingEvidenceCount} / 广告组合流判断 ${missingAdGroupSynthesisCount} / ABA ${missingAbaContextCount} / 证据缺口 ${missingEvidenceGapCount} / 动作边界 ${missingActionBoundaryCount}）/ 对象引用 ${missingObjectReferenceCount}；广告指标最早复盘：${earliestMetricDueDate}。`,
+    summary: `${statusText}；缺失 action_id / object_id / review_window：${missingActionIdCount} / ${missingObjectIdCount} / ${missingReviewWindowCount}；证据快照缺口：${missingEvidenceSnapshotCount} / 排查路径 ${missingDiagnosisPathCount} / AI 准入 ${missingAiAdmissionCount} / 搜索词边界 ${missingSearchTermBoundaryCount} / 广告位边界 ${missingPlacementBoundaryCount} / 搜索词复核链 ${missingSearchTermReviewChainCount}（投放词 ${missingTargetingEvidenceCount} / 广告组合流判断 ${missingAdGroupSynthesisCount} / ABA ${missingAbaContextCount} / 证据缺口 ${missingEvidenceGapCount} / 需要补证 ${missingRequiredEvidenceCount} / 动作边界 ${missingActionBoundaryCount}）/ 对象引用 ${missingObjectReferenceCount}；广告指标最早复盘：${earliestMetricDueDate}。`,
     boundary: `${boundaryParts.join("；")}。`,
     items: [
       { label: "待读回效果", value: `${effectCount}`, tone: effectCount > 0 ? "ready" : "neutral" },
@@ -2515,6 +2519,7 @@ function reviewReadbackKeys(keys: unknown[] | null | undefined) {
         hasAdGroupSynthesis: sourceBoolean(row, "has_ad_group_synthesis"),
         hasAbaContext: sourceBoolean(row, "has_aba_context"),
         hasEvidenceGap: sourceBoolean(row, "has_evidence_gap"),
+        hasRequiredEvidence: sourceBoolean(row, "has_required_evidence"),
         hasActionBoundary: sourceBoolean(row, "has_action_boundary"),
         hasObjectReference: sourceBoolean(row, "has_object_reference"),
       };
@@ -2553,6 +2558,7 @@ function reviewEvidenceSnapshotText(readbackKeys: ReturnType<typeof reviewReadba
       key.hasAdGroupSynthesis !== null ||
       key.hasAbaContext !== null ||
       key.hasEvidenceGap !== null ||
+      key.hasRequiredEvidence !== null ||
       key.hasActionBoundary !== null,
   );
   const allSearchTermChainComplete =
@@ -2564,6 +2570,7 @@ function reviewEvidenceSnapshotText(readbackKeys: ReturnType<typeof reviewReadba
           key.hasAdGroupSynthesis === true &&
           key.hasAbaContext === true &&
           key.hasEvidenceGap === true &&
+          key.hasRequiredEvidence === true &&
           key.hasActionBoundary === true,
       ));
   const hasSearchTermChainGap =
@@ -2574,6 +2581,7 @@ function reviewEvidenceSnapshotText(readbackKeys: ReturnType<typeof reviewReadba
         key.hasAdGroupSynthesis === false ||
         key.hasAbaContext === false ||
         key.hasEvidenceGap === false ||
+        key.hasRequiredEvidence === false ||
         key.hasActionBoundary === false,
     );
   const allBoundariesComplete =
@@ -2687,7 +2695,7 @@ export function buildReviewReadinessGateSummary(
       waitSummary?.next_step?.trim() ||
       status.rule_improvement?.next_step?.trim() ||
       (isReviewEvidenceGateBlocked
-        ? "先 dry-run 作废旧待办，再重新人工留痕生成完整证据快照；必须包含排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、ABA 背景、证据缺口和动作边界，不能用当前页面证据伪装成历史点击证据，不能补写历史 evidence_snapshot。"
+        ? "先 dry-run 作废旧待办，再重新人工留痕生成完整证据快照；必须包含排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、ABA 背景、证据缺口、需要补证和动作边界，不能用当前页面证据伪装成历史点击证据，不能补写历史 evidence_snapshot。"
         : "先补齐复盘所需的处理前后广告指标快照，再只读检查 ready 状态。");
     const nextStep = isReviewEvidenceGateBlocked ? reviewEvidenceGateRepairStep(rawNextStep) : rawNextStep;
     const gapStatusText =
@@ -2708,7 +2716,7 @@ export function buildReviewReadinessGateSummary(
         : `已有 ${manualActionCount} 条人工留痕，但 ready 复盘 ${readyCount} 个；当前不能保存复盘结论。`,
       detail: gapReasonText,
       boundary: isReviewEvidenceGateBlocked
-        ? `缺 evidence_snapshot、排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、ABA 背景、证据缺口或动作边界时，不能把当前页面证据伪装成历史点击证据；当前${forbiddenActionText}。`
+        ? `缺 evidence_snapshot、排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、ABA 背景、证据缺口、需要补证或动作边界时，不能把当前页面证据伪装成历史点击证据；当前${forbiddenActionText}。`
         : `not_ready 只说明证据不足，不能证明处理有效或无效；当前${forbiddenActionText}。`,
       identityAudit,
       queueSeparation,
@@ -2791,6 +2799,7 @@ function reviewEvidenceGateRepairStep(value: string): string {
   const hasAdGroupSynthesis = text.includes("广告组合流判断");
   const hasAbaContext = text.includes("ABA 背景");
   const hasEvidenceGap = text.includes("证据缺口");
+  const hasRequiredEvidence = text.includes("需要补证");
   const hasActionBoundary = text.includes("动作边界");
   const hasPatchPolicy = text.includes("不能静默补写历史 evidence_snapshot");
   if (
@@ -2801,6 +2810,7 @@ function reviewEvidenceGateRepairStep(value: string): string {
     hasAdGroupSynthesis &&
     hasAbaContext &&
     hasEvidenceGap &&
+    hasRequiredEvidence &&
     hasActionBoundary &&
     hasPatchPolicy
   ) {
@@ -2816,9 +2826,10 @@ function reviewEvidenceGateRepairStep(value: string): string {
     hasAdGroupSynthesis &&
     hasAbaContext &&
     hasEvidenceGap &&
+    hasRequiredEvidence &&
     hasActionBoundary
       ? null
-      : "重新人工留痕必须形成完整证据快照，包含排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、ABA 背景、证据缺口和动作边界";
+      : "重新人工留痕必须形成完整证据快照，包含排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、ABA 背景、证据缺口、需要补证和动作边界";
   return `${uniqueNonEmpty([base, patchPolicyText, snapshotText]).join("；")}。`;
 }
 
@@ -2880,7 +2891,7 @@ export function buildReviewEvidenceRepairSummary(
         { label: "可自动执行广告", value: "0 项", tone: "ready" },
       ],
       nextSteps: [
-        { label: "先看门禁", detail: "回到复盘证据门禁，核对缺少的是投放词证据、广告组合流判断、ABA 背景、证据缺口还是动作边界。" },
+        { label: "先看门禁", detail: "回到复盘证据门禁，核对缺少的是投放词证据、广告组合流判断、ABA 背景、证据缺口、需要补证还是动作边界。" },
         { label: "治理方式", detail: "当前可落地路径是 dry-run 作废旧待办，再重新人工留痕；不能静默补写历史 evidence_snapshot。" },
         { label: "保存限制", detail: "复核链补齐并出现 ready 复盘前，不保存 ReviewRecord，不自动改规则，不执行广告动作。" },
       ],
@@ -2948,6 +2959,7 @@ function reviewRepairIssueText(issueTypes: string[] | null | undefined): string 
     missing_ad_group_synthesis: "缺广告组合流判断",
     missing_aba_context: "缺 ABA 背景",
     missing_evidence_gap: "缺证据缺口",
+    missing_required_evidence: "缺需要补证",
     missing_action_boundary: "缺动作边界",
     evidence_snapshot_object_mismatch: "证据快照对象不一致",
     missing_action_id: "缺 action_id",
@@ -3921,7 +3933,12 @@ export function buildManualConfirmationEvidenceItems(
         {
           label: "证据缺口",
           value: searchTermOpportunityReviewChain.evidenceGap,
-          detail: `需要补证：${searchTermOpportunityReviewChain.requiredEvidence}`,
+          detail: "用于确认当前证据还缺哪类业务事实，不能把缺口包装成广告调整结论。",
+        },
+        {
+          label: "需要补证",
+          value: searchTermOpportunityReviewChain.requiredEvidence,
+          detail: "补证路径必须随人工留痕一起保存，方便 7/14 天复盘回看当时缺什么证据。",
         },
         {
           label: "动作边界",

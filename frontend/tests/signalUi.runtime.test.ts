@@ -135,6 +135,10 @@ async function main() {
     triage.next_unhandled_candidate?.stable_object_id ||
     triage.next_unhandled_candidate?.object_id ||
     "";
+  const reviewObjectLabel =
+    triage.review_status?.review_wait_summary?.next_object_label ||
+    triage.review_status?.review_wait_summary?.next_object_id ||
+    "";
 
   assert(recommendedLabel.length > 0, "运行态应存在推荐对象。");
   assert(nextLabel.length > 0, "推荐对象已留痕后应继续暴露下一未留痕候选。");
@@ -222,7 +226,8 @@ async function main() {
   assertIncludes(evidenceBlocks.diagnosis_path.value ?? "", "广告活动 / 广告组");
   assertIncludes(evidenceBlocks.search_term_metric_summary.value ?? "", "订单");
   assertIncludes(evidenceBlocks.search_term_metric_summary.detail ?? "", "ACOS");
-  assertIncludes(evidenceBlocks.targeting_context.detail ?? "", "sunglasses for kids");
+  assertIncludes(evidenceBlocks.targeting_context.detail ?? "", "投放词");
+  assertIncludes(evidenceBlocks.targeting_context.detail ?? "", "不代表完整关键词库");
   assertIncludes(evidenceBlocks.placement_context_gap.value ?? "", "缺少");
   assertIncludes(evidenceBlocks.search_term_boundary.detail ?? "", "不能自动归因");
   assertIncludes(evidenceBlocks.manual_action_path.value ?? "", "不自动新增关键词");
@@ -278,7 +283,7 @@ async function main() {
   );
   assert(
     manualConfirmationEvidenceItems.map((item: any) => item.label).join(" / ") ===
-      "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 动作边界",
+      "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
     "右侧人工确认证据依据必须保留固定业务判断结构和搜索词机会复核链。",
   );
   assertIncludes(asText(manualConfirmationEvidenceItems), nextLabel);
@@ -323,63 +328,31 @@ async function main() {
   assertIncludes(acosMetricDecision?.purpose ?? "", "不是自动调价依据");
 
   const readinessSummary = buildReviewReadinessGateSummary(triage);
-  assert(readinessSummary?.status === "blocked", "当前历史 ReviewTodo 缺少搜索词复核链，应被复盘证据门禁阻断。");
-  assertIncludes(readinessSummary?.detail ?? "", "缺少投放词证据");
-  assertIncludes(readinessSummary?.detail ?? "", "缺少广告组合流判断");
-  assertIncludes(readinessSummary?.boundary ?? "", "广告组合流判断");
+  assert(readinessSummary?.status === "waiting", "搜索词复核链齐全但复盘窗口未到期时，应进入等待窗口而不是保存复盘结论。");
+  assertIncludes(readinessSummary?.primary ?? "", "最早广告复盘");
+  assertIncludes(readinessSummary?.detail ?? "", "等待复盘窗口完整");
+  assertIncludes(readinessSummary?.boundary ?? "", "不拉取快照");
+  assertIncludes(readinessSummary?.boundary ?? "", "不保存复盘结论");
   assertIncludes(readinessSummary?.boundary ?? "", "不自动执行广告动作");
-  assertIncludes(asText(readinessSummary?.nextSteps), "不能静默补写历史 evidence_snapshot");
-  assertIncludes(readinessSummary?.queueSeparation?.primary ?? "", recommendedLabel);
+  assertIncludes(asText(readinessSummary?.nextSteps), "到期后");
+  assertIncludes(asText(readinessSummary?.nextSteps), "只读检查");
+  assertIncludes(readinessSummary?.queueSeparation?.primary ?? "", reviewObjectLabel);
   assertIncludes(readinessSummary?.queueSeparation?.primary ?? "", nextLabel);
-  assertIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "17 条证据");
-  assertIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "搜索词复核链缺口");
+  assertIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "条证据");
+  assertIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "搜索词复核链齐全");
+  assertNotIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "搜索词复核链缺口");
   assertNotIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "对象引用缺口");
 
   const repairSummary = buildReviewEvidenceRepairSummary(repair);
-  assert(repairSummary?.status === "blocked", "历史待办治理不能把搜索词复核链阻断展示成 ready。");
-  assertIncludes(repairSummary?.primary ?? "", "历史动作缺证据");
-  assertIncludes(repairSummary?.detail ?? "", "重建当前证据预览");
-  const repairSampleText = asText(repairSummary?.sampleItems);
-  assertIncludes(repairSampleText, "search_term / beach essentials");
-  assertIncludes(repairSampleText, "有投放词证据");
-  assertIncludes(repairSampleText, "有广告组合流判断");
-  assertIncludes(repairSampleText, "有 ABA 背景");
-  assertIncludes(repairSampleText, "有证据缺口");
-  assertIncludes(repairSampleText, "有动作边界");
-  assertIncludes(repairSampleText, "当前不可重新留痕");
-  assertIncludes(repairSampleText, "dry-run 可预检");
-  assertIncludes(repairSampleText, "真实作废未执行");
-  assertIncludes(repairSampleText, "作废对象：search_term / search_term:1:beach essentials");
-  assertIncludes(repairSampleText, "复盘窗口：7d / 14d");
-  assertIncludes(repairSampleText, "作废后：搜索词旧待办作废后仍不是复盘完成");
-  assertIncludes(repairSampleText, "重新留痕：重新点击“加入复盘”时必须保存新的 ManualAction 和 7d / 14d ReviewTodo");
-  assertIncludes(repairSampleText, "广告组合流");
-  assertIncludes(repairSampleText, "投放词");
-  assertIncludes(repairSampleText, "ABA");
-  assertIncludes(repairSampleText, "VOID_TODO:manual-action-d958bfd5cef04a538547bb4c19c48e6f:all");
-  assertIncludes(repairSampleText, "apply_review_todo_void_once.py");
-  assertIncludes(repairSampleText, "只写 review_todo_decisions");
-  assertIncludes(repairSampleText, "不修改 manual_actions");
-  assertIncludes(repairSampleText, "不保存 ReviewRecord");
-  assertNotIncludes(repairSampleText, "--execute");
-  assert(repairSummary?.voidPlanItems[0]?.objectText === "search_term / search_term:1:beach essentials", "历史治理应暴露作废对象。");
-  assert(
-    repairSummary?.voidPlanItems[0]?.statusText === "dry-run 可预检；真实作废未执行",
-    "历史治理应暴露作废计划状态。",
-  );
-  assert(repairSummary?.voidPlanItems[0]?.reviewWindows === "7d / 14d", "历史治理应暴露 7d / 14d 复盘窗口。");
-  assertIncludes(repairSummary?.voidPlanItems[0]?.afterVoidText ?? "", "搜索词旧待办作废后仍不是复盘完成");
-  assertIncludes(repairSummary?.voidPlanItems[0]?.recreateText ?? "", "广告组合流");
-  assertIncludes(repairSummary?.voidPlanItems[0]?.recreateText ?? "", "投放词");
-  assertIncludes(repairSummary?.voidPlanItems[0]?.recreateText ?? "", "ABA");
-  assertIncludes(
-    repairSummary?.voidPlanItems[0]?.authorizationCode ?? "",
-    "VOID_TODO:manual-action-d958bfd5cef04a538547bb4c19c48e6f:all",
-  );
-  assertIncludes(repairSummary?.voidPlanItems[0]?.dryRunCommand ?? "", "apply_review_todo_void_once.py");
-  assertNotIncludes(repairSummary?.voidPlanItems[0]?.dryRunCommand ?? "", "--execute");
-  assertIncludes(repairSummary?.voidPlanItems[0]?.boundary ?? "", "只写 review_todo_decisions");
-  assertIncludes(asText(repairSummary?.nextSteps), "不能静默补写历史 evidence_snapshot");
+  assert(repairSummary?.status === "ready", "历史待办没有证据缺口时，应展示为只读治理 ready。");
+  assertIncludes(repairSummary?.primary ?? "", "当前没有历史证据快照缺口");
+  assertIncludes(repairSummary?.boundary ?? "", "will_write=false");
+  assertIncludes(repairSummary?.boundary ?? "", "不能补写历史 evidence_snapshot");
+  assertIncludes(repairSummary?.boundary ?? "", "不能保存 ReviewRecord");
+  assertIncludes(repairSummary?.boundary ?? "", "不能自动执行广告动作");
+  assertIncludes(repairSummary?.items[0]?.value ?? "", "0 个");
+  assertIncludes(repairSummary?.items[2]?.value ?? "", "0 个");
+  assert((repairSummary?.voidPlanItems ?? []).length === 0, "没有历史缺口时不应暴露作废计划。");
   assertNotIncludes(repairSummary?.detail ?? "", "保存 ready");
 
   const preview = triage.next_unhandled_candidate?.manual_action_preview;
@@ -483,8 +456,8 @@ async function main() {
   });
   const readbackText = JSON.stringify(readbackPathItems);
   assertIncludes(readbackText, "待办证据快照");
-  assertIncludes(readbackText, "7d 17 条");
-  assertIncludes(readbackText, "14d 17 条");
+  assertIncludes(readbackText, "7d 22 条");
+  assertIncludes(readbackText, "14d 22 条");
   assertIncludes(readbackText, "排查路径");
   assertIncludes(readbackText, "AI 准入");
   assertIncludes(readbackText, "搜索词边界");
@@ -497,15 +470,15 @@ async function main() {
   assertIncludes(readbackConsistencyText, "尚未保存复盘结论");
   const reviewTodoForObjectGate = reviewTodos.find((todo: any) => todo.review_window === "7d") ?? reviewTodos[0];
   const reviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary(reviewTodoForObjectGate);
-  assert(reviewTodoEvidenceReadback?.tone === "blocked", "历史 ReviewTodo 缺搜索词复核链时，待办证据回读应先显示 blocked。");
+  assert(reviewTodoEvidenceReadback?.tone === "ready", "完整 ReviewTodo 搜索词复核链应允许进入到期后只读复盘。");
   const reviewTodoEvidenceReadbackText = asText(reviewTodoEvidenceReadback);
   assertIncludes(reviewTodoEvidenceReadbackText, "复盘待办证据回读核对");
   assertIncludes(reviewTodoEvidenceReadbackText, "业务判断");
   assertIncludes(reviewTodoEvidenceReadbackText, "诊断路径");
   assertIncludes(reviewTodoEvidenceReadbackText, "搜索词复核链");
-  assertIncludes(reviewTodoEvidenceReadbackText, "缺：投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 动作边界");
-  assertIncludes(reviewTodoEvidenceReadbackText, "当前待办没有广告组合流判断");
-  assertIncludes(reviewTodoEvidenceReadbackText, "不能直接保存可复盘结论");
+  assertIncludes(reviewTodoEvidenceReadbackText, "投放词证据");
+  assertIncludes(reviewTodoEvidenceReadbackText, "需要补证");
+  assertNotIncludes(reviewTodoEvidenceReadbackText, "缺：投放词证据");
   assertIncludes(reviewTodoEvidenceReadbackText, "不执行广告动作");
   const simulatedReadyEffect = {
     signal_id: reviewTodoForObjectGate.signal_id,
@@ -547,15 +520,17 @@ async function main() {
   assertIncludes(reviewRecordPreflightText, "回看广告组合流判断");
   assertIncludes(reviewRecordPreflightText, "回看 ABA 背景");
   assertIncludes(reviewRecordPreflightText, "回看证据缺口");
+  assertIncludes(reviewRecordPreflightText, "回看需要补证");
   assertIncludes(reviewRecordPreflightText, "回看动作边界");
-  assertIncludes(reviewRecordPreflightText, "缺少投放词证据");
-  assertIncludes(reviewRecordPreflightText, "缺少广告组合流判断");
-  assertIncludes(reviewRecordPreflightText, "缺少 ABA 背景");
-  assertIncludes(reviewRecordPreflightText, "缺少证据缺口");
-  assertIncludes(reviewRecordPreflightText, "缺少动作边界");
+  assertNotIncludes(reviewRecordPreflightText, "缺少投放词证据");
+  assertNotIncludes(reviewRecordPreflightText, "缺少广告组合流判断");
+  assertNotIncludes(reviewRecordPreflightText, "缺少 ABA 背景");
+  assertNotIncludes(reviewRecordPreflightText, "缺少证据缺口");
+  assertNotIncludes(reviewRecordPreflightText, "缺少需要补证");
+  assertNotIncludes(reviewRecordPreflightText, "缺少动作边界");
   assert(
-    !canSaveReviewRecordWithPreflight(simulatedReadyEffect, reviewRecordPreflight),
-    "历史 ReviewTodo 缺少搜索词复核链时不能保存 ReviewRecord。",
+    canSaveReviewRecordWithPreflight(simulatedReadyEffect, reviewRecordPreflight),
+    "完整 ReviewTodo 搜索词复核链且指标 ready 时，前端预检应允许人工保存 ReviewRecord。",
   );
 }
 

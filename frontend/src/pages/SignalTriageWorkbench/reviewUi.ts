@@ -539,6 +539,8 @@ export interface ReviewRecordPreflightCheck {
     | "aba_context_missing"
     | "evidence_gap"
     | "evidence_gap_missing"
+    | "required_evidence"
+    | "required_evidence_missing"
     | "manual_action_boundary"
     | "manual_action_boundary_missing"
     | "window_integrity"
@@ -591,6 +593,7 @@ const searchTermRequiredReviewRecordPreflightCheckIds: ReviewRecordPreflightChec
   "ad_group_synthesis",
   "aba_context",
   "evidence_gap",
+  "required_evidence",
   "manual_action_boundary",
 ];
 
@@ -613,6 +616,8 @@ const requiredReviewRecordPreflightCheckLabels: Record<ReviewRecordPreflightChec
   aba_context_missing: "ABA 背景缺失",
   evidence_gap: "证据缺口",
   evidence_gap_missing: "证据缺口缺失",
+  required_evidence: "需要补证",
+  required_evidence_missing: "需要补证缺失",
   manual_action_boundary: "动作边界",
   manual_action_boundary_missing: "动作边界缺失",
   window_integrity: "复盘窗口",
@@ -1152,6 +1157,7 @@ const reviewRecordTargetingEvidenceLabels = ["投放词证据"];
 const reviewRecordAdGroupSynthesisLabels = ["广告组合流判断"];
 const reviewRecordAbaContextLabels = ["ABA 背景"];
 const reviewRecordEvidenceGapLabels = ["证据缺口"];
+const reviewRecordRequiredEvidenceLabels = ["需要补证"];
 const reviewRecordManualActionBoundaryLabels = ["动作边界"];
 
 const reviewRecordDiagnosisSupportLabels = [
@@ -1162,6 +1168,7 @@ const reviewRecordDiagnosisSupportLabels = [
   "广告组合流判断",
   "ABA 背景",
   "证据缺口",
+  "需要补证",
   "动作边界",
   "搜索词边界",
   "广告位边界",
@@ -1257,11 +1264,12 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
               reviewRecordAdGroupSynthesisLabels,
               reviewRecordAbaContextLabels,
               reviewRecordEvidenceGapLabels,
+              reviewRecordRequiredEvidenceLabels,
               reviewRecordManualActionBoundaryLabels,
             ],
             labels,
             hasSnapshot,
-            "搜索词待办必须保留投放词证据、广告组合流判断、ABA 背景、证据缺口和动作边界，避免复盘时把搜索词裸指标误判为自动加词或否词依据。",
+            "搜索词待办必须保留投放词证据、广告组合流判断、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标误判为自动加词或否词依据。",
           ),
           {
             label: "广告组合流判断",
@@ -1438,6 +1446,15 @@ function reviewRecordEvidenceGapPreflightText(todo: ReviewTodoForUi | null) {
   );
 }
 
+function reviewRecordRequiredEvidencePreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordSearchTermReviewChainPreflightText(
+    todo,
+    reviewRecordRequiredEvidenceLabels,
+    "当前待办缺少需要补证",
+    "需要补证回看",
+  );
+}
+
 function reviewRecordManualActionBoundaryPreflightText(todo: ReviewTodoForUi | null) {
   return reviewRecordSearchTermReviewChainPreflightText(
     todo,
@@ -1589,6 +1606,7 @@ export function buildReviewRecordPreflightChecklist(
   const hasAdGroupSynthesis = reviewTodoHasSnapshotLabel(todo, "广告组合流判断");
   const hasAbaContext = reviewTodoHasSnapshotLabel(todo, "ABA 背景");
   const hasEvidenceGap = reviewTodoHasSnapshotLabel(todo, "证据缺口");
+  const hasRequiredEvidence = reviewTodoHasSnapshotLabel(todo, "需要补证");
   const hasManualActionBoundary = reviewTodoHasSnapshotLabel(todo, "动作边界");
   const hasTodoEvidenceSignature = reviewTodoEvidenceMatchesEffect(todo, effect);
   const hasTodoObjectReference = reviewTodoHasObjectReference(todo, effect);
@@ -1649,6 +1667,11 @@ export function buildReviewRecordPreflightChecklist(
         id: hasEvidenceGap ? "evidence_gap" : "evidence_gap_missing",
         title: "回看证据缺口",
         description: reviewRecordEvidenceGapPreflightText(todo),
+      },
+      {
+        id: hasRequiredEvidence ? "required_evidence" : "required_evidence_missing",
+        title: "回看需要补证",
+        description: reviewRecordRequiredEvidencePreflightText(todo),
       },
       {
         id: hasManualActionBoundary ? "manual_action_boundary" : "manual_action_boundary_missing",
@@ -2454,17 +2477,17 @@ const manualActionPreflightPriorityEvidenceLabels = [
   "投放词证据",
   "广告组合流判断",
   "ABA 背景",
-  "搜索词边界",
-  "广告位边界",
   "证据缺口",
-  "广告位证据缺口",
-  "诊断证据缺口",
   "需要补证",
   "动作边界",
+  "搜索词边界",
+  "广告位边界",
+  "广告位证据缺口",
+  "诊断证据缺口",
   "人工下一步",
 ];
 
-export function manualActionPreflightPriorityEvidenceRows(preflight: ManualActionPreflightForUi | null, limit = 6) {
+export function manualActionPreflightPriorityEvidenceRows(preflight: ManualActionPreflightForUi | null, limit = 9) {
   if (!preflight?.evidence_snapshot_preview) return [];
   const priorityRank = new Map(manualActionPreflightPriorityEvidenceLabels.map((label, index) => [label, index]));
   const rows = buildManualActionDisplayEvidenceSnapshot({
@@ -2487,7 +2510,7 @@ export function manualConfirmationEvidenceReadinessSummary(
   const manualLabels = evidenceLabelSet(manualEvidenceItems);
   const snapshotLabels = evidenceLabelSet(preflightEvidenceRows);
   const hasPreflightSnapshot = preflightEvidenceRows.length > 0;
-  const searchTermReviewChainLabels = ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "动作边界"];
+  const searchTermReviewChainLabels = ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "需要补证", "动作边界"];
   const needsSearchTermReviewChain = searchTermReviewChainLabels.some(
     (label) => manualLabels.has(label) || snapshotLabels.has(label),
   );
@@ -2510,7 +2533,7 @@ export function manualConfirmationEvidenceReadinessSummary(
             label: "搜索词复核链",
             manual: searchTermReviewChainLabels,
             snapshot: searchTermReviewChainLabels,
-            detail: "确认搜索词进入人工确认前，投放词、广告组合流判断、ABA、缺口和动作边界会一起保存。",
+            detail: "确认搜索词进入人工确认前，投放词、广告组合流判断、ABA、证据缺口、需要补证和动作边界会一起保存。",
           },
         ]
       : []),

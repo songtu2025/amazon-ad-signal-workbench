@@ -80,6 +80,7 @@ def write_complete_evidence_action(action_root: Path) -> None:
             {"label": "广告组合流判断", "value": "beach essentials 已串联 Parent -> 广告 ASIN -> 广告组"},
             {"label": "ABA 背景", "value": "beach essentials ABA 背景已记录"},
             {"label": "证据缺口", "value": "beach essentials 当前缺口已说明"},
+            {"label": "需要补证", "value": "beach essentials 后续补证路径已记录"},
             {"label": "动作边界", "value": "beach essentials 仅建议人工加入复盘"},
         ],
     }

@@ -975,6 +975,7 @@ const searchTermReviewTodoWithFullChain: ReviewTodoForUi = {
     },
     { label: "ABA 背景", value: "ABA 排名 208 / 2026-06-07 至 2026-06-13", detail: "ABA 只作为站点级市场背景。", source: "diagnosis_contract + ABA导出" },
     { label: "证据缺口", value: "缺少主推策略和投放词维护状态", source: "diagnosis_contract" },
+    { label: "需要补证", value: "补齐投放词维护状态、广告商品承接和主推策略", source: "diagnosis_contract" },
     { label: "动作边界", value: "只允许记录观察、标记已处理、加入复盘或忽略本次", detail: "不得自动加词、否词、调价或暂停广告。", source: "business_rule" },
   ],
 };
@@ -999,11 +1000,11 @@ assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadbackWithoutAdGroupSyn
 const blockedReviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary({
   ...searchTermReviewTodoWithFullChain,
   evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot?.filter(
-    (item) => !["ABA 背景", "证据缺口"].includes(item.label),
+    (item) => !["ABA 背景", "证据缺口", "需要补证"].includes(item.label),
   ),
 });
 assertEqual(blockedReviewTodoEvidenceReadback?.tone, "blocked");
-assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadback), "缺：ABA 背景 / 证据缺口");
+assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadback), "缺：ABA 背景 / 证据缺口 / 需要补证");
 assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadback), "不能直接保存可复盘结论");
 const searchTermReviewRecordPreflightChecklist = buildReviewRecordPreflightChecklist(
   searchTermReviewTodoWithFullChain,
@@ -1015,7 +1016,7 @@ const searchTermReviewRecordPreflightChecklist = buildReviewRecordPreflightCheck
     objectId: "search_term:1:beach essentials",
   },
 );
-assertEqual(searchTermReviewRecordPreflightChecklist.length, 17);
+assertEqual(searchTermReviewRecordPreflightChecklist.length, 18);
 assertEqual(searchTermReviewRecordPreflightChecklist[6].id, "targeting_evidence");
 assertIncludes(searchTermReviewRecordPreflightChecklist[6].description, "beach essentials");
 assertEqual(searchTermReviewRecordPreflightChecklist[7].id, "ad_group_synthesis");
@@ -1025,10 +1026,12 @@ assertEqual(searchTermReviewRecordPreflightChecklist[8].id, "aba_context");
 assertIncludes(searchTermReviewRecordPreflightChecklist[8].description, "ABA 排名 208");
 assertEqual(searchTermReviewRecordPreflightChecklist[9].id, "evidence_gap");
 assertIncludes(searchTermReviewRecordPreflightChecklist[9].description, "缺少主推策略");
-assertEqual(searchTermReviewRecordPreflightChecklist[10].id, "manual_action_boundary");
-assertIncludes(searchTermReviewRecordPreflightChecklist[10].description, "不得自动加词");
+assertEqual(searchTermReviewRecordPreflightChecklist[10].id, "required_evidence");
+assertIncludes(searchTermReviewRecordPreflightChecklist[10].description, "补齐投放词维护状态");
+assertEqual(searchTermReviewRecordPreflightChecklist[11].id, "manual_action_boundary");
+assertIncludes(searchTermReviewRecordPreflightChecklist[11].description, "不得自动加词");
 assertEqual(canSaveReviewRecordWithPreflight(searchTermReviewEffect, searchTermReviewRecordPreflightChecklist), true);
-for (const label of ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "动作边界"]) {
+for (const label of ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "需要补证", "动作边界"]) {
   const checklist = buildReviewRecordPreflightChecklist(
     {
       ...searchTermReviewTodoWithFullChain,
@@ -1916,6 +1919,7 @@ const readyManualConfirmationEvidenceReadiness = manualConfirmationEvidenceReadi
     { label: "广告组合流判断", value: "搜索词只能说明同广告组上下文，不能自动归因到单个广告 ASIN" },
     { label: "ABA 背景", value: "站点级 ABA 匹配" },
     { label: "证据缺口", value: "广告位仍需补证" },
+    { label: "需要补证", value: "补齐广告位和投放词维护状态" },
     { label: "动作边界", value: "不自动执行广告动作" },
   ],
   [
@@ -1927,6 +1931,7 @@ const readyManualConfirmationEvidenceReadiness = manualConfirmationEvidenceReadi
     { label: "广告组合流判断", value: "同广告组上下文已回看" },
     { label: "ABA 背景", value: "站点级市场背景" },
     { label: "证据缺口", value: "需要补广告位" },
+    { label: "需要补证", value: "补齐广告位和投放词维护状态" },
     { label: "动作边界", value: "不执行广告动作" },
   ],
 );
@@ -1953,6 +1958,7 @@ const readyManualConfirmationDiagnosisBridge = manualConfirmationDiagnosisBridge
     { label: "广告组合流判断", value: "搜索词只能说明同广告组上下文，不能自动归因到单个广告 ASIN" },
     { label: "ABA 背景", value: "站点级 ABA 匹配" },
     { label: "证据缺口", value: "广告位仍需补证" },
+    { label: "需要补证", value: "补齐广告位和投放词维护状态" },
     { label: "动作边界", value: "不自动执行广告动作" },
   ],
   readyManualConfirmationEvidenceReadiness,
@@ -1982,7 +1988,7 @@ const blockedManualConfirmationEvidenceReadiness = manualConfirmationEvidenceRea
   ],
 );
 assertEqual(blockedManualConfirmationEvidenceReadiness?.tone, "blocked");
-assertIncludes(JSON.stringify(blockedManualConfirmationEvidenceReadiness), "缺：广告组合流判断 / ABA 背景 / 证据缺口 / 动作边界");
+assertIncludes(JSON.stringify(blockedManualConfirmationEvidenceReadiness), "缺：广告组合流判断 / 需要补证 / ABA 背景 / 证据缺口 / 动作边界");
 assertIncludes(blockedManualConfirmationEvidenceReadiness?.summary ?? "", "不能把当前点击当成可复盘留痕");
 const snapshotOnlySearchTermChainReadiness = manualConfirmationEvidenceReadinessSummary(
   [
@@ -2001,6 +2007,7 @@ const snapshotOnlySearchTermChainReadiness = manualConfirmationEvidenceReadiness
     { label: "广告组合流判断", value: "同广告组证据" },
     { label: "ABA 背景", value: "站点级市场背景" },
     { label: "证据缺口", value: "缺广告位层级" },
+    { label: "需要补证", value: "补齐广告位和投放词维护状态" },
     { label: "动作边界", value: "只允许人工留痕" },
   ],
 );
@@ -2008,7 +2015,7 @@ assertEqual(snapshotOnlySearchTermChainReadiness?.tone, "blocked");
 assertIncludes(snapshotOnlySearchTermChainReadiness?.summary ?? "", "不一致");
 assertIncludes(
   JSON.stringify(snapshotOnlySearchTermChainReadiness),
-  "页面缺少：投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 动作边界",
+  "页面缺少：投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
 );
 const blockedManualConfirmationDiagnosisBridge = manualConfirmationDiagnosisBridgeSummary(
   {
@@ -2179,18 +2186,23 @@ const searchTermPreflightPriorityEvidenceRows = manualActionPreflightPriorityEvi
     ],
   },
 });
-assertEqual(searchTermPreflightPriorityEvidenceRows.length, 6);
+assertEqual(searchTermPreflightPriorityEvidenceRows.length, 9);
 assertEqual(searchTermPreflightPriorityEvidenceRows[0].label, "AI 准入");
 assertIncludes(searchTermPreflightPriorityEvidenceRows[0].value, "不会自动执行广告动作");
 assertEqual(searchTermPreflightPriorityEvidenceRows[1].label, "投放词证据");
 assertIncludes(searchTermPreflightPriorityEvidenceRows[1].value, "beach essentials");
 assertEqual(searchTermPreflightPriorityEvidenceRows[2].label, "ABA 背景");
 assertIncludes(searchTermPreflightPriorityEvidenceRows[2].value, "排名 208");
-assertEqual(searchTermPreflightPriorityEvidenceRows[3].label, "搜索词边界");
-assertIncludes(searchTermPreflightPriorityEvidenceRows[3].detail ?? "", "不能自动归因");
-assertEqual(searchTermPreflightPriorityEvidenceRows[4].label, "广告位边界");
-assertIncludes(searchTermPreflightPriorityEvidenceRows[4].source ?? "", "ad_placement_daily_metrics");
-assertEqual(searchTermPreflightPriorityEvidenceRows[5].label, "证据缺口");
+assertEqual(searchTermPreflightPriorityEvidenceRows[3].label, "证据缺口");
+assertEqual(searchTermPreflightPriorityEvidenceRows[4].label, "需要补证");
+assertIncludes(searchTermPreflightPriorityEvidenceRows[4].value, "投放词维护状态");
+assertEqual(searchTermPreflightPriorityEvidenceRows[5].label, "动作边界");
+assertIncludes(searchTermPreflightPriorityEvidenceRows[5].value, "人工留痕");
+assertEqual(searchTermPreflightPriorityEvidenceRows[6].label, "搜索词边界");
+assertIncludes(searchTermPreflightPriorityEvidenceRows[6].detail ?? "", "不能自动归因");
+assertEqual(searchTermPreflightPriorityEvidenceRows[7].label, "广告位边界");
+assertIncludes(searchTermPreflightPriorityEvidenceRows[7].source ?? "", "ad_placement_daily_metrics");
+assertEqual(searchTermPreflightPriorityEvidenceRows[8].label, "广告位证据缺口");
 const searchIntentManualEvidenceSnapshot = buildSearchIntentManualActionEvidenceSnapshot({
   intentLabel: "规则语义：海滩出行用品",
   searchTerm: "beach essentials",

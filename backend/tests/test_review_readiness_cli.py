@@ -547,6 +547,7 @@ def test_review_identity_audit_reports_ad_group_synthesis_gap() -> None:
                 "has_ad_group_synthesis": False,
                 "has_aba_context": True,
                 "has_evidence_gap": True,
+                "has_required_evidence": True,
                 "has_action_boundary": True,
             }
         ],

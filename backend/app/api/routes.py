@@ -250,6 +250,7 @@ def create_signal_review_record(
             "review_record_missing_targeting_evidence",
             "review_record_missing_aba_context",
             "review_record_missing_evidence_gap",
+            "review_record_missing_required_evidence",
             "review_record_missing_action_boundary",
             "review_record_evidence_snapshot_object_mismatch",
             "review_record_evidence_snapshot_mismatch",
@@ -283,6 +284,8 @@ def _validate_review_record_evidence_snapshot_preflight(
             raise HTTPException(status_code=409, detail="review_record_missing_aba_context")
         if not _review_record_evidence_snapshot_has_evidence_gap(request.expected_evidence_snapshot):
             raise HTTPException(status_code=409, detail="review_record_missing_evidence_gap")
+        if not _review_record_evidence_snapshot_has_required_evidence(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_required_evidence")
         if not _review_record_evidence_snapshot_has_action_boundary(request.expected_evidence_snapshot):
             raise HTTPException(status_code=409, detail="review_record_missing_action_boundary")
     if request.expected_object_id and not _review_record_evidence_snapshot_has_expected_object(
@@ -348,6 +351,10 @@ def _review_record_evidence_snapshot_has_aba_context(items: object) -> bool:
 
 def _review_record_evidence_snapshot_has_evidence_gap(items: object) -> bool:
     return _review_record_evidence_snapshot_has_label(items, "证据缺口")
+
+
+def _review_record_evidence_snapshot_has_required_evidence(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "需要补证")
 
 
 def _review_record_evidence_snapshot_has_action_boundary(items: object) -> bool:
@@ -458,6 +465,7 @@ def _review_todo_missing_required_evidence(todo: ReviewTodo) -> bool:
         and _review_record_evidence_snapshot_has_targeting_evidence(todo.evidence_snapshot)
         and _review_record_evidence_snapshot_has_aba_context(todo.evidence_snapshot)
         and _review_record_evidence_snapshot_has_evidence_gap(todo.evidence_snapshot)
+        and _review_record_evidence_snapshot_has_required_evidence(todo.evidence_snapshot)
         and _review_record_evidence_snapshot_has_action_boundary(todo.evidence_snapshot)
     )
 

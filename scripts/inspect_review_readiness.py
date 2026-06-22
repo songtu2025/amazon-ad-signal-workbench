@@ -189,6 +189,7 @@ def review_todo_evidence_snapshot_audit(todo: Any) -> dict[str, Any]:
             "has_ad_group_synthesis": None,
             "has_aba_context": None,
             "has_evidence_gap": None,
+            "has_required_evidence": None,
             "has_action_boundary": None,
             "has_object_reference": None,
         }
@@ -203,6 +204,7 @@ def review_todo_evidence_snapshot_audit(todo: Any) -> dict[str, Any]:
         "has_ad_group_synthesis": review_evidence_snapshot_has_label(evidence_snapshot, "广告组合流判断"),
         "has_aba_context": review_evidence_snapshot_has_label(evidence_snapshot, "ABA 背景"),
         "has_evidence_gap": review_evidence_snapshot_has_label(evidence_snapshot, "证据缺口"),
+        "has_required_evidence": review_evidence_snapshot_has_label(evidence_snapshot, "需要补证"),
         "has_action_boundary": review_evidence_snapshot_has_label(evidence_snapshot, "动作边界"),
         "has_object_reference": review_evidence_snapshot_has_object_reference(evidence_snapshot, todo),
     }
@@ -271,6 +273,7 @@ def review_identity_audit_summary(
     missing_ad_group_synthesis_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_ad_group_synthesis"))
     missing_aba_context_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_aba_context"))
     missing_evidence_gap_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_evidence_gap"))
+    missing_required_evidence_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_required_evidence"))
     missing_action_boundary_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_action_boundary"))
     missing_object_reference_count = sum(1 for item in snapshot_known_keys if item.get("has_object_reference") is False)
     unstable_object_id_count = len(identity_issues)
@@ -294,6 +297,7 @@ def review_identity_audit_summary(
         "missing_ad_group_synthesis_count": missing_ad_group_synthesis_count,
         "missing_aba_context_count": missing_aba_context_count,
         "missing_evidence_gap_count": missing_evidence_gap_count,
+        "missing_required_evidence_count": missing_required_evidence_count,
         "missing_action_boundary_count": missing_action_boundary_count,
         "missing_object_reference_count": missing_object_reference_count,
         "unstable_object_id_count": unstable_object_id_count,
@@ -333,6 +337,7 @@ def review_readback_key(effect: dict[str, Any]) -> dict[str, Any]:
                 "has_ad_group_synthesis": effect.get("has_ad_group_synthesis"),
                 "has_aba_context": effect.get("has_aba_context"),
                 "has_evidence_gap": effect.get("has_evidence_gap"),
+                "has_required_evidence": effect.get("has_required_evidence"),
                 "has_action_boundary": effect.get("has_action_boundary"),
             }
         )
@@ -469,6 +474,18 @@ def review_identity_audit_issues(
                         "object_id": item.get("object_id"),
                         "review_window": item.get("review_window"),
                         "note": "搜索词复盘待办缺少“证据缺口”，不能证明当时人工判断已保留不可证明项。",
+                    }
+                )
+            if not item.get("has_required_evidence"):
+                issues.append(
+                    {
+                        "issue_type": "missing_required_evidence",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "搜索词复盘待办缺少“需要补证”，不能证明当时已保存后续人工补证路径。",
                     }
                 )
             if not item.get("has_action_boundary"):
@@ -907,6 +924,7 @@ def review_audit_issue_reason(issues: list[dict[str, Any]]) -> str:
         "missing_ad_group_synthesis": "缺少广告组合流判断",
         "missing_aba_context": "缺少 ABA 背景",
         "missing_evidence_gap": "缺少证据缺口",
+        "missing_required_evidence": "缺少需要补证",
         "missing_action_boundary": "缺少动作边界",
         "evidence_snapshot_object_mismatch": "证据快照对象不一致",
         "missing_action_id": "缺少 action_id",

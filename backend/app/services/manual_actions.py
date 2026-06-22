@@ -651,6 +651,8 @@ def save_review_record(
             raise ValueError("review_record_missing_aba_context")
         if not _review_record_has_evidence_gap(expected_evidence_snapshot):
             raise ValueError("review_record_missing_evidence_gap")
+        if not _review_record_has_required_evidence(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_required_evidence")
         if not _review_record_has_action_boundary(expected_evidence_snapshot):
             raise ValueError("review_record_missing_action_boundary")
     if not _review_record_evidence_snapshot_matches_effect(effect, expected_evidence_snapshot):
@@ -741,6 +743,10 @@ def _review_record_has_aba_context(evidence_snapshot: list[ManualActionEvidenceS
 
 def _review_record_has_evidence_gap(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
     return _review_record_has_snapshot_label(evidence_snapshot, "证据缺口")
+
+
+def _review_record_has_required_evidence(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "需要补证")
 
 
 def _review_record_has_action_boundary(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:

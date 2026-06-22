@@ -694,6 +694,7 @@ def test_review_todo_void_api_removes_legacy_todos_and_blocks_review_record(monk
                 {"label": "投放词证据", "value": "beach essentials / 1 个"},
                 {"label": "ABA 背景", "value": "ABA 排名 208"},
                 {"label": "证据缺口", "value": "缺少主推策略和投放词维护状态"},
+                {"label": "需要补证", "value": "补齐投放词维护状态、广告商品承接和主推策略"},
                 {"label": "动作边界", "value": "只允许人工留痕和复盘"},
             ],
             "expected_can_auto_change_rules": False,
@@ -732,6 +733,7 @@ def test_review_record_rejects_evidence_snapshot_object_mismatch(monkeypatch, tm
                 {"label": "投放词证据", "value": "boys sunglasses / 1 个"},
                 {"label": "ABA 背景", "value": "ABA 未命中"},
                 {"label": "证据缺口", "value": "缺少主推策略和投放词维护状态"},
+                {"label": "需要补证", "value": "补齐投放词维护状态、广告商品承接和主推策略"},
                 {"label": "动作边界", "value": "只允许人工留痕和复盘"},
                 {"label": "人工确认判断依据", "value": "boys sunglasses 产生 3 单，可进入人工扩量复核"},
             ],
@@ -772,6 +774,7 @@ def test_review_record_rejects_search_term_snapshot_without_action_boundary(monk
                 {"label": "投放词证据", "value": "beach essentials / 1 个"},
                 {"label": "ABA 背景", "value": "ABA 排名 208"},
                 {"label": "证据缺口", "value": "缺少主推策略和投放词维护状态"},
+                {"label": "需要补证", "value": "补齐投放词维护状态、广告商品承接和主推策略"},
             ],
             "expected_can_auto_change_rules": False,
             "expected_can_auto_execute_ads": False,
@@ -780,6 +783,45 @@ def test_review_record_rejects_search_term_snapshot_without_action_boundary(monk
 
     assert response.status_code == 409
     assert response.json()["detail"] == "review_record_missing_action_boundary"
+
+
+def test_review_record_rejects_search_term_snapshot_without_required_evidence(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path / "manual_actions")
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path / "review_records")
+    monkeypatch.setattr(
+        routes,
+        "build_review_effect_result",
+        lambda *args, **kwargs: SimpleNamespace(status="ready"),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/signals/sig-opportunity-search-term-1-beach-essentials/review-records",
+        params={"market_id": 1, "review_window": "7d"},
+        json={
+            "review_note": "缺需要补证不能保存",
+            "reviewer_name": "本地运营",
+            "expected_object_type": "search_term",
+            "expected_object_id": "search_term:1:beach essentials",
+            "expected_review_window": "7d",
+            "expected_evidence_snapshot": [
+                {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组"},
+                {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
+                {"label": "搜索词边界", "value": "beach essentials 只说明同广告组搜索词上下文"},
+                {"label": "广告位边界", "value": "广告位证据缺口不能自动归因"},
+                {"label": "广告组合流判断", "value": "beach essentials 已串联广告组问题定位"},
+                {"label": "投放词证据", "value": "beach essentials / 1 个"},
+                {"label": "ABA 背景", "value": "ABA 排名 208"},
+                {"label": "证据缺口", "value": "缺少主推策略和投放词维护状态"},
+                {"label": "动作边界", "value": "只允许人工留痕和复盘"},
+            ],
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "review_record_missing_required_evidence"
 
 
 def test_review_record_rejects_search_term_snapshot_without_ad_group_synthesis(monkeypatch, tmp_path: Path) -> None:
@@ -809,6 +851,7 @@ def test_review_record_rejects_search_term_snapshot_without_ad_group_synthesis(m
                 {"label": "投放词证据", "value": "beach essentials / 1 个"},
                 {"label": "ABA 背景", "value": "ABA 排名 208"},
                 {"label": "证据缺口", "value": "缺少主推策略和投放词维护状态"},
+                {"label": "需要补证", "value": "补齐投放词维护状态、广告商品承接和主推策略"},
                 {"label": "动作边界", "value": "只允许人工留痕和复盘"},
             ],
             "expected_can_auto_change_rules": False,
@@ -909,7 +952,7 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
     assert action["evidence_snapshot"][0]["label"] == "排查路径"
     assert action["evidence_snapshot"][1]["label"] == "AI 准入"
     assert {item["label"] for item in action["evidence_snapshot"]}.issuperset(
-        {"广告组合流判断", "搜索词边界", "广告位边界", "投放词证据", "ABA 背景", "证据缺口", "动作边界"}
+        {"广告组合流判断", "搜索词边界", "广告位边界", "投放词证据", "ABA 背景", "证据缺口", "需要补证", "动作边界"}
     )
 
     todos_response = client.get(
@@ -1036,7 +1079,7 @@ def test_beach_essentials_manual_action_post_write_readback_distinguishes_action
         assert action["object_id"] == "search_term:1:beach essentials"
         assert len(action["evidence_snapshot"]) == 22
         assert {item["label"] for item in action["evidence_snapshot"]}.issuperset(
-            {"广告组合流判断", "搜索词边界", "广告位边界", "投放词证据", "ABA 背景", "证据缺口", "动作边界"}
+            {"广告组合流判断", "搜索词边界", "广告位边界", "投放词证据", "ABA 背景", "证据缺口", "需要补证", "动作边界"}
         )
         snapshot_by_label = {item["label"]: item for item in action["evidence_snapshot"]}
         assert "beach essentials" in snapshot_by_label["广告组合流判断"]["value"]
