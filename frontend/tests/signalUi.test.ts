@@ -3876,7 +3876,8 @@ assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "花费 $25.00"
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "广告订单 2");
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "广告销售 $40.00");
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "没有命中人工处理队列准入门槛");
-assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "全量排查还有 6 条");
+assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "范围外辅助排查");
+assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "不属于当前商品组广告诊断");
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "数据质量层还有 2 条");
 
 const parentScopeDrilldownExplanation = buildProductScopeSignalExplanation(

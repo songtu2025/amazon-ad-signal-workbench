@@ -5722,7 +5722,7 @@ export function buildProductScopeSignalExplanation(
 
   const outsideSignalCount = Math.max(input.allSignalCount - input.scopeSignalCount, 0);
   if (outsideSignalCount > 0) {
-    reasons.push(`全量排查还有 ${outsideSignalCount} 条范围外信号，可用于查看未归因广告数据或数据质量事项。`);
+    reasons.push(`范围外辅助排查：还有 ${outsideSignalCount} 条不属于当前${label}广告诊断的信号，只用于查看未归因广告数据或数据质量事项。`);
   }
 
   if ((input.dataQualityCount ?? 0) > 0) {
