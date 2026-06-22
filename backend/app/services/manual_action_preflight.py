@@ -23,6 +23,14 @@ SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS = (
     "需要补证",
     "动作边界",
 )
+ADVERTISED_PRODUCT_REQUIRED_REVIEW_EVIDENCE_LABELS = (
+    *REQUIRED_REVIEW_EVIDENCE_LABELS,
+    "广告商品覆盖",
+    "广告组合流判断",
+    "证据缺口",
+    "需要补证",
+    "动作边界",
+)
 ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
     "diagnosis_path",
     "ai_admission_gate",
@@ -43,6 +51,10 @@ ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
     "search_term_review_aba_context",
     "search_term_review_evidence_gap",
     "search_term_review_action_boundary",
+    "advertised_product_review_ad_group_synthesis",
+    "advertised_product_review_evidence_gap",
+    "advertised_product_review_required_evidence",
+    "advertised_product_review_action_boundary",
     "manual_action_path",
     "review_metrics",
     "placement_context_gap",
@@ -437,6 +449,7 @@ def _evidence_snapshot_preview(triage: dict[str, Any], target: dict[str, Any]) -
     blocks.extend(_product_scope_boundary_snapshot_blocks(triage, blocks, target))
     blocks.extend(_diagnosis_contract_snapshot_blocks(triage, target))
     blocks.extend(_search_term_review_chain_snapshot_blocks(blocks, triage, target))
+    blocks.extend(_advertised_product_review_chain_snapshot_blocks(blocks, triage, target))
     blocks = _ordered_evidence_snapshot_blocks(blocks)
     items = [_evidence_snapshot_item(block) for block in blocks]
     items = [item for item in items if item["label"] and item["value"]]
@@ -868,10 +881,91 @@ def _search_term_review_chain_snapshot_blocks(
     ]
 
 
+def _advertised_product_review_chain_snapshot_blocks(
+    blocks: list[dict[str, Any]],
+    triage: dict[str, Any],
+    target: dict[str, Any],
+) -> list[dict[str, str]]:
+    if str(target.get("object_type") or "").strip() != "advertised_product":
+        return []
+
+    labels = {
+        str(block.get("label") or "").strip()
+        for block in blocks
+        if str(block.get("value") or "").strip()
+    }
+    contract = _diagnosis_contract_for_target(triage, target)
+    sections = _dict_list(contract.get("sections"))
+    object_label = str(target.get("object_label") or target.get("object_id") or "当前广告商品").strip()
+    gap_block = _first_snapshot_block(blocks, "diagnosis_contract_gap")
+    required_block = _first_snapshot_block(blocks, "diagnosis_contract_required_evidence")
+    ad_group_section = _diagnosis_contract_section(sections, "ad_group_boundary")
+
+    review_blocks: list[dict[str, str]] = []
+    if "广告组合流判断" not in labels:
+        judgement = str(ad_group_section.get("current_judgement") or "").strip()
+        does_not_prove = str(ad_group_section.get("does_not_prove") or "").strip()
+        review_blocks.append(
+            {
+                "block_id": "advertised_product_review_ad_group_synthesis",
+                "label": "广告组合流判断",
+                "value": f"{object_label}：{judgement or '需按广告组容器回看投放词、搜索词和广告位上下文。'}",
+                "detail": does_not_prove
+                or "广告组是投放容器，广告商品复盘必须保留同广告组上下文；不能把搜索词或广告位证据自动归因到单个广告 ASIN。",
+                "source": "diagnosis_contract + business_rule",
+            }
+        )
+
+    if "证据缺口" not in labels:
+        gap_value = str(gap_block.get("value") or "").strip()
+        required_value = str(required_block.get("value") or "").strip()
+        combined_gap = "；".join(value for value in (gap_value, required_value) if value)
+        review_blocks.append(
+            {
+                "block_id": "advertised_product_review_evidence_gap",
+                "label": "证据缺口",
+                "value": combined_gap or "仍需人工核对广告商品覆盖、广告组容器、搜索词上下文、广告位证据和主推策略。",
+                "detail": "广告商品复盘必须保留缺口，避免把广告 ASIN 指标、搜索词或广告位背景包装成单 ASIN 自动归因。",
+                "source": "diagnosis_contract",
+            }
+        )
+
+    if "需要补证" not in labels:
+        required_value = str(required_block.get("value") or "").strip()
+        review_blocks.append(
+            {
+                "block_id": "advertised_product_review_required_evidence",
+                "label": "需要补证",
+                "value": required_value or "补齐广告组级广告位证据、投放词维护状态、广告商品承接和主推策略。",
+                "detail": "补证路径只用于人工复核和后续复盘，不能自动调价、暂停、加词或否词。",
+                "source": "diagnosis_contract",
+            }
+        )
+
+    if "动作边界" not in labels:
+        review_blocks.append(
+            {
+                "block_id": "advertised_product_review_action_boundary",
+                "label": "动作边界",
+                "value": "只允许记录观察、标记已处理、加入复盘或忽略本次。",
+                "detail": "不得自动调价、自动暂停、自动加词或自动否词；广告商品动作只保存人工留痕和 7/14 天复盘待办。",
+                "source": "business_rule",
+            }
+        )
+    return review_blocks
+
+
 def _first_snapshot_block(blocks: list[dict[str, Any]], block_id: str) -> dict[str, Any]:
     for block in blocks:
         if str(block.get("block_id") or "").strip() == block_id:
             return block
+    return {}
+
+
+def _diagnosis_contract_section(sections: list[dict[str, Any]], section_id: str) -> dict[str, Any]:
+    for section in sections:
+        if str(section.get("section_id") or "").strip() == section_id:
+            return section
     return {}
 
 
@@ -1275,8 +1369,11 @@ def _has_required_review_evidence_snapshot(record: Any) -> bool:
 
 
 def _required_review_evidence_labels(record: Any) -> tuple[str, ...]:
-    if str(_record_value(record, "object_type") or "").strip() == "search_term":
+    object_type = str(_record_value(record, "object_type") or "").strip()
+    if object_type == "search_term":
         return SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS
+    if object_type == "advertised_product":
+        return ADVERTISED_PRODUCT_REQUIRED_REVIEW_EVIDENCE_LABELS
     return REQUIRED_REVIEW_EVIDENCE_LABELS
 
 

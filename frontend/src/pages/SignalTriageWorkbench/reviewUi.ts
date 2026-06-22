@@ -531,6 +531,8 @@ export interface ReviewRecordPreflightCheck {
     | "search_term_boundary_missing"
     | "placement_boundary"
     | "placement_boundary_missing"
+    | "ad_product_coverage"
+    | "ad_product_coverage_missing"
     | "targeting_evidence"
     | "targeting_evidence_missing"
     | "ad_group_synthesis"
@@ -597,6 +599,14 @@ const searchTermRequiredReviewRecordPreflightCheckIds: ReviewRecordPreflightChec
   "manual_action_boundary",
 ];
 
+const advertisedProductRequiredReviewRecordPreflightCheckIds: ReviewRecordPreflightCheck["id"][] = [
+  "ad_product_coverage",
+  "ad_group_synthesis",
+  "evidence_gap",
+  "required_evidence",
+  "manual_action_boundary",
+];
+
 const requiredReviewRecordPreflightCheckLabels: Record<ReviewRecordPreflightCheck["id"], string> = {
   target_identity: "复盘对象",
   action_evidence_snapshot: "人工动作证据",
@@ -608,6 +618,8 @@ const requiredReviewRecordPreflightCheckLabels: Record<ReviewRecordPreflightChec
   search_term_boundary_missing: "搜索词边界缺失",
   placement_boundary: "广告位边界",
   placement_boundary_missing: "广告位边界缺失",
+  ad_product_coverage: "广告商品覆盖",
+  ad_product_coverage_missing: "广告商品覆盖缺失",
   targeting_evidence: "投放词证据",
   targeting_evidence_missing: "投放词证据缺失",
   ad_group_synthesis: "广告组合流判断",
@@ -1153,6 +1165,7 @@ const reviewRecordDiagnosisPathLabels = ["排查路径", "人工动作路径"];
 const reviewRecordAiAdmissionLabels = ["AI 准入"];
 const reviewRecordSearchTermBoundaryLabels = ["搜索词边界"];
 const reviewRecordPlacementBoundaryLabels = ["广告位边界"];
+const reviewRecordAdProductCoverageLabels = ["广告商品覆盖"];
 const reviewRecordTargetingEvidenceLabels = ["投放词证据"];
 const reviewRecordAdGroupSynthesisLabels = ["广告组合流判断"];
 const reviewRecordAbaContextLabels = ["ABA 背景"];
@@ -1223,6 +1236,7 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
   const actionId = normalizedPreflightTargetValue(todo.action_id);
   const objectReady = Boolean(objectType && objectId && actionId);
   const isSearchTermTodo = objectType === "search_term";
+  const isAdvertisedProductTodo = objectType === "advertised_product";
   const dueDate = todo.due_at ? String(todo.due_at).slice(0, 10) : "到期日待补充";
   const adGroupSynthesisItem = snapshot.find((item) => reviewRecordAdGroupSynthesisLabels.includes(String(item.label ?? "").trim()));
   const adGroupSynthesisText = adGroupSynthesisItem ? reviewRecordEvidenceItemText(adGroupSynthesisItem) : null;
@@ -1281,6 +1295,23 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
           },
         ]
       : []),
+    ...(isAdvertisedProductTodo
+      ? [
+          reviewTodoReadbackRow(
+            "广告商品复核链",
+            [
+              reviewRecordAdProductCoverageLabels,
+              reviewRecordAdGroupSynthesisLabels,
+              reviewRecordEvidenceGapLabels,
+              reviewRecordRequiredEvidenceLabels,
+              reviewRecordManualActionBoundaryLabels,
+            ],
+            labels,
+            hasSnapshot,
+            "广告商品待办必须保留广告商品覆盖、广告组合流判断、证据缺口、需要补证和动作边界，避免复盘时把 ASIN 指标或同广告组搜索词背景误判为单 ASIN 自动归因。",
+          ),
+        ]
+      : []),
     {
       label: "复盘边界",
       value: todo.is_due ? "可读取效果窗口" : "等待到期",
@@ -1310,10 +1341,14 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
 }
 
 function requiredReviewRecordPreflightCheckIdsForEffect(effect: ReviewEffectForUi | null): ReviewRecordPreflightCheck["id"][] {
-  if (normalizedPreflightTargetValue(effect?.object_type) !== "search_term") {
-    return baseRequiredReviewRecordPreflightCheckIds;
+  const objectType = normalizedPreflightTargetValue(effect?.object_type);
+  if (objectType === "search_term") {
+    return [...baseRequiredReviewRecordPreflightCheckIds, ...searchTermRequiredReviewRecordPreflightCheckIds];
   }
-  return [...baseRequiredReviewRecordPreflightCheckIds, ...searchTermRequiredReviewRecordPreflightCheckIds];
+  if (objectType === "advertised_product") {
+    return [...baseRequiredReviewRecordPreflightCheckIds, ...advertisedProductRequiredReviewRecordPreflightCheckIds];
+  }
+  return baseRequiredReviewRecordPreflightCheckIds;
 }
 
 function reviewRecordEvidenceItemText(item: ManualActionEvidenceSnapshotForUi) {
@@ -1408,6 +1443,66 @@ function reviewRecordSearchTermReviewChainPreflightText(
     return `${missingText}；保存前只能核对处理前后指标，不能证明当时人工判断已经看过搜索词机会的投放词、广告组合流、ABA、证据缺口或动作边界。`;
   }
   return `${readyPrefix}：${itemText}。保存复盘前必须确认它只作为人工复盘依据，不自动加词、否词、调价或暂停广告。`;
+}
+
+function reviewRecordAdvertisedProductReviewChainPreflightText(
+  todo: ReviewTodoForUi | null,
+  labels: string[],
+  missingText: string,
+  readyPrefix: string,
+) {
+  const snapshot = todo?.evidence_snapshot ?? [];
+  const item = snapshot.find((evidenceItem) => labels.includes(String(evidenceItem.label ?? "").trim()));
+  const itemText = item ? reviewRecordEvidenceItemText(item) : null;
+  if (!itemText) {
+    return `${missingText}；保存前只能核对处理前后指标，不能证明当时人工判断已经看过广告商品覆盖、广告组容器、证据缺口、需要补证或动作边界。`;
+  }
+  return `${readyPrefix}：${itemText}。保存复盘前必须确认它只作为广告商品人工复盘依据，不自动归因搜索词、调价、暂停、加词或否词。`;
+}
+
+function reviewRecordAdProductCoveragePreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordAdvertisedProductReviewChainPreflightText(
+    todo,
+    reviewRecordAdProductCoverageLabels,
+    "当前待办缺少广告商品覆盖",
+    "广告商品覆盖回看",
+  );
+}
+
+function reviewRecordAdProductAdGroupSynthesisPreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordAdvertisedProductReviewChainPreflightText(
+    todo,
+    reviewRecordAdGroupSynthesisLabels,
+    "当前待办缺少广告组合流判断",
+    "广告组合流判断回看",
+  );
+}
+
+function reviewRecordAdProductEvidenceGapPreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordAdvertisedProductReviewChainPreflightText(
+    todo,
+    reviewRecordEvidenceGapLabels,
+    "当前待办缺少证据缺口",
+    "证据缺口回看",
+  );
+}
+
+function reviewRecordAdProductRequiredEvidencePreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordAdvertisedProductReviewChainPreflightText(
+    todo,
+    reviewRecordRequiredEvidenceLabels,
+    "当前待办缺少需要补证",
+    "需要补证回看",
+  );
+}
+
+function reviewRecordAdProductManualActionBoundaryPreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordAdvertisedProductReviewChainPreflightText(
+    todo,
+    reviewRecordManualActionBoundaryLabels,
+    "当前待办缺少动作边界",
+    "动作边界回看",
+  );
 }
 
 function reviewRecordTargetingEvidencePreflightText(todo: ReviewTodoForUi | null) {
@@ -1601,7 +1696,10 @@ export function buildReviewRecordPreflightChecklist(
   const hasAiAdmission = reviewTodoHasAiAdmission(todo);
   const hasSearchTermBoundary = reviewTodoHasSearchTermBoundary(todo);
   const hasPlacementBoundary = reviewTodoHasPlacementBoundary(todo);
-  const requiresSearchTermReviewChain = normalizedPreflightTargetValue(effect.object_type) === "search_term";
+  const effectObjectType = normalizedPreflightTargetValue(effect.object_type);
+  const requiresSearchTermReviewChain = effectObjectType === "search_term";
+  const requiresAdvertisedProductReviewChain = effectObjectType === "advertised_product";
+  const hasAdProductCoverage = reviewTodoHasSnapshotLabel(todo, "广告商品覆盖");
   const hasTargetingEvidence = reviewTodoHasSnapshotLabel(todo, "投放词证据");
   const hasAdGroupSynthesis = reviewTodoHasSnapshotLabel(todo, "广告组合流判断");
   const hasAbaContext = reviewTodoHasSnapshotLabel(todo, "ABA 背景");
@@ -1677,6 +1775,36 @@ export function buildReviewRecordPreflightChecklist(
         id: hasManualActionBoundary ? "manual_action_boundary" : "manual_action_boundary_missing",
         title: "回看动作边界",
         description: reviewRecordManualActionBoundaryPreflightText(todo),
+      },
+    );
+  }
+
+  if (requiresAdvertisedProductReviewChain) {
+    checks.push(
+      {
+        id: hasAdProductCoverage ? "ad_product_coverage" : "ad_product_coverage_missing",
+        title: "回看广告商品覆盖",
+        description: reviewRecordAdProductCoveragePreflightText(todo),
+      },
+      {
+        id: hasAdGroupSynthesis ? "ad_group_synthesis" : "ad_group_synthesis_missing",
+        title: "回看广告组合流判断",
+        description: reviewRecordAdProductAdGroupSynthesisPreflightText(todo),
+      },
+      {
+        id: hasEvidenceGap ? "evidence_gap" : "evidence_gap_missing",
+        title: "回看证据缺口",
+        description: reviewRecordAdProductEvidenceGapPreflightText(todo),
+      },
+      {
+        id: hasRequiredEvidence ? "required_evidence" : "required_evidence_missing",
+        title: "回看需要补证",
+        description: reviewRecordAdProductRequiredEvidencePreflightText(todo),
+      },
+      {
+        id: hasManualActionBoundary ? "manual_action_boundary" : "manual_action_boundary_missing",
+        title: "回看动作边界",
+        description: reviewRecordAdProductManualActionBoundaryPreflightText(todo),
       },
     );
   }
@@ -2474,6 +2602,7 @@ export function manualActionPreflightEvidenceRows(preflight: ManualActionPreflig
 
 const manualActionPreflightPriorityEvidenceLabels = [
   "AI 准入",
+  "广告商品覆盖",
   "投放词证据",
   "广告组合流判断",
   "ABA 背景",
@@ -2511,9 +2640,11 @@ export function manualConfirmationEvidenceReadinessSummary(
   const snapshotLabels = evidenceLabelSet(preflightEvidenceRows);
   const hasPreflightSnapshot = preflightEvidenceRows.length > 0;
   const searchTermReviewChainLabels = ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "需要补证", "动作边界"];
+  const advertisedProductReviewChainLabels = ["广告商品覆盖", "广告组合流判断", "证据缺口", "需要补证", "动作边界"];
   const needsSearchTermReviewChain = searchTermReviewChainLabels.some(
     (label) => manualLabels.has(label) || snapshotLabels.has(label),
   );
+  const needsAdvertisedProductReviewChain = manualLabels.has("广告商品覆盖") || snapshotLabels.has("广告商品覆盖");
   const checks = [
     {
       label: "业务判断",
@@ -2534,6 +2665,16 @@ export function manualConfirmationEvidenceReadinessSummary(
             manual: searchTermReviewChainLabels,
             snapshot: searchTermReviewChainLabels,
             detail: "确认搜索词进入人工确认前，投放词、广告组合流判断、ABA、证据缺口、需要补证和动作边界会一起保存。",
+          },
+        ]
+      : []),
+    ...(needsAdvertisedProductReviewChain
+      ? [
+          {
+            label: "广告商品复核链",
+            manual: advertisedProductReviewChainLabels,
+            snapshot: advertisedProductReviewChainLabels,
+            detail: "确认广告商品进入人工确认前，广告商品覆盖、广告组合流判断、证据缺口、需要补证和动作边界会一起保存。",
           },
         ]
       : []),

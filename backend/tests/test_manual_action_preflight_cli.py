@@ -295,7 +295,7 @@ def test_manual_action_preflight_targets_next_unhandled_advertised_product(monke
     assert payload["expected_after_write"]["review_record_count"] == 0
     assert payload["expected_after_write"]["target_review_record_count"] == 0
     assert payload["evidence_snapshot_preview"]["status"] == "ready"
-    assert payload["evidence_snapshot_preview"]["item_count"] == 14
+    assert payload["evidence_snapshot_preview"]["item_count"] == 17
     assert [item["label"] for item in payload["evidence_snapshot_preview"]["items"][:7]] == [
         "排查路径",
         "AI 准入",
@@ -318,6 +318,13 @@ def test_manual_action_preflight_targets_next_unhandled_advertised_product(monke
     assert "缺少广告组级广告位证据" in synthesis_item["detail"]
     assert "有效 beach essentials" in payload["evidence_snapshot_preview"]["items"][5]["value"]
     assert "无订单 beach trip essentials" in payload["evidence_snapshot_preview"]["items"][6]["value"]
+    snapshot_by_label = {item["label"]: item for item in payload["evidence_snapshot_preview"]["items"]}
+    assert "广告商品覆盖" in snapshot_by_label
+    assert "证据缺口" in snapshot_by_label
+    assert "需要补证" in snapshot_by_label
+    assert "动作边界" in snapshot_by_label
+    assert "补齐广告组级广告位证据" in snapshot_by_label["需要补证"]["value"]
+    assert "不得自动调价" in snapshot_by_label["动作边界"]["detail"]
     assert payload["evidence_snapshot_preview"]["items"][-1]["label"] == "主要花费来源"
     assert payload["evidence_snapshot_preview"]["will_save_on_authorized_write"] is True
     assert payload["blockers"] == []

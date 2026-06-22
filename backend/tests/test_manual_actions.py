@@ -129,6 +129,33 @@ def diagnosis_without_label_snapshot(label: str) -> list[dict[str, str]]:
     return [item for item in diagnosis_evidence_snapshot() if item["label"] != label]
 
 
+def ad_product_review_rows() -> list[dict[str, object]]:
+    return [
+        {
+            "market_id": 1,
+            "object_type": "advertised_product",
+            "source_table": "advertised_products",
+            "asin": "B016EXMW02",
+            "start_date": "2026-06-01",
+            "end_date": "2026-06-07",
+            "cost": 80,
+            "orders": 1,
+            "sales": 50,
+        },
+        {
+            "market_id": 1,
+            "object_type": "advertised_product",
+            "source_table": "advertised_products",
+            "asin": "B016EXMW02",
+            "start_date": "2026-06-09",
+            "end_date": "2026-06-15",
+            "cost": 60,
+            "orders": 5,
+            "sales": 200,
+        },
+    ]
+
+
 def route_preflight_payload(
     *,
     object_type: str,
@@ -1670,6 +1697,104 @@ def test_review_record_rejects_search_term_snapshot_without_required_evidence_at
         assert str(error) == "review_record_missing_required_evidence"
     else:
         raise AssertionError("搜索词复盘缺少需要补证时不能保存 ReviewRecord")
+
+    assert not (tmp_path / "review_records.jsonl").exists()
+
+
+def test_review_record_rejects_advertised_product_snapshot_without_ad_product_coverage(tmp_path: Path) -> None:
+    evidence_snapshot = diagnosis_without_label_snapshot("广告商品覆盖")
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-ad-product-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "advertised_product",
+        "object_id": "B016EXMW02",
+        "object_label": "B016EXMW02",
+        "evidence_snapshot": evidence_snapshot,
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+    effect = manual_actions.build_review_effect_result(
+        "sig-test-ad-product-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=ad_product_review_rows(),
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    try:
+        manual_actions.save_review_record(
+            effect,
+            review_note="缺少广告商品覆盖不能保存",
+            reviewer_name="本地运营",
+            expected_action_id="manual-action-fixed",
+            expected_object_type="advertised_product",
+            expected_object_id="B016EXMW02",
+            expected_review_window="7d",
+            expected_evidence_snapshot=evidence_snapshot,
+            expected_can_auto_change_rules=False,
+            expected_can_auto_execute_ads=False,
+            review_root=tmp_path,
+        )
+    except ValueError as error:
+        assert str(error) == "review_record_missing_ad_product_coverage"
+    else:
+        raise AssertionError("广告商品复盘缺少广告商品覆盖时不能保存 ReviewRecord")
+
+    assert not (tmp_path / "review_records.jsonl").exists()
+
+
+def test_review_record_rejects_advertised_product_snapshot_without_action_boundary(tmp_path: Path) -> None:
+    evidence_snapshot = diagnosis_without_label_snapshot("动作边界")
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-ad-product-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "advertised_product",
+        "object_id": "B016EXMW02",
+        "object_label": "B016EXMW02",
+        "evidence_snapshot": evidence_snapshot,
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+    effect = manual_actions.build_review_effect_result(
+        "sig-test-ad-product-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=ad_product_review_rows(),
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    try:
+        manual_actions.save_review_record(
+            effect,
+            review_note="缺少动作边界不能保存",
+            reviewer_name="本地运营",
+            expected_action_id="manual-action-fixed",
+            expected_object_type="advertised_product",
+            expected_object_id="B016EXMW02",
+            expected_review_window="7d",
+            expected_evidence_snapshot=evidence_snapshot,
+            expected_can_auto_change_rules=False,
+            expected_can_auto_execute_ads=False,
+            review_root=tmp_path,
+        )
+    except ValueError as error:
+        assert str(error) == "review_record_missing_action_boundary"
+    else:
+        raise AssertionError("广告商品复盘缺少动作边界时不能保存 ReviewRecord")
 
     assert not (tmp_path / "review_records.jsonl").exists()
 

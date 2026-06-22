@@ -642,6 +642,17 @@ def save_review_record(
         raise ValueError("review_record_missing_search_term_boundary")
     if not _review_record_has_placement_boundary(expected_evidence_snapshot):
         raise ValueError("review_record_missing_placement_boundary")
+    if _normalized(expected_object_type) == ObjectType.ADVERTISED_PRODUCT.value:
+        if not _review_record_has_ad_product_coverage(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_ad_product_coverage")
+        if not _review_record_has_ad_group_synthesis(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_ad_group_synthesis")
+        if not _review_record_has_evidence_gap(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_evidence_gap")
+        if not _review_record_has_required_evidence(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_required_evidence")
+        if not _review_record_has_action_boundary(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_action_boundary")
     if _normalized(expected_object_type) == ObjectType.SEARCH_TERM.value:
         if not _review_record_has_ad_group_synthesis(expected_evidence_snapshot):
             raise ValueError("review_record_missing_ad_group_synthesis")
@@ -727,6 +738,10 @@ def _review_record_has_search_term_boundary(evidence_snapshot: list[ManualAction
 
 def _review_record_has_placement_boundary(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
     return _review_record_has_snapshot_label(evidence_snapshot, "广告位边界")
+
+
+def _review_record_has_ad_product_coverage(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "广告商品覆盖")
 
 
 def _review_record_has_ad_group_synthesis(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:

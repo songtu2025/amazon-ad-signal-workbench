@@ -686,6 +686,10 @@ const reviewTodoWithDiagnosisPath: ReviewTodoForUi = {
       detail: "活动级广告位只能作背景，不能替代广告组级证据。",
       source: "placement_metrics",
     },
+    { label: "人工确认判断依据", value: "当前广告商品可进入复盘。", source: "diagnosis_contract" },
+    { label: "能证明的事实", value: "当前广告商品有处理前后指标和广告商品覆盖证据。", source: "diagnosis_contract" },
+    { label: "不能证明的边界", value: "不能证明搜索词或广告位可以自动归因到该广告 ASIN。", source: "diagnosis_contract" },
+    { label: "人工下一步", value: "人工核对广告组、搜索词、广告位和主推策略后保存复盘。", source: "diagnosis_contract" },
     {
       label: "广告组问题定位",
       value: "RBK004-Exact / 花费 30.00 / 订单 6",
@@ -698,8 +702,28 @@ const reviewTodoWithDiagnosisPath: ReviewTodoForUi = {
       detail: "未覆盖 raw 投放行 1 条，覆盖率 85.7%。",
       source: "advertised_products",
     },
+    {
+      label: "广告组合流判断",
+      value: "当前广告商品必须按广告组容器回看投放词、搜索词和广告位上下文。",
+      detail: "不能把搜索词或广告位证据自动归因到单个广告 ASIN。",
+      source: "diagnosis_contract",
+    },
+    { label: "证据缺口", value: "缺少广告组级广告位证据和主推策略确认。", source: "diagnosis_contract" },
+    { label: "需要补证", value: "补齐广告位、投放词维护状态和主推策略。", source: "diagnosis_contract" },
+    { label: "动作边界", value: "只允许记录观察、标记已处理、加入复盘或忽略本次。", source: "business_rule" },
   ],
 };
+const readyAdProductReviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary(reviewTodoWithDiagnosisPath);
+assertEqual(readyAdProductReviewTodoEvidenceReadback?.tone, "ready");
+assertIncludes(JSON.stringify(readyAdProductReviewTodoEvidenceReadback), "广告商品复核链");
+assertIncludes(JSON.stringify(readyAdProductReviewTodoEvidenceReadback), "广告商品覆盖");
+assertIncludes(JSON.stringify(readyAdProductReviewTodoEvidenceReadback), "动作边界");
+const blockedAdProductReviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary({
+  ...reviewTodoWithDiagnosisPath,
+  evidence_snapshot: reviewTodoWithDiagnosisPath.evidence_snapshot?.filter((item) => item.label !== "动作边界"),
+});
+assertEqual(blockedAdProductReviewTodoEvidenceReadback?.tone, "blocked");
+assertIncludes(JSON.stringify(blockedAdProductReviewTodoEvidenceReadback), "缺：动作边界");
 const reviewRecordPreflightChecklist = buildReviewRecordPreflightChecklist(
   reviewTodoWithDiagnosisPath,
   {
@@ -721,7 +745,7 @@ const reviewRecordPreflightChecklist = buildReviewRecordPreflightChecklist(
     objectId: "B016EXMW02",
   },
 );
-assertEqual(reviewRecordPreflightChecklist.length, 12);
+assertEqual(reviewRecordPreflightChecklist.length, 17);
 assertEqual(reviewRecordPreflightChecklist[0].title, "确认复盘对象");
 assertIncludes(reviewRecordPreflightChecklist[0].description, "advertised_product / B016EXMW02");
 assertIncludes(reviewRecordPreflightChecklist[0].description, "sig-previous-snapshot");
@@ -741,28 +765,39 @@ assertIncludes(reviewRecordPreflightChecklist[4].description, "不能自动归�
 assertEqual(reviewRecordPreflightChecklist[5].title, "回看广告位边界");
 assertIncludes(reviewRecordPreflightChecklist[5].description, "广告组级广告位 0 条");
 assertIncludes(reviewRecordPreflightChecklist[5].description, "不能替代广告组级证据");
-assertEqual(reviewRecordPreflightChecklist[6].title, "确认复盘窗口");
-assertIncludes(reviewRecordPreflightChecklist[6].description, "7 天");
-assertIncludes(reviewRecordPreflightChecklist[6].description, "ready");
-assertEqual(reviewRecordPreflightChecklist[7].title, "核对指标口径");
-assertIncludes(reviewRecordPreflightChecklist[7].description, "处理前 2026-06-01 至 2026-06-07");
-assertIncludes(reviewRecordPreflightChecklist[7].description, "花费、订单、销售额、ACOS");
-assertIncludes(reviewRecordPreflightChecklist[7].description, "不等同于归因所有业务变化");
-assertEqual(reviewRecordPreflightChecklist[8].title, "确认复盘结论边界");
-assertIncludes(reviewRecordPreflightChecklist[8].description, "处理后 7 天订单改善");
-assertIncludes(reviewRecordPreflightChecklist[8].description, "当前对象");
-assertIncludes(reviewRecordPreflightChecklist[8].description, "不证明所有业务变化");
-assertEqual(reviewRecordPreflightChecklist[9].title, "确认规则反馈边界");
-assertIncludes(reviewRecordPreflightChecklist[9].description, "只形成规则反馈候选");
-assertIncludes(reviewRecordPreflightChecklist[9].description, "不自动改规则");
-assertIncludes(reviewRecordPreflightChecklist[9].description, "不自动执行广告动作");
-assertEqual(reviewRecordPreflightChecklist[10].title, "核对待办证据一致性");
-assertIncludes(reviewRecordPreflightChecklist[10].description, "action_id manual-action-ad-product");
-assertIncludes(reviewRecordPreflightChecklist[10].description, "证据快照 6 条");
-assertIncludes(reviewRecordPreflightChecklist[10].description, "后端仍会按签名校验");
-assertEqual(reviewRecordPreflightChecklist[11].title, "核对待办证据对象引用");
-assertIncludes(reviewRecordPreflightChecklist[11].description, "advertised_product / B016EXMW02");
-assertIncludes(reviewRecordPreflightChecklist[11].description, "对象引用可回看");
+assertEqual(reviewRecordPreflightChecklist[6].id, "ad_product_coverage");
+assertIncludes(reviewRecordPreflightChecklist[6].description, "广告商品覆盖回看");
+assertEqual(reviewRecordPreflightChecklist[7].id, "ad_group_synthesis");
+assertIncludes(reviewRecordPreflightChecklist[7].description, "广告组合流判断回看");
+assertIncludes(reviewRecordPreflightChecklist[7].description, "不能把搜索词或广告位证据自动归因");
+assertEqual(reviewRecordPreflightChecklist[8].id, "evidence_gap");
+assertIncludes(reviewRecordPreflightChecklist[8].description, "缺少广告组级广告位证据");
+assertEqual(reviewRecordPreflightChecklist[9].id, "required_evidence");
+assertIncludes(reviewRecordPreflightChecklist[9].description, "补齐广告位");
+assertEqual(reviewRecordPreflightChecklist[10].id, "manual_action_boundary");
+assertIncludes(reviewRecordPreflightChecklist[10].description, "不自动归因搜索词");
+assertEqual(reviewRecordPreflightChecklist[11].title, "确认复盘窗口");
+assertIncludes(reviewRecordPreflightChecklist[11].description, "7 天");
+assertIncludes(reviewRecordPreflightChecklist[11].description, "ready");
+assertEqual(reviewRecordPreflightChecklist[12].title, "核对指标口径");
+assertIncludes(reviewRecordPreflightChecklist[12].description, "处理前 2026-06-01 至 2026-06-07");
+assertIncludes(reviewRecordPreflightChecklist[12].description, "花费、订单、销售额、ACOS");
+assertIncludes(reviewRecordPreflightChecklist[12].description, "不等同于归因所有业务变化");
+assertEqual(reviewRecordPreflightChecklist[13].title, "确认复盘结论边界");
+assertIncludes(reviewRecordPreflightChecklist[13].description, "处理后 7 天订单改善");
+assertIncludes(reviewRecordPreflightChecklist[13].description, "当前对象");
+assertIncludes(reviewRecordPreflightChecklist[13].description, "不证明所有业务变化");
+assertEqual(reviewRecordPreflightChecklist[14].title, "确认规则反馈边界");
+assertIncludes(reviewRecordPreflightChecklist[14].description, "只形成规则反馈候选");
+assertIncludes(reviewRecordPreflightChecklist[14].description, "不自动改规则");
+assertIncludes(reviewRecordPreflightChecklist[14].description, "不自动执行广告动作");
+assertEqual(reviewRecordPreflightChecklist[15].title, "核对待办证据一致性");
+assertIncludes(reviewRecordPreflightChecklist[15].description, "action_id manual-action-ad-product");
+assertIncludes(reviewRecordPreflightChecklist[15].description, "证据快照 14 条");
+assertIncludes(reviewRecordPreflightChecklist[15].description, "后端仍会按签名校验");
+assertEqual(reviewRecordPreflightChecklist[16].title, "核对待办证据对象引用");
+assertIncludes(reviewRecordPreflightChecklist[16].description, "advertised_product / B016EXMW02");
+assertIncludes(reviewRecordPreflightChecklist[16].description, "对象引用可回看");
 assertEqual(buildReviewRecordPreflightChecklist(dueTodo, notReadyEffect, null).length, 0);
 assertEqual(canSaveReviewRecordWithPreflight(notReadyEffect, reviewRecordPreflightChecklist), false);
 assertEqual(canSaveReviewRecordWithPreflight(improvedEffect, []), false);
@@ -859,9 +894,9 @@ const reviewRecordPreflightChecklistWithStaleTodo = buildReviewRecordPreflightCh
   },
   null,
 );
-assertEqual(reviewRecordPreflightChecklistWithStaleTodo[10].id, "todo_evidence_signature_missing");
-assertIncludes(reviewRecordPreflightChecklistWithStaleTodo[10].description, "action_id 与 ready effect 不一致");
-assertIncludes(reviewRecordPreflightChecklistWithStaleTodo[10].description, "不能用页面缓存");
+assertEqual(reviewRecordPreflightChecklistWithStaleTodo[15].id, "todo_evidence_signature_missing");
+assertIncludes(reviewRecordPreflightChecklistWithStaleTodo[15].description, "action_id 与 ready effect 不一致");
+assertIncludes(reviewRecordPreflightChecklistWithStaleTodo[15].description, "不能用页面缓存");
 assertEqual(canSaveReviewRecordWithPreflight(improvedEffect, reviewRecordPreflightChecklistWithStaleTodo), false);
 const reviewRecordPreflightChecklistWithObjectMismatch = buildReviewRecordPreflightChecklist(
   {
@@ -880,9 +915,9 @@ const reviewRecordPreflightChecklistWithObjectMismatch = buildReviewRecordPrefli
   },
   null,
 );
-assertEqual(reviewRecordPreflightChecklistWithObjectMismatch[11].id, "todo_object_reference_missing");
-assertIncludes(reviewRecordPreflightChecklistWithObjectMismatch[11].description, "证据快照未能回看 advertised_product / B016EXMW02");
-assertIncludes(reviewRecordPreflightChecklistWithObjectMismatch[11].description, "不能保存 ReviewRecord");
+assertEqual(reviewRecordPreflightChecklistWithObjectMismatch[16].id, "todo_object_reference_missing");
+assertIncludes(reviewRecordPreflightChecklistWithObjectMismatch[16].description, "证据快照未能回看 advertised_product / B016EXMW02");
+assertIncludes(reviewRecordPreflightChecklistWithObjectMismatch[16].description, "不能保存 ReviewRecord");
 assertEqual(canSaveReviewRecordWithPreflight(improvedEffect, reviewRecordPreflightChecklistWithObjectMismatch), false);
 const reviewRecordPreflightChecklistWithoutDiagnosisPath = buildReviewRecordPreflightChecklist(
   {
@@ -1058,7 +1093,7 @@ assertEqual(reviewRecordRequestPayload.expected_action_id, "manual-action-ad-pro
 assertEqual(reviewRecordRequestPayload.expected_object_type, "advertised_product");
 assertEqual(reviewRecordRequestPayload.expected_object_id, "B016EXMW02");
 assertEqual(reviewRecordRequestPayload.expected_review_window, "7d");
-assertEqual(reviewRecordRequestPayload.expected_evidence_snapshot.length, 6);
+assertEqual(reviewRecordRequestPayload.expected_evidence_snapshot.length, 14);
 assertEqual(reviewRecordRequestPayload.expected_evidence_snapshot[0].label, "排查路径");
 assertEqual(reviewRecordRequestPayload.expected_evidence_snapshot[1].label, "AI 准入");
 assertEqual(reviewRecordRequestPayload.expected_evidence_snapshot[2].label, "搜索词边界");

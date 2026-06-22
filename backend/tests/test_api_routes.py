@@ -863,6 +863,44 @@ def test_review_record_rejects_search_term_snapshot_without_ad_group_synthesis(m
     assert response.json()["detail"] == "review_record_missing_ad_group_synthesis"
 
 
+def test_review_record_rejects_advertised_product_snapshot_without_ad_product_coverage(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path / "manual_actions")
+    monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path / "review_records")
+    monkeypatch.setattr(
+        routes,
+        "build_review_effect_result",
+        lambda *args, **kwargs: SimpleNamespace(status="ready"),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/signals/sig-ad-product/review-records",
+        params={"market_id": 1, "review_window": "7d"},
+        json={
+            "review_note": "缺广告商品覆盖不能保存",
+            "reviewer_name": "本地运营",
+            "expected_object_type": "advertised_product",
+            "expected_object_id": "B016EXMW02",
+            "expected_review_window": "7d",
+            "expected_evidence_snapshot": [
+                {"label": "排查路径", "value": "Parent 经营盘子 -> 广告 ASIN -> 广告组"},
+                {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
+                {"label": "搜索词边界", "value": "搜索词只说明同广告组上下文"},
+                {"label": "广告位边界", "value": "广告位证据缺口不能自动归因"},
+                {"label": "广告组合流判断", "value": "B016EXMW02 已串联广告组容器判断"},
+                {"label": "证据缺口", "value": "缺少主推策略和广告位证据"},
+                {"label": "需要补证", "value": "补齐广告位和投放词维护状态"},
+                {"label": "动作边界", "value": "只允许人工留痕和复盘"},
+            ],
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "review_record_missing_ad_product_coverage"
+
+
 def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapshot(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path / "manual_actions")
     monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path / "review_records")
@@ -1445,6 +1483,30 @@ def test_signal_triage_rule_feedback_after_saving_ready_review_record(monkeypatc
             "detail": "用于验证规则反馈只来自当前广告商品和当前复盘窗口。",
             "source": "ad_product_daily_metrics",
         },
+        {
+            "label": "广告组合流判断",
+            "value": "B00READYASIN 必须按广告组容器回看投放词、搜索词和广告位上下文。",
+            "detail": "不能把搜索词或广告位证据自动归因到单个广告 ASIN。",
+            "source": "diagnosis_contract",
+        },
+        {
+            "label": "证据缺口",
+            "value": "缺少广告组级广告位证据和主推策略确认。",
+            "detail": "复盘时不能把广告 ASIN 指标扩展成自动归因依据。",
+            "source": "diagnosis_contract",
+        },
+        {
+            "label": "需要补证",
+            "value": "补齐广告位、投放词维护状态和主推策略。",
+            "detail": "复盘时必须回看当时还缺哪些业务事实。",
+            "source": "diagnosis_contract",
+        },
+        {
+            "label": "动作边界",
+            "value": "只允许记录观察、标记已处理、加入复盘或忽略本次。",
+            "detail": "不得自动调价、自动暂停、自动加词或自动否词。",
+            "source": "business_rule",
+        },
     ]
     action_payload = {
         "id": "manual-action-ready-review",
@@ -1558,7 +1620,7 @@ def test_signal_triage_rule_feedback_after_saving_ready_review_record(monkeypatc
     assert after_review_status["review_record_count"] == 1
     assert after_review_status["review_feedback"]["total"] == 1
     feedback_record = after_review_status["review_feedback"]["records"][0]
-    assert feedback_record["evidence_snapshot_count"] == 5
+    assert feedback_record["evidence_snapshot_count"] == 9
     assert feedback_record["diagnosis_snapshot"]["label"] == "排查路径"
     assert feedback_record["ai_admission_snapshot"]["label"] == "AI 准入"
     assert feedback_record["ai_admission_snapshot"]["source"] == "actionability_status"
