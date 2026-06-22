@@ -732,18 +732,32 @@ export function SignalTriageWorkbench() {
     });
   }
 
-  function handleLocateReviewSignal(signalId?: string | null) {
+  function handleLocateSignalInCurrentScope(
+    signalId: string | null | undefined,
+    setMessage: (message: string | null) => void,
+    missingMessage: string,
+  ) {
     if (!signalId) return;
+    if (!displayProductScopedSignals.some((signal) => signal.id === signalId)) {
+      setMessage(missingMessage);
+      return;
+    }
+    setMessage(null);
     setSelectedSearchIntentLabel(null);
     setFilter("all");
-    if (!displayProductScopedSignals.some((signal) => signal.id === signalId)) {
-      setSelectedProductScopeId("all");
-    }
     setSelectedId(signalId);
     window.requestAnimationFrame(() => {
       workbenchGridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       workbenchGridRef.current?.focus();
     });
+  }
+
+  function handleLocateReviewSignal(signalId?: string | null) {
+    handleLocateSignalInCurrentScope(
+      signalId,
+      setReviewTodoMessage,
+      "当前诊断入口下没有命中这条复盘待办对应信号；诊断入口已保持不变。需要跨范围查看时，请点击“切到全量排查”。",
+    );
   }
 
   const nextReviewTodoReadback = reviewTargetReadbackText(nextReviewTodo);
@@ -1735,13 +1749,13 @@ export function SignalTriageWorkbench() {
                 </details>
                 <button
                   type="button"
-                  onClick={() => {
-                    setFilter("all");
-                    if (!displayProductScopedSignals.some((signal) => signal.id === recommendedManualActionCandidate.signal.id)) {
-                      setSelectedProductScopeId("all");
-                    }
-                    setSelectedId(recommendedManualActionCandidate.signal.id);
-                  }}
+                  onClick={() =>
+                    handleLocateSignalInCurrentScope(
+                      recommendedManualActionCandidate.signal.id,
+                      setManualActionMessage,
+                      "当前诊断入口下没有命中推荐候选信号；诊断入口已保持不变。需要跨范围查看时，请先使用显式全量排查入口。",
+                    )
+                  }
                   aria-label={recommendedManualActionCopy.buttonAriaLabel}
                 >
                   {recommendedManualActionCopy.buttonText}
@@ -1769,13 +1783,13 @@ export function SignalTriageWorkbench() {
                 </details>
                 <button
                   type="button"
-                  onClick={() => {
-                    setFilter("all");
-                    if (!displayProductScopedSignals.some((signal) => signal.id === nextUnhandledManualActionCandidate.signal.id)) {
-                      setSelectedProductScopeId("all");
-                    }
-                    setSelectedId(nextUnhandledManualActionCandidate.signal.id);
-                  }}
+                  onClick={() =>
+                    handleLocateSignalInCurrentScope(
+                      nextUnhandledManualActionCandidate.signal.id,
+                      setManualActionMessage,
+                      "当前诊断入口下没有命中下一个候选信号；诊断入口已保持不变。需要跨范围查看时，请先使用显式全量排查入口。",
+                    )
+                  }
                   aria-label={`定位下一个未留痕候选 ${nextUnhandledManualActionCandidate.objectLabel}`}
                 >
                   定位候选
