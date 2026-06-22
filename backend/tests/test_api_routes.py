@@ -57,50 +57,52 @@ def test_snapshot_readiness_route_returns_model(monkeypatch) -> None:
 
 
 def test_search_intents_route_returns_review_queue_fields(monkeypatch) -> None:
-    monkeypatch.setattr(
-        routes,
-        "load_signal_rows_from_latest_snapshot",
-        lambda: [
-            {
-                "row_id": "fixture-baby-sunglasses",
-                "search_term": "baby sunglasses",
-                "normalized_query": "baby sunglasses",
-                "intent_label": "未分组搜索词",
-                "source_table": "ad_search_term_daily_metrics",
-                "market_id": 1,
-                "marketplace": "US",
-                "clicks": 8,
-                "cost": 4,
-                "orders": 2,
-                "sales": 32,
-                "start_date": "2026-06-02",
-                "end_date": "2026-06-16",
-            }
-        ],
-    )
-    monkeypatch.setattr(
-        routes,
-        "load_aba_rows_from_latest_snapshot",
-        lambda: [
-            {
-                "source_record_id": "aba-baby-sunglasses",
-                "source_table": "aba_search_term_snapshots",
-                "marketplace_id": 1,
-                "marketplace_code": "US",
-                "country": "US",
-                "search_term": "baby sunglasses",
-                "normalized_query": "baby sunglasses",
-                "search_frequency_rank": 120,
-                "start_date": "2026-06-07",
-                "end_date": "2026-06-13",
-            }
-        ],
-    )
+    captured: dict[str, object] = {}
 
-    response = TestClient(app).get("/api/search-intents")
+    def fake_build_search_intent_summaries(*, selected_market_id=None, product_scope_id=None):
+        captured["selected_market_id"] = selected_market_id
+        captured["product_scope_id"] = product_scope_id
+        return [
+            {
+                "intent_label": "规则语义：儿童太阳镜",
+                "search_terms": ["baby sunglasses"],
+                "metrics": {
+                    "impressions": 0,
+                    "clicks": 8,
+                    "cost": 4,
+                    "orders": 2,
+                    "sales": 32,
+                    "acos": 0.125,
+                    "cvr": 0.25,
+                    "cpc": 0.5,
+                },
+                "insight": "需要观察",
+                "semantic_source": "规则语义",
+                "aba_match_count": 1,
+                "top_search_terms": [
+                    {
+                        "search_term": "baby sunglasses",
+                        "normalized_query": "baby sunglasses",
+                        "clicks": 8,
+                        "cost": 4,
+                        "orders": 2,
+                        "sales": 32,
+                        "acos": 0.125,
+                        "aba_rank": 120,
+                        "aba_period": "2026-06-07 至 2026-06-13",
+                        "source_row_count": 1,
+                    }
+                ],
+            }
+        ]
+
+    monkeypatch.setattr(routes, "build_search_intent_summaries", fake_build_search_intent_summaries)
+
+    response = TestClient(app).get("/api/search-intents?market_id=1&product_scope_id=parent_asin:B00K4W4AAA")
 
     assert response.status_code == 200
     payload = response.json()
+    assert captured == {"selected_market_id": 1, "product_scope_id": "parent_asin:B00K4W4AAA"}
     assert payload[0]["semantic_source"] == "规则语义"
     assert payload[0]["aba_match_count"] == 1
     assert payload[0]["top_search_terms"][0]["search_term"] == "baby sunglasses"

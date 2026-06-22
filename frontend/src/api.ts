@@ -7,6 +7,7 @@ import {
   signalManualActionsPath,
   signalReviewEffectPath,
   signalReviewRecordsPath,
+  searchIntentsPath,
   signalTriagePath,
   signalReviewTodosPath,
 } from "./apiPaths";
@@ -1399,8 +1400,8 @@ export function fetchSignals(marketId?: number | null): Promise<AiSignal[]> {
   return request<AiSignal[]>(marketScopedPath("/api/signals", marketId));
 }
 
-export function fetchSearchIntents(): Promise<SearchIntentSummary[]> {
-  return request<SearchIntentSummary[]>("/api/search-intents");
+export function fetchSearchIntents(marketId?: number | null, productScopeId?: string | null): Promise<SearchIntentSummary[]> {
+  return request<SearchIntentSummary[]>(searchIntentsPath(marketId, productScopeId));
 }
 
 export function fetchMarketOptions(): Promise<MarketOption[]> {

@@ -26,6 +26,7 @@ from app.services.signal_detection import (
     AD_PRODUCT_MIN_STABLE_ORDERS,
     detect_data_quality_signals,
     detect_signals,
+    search_intent_summaries,
 )
 from app.services.snapshot_readiness import load_snapshot_readiness
 from app.services.snapshot_store import (
@@ -249,6 +250,24 @@ def build_signal_triage_payload(
         ),
         "diagnosis_contract": diagnosis_contract,
     }
+
+
+def build_search_intent_summaries(
+    *,
+    selected_market_id: int | None = None,
+    product_scope_id: str | None = None,
+) -> list[Any]:
+    signal_rows = _market_scoped_rows(load_signal_rows_from_latest_snapshot(), selected_market_id)
+    aba_rows = _market_scoped_rows(load_aba_rows_from_latest_snapshot(), selected_market_id)
+    normalized_scope_id = _normalized_product_scope_id(product_scope_id)
+    if not normalized_scope_id:
+        return search_intent_summaries(signal_rows, aba_rows=aba_rows)
+
+    product_scope = build_product_scope_summary()
+    signals = _current_signals(signal_rows, selected_market_id=selected_market_id)
+    scoped_signals = _filter_signals_by_product_scope(signals, normalized_scope_id, product_scope, signal_rows=signal_rows)
+    scoped_search_term_rows = _search_term_rows_from_scoped_signals(scoped_signals)
+    return search_intent_summaries(scoped_search_term_rows, aba_rows=aba_rows)
 
 
 def _diagnosis_contract(
@@ -3161,6 +3180,46 @@ def _normalized_product_scope_id(product_scope_id: str | None) -> str | None:
     if not scope_id or scope_id == "all":
         return None
     return scope_id
+
+
+def _market_scoped_rows(rows: list[dict[str, Any]], selected_market_id: int | None) -> list[dict[str, Any]]:
+    if selected_market_id is None:
+        return rows
+    scoped: list[dict[str, Any]] = []
+    for row in rows:
+        row_market_id = _row_market_id(row)
+        if row_market_id is None or row_market_id == selected_market_id:
+            scoped.append(row)
+    return scoped
+
+
+def _row_market_id(row: dict[str, Any]) -> int | None:
+    return _int(row.get("market_id")) or _int(row.get("marketplace_id")) or _int(row.get("marketId"))
+
+
+def _search_term_rows_from_scoped_signals(signals: list[Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    seen: set[tuple[tuple[str, str], ...]] = set()
+    for signal in signals:
+        if _string(_get(signal, "signal_category")) != "search_term_opportunity":
+            continue
+        if _string(_get(signal, "object_type")) != "search_term":
+            continue
+        evidence = _get(signal, "evidence") or {}
+        for row in _get(evidence, "source_rows") or []:
+            if _string(_get(row, "source_table")) != "ad_search_term_daily_metrics":
+                continue
+            row_dict = dict(row)
+            row_key = _row_identity_key(row_dict)
+            if row_key in seen:
+                continue
+            seen.add(row_key)
+            rows.append(row_dict)
+    return rows
+
+
+def _row_identity_key(row: dict[str, Any]) -> tuple[tuple[str, str], ...]:
+    return tuple((str(key), str(value)) for key, value in sorted(row.items()))
 
 
 def _is_actionable_product_scope_id(product_scope_id: Any) -> bool:

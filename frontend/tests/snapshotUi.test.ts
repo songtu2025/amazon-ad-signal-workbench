@@ -19,6 +19,7 @@ import {
   marketScopedPath,
   manualActionPreflightPath,
   reviewTodosPath,
+  searchIntentsPath,
   signalTriagePath,
   signalManualActionsPath,
   signalReviewEffectPath,
@@ -203,6 +204,10 @@ assertEqual(marketScopedPath("/api/signals", null), "/api/signals");
 assertEqual(signalTriagePath(1, 5, "parent_asin:B00K4W4AAA"), "/api/signal-triage?top=5&product_scope_id=parent_asin%3AB00K4W4AAA&market_id=1");
 
 assertEqual(signalTriagePath(1, 5, "all"), "/api/signal-triage?top=5&market_id=1");
+
+assertEqual(searchIntentsPath(1, "parent_asin:B00K4W4AAA"), "/api/search-intents?product_scope_id=parent_asin%3AB00K4W4AAA&market_id=1");
+
+assertEqual(searchIntentsPath(1, "all"), "/api/search-intents?market_id=1");
 
 assertEqual(
   manualActionPreflightPath({

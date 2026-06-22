@@ -45,9 +45,9 @@ from app.services.market_options import load_market_options, save_probe_market_o
 from app.services.promotion_strategy_profiles import load_promotion_strategy_profiles
 from app.services.product_scope import build_product_scope_summary
 from app.services.review_evidence_repair import build_review_evidence_repair_payload
-from app.services.signal_detection import detect_data_quality_signals, detect_signals, search_intent_summaries
+from app.services.signal_detection import detect_data_quality_signals, detect_signals
 from app.services.signal_scan_summary import build_signal_scan_summary
-from app.services.signal_triage import build_signal_triage_payload
+from app.services.signal_triage import build_search_intent_summaries, build_signal_triage_payload
 from app.services.snapshot_guidance import SNAPSHOT_API_FAILURE_NEXT_ACTION
 from app.services.snapshot_request import (
     SNAPSHOT_CONFIG_NEXT_ACTION,
@@ -573,10 +573,10 @@ def _manual_action_evidence_snapshot_signature(items: object) -> list[tuple[str,
 
 
 @router.get("/search-intents", response_model=list[SearchIntentSummary])
-def list_search_intents() -> list[SearchIntentSummary]:
-    return search_intent_summaries(
-        load_signal_rows_from_latest_snapshot(),
-        aba_rows=load_aba_rows_from_latest_snapshot(),
+def list_search_intents(market_id: int | None = None, product_scope_id: str | None = None) -> list[SearchIntentSummary]:
+    return build_search_intent_summaries(
+        selected_market_id=market_id,
+        product_scope_id=product_scope_id,
     )
 
 

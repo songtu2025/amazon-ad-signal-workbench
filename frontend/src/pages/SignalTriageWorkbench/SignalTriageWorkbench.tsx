@@ -356,7 +356,6 @@ export function SignalTriageWorkbench() {
         nextSnapshotReadiness,
         nextSnapshotInspection,
         nextSignalScanSummary,
-        nextSearchIntents,
         nextReviewTodos,
       ] = await Promise.all([
         fetchMarketOptions(),
@@ -366,7 +365,6 @@ export function SignalTriageWorkbench() {
         fetchSnapshotReadiness(selectedMarketId),
         fetchSnapshotInspection(),
         fetchSignalScanSummary(selectedMarketId),
-        fetchSearchIntents(),
         fetchReviewTodos(selectedMarketId),
       ]);
       const nextProductScopeOptions = nextProductScope.options;
@@ -375,9 +373,10 @@ export function SignalTriageWorkbench() {
           ? selectedProductScopeId
           : preferredProductScopeId(nextProductScopeOptions);
       const nextProductScopedSignals = filterSignalsByProductScope(nextSignals, nextActiveProductScopeId, nextProductScopeOptions);
-      const [nextSignalTriageSummary, nextReviewEvidenceRepair] = await Promise.all([
+      const [nextSignalTriageSummary, nextReviewEvidenceRepair, nextSearchIntents] = await Promise.all([
         fetchSignalTriageSummary(selectedMarketId, 5, nextActiveProductScopeId),
         fetchReviewEvidenceRepair(selectedMarketId, 5, nextActiveProductScopeId),
+        fetchSearchIntents(selectedMarketId, nextActiveProductScopeId),
       ]);
       const nextDisplayProductScopedSignals = mergeBackendTriageSignals(
         nextProductScopedSignals,
@@ -493,10 +492,12 @@ export function SignalTriageWorkbench() {
     void Promise.all([
       fetchSignalTriageSummary(selectedMarketId, 5, activeProductScopeId),
       fetchReviewEvidenceRepair(selectedMarketId, 5, activeProductScopeId),
+      fetchSearchIntents(selectedMarketId, activeProductScopeId),
     ])
-      .then(([nextSignalTriageSummary, nextReviewEvidenceRepair]) => {
+      .then(([nextSignalTriageSummary, nextReviewEvidenceRepair, nextSearchIntents]) => {
         setSignalTriageSummary(nextSignalTriageSummary);
         setReviewEvidenceRepair(nextReviewEvidenceRepair);
+        setSearchIntents(nextSearchIntents);
         const nextDisplayProductScopedSignals = mergeBackendTriageSignals(
           productScopedSignals,
           normalizedSignals,
@@ -1838,7 +1839,7 @@ export function SignalTriageWorkbench() {
             <section className="searchIntentReviewPanel" aria-label="搜索词语义组复核">
               <div className="searchIntentReviewHeader">
                 <strong>语义组复核</strong>
-                <span>先看同类搜索词，再处理具体机会</span>
+                <span>当前诊断入口内的同类搜索词复核</span>
               </div>
               {selectedSearchIntentLabel && (
                 <div className="searchIntentActiveFilter" aria-label="当前语义组筛选">

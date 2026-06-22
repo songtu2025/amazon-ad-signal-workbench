@@ -417,6 +417,118 @@ def test_parent_scope_includes_search_term_candidates_by_ad_group_context(monkey
     assert "广告 ASIN 待处理 1 个" not in payload["recommendation_reason"]
 
 
+def test_search_intent_summaries_respect_parent_asin_product_scope(monkeypatch) -> None:
+    in_scope_search_row = {
+        "source_table": "ad_search_term_daily_metrics",
+        "market_id": 1,
+        "campaign_id": "camp-1",
+        "campaign_name": "RBK004-beach essentials",
+        "ad_group_id": "group-1",
+        "ad_group_name": "RBK004-扩展-beach essentials",
+        "normalized_query": "beach essentials",
+        "search_term": "beach essentials",
+        "cost": 16.03,
+        "spend": 16.03,
+        "clicks": 19,
+        "orders": 8,
+        "sales": 76.32,
+    }
+    out_of_scope_search_row = {
+        "source_table": "ad_search_term_daily_metrics",
+        "market_id": 1,
+        "campaign_id": "camp-2",
+        "campaign_name": "Other campaign",
+        "ad_group_id": "group-2",
+        "ad_group_name": "Other ad group",
+        "normalized_query": "kids sunglasses",
+        "search_term": "kids sunglasses",
+        "cost": 99.0,
+        "spend": 99.0,
+        "clicks": 40,
+        "orders": 20,
+        "sales": 300.0,
+    }
+    in_scope_ad_row = {
+        "source_table": "advertised_products",
+        "market_id": 1,
+        "asin": "B016EXMVZS",
+        "campaign_id": "camp-1",
+        "ad_group_id": "group-1",
+    }
+    out_of_scope_ad_row = {
+        "source_table": "advertised_products",
+        "market_id": 1,
+        "asin": "B0D89X1LXC",
+        "campaign_id": "camp-2",
+        "ad_group_id": "group-2",
+    }
+    in_scope_signal = make_signal(
+        "sig-in-scope-search-term",
+        "",
+        object_type="search_term",
+        signal_category="search_term_opportunity",
+        action_type="promote_search_term",
+        label="beach essentials",
+        source_rows=[in_scope_search_row],
+    )
+    out_of_scope_signal = make_signal(
+        "sig-out-of-scope-search-term",
+        "",
+        object_type="search_term",
+        signal_category="search_term_opportunity",
+        action_type="promote_search_term",
+        label="kids sunglasses",
+        source_rows=[out_of_scope_search_row],
+    )
+    in_scope_signal.evidence.primary_object.asin = ""
+    in_scope_signal.evidence.primary_object.object_id = "search_term:1:beach essentials"
+    out_of_scope_signal.evidence.primary_object.asin = ""
+    out_of_scope_signal.evidence.primary_object.object_id = "search_term:1:kids sunglasses"
+
+    monkeypatch.setattr(
+        signal_triage,
+        "load_signal_rows_from_latest_snapshot",
+        lambda: [in_scope_ad_row, out_of_scope_ad_row, in_scope_search_row, out_of_scope_search_row],
+    )
+    monkeypatch.setattr(signal_triage, "load_aba_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(
+        signal_triage,
+        "_current_signals",
+        lambda signal_rows, selected_market_id=None: [in_scope_signal, out_of_scope_signal],
+    )
+    monkeypatch.setattr(
+        signal_triage,
+        "build_product_scope_summary",
+        lambda: SimpleNamespace(
+            options=[
+                SimpleNamespace(
+                    scope_id="parent_asin:B00K4W4AAA",
+                    scope_type="parent_asin",
+                    parent_asin="B00K4W4AAA",
+                    child_asins=["B016EXMVZS"],
+                ),
+                SimpleNamespace(
+                    scope_id="parent_asin:B0D8B7K8ZP",
+                    scope_type="parent_asin",
+                    parent_asin="B0D8B7K8ZP",
+                    child_asins=["B0D89X1LXC"],
+                ),
+            ],
+        ),
+    )
+
+    summaries = signal_triage.build_search_intent_summaries(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+    )
+
+    assert len(summaries) == 1
+    assert summaries[0].top_search_terms[0].search_term == "beach essentials"
+    assert "beach essentials" in summaries[0].search_terms
+    assert "kids sunglasses" not in summaries[0].search_terms
+    assert summaries[0].metrics.cost == 16.03
+
+
 def test_review_candidates_require_actionable_manual_triage_gate(monkeypatch) -> None:
     actionable = make_signal("sig-actionable", "B016EXMW02")
     shallow_opportunity = make_signal(

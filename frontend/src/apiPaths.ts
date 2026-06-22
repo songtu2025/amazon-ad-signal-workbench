@@ -14,6 +14,11 @@ export function reviewEvidenceRepairPath(marketId?: number | null, top = 5, prod
   return marketScopedPath(`/api/review-evidence-repair?top=${encodeURIComponent(String(top))}${scope}`, marketId);
 }
 
+export function searchIntentsPath(marketId?: number | null, productScopeId?: string | null) {
+  const scope = productScopeId && productScopeId !== "all" ? `?product_scope_id=${encodeURIComponent(productScopeId)}` : "";
+  return marketScopedPath(`/api/search-intents${scope}`, marketId);
+}
+
 export interface ManualActionPreflightPathOptions {
   marketId?: number | null;
   top?: number;
