@@ -5369,34 +5369,39 @@ export function productScopeOptionLabel(option: ProductScopeFilterOption): strin
   const label = option.label ?? option.scope_id;
   if (option.scope_id === "all" || option.scope_type === "all") return `辅助入口：${label}`;
   if (option.scope_id === "unattributed" || option.scope_type === "unattributed") return `辅助入口：${label}`;
-  if (option.scope_type === "parent_asin" || option.scope_id.startsWith("parent_asin:")) return `商品组：${label}`;
-  if (option.scope_type === "advertised_asin") return `ASIN：${label}`;
+  if (option.scope_type === "parent_asin" || option.scope_id.startsWith("parent_asin:")) return `经营入口：${label}`;
+  if (option.scope_type === "advertised_asin") return `广告下钻：${label}`;
   if (option.scope_type === "sales_asin") return `销售背景：${label}`;
   return label;
 }
 
 export function buildProductScopeOptionGroups(options: ProductScopeFilterOption[]): ProductScopeOptionGroup[] {
   const loadingOptions = options.filter((option) => option.scope_type === "loading");
-  const productOptions = options.filter(
-    (option) =>
-      option.scope_type === "parent_asin" ||
-      option.scope_id.startsWith("parent_asin:") ||
-      option.scope_type === "advertised_asin",
-  );
+  const parentOptions = options.filter((option) => option.scope_type === "parent_asin" || option.scope_id.startsWith("parent_asin:"));
+  const advertisedOptions = options.filter((option) => option.scope_type === "advertised_asin");
+  const salesBackgroundOptions = options.filter((option) => option.scope_type === "sales_asin");
   const assistOptions = options.filter(
-    (option) => option.scope_id === "all" || option.scope_type === "all" || option.scope_id === "unattributed" || option.scope_type === "unattributed",
+    (option) =>
+      option.scope_id === "all" ||
+      option.scope_type === "all" ||
+      option.scope_id === "unattributed" ||
+      option.scope_type === "unattributed" ||
+      option.scope_type === "sales_asin",
   );
   const groups: ProductScopeOptionGroup[] = [];
   if (loadingOptions.length > 0) groups.push({ label: "经营入口状态", options: loadingOptions });
-  if (productOptions.length > 0) groups.push({ label: "广告分析入口", options: productOptions });
-  if (assistOptions.length > 0) groups.push({ label: "辅助排查入口", options: assistOptions });
+  if (parentOptions.length > 0) groups.push({ label: "经营入口（Parent ASIN）", options: parentOptions });
+  if (advertisedOptions.length > 0) groups.push({ label: "广告下钻入口（仅已投广告 ASIN）", options: advertisedOptions });
+  if (salesBackgroundOptions.length > 0 || assistOptions.length > salesBackgroundOptions.length) {
+    groups.push({ label: "辅助排查入口（非广告动作对象）", options: assistOptions });
+  }
   return groups;
 }
 
 export function buildProductScopeSelectionSummary(selectedScope: ProductScopeFilterOption | null): ProductScopeSelectionSummary {
   if (!selectedScope) {
     return {
-      title: "等待经营商品入口",
+      title: "等待诊断入口",
       description: "需要先读取商品范围，才能按 Parent ASIN / ASIN 收敛信号。",
       targetBoundary: "未选择范围时不生成处理目标；先选择 Parent ASIN / ASIN 后再人工确认。",
       tone: "all",

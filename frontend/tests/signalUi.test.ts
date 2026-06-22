@@ -534,8 +534,8 @@ assertEqual(
 
 assertEqual(productScopeOptionLabel({ scope_id: "all", scope_type: "all", label: "全量排查（商品 + 未归因 + 数据质量）" }), "辅助入口：全量排查（商品 + 未归因 + 数据质量）");
 assertEqual(productScopeOptionLabel({ scope_id: "unattributed", scope_type: "unattributed", label: "未归因广告数据" }), "辅助入口：未归因广告数据");
-assertEqual(productScopeOptionLabel({ scope_id: "parent_asin:B0PARENT", scope_type: "parent_asin", label: "Parent ASIN B0PARENT" }), "商品组：Parent ASIN B0PARENT");
-assertEqual(productScopeOptionLabel({ scope_id: "ad_asin:B000TEST01", scope_type: "advertised_asin", label: "广告 ASIN B000TEST01" }), "ASIN：广告 ASIN B000TEST01");
+assertEqual(productScopeOptionLabel({ scope_id: "parent_asin:B0PARENT", scope_type: "parent_asin", label: "Parent ASIN B0PARENT" }), "经营入口：Parent ASIN B0PARENT");
+assertEqual(productScopeOptionLabel({ scope_id: "ad_asin:B000TEST01", scope_type: "advertised_asin", label: "广告 ASIN B000TEST01" }), "广告下钻：广告 ASIN B000TEST01");
 assertEqual(productScopeOptionLabel({ scope_id: "sales_asin:B000SALES1", scope_type: "sales_asin", label: "销售 ASIN B000SALES1" }), "销售背景：销售 ASIN B000SALES1");
 
 const productScopeOptionGroups = buildProductScopeOptionGroups([
@@ -546,9 +546,13 @@ const productScopeOptionGroups = buildProductScopeOptionGroups([
   { scope_id: "sales_asin:B000SALES1", scope_type: "sales_asin", label: "销售 ASIN B000SALES1" },
 ]);
 
-assertEqual(productScopeOptionGroups.map((group) => group.label).join(" / "), "广告分析入口 / 辅助排查入口");
-assertEqual(productScopeOptionGroups[0].options.map((option) => option.scope_id).join(","), "parent_asin:B0PARENT,ad_asin:B000TEST01");
-assertEqual(productScopeOptionGroups[1].options.map((option) => option.scope_id).join(","), "all,unattributed");
+assertEqual(
+  productScopeOptionGroups.map((group) => group.label).join(" / "),
+  "经营入口（Parent ASIN） / 广告下钻入口（仅已投广告 ASIN） / 辅助排查入口（非广告动作对象）",
+);
+assertEqual(productScopeOptionGroups[0].options.map((option) => option.scope_id).join(","), "parent_asin:B0PARENT");
+assertEqual(productScopeOptionGroups[1].options.map((option) => option.scope_id).join(","), "ad_asin:B000TEST01");
+assertEqual(productScopeOptionGroups[2].options.map((option) => option.scope_id).join(","), "all,unattributed,sales_asin:B000SALES1");
 
 const parentAsinOptions = [
   {
@@ -3749,7 +3753,7 @@ const preferredAdEvidenceParentScope = preferredProductScopeId([
 assertEqual(preferredAdEvidenceParentScope, "parent_asin:B0WITHADS");
 
 const loadingProductScopeGroups = buildProductScopeOptionGroups([
-  { scope_id: "loading_product_scope", scope_type: "loading", label: "正在读取经营商品入口" },
+  { scope_id: "loading_product_scope", scope_type: "loading", label: "正在读取诊断入口" },
 ]);
 assertEqual(loadingProductScopeGroups[0]?.label, "经营入口状态");
 assertEqual(loadingProductScopeGroups[0]?.options[0]?.scope_id, "loading_product_scope");

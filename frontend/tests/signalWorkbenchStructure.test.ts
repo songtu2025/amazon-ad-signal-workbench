@@ -130,7 +130,7 @@ assertIncludes(signalUiSource, "AI 信号诊断 -> 人工确认 -> 7/14 天复�
 assertIncludes(signalUiSource, "广告组是投放容器，不是产品");
 assertIncludes(signalUiSource, "只允许记录观察、标记已处理、加入复盘、忽略本次");
 assertIncludes(workbenchSource, 'scope_id: "loading_product_scope"');
-assertIncludes(workbenchSource, "正在读取经营商品入口");
+assertIncludes(workbenchSource, "正在读取诊断入口");
 assertIncludes(workbenchSource, "disabled={productScope === null || loading}");
 assertIncludes(workbenchSource, 'aria-label="广告组问题定位"');
 assertIncludes(workbenchSource, 'aria-label="广告组问题归属判定"');

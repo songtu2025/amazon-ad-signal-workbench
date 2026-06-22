@@ -465,7 +465,7 @@ export function SignalTriageWorkbench() {
         {
           scope_id: "loading_product_scope",
           scope_type: "loading",
-          label: "正在读取经营商品入口",
+          label: "正在读取诊断入口",
           source: "system",
           spend: 0,
           orders: 0,
@@ -1352,7 +1352,7 @@ export function SignalTriageWorkbench() {
           </select>
         </label>
         <label>
-          <span>经营商品入口</span>
+          <span>诊断入口</span>
           <select
             value={activeProductScopeId}
             disabled={productScope === null || loading}
