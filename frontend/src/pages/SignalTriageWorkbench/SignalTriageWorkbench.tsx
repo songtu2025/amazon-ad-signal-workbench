@@ -1826,7 +1826,7 @@ export function SignalTriageWorkbench() {
                   className="reviewTodoQueueGlobalHint"
                   type="button"
                   onClick={() => setSelectedProductScopeId(reviewTodoScopeHint.actionScopeId)}
-                  aria-label="切到全量排查查看全局复盘待办"
+                  aria-label="切到全量排查查看范围外复盘待办"
                   title={reviewTodoScopeHint.actionLabel}
                 >
                   {reviewTodoScopeHint.text}

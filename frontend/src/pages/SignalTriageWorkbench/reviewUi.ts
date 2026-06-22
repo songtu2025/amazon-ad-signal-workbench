@@ -952,13 +952,13 @@ export function buildReviewTodoScopeHint(input: ReviewTodoScopeHintInput): Revie
   if (input.currentTotal > 0) {
     const remainingTotal = input.globalTotal - input.currentTotal;
     return {
-      text: `当前范围有 ${input.currentTotal} 条复盘待办；全局共 ${input.globalTotal} 条，另有 ${remainingTotal} 条在其他范围。`,
+      text: `当前诊断入口有 ${input.currentTotal} 条复盘待办；范围外辅助排查还有 ${remainingTotal} 条，不属于当前入口。`,
       actionScopeId: "all",
       actionLabel: "切到全量排查",
     };
   }
   return {
-    text: `全局还有 ${input.globalTotal} 条复盘待办，可切到全量排查查看。`,
+    text: `当前诊断入口暂无复盘待办；范围外辅助排查还有 ${input.globalTotal} 条，可显式切到全量排查查看。`,
     actionScopeId: "all",
     actionLabel: "切到全量排查",
   };

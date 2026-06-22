@@ -185,14 +185,14 @@ assertEqual(
     globalTotal: queueSummary.total,
     isGlobalScope: false,
   }),
-  "全局还有 2 条复盘待办，可切到全量排查查看。",
+  "当前诊断入口暂无复盘待办；范围外辅助排查还有 2 条，可显式切到全量排查查看。",
 );
 const globalReviewTodoHint = buildReviewTodoScopeHint({
   currentTotal: emptyQueueSummary.total,
   globalTotal: queueSummary.total,
   isGlobalScope: false,
 });
-assertEqual(globalReviewTodoHint?.text, "全局还有 2 条复盘待办，可切到全量排查查看。");
+assertEqual(globalReviewTodoHint?.text, "当前诊断入口暂无复盘待办；范围外辅助排查还有 2 条，可显式切到全量排查查看。");
 assertEqual(globalReviewTodoHint?.actionScopeId, "all");
 assertEqual(globalReviewTodoHint?.actionLabel, "切到全量排查");
 const scopedReviewTodoHint = buildReviewTodoScopeHint({
@@ -200,7 +200,7 @@ const scopedReviewTodoHint = buildReviewTodoScopeHint({
   globalTotal: 10,
   isGlobalScope: false,
 });
-assertEqual(scopedReviewTodoHint?.text, "当前范围有 6 条复盘待办；全局共 10 条，另有 4 条在其他范围。");
+assertEqual(scopedReviewTodoHint?.text, "当前诊断入口有 6 条复盘待办；范围外辅助排查还有 4 条，不属于当前入口。");
 assertEqual(scopedReviewTodoHint?.actionScopeId, "all");
 assertEqual(scopedReviewTodoHint?.actionLabel, "切到全量排查");
 const globalReviewTodoDetails = buildReviewTodoQueueDetails([pendingTodo, dueTodo], {
