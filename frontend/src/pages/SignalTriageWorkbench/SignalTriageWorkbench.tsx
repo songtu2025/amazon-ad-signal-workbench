@@ -74,6 +74,7 @@ import {
   buildRuleFeedbackCandidate,
   buildManualActionDisplayEvidenceSnapshot,
   buildManualActionEvidenceSnapshot,
+  manualActionExpectedTargetForSignal,
   buildManualActionIdentityGateItems,
   buildManualActionPathSteps,
   buildManualActionReadbackPathItems,
@@ -1160,11 +1161,7 @@ export function SignalTriageWorkbench() {
       actionPreflight,
       actionPreflightError,
       hasReviewTodoForSelectedObject,
-      {
-        objectType: selectedBackendManualActionPreview?.objectType ?? null,
-        objectId: selectedBackendManualActionPreview?.objectId ?? null,
-        actionType,
-      },
+      manualActionExpectedTargetForSignal(selectedSignal, actionType),
     );
     const guardMessage = manualActionWriteGuardMessage(manualActionLabel[actionType], actionGate);
     if (guardMessage) {
@@ -2441,11 +2438,7 @@ export function SignalTriageWorkbench() {
                       actionPreflight,
                       actionPreflightError,
                       hasReviewTodoForSelectedObject,
-                      {
-                        objectType: selectedBackendManualActionPreview?.objectType ?? null,
-                        objectId: selectedBackendManualActionPreview?.objectId ?? null,
-                        actionType,
-                      },
+                      manualActionExpectedTargetForSignal(selectedSignal, actionType),
                     );
                     const isDuplicateReviewAction = actionType === "add_to_review" && hasReviewTodoForSelectedObject;
                     const actionLabel = isDuplicateReviewAction ? "等待复盘窗口" : manualActionLabel[actionType];

@@ -11,6 +11,7 @@ import {
   buildRuleFeedbackCandidate,
   buildManualActionEvidenceSnapshot,
   buildManualActionDisplayEvidenceSnapshot,
+  manualActionExpectedTargetForSignal,
   buildManualActionIdentityGateItems,
   buildManualActionPathSteps,
   buildManualActionReadbackPathItems,
@@ -1617,6 +1618,60 @@ const readyManualActionPreflight = {
     ],
   },
 };
+const expectedCurrentSignalTarget = manualActionExpectedTargetForSignal(
+  {
+    id: "sig-sales-product",
+    object_type: "sales_product",
+    evidence: {
+      primary_object: {
+        object_type: "sales_product",
+        object_id: "B06VW5SQ97",
+        label: "B06VW5SQ97",
+      },
+    },
+  },
+  "add_to_review",
+);
+assertEqual(expectedCurrentSignalTarget.objectType, "sales_product");
+assertEqual(expectedCurrentSignalTarget.objectId, "B06VW5SQ97");
+const missingCurrentSignalTargetGate = manualActionButtonGate(
+  "add_to_review",
+  readyManualActionPreflight,
+  null,
+  false,
+  manualActionExpectedTargetForSignal(
+    {
+      id: "sig-missing-object",
+      object_type: "sales_product",
+      evidence: { primary_object: { object_type: "sales_product" } },
+    },
+    "add_to_review",
+  ),
+);
+assertEqual(missingCurrentSignalTargetGate.disabled, true);
+assertIncludes(missingCurrentSignalTargetGate.reason ?? "", "当前信号对象身份待补充");
+const mismatchedCurrentSignalTargetGate = manualActionButtonGate(
+  "add_to_review",
+  readyManualActionPreflight,
+  null,
+  false,
+  manualActionExpectedTargetForSignal(
+    {
+      id: "sig-other-sales-product",
+      object_type: "sales_product",
+      evidence: {
+        primary_object: {
+          object_type: "sales_product",
+          object_id: "B07OTHERASIN",
+          label: "B07OTHERASIN",
+        },
+      },
+    },
+    "add_to_review",
+  ),
+);
+assertEqual(mismatchedCurrentSignalTargetGate.disabled, true);
+assertIncludes(mismatchedCurrentSignalTargetGate.reason ?? "", "后端预检目标与当前候选不一致");
 assertEqual(manualActionButtonGate("add_to_review", null, null, false).disabled, true);
 assertIncludes(manualActionButtonGate("add_to_review", null, null, false).reason ?? "", "正在读取后端只读预检");
 assertEqual(

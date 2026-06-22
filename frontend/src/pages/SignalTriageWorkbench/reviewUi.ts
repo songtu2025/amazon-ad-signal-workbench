@@ -874,6 +874,18 @@ function reviewSignalStableObjectForReviewRecord(signal: ReviewSignalForUi | nul
   return { objectType, objectId };
 }
 
+export function manualActionExpectedTargetForSignal(
+  signal: ReviewSignalForUi | null,
+  actionType: ManualActionForUi["action_type"] | string | null | undefined,
+): ManualActionExpectedTargetForUi {
+  const stableObject = reviewSignalStableObjectForReviewRecord(signal);
+  return {
+    objectType: stableObject.objectType ?? null,
+    objectId: stableObject.objectId ?? null,
+    actionType: actionType ?? null,
+  };
+}
+
 export function buildReviewTodoQueueSummary<T extends ReviewTodoForUi>(todos: T[]): ReviewTodoQueueSummary<T> {
   const total = todos.length;
   const due = todos.filter((todo) => todo.is_due).length;
@@ -2666,6 +2678,13 @@ export function manualActionButtonGate(
       disabled: true,
       reason: "后端预检未确认 will_write=false；不会写入人工动作。",
       compactReason: "只读边界待核对",
+    };
+  }
+  if (!normalizedPreflightTargetValue(expectedTarget?.objectType) || !normalizedPreflightTargetValue(expectedTarget?.objectId)) {
+    return {
+      disabled: true,
+      reason: "当前信号对象身份待补充；缺少 object_type 或 object_id 时不写入人工动作。",
+      compactReason: "对象身份待补充",
     };
   }
   if (manualActionPreflightTargetMismatch(preflight, expectedTarget)) {
