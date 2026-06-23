@@ -5126,7 +5126,7 @@ assertEqual(searchIntentReviewCards.length, 1);
 assertEqual(searchIntentReviewCards[0].title, "规则语义：儿童太阳镜");
 assertEqual(searchIntentReviewCards[0].summary, "4 单 / 花费 9 / ACOS 12.86% / ABA 命中 1");
 assertEqual(searchIntentReviewCards[0].sourceLabel, "规则语义");
-assertIncludes(searchIntentReviewCards[0].purpose, "机会队列内的二级筛选");
+assertIncludes(searchIntentReviewCards[0].purpose, "搜索词语义聚焦");
 assertIncludes(searchIntentReviewCards[0].dataGrain, "当前诊断入口内已进入 SearchTerm 机会队列");
 assertIncludes(searchIntentReviewCards[0].proves, "同类广告搜索词");
 assertIncludes(searchIntentReviewCards[0].doesNotProve, "不能证明 Parent ASIN 下全部搜索词表现");

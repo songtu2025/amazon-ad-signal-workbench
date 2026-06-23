@@ -5480,7 +5480,7 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       summary: `${metrics.orders} 单 / 花费 ${formatReviewNumber(metrics.cost)} / ACOS ${formatReviewPercent(metrics.acos)} / ABA 命中 ${abaMatchCount}`,
       sourceLabel: summary.semantic_source || "未知来源",
       insight: summary.insight,
-      purpose: "用途：作为机会队列内的二级筛选，聚焦当前诊断入口内同类广告搜索词，再逐条进入人工复核。",
+      purpose: "用途：作为当前诊断入口内的搜索词语义聚焦，聚合同类广告 SearchTerm，再逐条进入人工复核。",
       boundary: "边界：只筛 SearchTerm 机会；不改变诊断入口，不生成语义组人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
       dataGrain: summary.data_grain || "当前诊断入口内 SearchTerm 机会队列的广告搜索词表现行",
       proves: summary.proves || "能证明同类广告搜索词在当前广告上下文内的花费、点击、订单和 ABA 背景。",
