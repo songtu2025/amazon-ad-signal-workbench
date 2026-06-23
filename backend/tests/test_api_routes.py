@@ -986,6 +986,11 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
     assert snapshot_by_label["搜索词表现分组"]["source"] == "规则语义"
     assert "不能替代顶部诊断入口" in snapshot_by_label["搜索词表现分组"]["detail"]
     assert "beach essentials" in snapshot_by_label["广告组合流判断"]["value"]
+    assert "RBK004-beach essentials-精准" in snapshot_by_label["广告组合流判断"]["value"]
+    assert "RBK004-扩展-beach essentials" in snapshot_by_label["广告组合流判断"]["value"]
+    assert "B016EXMVZS" in snapshot_by_label["广告组合流判断"]["value"]
+    assert "B07BS9754Q" in snapshot_by_label["广告组合流判断"]["value"]
+    assert "B016EXMW02" in snapshot_by_label["广告组合流判断"]["value"]
     assert "广告组级广告位 0 条 / 同广告活动广告位 6 条" in snapshot_by_label["广告组合流判断"]["value"]
     assert "自动归因到单个广告 ASIN" in snapshot_by_label["广告组合流判断"]["detail"]
     assert "B016EXMVZS" in snapshot_by_label["同组投放商品表现"]["value"]
@@ -1216,6 +1221,11 @@ def test_beach_essentials_manual_action_post_write_readback_distinguishes_action
         assert snapshot_by_label["搜索词表现分组"]["value"] == "规则语义：海滩出行用品"
         assert "不能替代顶部诊断入口" in snapshot_by_label["搜索词表现分组"]["detail"]
         assert "beach essentials" in snapshot_by_label["广告组合流判断"]["value"]
+        assert "RBK004-beach essentials-精准" in snapshot_by_label["广告组合流判断"]["value"]
+        assert "RBK004-扩展-beach essentials" in snapshot_by_label["广告组合流判断"]["value"]
+        assert "B016EXMVZS" in snapshot_by_label["广告组合流判断"]["value"]
+        assert "B07BS9754Q" in snapshot_by_label["广告组合流判断"]["value"]
+        assert "B016EXMW02" in snapshot_by_label["广告组合流判断"]["value"]
         assert "广告组级广告位 0 条 / 同广告活动广告位 6 条" in snapshot_by_label["广告组合流判断"]["value"]
         assert "自动归因到单个广告 ASIN" in snapshot_by_label["广告组合流判断"]["detail"]
         assert "B016EXMVZS" in snapshot_by_label["同组投放商品表现"]["value"]

@@ -703,7 +703,7 @@ def _target_search_term_boundary_snapshot_blocks(
     if not sections:
         return []
 
-    section = next(
+    search_term_section = next(
         (
             item
             for item in sections
@@ -711,20 +711,38 @@ def _target_search_term_boundary_snapshot_blocks(
         ),
         {},
     )
+    ad_group_section = _diagnosis_contract_section(sections, "ad_group_boundary")
     object_label = str(target.get("object_label") or target.get("object_id") or "当前搜索词").strip()
-    judgement = str(section.get("current_judgement") or "").strip()
-    does_not_prove = str(section.get("does_not_prove") or "").strip()
+    search_term_judgement = str(search_term_section.get("current_judgement") or "").strip()
+    search_term_does_not_prove = str(search_term_section.get("does_not_prove") or "").strip()
+    ad_group_judgement = str(ad_group_section.get("current_judgement") or "").strip()
+    ad_group_does_not_prove = str(ad_group_section.get("does_not_prove") or "").strip()
+    ad_group_evidence_gap = str(ad_group_section.get("evidence_gap") or "").strip()
     targeting_metric = _diagnosis_contract_metric(sections, "投放词证据")
     placement_metric = _diagnosis_contract_metric(sections, "广告位证据")
+    synthesis_value = ad_group_judgement or search_term_judgement
+    placement_value = str(placement_metric.get("value") or "").strip()
+    if ad_group_judgement and placement_value and placement_value not in synthesis_value:
+        synthesis_value = f"{synthesis_value}；广告位证据：{placement_value}"
+    synthesis_detail = "；".join(
+        part
+        for part in [
+            ad_group_does_not_prove or search_term_does_not_prove,
+            ad_group_evidence_gap if ad_group_judgement else "",
+        ]
+        if part
+    )
+    if synthesis_detail and "自动归因到单个广告 ASIN" not in synthesis_detail:
+        synthesis_detail = f"{synthesis_detail}；搜索词表现不能自动归因到单个广告 ASIN。"
 
     blocks: list[dict[str, str]] = []
-    if judgement:
+    if synthesis_value:
         blocks.append(
             {
                 "block_id": "ad_group_evidence_synthesis",
                 "label": "广告组合流判断",
-                "value": f"{object_label}：{judgement}",
-                "detail": does_not_prove
+                "value": f"{object_label}：{synthesis_value}",
+                "detail": synthesis_detail
                 or "搜索词只能按投放上下文人工复核，不能自动归因到单个广告 ASIN，也不能自动加词、否词、调价或调整广告位。",
                 "source": "diagnosis_contract",
             }
