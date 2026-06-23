@@ -2765,9 +2765,11 @@ export function SignalTriageWorkbench() {
                       </div>
                     )}
                     {reviewEvidenceRepairSummary.sampleItems.length > 0 && (
-                      <ul className="ruleFeedbackRecordList">
+                      <ul className="reviewRepairSampleList" aria-label="历史待办治理样本">
                         {reviewEvidenceRepairSummary.sampleItems.map((item) => (
-                          <li key={item}>{item}</li>
+                          <li key={item}>
+                            <ReviewRepairSampleItem item={item} />
+                          </li>
                         ))}
                       </ul>
                     )}
@@ -4167,6 +4169,74 @@ function MetricDecisionCell({ item }: { item: SignalMetricDecisionItem }) {
       <small>不能证明：{item.doesNotProve}</small>
       <small>人工下一步：{item.nextManualStep}</small>
     </div>
+  );
+}
+
+function ReviewRepairSampleItem({ item }: { item: string }) {
+  const sections = buildReviewRepairSampleSections(item);
+  return (
+    <div className="reviewRepairSampleItem">
+      <strong>{sections.primary}</strong>
+      {sections.meta.length > 0 && (
+        <div className="reviewRepairSampleMeta">
+          {sections.meta.map((part) => (
+            <span key={part}>{part}</span>
+          ))}
+        </div>
+      )}
+      <ReviewRepairSampleSection title="证据缺口 / 预检" items={sections.evidence} />
+      <ReviewRepairSampleSection title="作废计划" items={sections.voidPlan} />
+      <ReviewRepairSampleSection title="授权与命令" items={sections.commands} code />
+    </div>
+  );
+}
+
+function ReviewRepairSampleSection({ title, items, code = false }: { title: string; items: string[]; code?: boolean }) {
+  if (items.length === 0) return null;
+  return (
+    <div className="reviewRepairSampleSection">
+      <span>{title}</span>
+      <div>
+        {items.map((part) => (
+          code ? <code key={part}>{part}</code> : <p key={part}>{part}</p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function buildReviewRepairSampleSections(item: string) {
+  const parts = item
+    .split("；")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const [primary = item, ...rest] = parts;
+  const meta = rest.filter((part, index) => index < 2 || part.startsWith("动作 "));
+  const details = rest.filter((part, index) => index >= 2 && !part.startsWith("动作 "));
+  const commands = details.filter(isReviewRepairCommandText);
+  const voidPlan = details.filter((part) => !isReviewRepairCommandText(part) && isReviewRepairVoidPlanText(part));
+  const evidence = details.filter((part) => !isReviewRepairCommandText(part) && !isReviewRepairVoidPlanText(part));
+  return { primary, meta, evidence, voidPlan, commands };
+}
+
+function isReviewRepairCommandText(part: string) {
+  return (
+    part.startsWith("授权码") ||
+    part.startsWith("dry-run：") ||
+    part.startsWith("execute ") ||
+    part.startsWith("先 dry-run") ||
+    part.startsWith("该动作")
+  );
+}
+
+function isReviewRepairVoidPlanText(part: string) {
+  return (
+    part.startsWith("dry-run 可预检") ||
+    part.startsWith("真实作废") ||
+    part.startsWith("作废对象") ||
+    part.startsWith("复盘窗口") ||
+    part.startsWith("作废后") ||
+    part.startsWith("重新留痕")
   );
 }
 

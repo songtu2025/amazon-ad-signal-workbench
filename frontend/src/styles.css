@@ -4970,6 +4970,89 @@ button.reviewTodoQueueNext:focus-visible {
   word-break: break-word;
 }
 
+.reviewReadinessGateSummary .reviewRepairSampleList {
+  grid-template-columns: 1fr;
+}
+
+.reviewRepairSampleList {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reviewRepairSampleItem {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.reviewRepairSampleItem > strong {
+  color: #25364b;
+  font-size: 12px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.reviewRepairSampleMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.reviewRepairSampleMeta span {
+  border: 1px solid #e1e8f0;
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: #f8fafc;
+  color: #52677d;
+  font-size: 11px;
+  font-weight: 760;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.reviewRepairSampleSection {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 7px;
+  align-items: start;
+}
+
+.reviewRepairSampleSection > span {
+  color: #66758a;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.reviewRepairSampleSection > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.reviewRepairSampleSection p,
+.reviewRepairSampleSection code {
+  margin: 0;
+  color: #2f3f52;
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.reviewRepairSampleSection code {
+  border: 1px solid #e4d9be;
+  border-radius: 6px;
+  padding: 3px 5px;
+  background: #fff8e9;
+  color: #5d4d21;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  white-space: normal;
+  word-break: break-word;
+}
+
 .reviewIdentityAudit {
   display: grid;
   gap: 7px;
