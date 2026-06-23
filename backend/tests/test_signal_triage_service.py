@@ -639,6 +639,9 @@ def test_search_intent_summaries_respect_parent_asin_product_scope(monkeypatch) 
     assert "可人工确认的扩量机会" in summaries[0].current_judgement
     assert "花费 20.03" in summaries[0].metric_purpose
     assert "覆盖 1 个广告活动、1 个广告组、2 条搜索词表现行" in summaries[0].ad_context
+    assert "关联 1 个广告 ASIN：B016EXMVZS" in summaries[0].ad_context
+    assert "投放词/投放对象 0 个：投放词待补齐" in summaries[0].ad_context
+    assert "缺广告 ASIN 覆盖上下文" not in summaries[0].evidence_gap
     assert "缺投放词或关键词承接字段" in summaries[0].evidence_gap
     assert "广告位影响需要继续打开广告位证据核对" in summaries[0].evidence_gap
     assert "同类广告搜索词" in summaries[0].proves

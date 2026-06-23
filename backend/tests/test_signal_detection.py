@@ -450,6 +450,11 @@ def test_search_intent_summary_exposes_review_terms_and_aba_matches() -> None:
     rows = [
         {
             "row_id": "fixture-baby-sunglasses-a",
+            "campaign_id": "campaign-baby",
+            "campaign_name": "Baby sunglasses campaign",
+            "ad_group_id": "group-baby",
+            "ad_group_name": "Baby sunglasses exact",
+            "keyword_text": "baby sunglasses exact",
             "search_term": "baby sunglasses",
             "normalized_query": "baby sunglasses",
             "intent_label": "未分组搜索词",
@@ -465,6 +470,11 @@ def test_search_intent_summary_exposes_review_terms_and_aba_matches() -> None:
         },
         {
             "row_id": "fixture-baby-sunglasses-b",
+            "campaign_id": "campaign-baby",
+            "campaign_name": "Baby sunglasses campaign",
+            "ad_group_id": "group-baby",
+            "ad_group_name": "Baby sunglasses exact",
+            "keyword_text": "baby sunglasses exact",
             "search_term": "baby sunglasses",
             "normalized_query": "baby sunglasses",
             "intent_label": "未分组搜索词",
@@ -494,6 +504,17 @@ def test_search_intent_summary_exposes_review_terms_and_aba_matches() -> None:
             "end_date": "2026-06-16",
         },
     ]
+    context_rows = [
+        *rows,
+        {
+            "row_id": "fixture-ad-product-baby-sunglasses",
+            "source_table": "advertised_products",
+            "market_id": 1,
+            "campaign_id": "campaign-baby",
+            "ad_group_id": "group-baby",
+            "asin": "B000SUN01",
+        },
+    ]
     aba_rows = [
         {
             "source_record_id": "aba-baby-sunglasses",
@@ -509,7 +530,7 @@ def test_search_intent_summary_exposes_review_terms_and_aba_matches() -> None:
         }
     ]
 
-    summaries = search_intent_summaries(rows, aba_rows=aba_rows)
+    summaries = search_intent_summaries(rows, aba_rows=aba_rows, context_rows=context_rows)
 
     sunglasses = next(summary for summary in summaries if summary.intent_label == "规则语义：儿童太阳镜")
 
@@ -522,6 +543,10 @@ def test_search_intent_summary_exposes_review_terms_and_aba_matches() -> None:
     assert sunglasses.top_search_terms[0].acos == 0.14
     assert sunglasses.top_search_terms[0].aba_rank == 120
     assert sunglasses.top_search_terms[1].search_term == "kids sunglasses"
+    assert "关联 1 个广告 ASIN：B000SUN01" in sunglasses.ad_context
+    assert "投放词/投放对象 1 个：baby sunglasses exact" in sunglasses.ad_context
+    assert "缺广告 ASIN 覆盖上下文" not in sunglasses.evidence_gap
+    assert "缺投放词或关键词承接字段" not in sunglasses.evidence_gap
 
 
 def test_search_intent_summary_ignores_non_search_term_rows() -> None:

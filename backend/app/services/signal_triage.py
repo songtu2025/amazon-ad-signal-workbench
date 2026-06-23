@@ -268,6 +268,7 @@ def build_search_intent_summaries(
         return search_intent_summaries(
             signal_rows,
             aba_rows=aba_rows,
+            context_rows=signal_rows,
             data_grain="当前站点广告搜索词表现行按搜索意图聚合",
         )
 
@@ -276,6 +277,7 @@ def build_search_intent_summaries(
     return search_intent_summaries(
         scoped_search_term_rows,
         aba_rows=aba_rows,
+        context_rows=signal_rows,
         data_grain=_search_intent_data_grain_for_product_scope(normalized_scope_id),
     )
 

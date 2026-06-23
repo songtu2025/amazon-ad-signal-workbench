@@ -3145,7 +3145,72 @@ def search_intent_metric_purpose(metrics: MetricSnapshot) -> str:
     )
 
 
-def search_intent_ad_context(group_rows: list[dict]) -> str:
+def search_intent_context_key(row: dict) -> tuple[str, str, str] | None:
+    campaign_id = string_value(row.get("campaign_id") or row.get("campaignId"))
+    ad_group_id = string_value(row.get("ad_group_id") or row.get("group_id") or row.get("adGroupId"))
+    if not campaign_id and not ad_group_id:
+        return None
+    market_id = string_value(row.get("market_id") or row.get("marketplace_id") or row.get("marketId"))
+    return (market_id, campaign_id, ad_group_id)
+
+
+def search_intent_matching_context_rows(
+    group_rows: list[dict],
+    context_rows: list[dict],
+    source_table: str,
+) -> list[dict]:
+    context_keys = {key for row in group_rows if (key := search_intent_context_key(row))}
+    if not context_keys:
+        return []
+    matches: list[dict] = []
+    seen: set[str] = set()
+    for row in context_rows:
+        if row.get("source_table") != source_table:
+            continue
+        if search_intent_context_key(row) not in context_keys:
+            continue
+        identity = string_value(row.get("row_id") or row.get("source_record_id")) or str(sorted(row.items()))
+        if identity in seen:
+            continue
+        seen.add(identity)
+        matches.append(row)
+    return matches
+
+
+def search_intent_ad_asin_labels(group_rows: list[dict], context_rows: list[dict]) -> list[str]:
+    direct_labels = {
+        label
+        for row in group_rows
+        if (label := string_value(row.get("asin") or row.get("ad_asin") or row.get("advertised_asin")))
+    }
+    context_labels = {
+        label
+        for row in search_intent_matching_context_rows(group_rows, context_rows, "advertised_products")
+        if (label := string_value(row.get("asin") or row.get("ad_asin") or row.get("advertised_asin")))
+    }
+    return sorted(direct_labels | context_labels)
+
+
+def search_intent_targeting_labels(group_rows: list[dict]) -> list[str]:
+    labels = {
+        label
+        for row in group_rows
+        if (
+            label := string_value(
+                row.get("keyword_text")
+                or row.get("targeting_text")
+                or row.get("target_text")
+                or row.get("targeting")
+                or row.get("keyword_id")
+                or row.get("target_id")
+            )
+        )
+    }
+    return sorted(labels)
+
+
+def search_intent_ad_context(group_rows: list[dict], context_rows: list[dict] | None = None) -> str:
+    context_source_rows = context_rows if context_rows is not None else group_rows
     campaign_labels = sorted(
         {
             label
@@ -3161,17 +3226,33 @@ def search_intent_ad_context(group_rows: list[dict]) -> str:
         }
     )
     top_groups = "、".join(ad_group_labels[:2]) if ad_group_labels else "广告组待补齐"
-    suffix = "；多广告组时不能自动归因到单个广告 ASIN。" if len(ad_group_labels) > 1 else "；仍需核对同广告组投放商品。"
-    return f"广告上下文：覆盖 {len(campaign_labels)} 个广告活动、{len(ad_group_labels)} 个广告组、{len(group_rows)} 条搜索词表现行；Top 广告组：{top_groups}{suffix}"
-
-
-def search_intent_evidence_gap(group_rows: list[dict], aba_match_count: int) -> str:
-    gaps: list[str] = []
-    has_keyword_context = any(
-        string_value(row.get("keyword_text") or row.get("targeting_text") or row.get("targeting") or row.get("keyword_id"))
-        for row in group_rows
+    ad_asin_labels = search_intent_ad_asin_labels(group_rows, context_source_rows)
+    targeting_labels = search_intent_targeting_labels(group_rows)
+    ad_asin_text = "、".join(ad_asin_labels[:3]) if ad_asin_labels else "广告 ASIN 待补齐"
+    targeting_text = "、".join(targeting_labels[:3]) if targeting_labels else "投放词待补齐"
+    if len(ad_group_labels) > 1 or len(ad_asin_labels) > 1:
+        suffix = "；多广告组或多广告 ASIN 时不能自动归因到单个广告 ASIN。"
+    elif len(ad_asin_labels) == 1:
+        suffix = "；仍需核对该广告 ASIN 所在广告组的投放商品、投放词和广告位。"
+    else:
+        suffix = "；缺广告 ASIN 覆盖上下文，不能判断具体广告商品承接。"
+    return (
+        f"广告上下文：覆盖 {len(campaign_labels)} 个广告活动、{len(ad_group_labels)} 个广告组、{len(group_rows)} 条搜索词表现行；"
+        f"关联 {len(ad_asin_labels)} 个广告 ASIN：{ad_asin_text}；"
+        f"投放词/投放对象 {len(targeting_labels)} 个：{targeting_text}；Top 广告组：{top_groups}{suffix}"
     )
-    if not has_keyword_context:
+
+
+def search_intent_evidence_gap(group_rows: list[dict], aba_match_count: int, context_rows: list[dict] | None = None) -> str:
+    context_source_rows = context_rows if context_rows is not None else group_rows
+    gaps: list[str] = []
+    ad_asin_labels = search_intent_ad_asin_labels(group_rows, context_source_rows)
+    targeting_labels = search_intent_targeting_labels(group_rows)
+    if not ad_asin_labels:
+        gaps.append("缺广告 ASIN 覆盖上下文")
+    elif len(ad_asin_labels) > 1:
+        gaps.append("同广告组多广告 ASIN，不能自动归因到单个广告 ASIN")
+    if not targeting_labels:
         gaps.append("缺投放词或关键词承接字段")
     if aba_match_count == 0:
         gaps.append("未命中 ABA 站点级热度背景")
@@ -3191,6 +3272,7 @@ def search_intent_summaries(
     rows: list[dict] | None = None,
     *,
     aba_rows: list[dict] | None = None,
+    context_rows: list[dict] | None = None,
     data_grain: str = "当前广告搜索词表现行按搜索意图聚合",
 ) -> list[SearchIntentSummary]:
     groups: dict[str, list[dict]] = defaultdict(list)
@@ -3226,8 +3308,8 @@ def search_intent_summaries(
                 business_question="这组同类广告用户搜索词在当前 Parent ASIN 广告上下文下，是应该扩量、止损，还是只观察？",
                 current_judgement=search_intent_current_judgement(metrics),
                 metric_purpose=search_intent_metric_purpose(metrics),
-                ad_context=search_intent_ad_context(group_rows),
-                evidence_gap=search_intent_evidence_gap(group_rows, aba_match_count),
+                ad_context=search_intent_ad_context(group_rows, context_rows),
+                evidence_gap=search_intent_evidence_gap(group_rows, aba_match_count, context_rows),
                 next_manual_step=search_intent_next_manual_step(metrics),
             )
         )
