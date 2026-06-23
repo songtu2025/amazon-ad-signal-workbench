@@ -152,6 +152,7 @@ import {
   buildRecommendedManualActionCandidate,
   buildDiagnosisContextSummary,
   buildDiagnosisPathSummary,
+  buildSearchIntentPanelContext,
   buildSearchIntentReviewCards,
   buildSearchIntentFocusContext,
   buildSelectedSignalScopeContext,
@@ -206,6 +207,7 @@ import {
   SignalMetricDecisionItem,
   SignalTriageDiagnosisPathItem,
   SelectedSignalScopeContext,
+  SearchIntentPanelContext,
   SearchIntentFocusContext,
   triggerEvidenceCountText,
   filterEvidenceBySource,
@@ -545,6 +547,10 @@ export function SignalTriageWorkbench() {
   const productScopeAdmissionCard = useMemo(() => buildProductScopeAdmissionCard(signalTriageSummary), [signalTriageSummary]);
   const noActionableManualGate = useMemo(() => buildNoActionableManualGate(signalTriageSummary), [signalTriageSummary]);
   const searchIntentReviewCards = useMemo(() => buildSearchIntentReviewCards(searchIntents), [searchIntents]);
+  const searchIntentPanelContext: SearchIntentPanelContext = useMemo(
+    () => buildSearchIntentPanelContext(searchIntentReviewCards),
+    [searchIntentReviewCards],
+  );
   const triageReviewFeedbackText = useMemo(() => signalTriageReviewFeedbackText(signalTriageSummary), [signalTriageSummary]);
   const reviewReadinessGateSummary = useMemo(() => buildReviewReadinessGateSummary(signalTriageSummary), [signalTriageSummary]);
   const reviewEvidenceRepairSummary = useMemo(
@@ -1881,24 +1887,47 @@ export function SignalTriageWorkbench() {
             </button>
           </div>
 
-          {searchIntentReviewCards.length > 0 && (
-            <section className="searchIntentReviewPanel" aria-label="SearchTerm 机会筛选（语义聚合）">
-              <div className="searchIntentReviewHeader">
-                <strong>SearchTerm 机会筛选</strong>
-                <span>当前诊断入口内的广告搜索词机会语义聚合</span>
+          <section className="searchIntentReviewPanel" aria-label="SearchTerm 机会筛选（语义聚合）">
+            <div className="searchIntentReviewHeader">
+              <strong>SearchTerm 机会筛选</strong>
+              <span>当前诊断入口内的广告搜索词机会语义聚合</span>
+            </div>
+            <div className="searchIntentReviewScope" aria-label="SearchTerm 机会筛选数据口径">
+              <span>
+                <b>作用</b>
+                <small>{searchIntentPanelContext.purpose}</small>
+              </span>
+              <span>
+                <b>数据口径</b>
+                <small>{searchIntentPanelContext.dataGrain}</small>
+              </span>
+              <span>
+                <b>能证明</b>
+                <small>{searchIntentPanelContext.proves}</small>
+              </span>
+              <span>
+                <b>不能证明</b>
+                <small>{searchIntentPanelContext.doesNotProve}</small>
+              </span>
+              <span>
+                <b>人工下一步</b>
+                <small>{searchIntentPanelContext.nextManualStep}</small>
+              </span>
+            </div>
+            <small className="searchIntentReviewBoundary">{searchIntentPanelContext.boundary}</small>
+            {activeSearchIntentLabel && (
+              <div className="searchIntentActiveFilter" aria-label="当前 SearchTerm 机会筛选">
+                <span>
+                  已筛选：{activeSearchIntentLabel}
+                  <small>诊断入口保持不变，仅显示同类 SearchTerm 机会；不做商品归因；ABA 只作站点级背景。</small>
+                  <small>绑定诊断入口：{selectedProductScopeOption?.label ?? activeProductScopeId}</small>
+                </span>
+                <button type="button" onClick={clearSearchIntentFocus}>
+                  清除
+                </button>
               </div>
-              {activeSearchIntentLabel && (
-                <div className="searchIntentActiveFilter" aria-label="当前 SearchTerm 机会筛选">
-                  <span>
-                    已筛选：{activeSearchIntentLabel}
-                    <small>诊断入口保持不变，仅显示同类 SearchTerm 机会；不做商品归因；ABA 只作站点级背景。</small>
-                    <small>绑定诊断入口：{selectedProductScopeOption?.label ?? activeProductScopeId}</small>
-                  </span>
-                  <button type="button" onClick={clearSearchIntentFocus}>
-                    清除
-                  </button>
-                </div>
-              )}
+            )}
+            {searchIntentReviewCards.length > 0 ? (
               <div className="searchIntentReviewList">
                 {searchIntentReviewCards.map((card) => (
                   <button
@@ -1931,8 +1960,13 @@ export function SignalTriageWorkbench() {
                   </button>
                 ))}
               </div>
-            </section>
-          )}
+            ) : (
+              <div className="searchIntentReviewEmpty" aria-label="SearchTerm 机会筛选空态">
+                <strong>暂无 SearchTerm 机会聚合</strong>
+                <small>{searchIntentPanelContext.emptyText}</small>
+              </div>
+            )}
+          </section>
 
           {loading && <EmptyState icon="loading" title="正在读取信号" />}
           {error && <EmptyState icon="warning" title={error} />}

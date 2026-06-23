@@ -184,6 +184,16 @@ export interface SearchIntentReviewCard {
   topTerms: string[];
 }
 
+export interface SearchIntentPanelContext {
+  purpose: string;
+  dataGrain: string;
+  proves: string;
+  doesNotProve: string;
+  nextManualStep: string;
+  boundary: string;
+  emptyText: string;
+}
+
 export interface SearchIntentFilterSignalForUi extends SignalForUi {
   evidence?: {
     primary_object?: PrimaryObjectForUi | null;
@@ -5613,6 +5623,30 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       topTerms,
     };
   });
+}
+
+export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): SearchIntentPanelContext {
+  const firstCard = cards[0];
+  return {
+    purpose:
+      firstCard?.purpose ??
+      "用途：作为当前诊断入口内的 SearchTerm 机会筛选，帮助运营缩小同类广告搜索词复核范围；它不是经营商品入口、广告组入口或人工动作对象。",
+    dataGrain: firstCard?.dataGrain ?? "当前诊断入口内已进入 SearchTerm 机会队列的广告搜索词表现行，按搜索意图聚合。",
+    proves: firstCard?.proves ?? "能证明当前诊断入口内同类广告搜索词的花费、点击、订单、ACOS 和 ABA 站点级背景。",
+    doesNotProve:
+      firstCard?.doesNotProve ??
+      "不能证明 Parent ASIN 下全部搜索词表现，不能证明单个广告 ASIN 归因，也不能生成 SearchTerm 筛选上下文人工动作。",
+    nextManualStep:
+      firstCard?.nextManualStep ??
+      "有命中时逐条打开具体 SearchTerm 信号；无命中时回到广告 ASIN、广告组、投放词或广告位证据缺口，不扩展浅层语义分析。",
+    boundary:
+      firstCard?.boundary ??
+      "边界：只筛当前诊断入口内的 SearchTerm 机会；不改变诊断入口，不生成 SearchTerm 筛选上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
+    emptyText:
+      cards.length > 0
+        ? `当前展示 ${cards.length} 组 SearchTerm 机会聚合，点击后只筛选当前诊断入口内的同类 SearchTerm 信号。`
+        : "当前诊断入口下没有已进入 SearchTerm 机会队列的广告搜索词行；这不是系统故障，也不代表 Parent ASIN 没有搜索词，只代表当前证据不足以生成 SearchTerm 机会聚合。",
+  };
 }
 
 export function filterSignalsBySearchIntent<T extends SearchIntentFilterSignalForUi>(signals: T[], intentLabel: string | null | undefined): T[] {

@@ -2714,6 +2714,37 @@ button.reviewTodoQueueNext:focus-visible {
   text-align: right;
 }
 
+.searchIntentReviewScope {
+  border: 1px solid #dce8f4;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 8px;
+  display: grid;
+  gap: 7px;
+}
+
+.searchIntentReviewScope span {
+  display: grid;
+  gap: 2px;
+}
+
+.searchIntentReviewScope b {
+  color: #213047;
+  font-size: 11px;
+}
+
+.searchIntentReviewScope small,
+.searchIntentReviewBoundary,
+.searchIntentReviewEmpty small {
+  color: #52647a;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.searchIntentReviewBoundary {
+  display: block;
+}
+
 .searchIntentActiveFilter {
   border: 1px solid #cfe2fb;
   border-radius: 8px;
@@ -2756,6 +2787,20 @@ button.reviewTodoQueueNext:focus-visible {
 .searchIntentReviewList {
   display: grid;
   gap: 7px;
+}
+
+.searchIntentReviewEmpty {
+  border: 1px dashed #cfe2fb;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.searchIntentReviewEmpty strong {
+  color: #213047;
+  font-size: 12px;
 }
 
 .searchIntentReviewCard {
