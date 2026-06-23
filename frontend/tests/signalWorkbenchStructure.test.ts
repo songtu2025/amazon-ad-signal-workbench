@@ -275,12 +275,12 @@ assertIncludes(workbenchSource, "chain.marketContext");
 assertIncludes(workbenchSource, "chain.actionBoundary");
 assert(
   workbenchSource.indexOf("chain.parentScopeContext") < workbenchSource.indexOf("chain.adAsinCoverage") &&
-    workbenchSource.indexOf("chain.adAsinCoverage") < workbenchSource.indexOf("chain.targetingEvidence") &&
-    workbenchSource.indexOf("chain.targetingEvidence") < workbenchSource.indexOf("chain.adGroupSynthesis") &&
+    workbenchSource.indexOf("chain.adAsinCoverage") < workbenchSource.indexOf("chain.adGroupSynthesis") &&
     workbenchSource.indexOf("chain.adGroupSynthesis") < workbenchSource.indexOf("chain.adGroupProductPerformance") &&
-    workbenchSource.indexOf("chain.adGroupProductPerformance") < workbenchSource.indexOf("chain.placementBoundary") &&
+    workbenchSource.indexOf("chain.adGroupProductPerformance") < workbenchSource.indexOf("chain.targetingEvidence") &&
+    workbenchSource.indexOf("chain.targetingEvidence") < workbenchSource.indexOf("chain.placementBoundary") &&
     workbenchSource.indexOf("chain.placementBoundary") < workbenchSource.indexOf("chain.marketContext"),
-  "广告搜索词表现复核链必须按 Parent ASIN -> 广告 ASIN -> 投放词证据 -> 广告组合流判断 -> 同组投放商品表现 -> 广告位边界 -> ABA 背景 的顺序展示。",
+  "广告搜索词表现复核链必须按 Parent ASIN -> 广告 ASIN -> 广告组合流判断 -> 同组投放商品表现 -> 投放词证据 -> 广告位边界 -> ABA 背景 的顺序展示。",
 );
 assertIncludes(workbenchSource, "diagnosis.decision.businessQuestion");
 assertIncludes(workbenchSource, "diagnosis.decision.targetingEvidence");

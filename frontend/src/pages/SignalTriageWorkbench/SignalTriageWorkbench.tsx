@@ -3074,16 +3074,16 @@ function SearchTermOpportunityReviewChainPanel({ chain }: { chain: SearchTermOpp
           <span>{chain.adAsinCoverage}</span>
         </li>
         <li>
-          <b>投放词证据</b>
-          <span>{chain.targetingEvidence}</span>
-        </li>
-        <li>
           <b>广告组合流判断</b>
           <span>{chain.adGroupSynthesis}</span>
         </li>
         <li>
           <b>同组投放商品表现</b>
           <span>{chain.adGroupProductPerformance}</span>
+        </li>
+        <li>
+          <b>投放词证据</b>
+          <span>{chain.targetingEvidence}</span>
         </li>
         <li>
           <b>广告位边界</b>

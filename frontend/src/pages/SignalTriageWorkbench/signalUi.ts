@@ -4151,11 +4151,6 @@ export function buildManualConfirmationEvidenceItems(
           detail: "用于确认只有有广告数据的广告 ASIN 进入承接复核；搜索词不能自动归因到单个广告 ASIN。",
         },
         {
-          label: "投放词证据",
-          value: searchTermOpportunityReviewChain.targetingEvidence,
-          detail: "用于确认搜索词来自当前投放上下文，不代表完整关键词库。",
-        },
-        {
           label: "广告组合流判断",
           value: searchTermOpportunityReviewChain.adGroupSynthesis,
           detail: "用于确认搜索词只说明同广告组上下文，不能自动归因到单个广告 ASIN、广告组或广告位。",
@@ -4164,6 +4159,11 @@ export function buildManualConfirmationEvidenceItems(
           label: "同组投放商品表现",
           value: searchTermOpportunityReviewChain.adGroupProductPerformance,
           detail: "用于确认同广告组广告 ASIN 的承接差异；不能把搜索词或广告位自动归因到单个广告 ASIN。",
+        },
+        {
+          label: "投放词证据",
+          value: searchTermOpportunityReviewChain.targetingEvidence,
+          detail: "用于确认搜索词来自当前广告组投放上下文，不代表完整关键词库。",
         },
         {
           label: "广告位边界",
