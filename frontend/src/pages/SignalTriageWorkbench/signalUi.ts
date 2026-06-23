@@ -7647,6 +7647,15 @@ function buildSignalObjectReviewPath(signal: SignalForUi, primaryObject?: Primar
     };
   }
 
+  if (objectType === "ad_group") {
+    return {
+      label: "复核路径",
+      value:
+        "Parent ASIN 销售盘 -> 广告 ASIN 覆盖 -> 当前广告组容器 -> 同组投放商品表现 -> 投放词 / 搜索词 / 广告位证据 -> 主推款策略边界 -> 人工确认 -> 7/14 天复盘",
+      detail: "广告组是投放容器，不是商品；先核对同组广告商品表现和主推款策略，再判断是否只是结构待确认，不能自动拆广告组。",
+    };
+  }
+
   if (objectType === "placement") {
     return {
       label: "复核路径",

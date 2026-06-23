@@ -3746,6 +3746,14 @@ assertIncludes(advertisedProductManualConfirmationEvidenceItems[0].value, "当�
 assertIncludes(advertisedProductManualConfirmationEvidenceItems[0].detail ?? "", "广告 ASIN 是投放商品");
 assertIncludes(advertisedProductManualConfirmationEvidenceItems[0].detail ?? "", "不能自动归因到该 ASIN");
 
+const adGroupManualConfirmationEvidenceItems = buildManualConfirmationEvidenceItems([], null, adGroupSignal);
+assertEqual(adGroupManualConfirmationEvidenceItems.map((item) => item.label).join(" / "), "复核路径");
+assertIncludes(adGroupManualConfirmationEvidenceItems[0].value, "当前广告组容器");
+assertIncludes(adGroupManualConfirmationEvidenceItems[0].value, "同组投放商品表现");
+assertIncludes(adGroupManualConfirmationEvidenceItems[0].value, "主推款策略边界");
+assertIncludes(adGroupManualConfirmationEvidenceItems[0].detail ?? "", "广告组是投放容器");
+assertIncludes(adGroupManualConfirmationEvidenceItems[0].detail ?? "", "不能自动拆广告组");
+
 const placementManualConfirmationEvidenceItems = buildManualConfirmationEvidenceItems(
   [],
   null,
@@ -5264,6 +5272,11 @@ assertEqual(adGroupContext.items[1].label, "广告组");
 assertEqual(adGroupContext.items[1].value, "RBK004-Auto");
 assertIncludes(adGroupContext.boundary, "广告组是投放容器");
 assertIncludes(adGroupContext.boundary, "不能直接归因为单个商品");
+assertIncludes(adGroupContext.reviewPath?.value ?? "", "当前广告组容器");
+assertIncludes(adGroupContext.reviewPath?.value ?? "", "同组投放商品表现");
+assertIncludes(adGroupContext.reviewPath?.value ?? "", "主推款策略边界");
+assertIncludes(adGroupContext.reviewPath?.detail ?? "", "广告组是投放容器");
+assertIncludes(adGroupContext.reviewPath?.detail ?? "", "不能自动拆广告组");
 
 const searchTermObject: PrimaryObjectForUi = {
   object_type: "search_term",

@@ -429,6 +429,8 @@ assertIncludes(workbenchSource, "buildManualConfirmationEvidenceItems(selectedDi
 assertIncludes(workbenchSource, 'aria-label="对象复核路径"');
 assertIncludes(signalUiSource, "buildSignalObjectReviewPath");
 assertIncludes(signalUiSource, "Parent ASIN 销售盘 -> 当前广告 ASIN");
+assertIncludes(signalUiSource, "Parent ASIN 销售盘 -> 广告 ASIN 覆盖 -> 当前广告组容器");
+assertIncludes(signalUiSource, "不能自动拆广告组");
 assertIncludes(signalUiSource, "当前经营入口 -> 广告活动 / 广告组 -> 广告位表现");
 assertIncludes(workbenchSource, 'aria-label="人工确认证据写入核对"');
 assertIncludes(workbenchSource, "manualConfirmationEvidenceReadinessSummary");
