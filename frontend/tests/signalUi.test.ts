@@ -630,6 +630,22 @@ const noStrategyAdProductCandidateSignal = {
   },
 } satisfies ProductScopedSignalForUi & { priority: "P1" };
 
+const salesContextSignal = {
+  ...opportunitySignal,
+  id: "sig-sales-context",
+  signal_category: "product_ad_coverage",
+  object_type: "sales_product",
+  priority: "P1",
+  severity: 2,
+  evidence: {
+    primary_object: {
+      object_type: "sales_product",
+      label: "销售 ASIN B016EXMW1G",
+      asin: "B016EXMW1G",
+    },
+  },
+} satisfies ProductScopedSignalForUi & { priority: "P1"; object_type: "sales_product" };
+
 const recommendedManualActionCandidate = buildRecommendedManualActionCandidate(
   [placementCandidateSignal, mainPushAdProductCandidateSignal, noStrategyAdProductCandidateSignal],
   parentAsinOptions,
@@ -704,6 +720,34 @@ const globalScopeBackendCandidate = buildBackendRecommendedManualActionCandidate
   },
 );
 assertEqual(globalScopeBackendCandidate, null);
+
+const salesScopeMergedSignals = mergeBackendTriageSignals<ProductScopedSignalForUi>(
+  [salesContextSignal],
+  [noStrategyAdProductCandidateSignal],
+  {
+    product_scope_gate: {
+      status: "requires_product_scope",
+      is_actionable: false,
+      selected_product_scope_id: "sales_asin:B016EXMW1G",
+      message: "当前是销售背景 ASIN，广告 AI 信号必须从 Parent ASIN 或已有广告数据的广告 ASIN 进入。",
+    },
+    recommended_candidate: {
+      signal_id: "sig-ad-product-no-strategy",
+      stable_object_id: "B016EXMW02",
+      object_label: "B016EXMW02",
+    },
+    manual_action_preview: {
+      will_write: false,
+      signal_id: "sig-ad-product-no-strategy",
+      action_type: "add_to_review",
+      object_type: "advertised_product",
+      object_id: "B016EXMW02",
+      object_label: "B016EXMW02",
+      review_windows: ["7d", "14d"],
+    },
+  },
+);
+assertEqual(salesScopeMergedSignals.map((signal) => signal.id).join(","), "sig-sales-context");
 
 assertEqual(
   resolveSignalSelectionId(null, [mainPushAdProductCandidateSignal, noStrategyAdProductCandidateSignal], {

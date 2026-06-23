@@ -1548,6 +1548,7 @@ export function mergeBackendTriageSignals<T extends ProductScopedSignalForUi>(
   allSignals: T[],
   summary: SignalTriageSummaryForUi | null | undefined,
 ): T[] {
+  if (summaryRequiresProductScope(summary)) return scopedSignals;
   const seen = new Set(scopedSignals.map((signal) => signal.id));
   const merged = [...scopedSignals];
 
