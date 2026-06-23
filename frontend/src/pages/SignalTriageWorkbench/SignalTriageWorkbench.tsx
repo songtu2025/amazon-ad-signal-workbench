@@ -1965,6 +1965,14 @@ export function SignalTriageWorkbench() {
                     <small>业务问题：{card.businessQuestion}</small>
                     <small>{card.currentJudgement}</small>
                     <small>{card.metricPurpose}</small>
+                    <ul className="searchIntentMetricPurposeList" aria-label="广告搜索词表现指标目的">
+                      {card.metricPurposeItems.map((item) => (
+                        <li className={item.tone} key={item.label}>
+                          <b>{item.label}</b>
+                          <span>{item.value}</span>
+                        </li>
+                      ))}
+                    </ul>
                     <small>{card.adContext}</small>
                     <small>{card.evidenceGap}</small>
                     <small>{card.signalMetricBoundary}</small>

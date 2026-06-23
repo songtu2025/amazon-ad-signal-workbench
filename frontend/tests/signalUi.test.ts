@@ -5375,6 +5375,18 @@ assertEqual(searchIntentReviewCards[0].operationDecisionTone, "scale");
 assertIncludes(searchIntentReviewCards[0].operationDecisionReason, "订单 4");
 assertIncludes(searchIntentReviewCards[0].operationDecisionReason, "ACOS 12.86%");
 assertIncludes(searchIntentReviewCards[0].operationDecisionReason, "具体 SearchTerm");
+assertEqual(searchIntentReviewCards[0].metricPurposeItems.length, 3);
+assertEqual(searchIntentReviewCards[0].metricPurposeItems[0].label, "扩量机会指标");
+assertIncludes(searchIntentReviewCards[0].metricPurposeItems[0].value, "订单 4");
+assertIncludes(searchIntentReviewCards[0].metricPurposeItems[0].value, "CVR 22.22%");
+assertIncludes(searchIntentReviewCards[0].metricPurposeItems[0].value, "仍必须落到具体 SearchTerm");
+assertEqual(searchIntentReviewCards[0].metricPurposeItems[1].label, "浪费风险指标");
+assertIncludes(searchIntentReviewCards[0].metricPurposeItems[1].value, "花费 9");
+assertIncludes(searchIntentReviewCards[0].metricPurposeItems[1].value, "不能自动否词");
+assertEqual(searchIntentReviewCards[0].metricPurposeItems[2].label, "证据缺口提示");
+assertIncludes(searchIntentReviewCards[0].metricPurposeItems[2].value, "表现行 3 条");
+assertIncludes(searchIntentReviewCards[0].metricPurposeItems[2].value, "ABA 命中 1");
+assertIncludes(searchIntentReviewCards[0].metricPurposeItems[2].value, "广告组、投放词、广告位、同组 ASIN");
 assertEqual(searchIntentReviewCards[0].insight, "这组广告搜索词转化稳定，属于放量候选");
 assertIncludes(searchIntentReviewCards[0].businessQuestion, "扩量、止损，还是只观察");
 assertIncludes(searchIntentReviewCards[0].currentJudgement, "可人工确认的扩量机会");
@@ -5469,6 +5481,9 @@ assertEqual(wasteSearchIntentReviewCards[0].operationDecisionLabel, "止损复�
 assertEqual(wasteSearchIntentReviewCards[0].operationDecisionTone, "waste");
 assertIncludes(wasteSearchIntentReviewCards[0].operationDecisionReason, "花费 36");
 assertIncludes(wasteSearchIntentReviewCards[0].operationDecisionReason, "订单 0");
+assertIncludes(wasteSearchIntentReviewCards[0].metricPurposeItems[1].value, "花费 36");
+assertIncludes(wasteSearchIntentReviewCards[0].metricPurposeItems[1].value, "订单 0");
+assertIncludes(wasteSearchIntentReviewCards[0].metricPurposeItems[2].value, "表现行 3 条");
 assertEqual(wasteSearchIntentReviewCards[0].primarySearchTerm, "kids beach gear");
 assertIncludes(wasteSearchIntentReviewCards[0].primarySearchTermReason, "无订单且花费最高");
 
@@ -5512,6 +5527,8 @@ const observeSearchIntentReviewCards = buildSearchIntentReviewCards([
 assertEqual(observeSearchIntentReviewCards[0].operationDecisionLabel, "观察复核");
 assertEqual(observeSearchIntentReviewCards[0].operationDecisionTone, "observe");
 assertIncludes(observeSearchIntentReviewCards[0].operationDecisionReason, "证据还不足");
+assertIncludes(observeSearchIntentReviewCards[0].metricPurposeItems[0].value, "观察复核");
+assertIncludes(observeSearchIntentReviewCards[0].metricPurposeItems[2].value, "表现行 4 条");
 assertEqual(observeSearchIntentReviewCards[0].primarySearchTerm, "toddler shade");
 assertIncludes(observeSearchIntentReviewCards[0].primarySearchTermReason, "样本行数");
 

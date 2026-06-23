@@ -188,6 +188,7 @@ export interface SearchIntentReviewCard {
   businessQuestion: string;
   currentJudgement: string;
   metricPurpose: string;
+  metricPurposeItems: SearchIntentMetricPurposeItem[];
   adContext: string;
   evidenceGap: string;
   signalMetricBoundary: string;
@@ -200,6 +201,12 @@ export interface SearchIntentReviewCard {
   primarySearchTerm: string | null;
   primarySearchTermReason: string;
   topTerms: string[];
+}
+
+export interface SearchIntentMetricPurposeItem {
+  label: string;
+  value: string;
+  tone: "scale" | "waste" | "gap";
 }
 
 export interface SearchIntentPanelContext {
@@ -5887,12 +5894,49 @@ function selectPrimarySearchTermForOperationDecision(
   };
 }
 
+function searchIntentMetricPurposeItems(
+  summary: SearchIntentSummaryForUi,
+  operationDecisionTone: SearchIntentReviewCard["operationDecisionTone"],
+): SearchIntentMetricPurposeItem[] {
+  const metrics = summary.metrics;
+  const rowCount = (summary.top_search_terms ?? []).reduce((total, term) => {
+    const count = typeof term.source_row_count === "number" && Number.isFinite(term.source_row_count) ? term.source_row_count : 0;
+    return total + count;
+  }, 0);
+  const rowText = rowCount > 0 ? `表现行 ${rowCount} 条` : "表现行待补";
+  const gapText = searchIntentDisplayText(summary.evidence_gap).replace(/^证据缺口[:：]\s*/, "");
+  const operationText =
+    operationDecisionTone === "scale"
+      ? "当前更偏扩量复核，但仍必须落到具体 SearchTerm。"
+      : operationDecisionTone === "waste"
+        ? "当前更偏止损复核，但只能进入人工判断。"
+        : "当前更偏观察复核，先补证再判断。";
+  return [
+    {
+      label: "扩量机会指标",
+      value: `订单 ${metrics.orders} / CVR ${formatReviewPercent(metrics.cvr)} / ACOS ${formatReviewPercent(metrics.acos)} / 销售额 ${formatReviewNumber(metrics.sales)} 用于判断搜索词是否已有广告承接质量；${operationText}`,
+      tone: "scale",
+    },
+    {
+      label: "浪费风险指标",
+      value: `花费 ${formatReviewNumber(metrics.cost)} / 点击 ${formatReviewNumber(metrics.clicks)} / 订单 ${metrics.orders} 用于判断是否存在消耗浪费；只能提示人工止损复核，不能自动否词、调价或暂停广告。`,
+      tone: "waste",
+    },
+    {
+      label: "证据缺口提示",
+      value: `${rowText} / ABA 命中 ${summary.aba_match_count ?? 0}；广告组、投放词、广告位、同组 ASIN 和 ABA 周期只用于判断证据是否足够。${gapText ? `当前缺口：${gapText}` : "缺失时只降低置信度或提示补证，不生成广告动作。"}`,
+      tone: "gap",
+    },
+  ];
+}
+
 export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi[], limit = 4): SearchIntentReviewCard[] {
   return summaries.slice(0, limit).map((summary) => {
     const metrics = summary.metrics;
     const abaMatchCount = summary.aba_match_count ?? 0;
     const operationDecision = searchIntentOperationDecision(metrics);
     const primarySelection = selectPrimarySearchTermForOperationDecision(summary, operationDecision.operationDecisionTone);
+    const metricPurposeItems = searchIntentMetricPurposeItems(summary, operationDecision.operationDecisionTone);
     const topTerms = (summary.top_search_terms ?? []).slice(0, 3).map((term) => {
       const abaText = term.aba_rank ? ` / ABA ${term.aba_rank}` : "";
       const adGroupText = (term.ad_group_names ?? []).filter(Boolean).slice(0, 2).join("、") || "广告组待补齐";
@@ -5915,6 +5959,7 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       metricPurpose:
         searchIntentDisplayText(summary.metric_purpose) ||
         "指标目的：花费和点击用于判断消耗规模，订单、CVR 和 ACOS 用于判断广告搜索词承接质量。",
+      metricPurposeItems,
       adContext: searchIntentDisplayText(summary.ad_context) || "广告上下文：等待广告活动、广告组和搜索词表现行补齐。",
       evidenceGap:
         searchIntentDisplayText(summary.evidence_gap) ||

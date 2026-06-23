@@ -2908,6 +2908,41 @@ button.reviewTodoQueueNext:focus-visible {
   gap: 3px;
 }
 
+.searchIntentMetricPurposeList {
+  padding-left: 0 !important;
+  gap: 5px !important;
+}
+
+.searchIntentMetricPurposeList li {
+  list-style: none;
+  border: 1px solid #dfe9f3;
+  border-radius: 8px;
+  background: #f9fbfd;
+  padding: 6px 7px;
+  display: grid;
+  gap: 2px;
+}
+
+.searchIntentMetricPurposeList li.scale {
+  border-color: #c6decf;
+  background: #f6fbf7;
+}
+
+.searchIntentMetricPurposeList li.waste {
+  border-color: #f0c9bf;
+  background: #fff8f6;
+}
+
+.searchIntentMetricPurposeList li.gap {
+  border-color: #d6e1ec;
+  background: #f8fafc;
+}
+
+.searchIntentMetricPurposeList b {
+  color: #24364d;
+  font-size: 11px;
+}
+
 .signalRows {
   display: grid;
   gap: 8px;
