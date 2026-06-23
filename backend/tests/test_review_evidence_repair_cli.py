@@ -99,15 +99,18 @@ def test_review_evidence_repair_rebuilds_preview_without_patching_legacy(monkeyp
             },
             "evidence_snapshot_preview": {
                 "status": "ready",
-                "item_count": 11,
+                "item_count": 14,
                 "items": [
                     {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组", "source": "business_rule"},
                     {"label": "AI 准入", "value": "ready_for_manual_confirmation", "source": "actionability_status"},
                     {"label": "搜索词边界", "value": "beach essentials 只说明同广告组上下文", "source": "search_term_metrics"},
                     {"label": "广告位边界", "value": "广告位证据缺口不能自动归因", "source": "placement_metrics"},
-                    {"label": "投放词证据", "value": "beach essentials 由投放词承接", "source": "targeting_metrics"},
+                    {"label": "搜索词表现分组", "value": "规则语义：海滩出行用品", "source": "search_term_metrics"},
+                    {"label": "Parent ASIN入口", "value": "当前商品范围 Parent ASIN B00K4W4AAA", "source": "business_rule"},
+                    {"label": "广告 ASIN承接", "value": "广告 ASIN B016EXMVZS / B016EXMW02 承接该搜索词上下文", "source": "ad_product_metrics"},
                     {"label": "广告组合流判断", "value": "同广告组多广告 ASIN 不能把搜索词自动归因到单个 ASIN", "source": "ad_group_metrics"},
                     {"label": "同组投放商品表现", "value": "B016EXMVZS 与 B016EXMW02 同组投放表现已回看", "source": "ad_product_metrics"},
+                    {"label": "投放词证据", "value": "beach essentials 由投放词承接", "source": "targeting_metrics"},
                     {"label": "ABA 背景", "value": "ABA Top1000 匹配 beach essentials", "source": "aba_search_term"},
                     {"label": "证据缺口", "value": "不能证明应自动加词", "source": "business_rule"},
                     {"label": "需要补证", "value": "补齐投放词维护状态、广告商品承接和主推策略", "source": "business_rule"},
@@ -184,15 +187,18 @@ def test_review_evidence_repair_handles_object_mismatch_gap(monkeypatch) -> None
             },
             "evidence_snapshot_preview": {
                 "status": "ready",
-                "item_count": 12,
+                "item_count": 15,
                 "items": [
                     {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组"},
                     {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
                     {"label": "搜索词边界", "value": "beach essentials 只说明同广告组上下文"},
                     {"label": "广告位边界", "value": "beach essentials 缺广告组级广告位证据"},
-                    {"label": "投放词证据", "value": "beach essentials 由投放词承接"},
+                    {"label": "搜索词表现分组", "value": "规则语义：海滩出行用品"},
+                    {"label": "Parent ASIN入口", "value": "当前商品范围 Parent ASIN B00K4W4AAA"},
+                    {"label": "广告 ASIN承接", "value": "广告 ASIN B016EXMVZS / B016EXMW02 承接该搜索词上下文"},
                     {"label": "广告组合流判断", "value": "同广告组多广告 ASIN 不能把搜索词自动归因到单个 ASIN"},
                     {"label": "同组投放商品表现", "value": "B016EXMVZS 与 B016EXMW02 同组投放表现已回看"},
+                    {"label": "投放词证据", "value": "beach essentials 由投放词承接"},
                     {"label": "ABA 背景", "value": "ABA Top1000 匹配 beach essentials"},
                     {"label": "证据缺口", "value": "不能证明应自动加词"},
                     {"label": "需要补证", "value": "补齐投放词维护状态、广告商品承接和主推策略"},
@@ -279,9 +285,12 @@ def test_review_evidence_repair_blocks_preview_without_search_term_or_placement_
     assert item["current_preflight"]["missing_required_labels"] == [
         "搜索词边界",
         "广告位边界",
-        "投放词证据",
+        "搜索词表现分组",
+        "Parent ASIN入口",
+        "广告 ASIN承接",
         "广告组合流判断",
         "同组投放商品表现",
+        "投放词证据",
         "ABA 背景",
         "证据缺口",
         "需要补证",
@@ -289,7 +298,7 @@ def test_review_evidence_repair_blocks_preview_without_search_term_or_placement_
     ]
     assert item["can_rebuild_evidence_preview"] is False
     assert item["can_recreate_from_current_signal"] is False
-    assert "搜索词边界、广告位边界、投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证、动作边界" in item["recommended_next_step"]
+    assert "搜索词边界、广告位边界、搜索词表现分组、Parent ASIN入口、广告 ASIN承接、广告组合流判断、同组投放商品表现、投放词证据、ABA 背景、证据缺口、需要补证、动作边界" in item["recommended_next_step"]
 
 
 def test_review_evidence_repair_treats_search_term_review_chain_gaps_as_repair_items(monkeypatch) -> None:
@@ -367,9 +376,20 @@ def test_review_evidence_repair_treats_search_term_review_chain_gaps_as_repair_i
     assert item["current_preflight"]["has_evidence_gap"] is False
     assert item["current_preflight"]["has_required_evidence"] is False
     assert item["current_preflight"]["has_action_boundary"] is False
-    assert item["current_preflight"]["missing_required_labels"] == ["投放词证据", "广告组合流判断", "同组投放商品表现", "ABA 背景", "证据缺口", "需要补证", "动作边界"]
+    assert item["current_preflight"]["missing_required_labels"] == [
+        "搜索词表现分组",
+        "Parent ASIN入口",
+        "广告 ASIN承接",
+        "广告组合流判断",
+        "同组投放商品表现",
+        "投放词证据",
+        "ABA 背景",
+        "证据缺口",
+        "需要补证",
+        "动作边界",
+    ]
     assert item["can_rebuild_evidence_preview"] is False
-    assert "投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证、动作边界" in item["recommended_next_step"]
+    assert "搜索词表现分组、Parent ASIN入口、广告 ASIN承接、广告组合流判断、同组投放商品表现、投放词证据、ABA 背景、证据缺口、需要补证、动作边界" in item["recommended_next_step"]
 
 
 def test_review_evidence_repair_treats_placement_review_chain_gaps_as_repair_items(monkeypatch) -> None:

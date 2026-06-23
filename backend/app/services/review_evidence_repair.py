@@ -1,7 +1,13 @@
 from pathlib import Path
 from typing import Any
 
-from app.services.manual_action_preflight import build_manual_action_preflight_payload
+from app.services.manual_action_preflight import (
+    ADVERTISED_PRODUCT_REQUIRED_REVIEW_EVIDENCE_LABELS,
+    PLACEMENT_REQUIRED_REVIEW_EVIDENCE_LABELS,
+    REQUIRED_REVIEW_EVIDENCE_LABELS,
+    SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS,
+    build_manual_action_preflight_payload,
+)
 from app.services.manual_actions import (
     DEFAULT_MANUAL_ACTION_ROOT,
     DEFAULT_REVIEW_RECORD_ROOT,
@@ -28,33 +34,10 @@ REPAIR_ISSUE_TYPES = {
     "missing_action_boundary",
     "evidence_snapshot_object_mismatch",
 }
-BASE_REPAIR_LABELS = ("排查路径", "AI 准入", "搜索词边界", "广告位边界")
-SEARCH_TERM_REPAIR_LABELS = (
-    *BASE_REPAIR_LABELS,
-    "投放词证据",
-    "广告组合流判断",
-    "同组投放商品表现",
-    "ABA 背景",
-    "证据缺口",
-    "需要补证",
-    "动作边界",
-)
-ADVERTISED_PRODUCT_REPAIR_LABELS = (
-    *BASE_REPAIR_LABELS,
-    "广告商品覆盖",
-    "广告组合流判断",
-    "同组投放商品表现",
-    "证据缺口",
-    "需要补证",
-    "动作边界",
-)
-PLACEMENT_REPAIR_LABELS = (
-    *BASE_REPAIR_LABELS,
-    "广告位表现",
-    "证据缺口",
-    "需要补证",
-    "动作边界",
-)
+BASE_REPAIR_LABELS = REQUIRED_REVIEW_EVIDENCE_LABELS
+SEARCH_TERM_REPAIR_LABELS = SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS
+ADVERTISED_PRODUCT_REPAIR_LABELS = ADVERTISED_PRODUCT_REQUIRED_REVIEW_EVIDENCE_LABELS
+PLACEMENT_REPAIR_LABELS = PLACEMENT_REQUIRED_REVIEW_EVIDENCE_LABELS
 
 
 def build_review_evidence_repair_payload(

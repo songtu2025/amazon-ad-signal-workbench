@@ -76,9 +76,44 @@ def write_complete_evidence_action(action_root: Path) -> None:
             {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
             {"label": "搜索词边界", "value": "beach essentials 不能自动归因到单个广告 ASIN"},
             {"label": "广告位边界", "value": "广告位证据缺口不能自动归因"},
-            {"label": "投放词证据", "value": "beach essentials 同广告组投放词上下文完整"},
+            {"label": "搜索词表现分组", "value": "规则语义：海滩出行用品"},
+            {"label": "Parent ASIN入口", "value": "当前商品范围 Parent ASIN B00K4W4AAA"},
+            {"label": "广告 ASIN承接", "value": "广告 ASIN B016EXMVZS / B016EXMW02 承接该搜索词上下文"},
             {"label": "广告组合流判断", "value": "beach essentials 已串联 Parent -> 广告 ASIN -> 广告组"},
             {"label": "同组投放商品表现", "value": "B016EXMVZS 与 B016EXMW02 同组投放表现已回看"},
+            {"label": "投放词证据", "value": "beach essentials 同广告组投放词上下文完整"},
+            {"label": "ABA 背景", "value": "beach essentials ABA 背景已记录"},
+            {"label": "证据缺口", "value": "beach essentials 当前缺口已说明"},
+            {"label": "需要补证", "value": "beach essentials 后续补证路径已记录"},
+            {"label": "动作边界", "value": "beach essentials 仅建议人工加入复盘"},
+        ],
+    }
+    (action_root / "manual_actions.jsonl").write_text(json.dumps(payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def write_search_term_without_parent_ad_asin_action(action_root: Path) -> None:
+    action_root.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "id": "manual-action-search-term-without-scope",
+        "signal_id": "sig-search-term-without-scope",
+        "action_type": "add_to_review",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-01T00:00:00+00:00",
+        "manual_status": "pending",
+        "shop_id": "market:1",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "search_term:1:beach essentials",
+        "object_label": "beach essentials",
+        "evidence_snapshot": [
+            {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组"},
+            {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
+            {"label": "搜索词边界", "value": "beach essentials 不能自动归因到单个广告 ASIN"},
+            {"label": "广告位边界", "value": "广告位证据缺口不能自动归因"},
+            {"label": "搜索词表现分组", "value": "规则语义：海滩出行用品"},
+            {"label": "广告组合流判断", "value": "同广告组多广告 ASIN 不能把搜索词自动归因到单个 ASIN"},
+            {"label": "同组投放商品表现", "value": "B016EXMVZS 与 B016EXMW02 同组投放表现已回看"},
+            {"label": "投放词证据", "value": "beach essentials 同广告组投放词上下文完整"},
             {"label": "ABA 背景", "value": "beach essentials ABA 背景已记录"},
             {"label": "证据缺口", "value": "beach essentials 当前缺口已说明"},
             {"label": "需要补证", "value": "beach essentials 后续补证路径已记录"},
@@ -209,6 +244,25 @@ def test_review_todo_void_cli_blocks_complete_evidence_todos(tmp_path: Path) -> 
     assert payload["status"] == "blocked"
     assert payload["blockers"][0]["code"] == "review_todo_has_required_evidence"
     assert "对象引用" in payload["blockers"][0]["message"]
+    assert not (action_root / "review_todo_decisions.jsonl").exists()
+
+
+def test_review_todo_void_cli_allows_search_term_todos_missing_parent_or_ad_asin_scope(tmp_path: Path) -> None:
+    module = load_review_todo_void_script()
+    action_root = tmp_path / "manual_actions"
+    write_search_term_without_parent_ad_asin_action(action_root)
+
+    payload = module.build_review_todo_void_payload(
+        selected_market_id=1,
+        action_id="manual-action-search-term-without-scope",
+        expected_object_type="search_term",
+        expected_object_id="search_term:1:beach essentials",
+        action_root=action_root,
+    )
+
+    assert payload["status"] == "dry_run_ready"
+    assert payload["current_todo_count"] == 2
+    assert payload["blockers"] == []
     assert not (action_root / "review_todo_decisions.jsonl").exists()
 
 
