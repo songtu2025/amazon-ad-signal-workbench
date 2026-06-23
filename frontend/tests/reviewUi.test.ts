@@ -587,6 +587,12 @@ const savedSearchTermReviewRecord: ReviewRecordForUi = {
     { label: "AI 准入", value: "可进入人工确认 / 不自动执行广告动作", source: "actionability_status" },
     { label: "广告组合流判断", value: "beach essentials 已串联广告组、投放词、搜索词和广告位边界。", source: "diagnosis_contract" },
     { label: "同组投放商品表现", value: "B016EXMVZS 花费 22.78 / 订单 11", source: "ad_product_daily_metrics" },
+    {
+      label: "逐投放上下文",
+      value: "优先复核广告组：RBK004-beach essentials-精准 / 投放词 beach essentials / 订单 11 / 花费 22.78",
+      detail: "只证明该搜索词在对应广告组和投放词下的广告表现；不能自动归因到单个广告 ASIN。",
+      source: "ad_search_term_daily_metrics",
+    },
     { label: "投放词证据", value: "beach essentials / 1 个", source: "ad_search_term_daily_metrics" },
     { label: "搜索词边界", value: "beach essentials 只能说明广告组上下文，不能自动归因到单个广告 ASIN。", source: "business_rule" },
     { label: "广告位边界", value: "广告组级广告位 0 条 / 同广告活动广告位 6 条。", source: "placement_metrics" },
@@ -1068,6 +1074,13 @@ const searchTermReviewTodoWithFullChain: ReviewTodoForUi = {
       detail: "只说明同广告组内广告商品承接差异，不能把搜索词自动归因到单个广告 ASIN。",
       source: "advertised_products + ad_product_daily_metrics",
     },
+    {
+      label: "逐投放上下文",
+      value:
+        "优先复核广告组：RBK004-beach essentials-精准 / 投放词 beach essentials / 订单 11 / 花费 22.78；对照复核广告组：RBK004-扩展-beach essentials / 投放词 beach essentials / 订单 7 / 花费 18.41",
+      detail: "每行只证明该搜索词在对应广告活动、广告组和投放词下的广告表现；不能自动归因到单个广告 ASIN。",
+      source: "ad_search_term_daily_metrics",
+    },
     { label: "投放词证据", value: "beach essentials / 1 个", detail: "不是完整关键词库证明。", source: "diagnosis_contract" },
     { label: "搜索词边界", value: "beach essentials 只说明同广告组搜索词上下文", source: "ad_search_term_daily_metrics + business_rule" },
     { label: "广告位边界", value: "广告组级广告位 0 条 / 同广告活动广告位 4 条", source: "ad_placement_daily_metrics + business_rule" },
@@ -1085,16 +1098,19 @@ const readyReviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary(s
 const searchTermSnapshotLabels = searchTermReviewTodoWithFullChain.evidence_snapshot?.map((item) => item.label).join(" / ") ?? "";
 assertEqual(
   searchTermSnapshotLabels,
-  "排查路径 / AI 准入 / 语义组 / Parent ASIN入口 / 广告 ASIN承接 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景 / 人工确认判断依据 / 能证明的事实 / 不能证明的边界 / 人工下一步 / 证据缺口 / 需要补证 / 动作边界",
+  "排查路径 / AI 准入 / 语义组 / Parent ASIN入口 / 广告 ASIN承接 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景 / 人工确认判断依据 / 能证明的事实 / 不能证明的边界 / 人工下一步 / 证据缺口 / 需要补证 / 动作边界",
 );
 assertEqual(readyReviewTodoEvidenceReadback?.tone, "ready");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "复盘待办证据回读核对");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "业务判断");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "诊断路径");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "广告搜索词表现复核链");
-assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "Parent ASIN 入口、广告 ASIN 承接、广告组合流判断、同组投放商品表现、投放词证据、搜索词边界、广告位边界、ABA 背景");
+assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "Parent ASIN 入口、广告 ASIN 承接、广告组合流判断、同组投放商品表现、逐投放上下文、投放词证据、搜索词边界、广告位边界、ABA 背景");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "广告组合流判断");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "同组投放商品表现");
+assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "逐投放复核顺序");
+assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "优先复核广告组");
+assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "对照复核广告组");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "同广告组广告 ASIN");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "不能自动归因到单个广告 ASIN");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "缺少广告组级广告位证据");
@@ -1106,6 +1122,13 @@ const blockedReviewTodoEvidenceReadbackWithoutAdGroupSynthesis = buildReviewTodo
 });
 assertEqual(blockedReviewTodoEvidenceReadbackWithoutAdGroupSynthesis?.tone, "blocked");
 assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadbackWithoutAdGroupSynthesis), "缺：广告组合流判断");
+const blockedReviewTodoEvidenceReadbackWithoutAdContextRows = buildReviewTodoEvidenceReadbackSummary({
+  ...searchTermReviewTodoWithFullChain,
+  evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot?.filter((item) => item.label !== "逐投放上下文"),
+});
+assertEqual(blockedReviewTodoEvidenceReadbackWithoutAdContextRows?.tone, "blocked");
+assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadbackWithoutAdContextRows), "缺：逐投放上下文");
+assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadbackWithoutAdContextRows), "不能回看当时先复核哪个广告组");
 const blockedReviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary({
   ...searchTermReviewTodoWithFullChain,
   evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot?.filter(
@@ -1125,10 +1148,10 @@ const searchTermReviewRecordPreflightChecklist = buildReviewRecordPreflightCheck
     objectId: "search_term:1:beach essentials",
   },
 );
-assertEqual(searchTermReviewRecordPreflightChecklist.length, 19);
+assertEqual(searchTermReviewRecordPreflightChecklist.length, 20);
 assertEqual(
   searchTermReviewRecordPreflightChecklist.map((check) => check.id).slice(4, 13).join(" / "),
-  "ad_group_synthesis / ad_group_product_performance / targeting_evidence / search_term_boundary / placement_boundary / aba_context / evidence_gap / required_evidence / manual_action_boundary",
+  "ad_group_synthesis / ad_group_product_performance / ad_context_rows / targeting_evidence / search_term_boundary / placement_boundary / aba_context / evidence_gap / required_evidence",
 );
 assertEqual(searchTermReviewRecordPreflightChecklist[4].id, "ad_group_synthesis");
 assertIncludes(searchTermReviewRecordPreflightChecklist[4].description, "同广告组广告 ASIN");
@@ -1136,20 +1159,24 @@ assertIncludes(searchTermReviewRecordPreflightChecklist[4].description, "不能�
 assertEqual(searchTermReviewRecordPreflightChecklist[5].id, "ad_group_product_performance");
 assertIncludes(searchTermReviewRecordPreflightChecklist[5].description, "同组投放商品表现回看");
 assertIncludes(searchTermReviewRecordPreflightChecklist[5].description, "B016EXMVZS");
-assertEqual(searchTermReviewRecordPreflightChecklist[6].id, "targeting_evidence");
-assertIncludes(searchTermReviewRecordPreflightChecklist[6].description, "beach essentials");
-assertEqual(searchTermReviewRecordPreflightChecklist[7].id, "search_term_boundary");
-assertIncludes(searchTermReviewRecordPreflightChecklist[7].description, "beach essentials 只说明同广告组搜索词上下文");
-assertEqual(searchTermReviewRecordPreflightChecklist[8].id, "placement_boundary");
-assertIncludes(searchTermReviewRecordPreflightChecklist[8].description, "广告组级广告位 0 条");
-assertEqual(searchTermReviewRecordPreflightChecklist[9].id, "aba_context");
-assertIncludes(searchTermReviewRecordPreflightChecklist[9].description, "ABA 排名 208");
-assertEqual(searchTermReviewRecordPreflightChecklist[10].id, "evidence_gap");
-assertIncludes(searchTermReviewRecordPreflightChecklist[10].description, "缺少主推策略");
-assertEqual(searchTermReviewRecordPreflightChecklist[11].id, "required_evidence");
-assertIncludes(searchTermReviewRecordPreflightChecklist[11].description, "补齐投放词维护状态");
-assertEqual(searchTermReviewRecordPreflightChecklist[12].id, "manual_action_boundary");
-assertIncludes(searchTermReviewRecordPreflightChecklist[12].description, "不得自动加词");
+assertEqual(searchTermReviewRecordPreflightChecklist[6].id, "ad_context_rows");
+assertIncludes(searchTermReviewRecordPreflightChecklist[6].description, "逐投放复核顺序回看");
+assertIncludes(searchTermReviewRecordPreflightChecklist[6].description, "优先复核广告组");
+assertIncludes(searchTermReviewRecordPreflightChecklist[6].description, "不能自动归因到单个广告 ASIN");
+assertEqual(searchTermReviewRecordPreflightChecklist[7].id, "targeting_evidence");
+assertIncludes(searchTermReviewRecordPreflightChecklist[7].description, "beach essentials");
+assertEqual(searchTermReviewRecordPreflightChecklist[8].id, "search_term_boundary");
+assertIncludes(searchTermReviewRecordPreflightChecklist[8].description, "beach essentials 只说明同广告组搜索词上下文");
+assertEqual(searchTermReviewRecordPreflightChecklist[9].id, "placement_boundary");
+assertIncludes(searchTermReviewRecordPreflightChecklist[9].description, "广告组级广告位 0 条");
+assertEqual(searchTermReviewRecordPreflightChecklist[10].id, "aba_context");
+assertIncludes(searchTermReviewRecordPreflightChecklist[10].description, "ABA 排名 208");
+assertEqual(searchTermReviewRecordPreflightChecklist[11].id, "evidence_gap");
+assertIncludes(searchTermReviewRecordPreflightChecklist[11].description, "缺少主推策略");
+assertEqual(searchTermReviewRecordPreflightChecklist[12].id, "required_evidence");
+assertIncludes(searchTermReviewRecordPreflightChecklist[12].description, "补齐投放词维护状态");
+assertEqual(searchTermReviewRecordPreflightChecklist[13].id, "manual_action_boundary");
+assertIncludes(searchTermReviewRecordPreflightChecklist[13].description, "不得自动加词");
 assertEqual(canSaveReviewRecordWithPreflight(searchTermReviewEffect, searchTermReviewRecordPreflightChecklist), true);
 const searchTermSavedReviewRecord: ReviewRecordForUi = {
   ...searchTermReviewEffect,
@@ -1164,8 +1191,8 @@ const searchTermSavedReviewRecord: ReviewRecordForUi = {
     can_auto_execute_ads: false,
   },
 };
-assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘证据快照：7d 18 条");
-assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "Parent ASIN 搜索词表现聚合 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景");
+assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘证据快照：7d 19 条");
+assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "Parent ASIN 搜索词表现聚合 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景");
 assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘上下文：Parent ASIN 搜索词表现聚合：规则语义：海滩出行用品");
 assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "具体 SearchTerm：beach essentials");
 assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "人工复盘下一步：按同类广告搜索词表现核对规则口径");
@@ -1176,7 +1203,7 @@ assertIncludes(
     objectId: "search_term:1:beach essentials",
     reviewWindow: "7d",
   }),
-  "可回看对象引用 / 排查路径 / AI 准入 / Parent ASIN 搜索词表现聚合 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景",
+  "可回看对象引用 / 排查路径 / AI 准入 / Parent ASIN 搜索词表现聚合 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景",
 );
 assertIncludes(
   reviewRecordReadbackStatus(
@@ -1195,7 +1222,7 @@ assertIncludes(
   ),
   "7d 缺广告组合流判断",
 );
-for (const label of ["广告组合流判断", "同组投放商品表现", "投放词证据", "搜索词边界", "广告位边界", "ABA 背景", "证据缺口", "需要补证", "动作边界"]) {
+for (const label of ["广告组合流判断", "同组投放商品表现", "逐投放上下文", "投放词证据", "搜索词边界", "广告位边界", "ABA 背景", "证据缺口", "需要补证", "动作边界"]) {
   const checklist = buildReviewRecordPreflightChecklist(
     {
       ...searchTermReviewTodoWithFullChain,

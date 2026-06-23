@@ -542,6 +542,8 @@ export interface ReviewRecordPreflightCheck {
     | "ad_group_synthesis_missing"
     | "ad_group_product_performance"
     | "ad_group_product_performance_missing"
+    | "ad_context_rows"
+    | "ad_context_rows_missing"
     | "aba_context"
     | "aba_context_missing"
     | "evidence_gap"
@@ -632,6 +634,8 @@ const requiredReviewRecordPreflightCheckLabels: Record<ReviewRecordPreflightChec
   ad_group_synthesis_missing: "广告组合流判断缺失",
   ad_group_product_performance: "同组投放商品表现",
   ad_group_product_performance_missing: "同组投放商品表现缺失",
+  ad_context_rows: "逐投放复核顺序",
+  ad_context_rows_missing: "逐投放复核顺序缺失",
   aba_context: "ABA 背景",
   aba_context_missing: "ABA 背景缺失",
   evidence_gap: "证据缺口",
@@ -1223,6 +1227,7 @@ const reviewRecordAdProductCoverageLabels = ["广告商品覆盖"];
 const reviewRecordTargetingEvidenceLabels = ["投放词证据"];
 const reviewRecordAdGroupSynthesisLabels = ["广告组合流判断"];
 const reviewRecordAdGroupProductPerformanceLabels = ["同组投放商品表现"];
+const reviewRecordAdContextRowsLabels = ["逐投放上下文"];
 const reviewRecordAbaContextLabels = ["ABA 背景"];
 const reviewRecordEvidenceGapLabels = ["证据缺口"];
 const reviewRecordRequiredEvidenceLabels = ["需要补证"];
@@ -1235,6 +1240,7 @@ const reviewRecordDiagnosisSupportLabels = [
   "投放词证据",
   "广告组合流判断",
   "同组投放商品表现",
+  "逐投放上下文",
   "ABA 背景",
   "证据缺口",
   "需要补证",
@@ -1298,6 +1304,8 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
   const dueDate = todo.due_at ? String(todo.due_at).slice(0, 10) : "到期日待补充";
   const adGroupSynthesisItem = snapshot.find((item) => reviewRecordAdGroupSynthesisLabels.includes(String(item.label ?? "").trim()));
   const adGroupSynthesisText = adGroupSynthesisItem ? reviewRecordEvidenceItemText(adGroupSynthesisItem) : null;
+  const adContextRowsItem = snapshot.find((item) => reviewRecordAdContextRowsLabels.includes(String(item.label ?? "").trim()));
+  const adContextRowsText = adContextRowsItem ? reviewRecordEvidenceItemText(adContextRowsItem) : null;
 
   const rows: ReviewTodoEvidenceReadbackRow[] = [
     {
@@ -1336,6 +1344,7 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
               reviewRecordAdAsinCoverageLabels,
               reviewRecordAdGroupSynthesisLabels,
               reviewRecordAdGroupProductPerformanceLabels,
+              reviewRecordAdContextRowsLabels,
               reviewRecordTargetingEvidenceLabels,
               reviewRecordSearchTermBoundaryLabels,
               reviewRecordPlacementBoundaryLabels,
@@ -1346,7 +1355,7 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
             ],
             labels,
             hasSnapshot,
-            "广告搜索词表现复核待办必须保留 Parent ASIN 入口、广告 ASIN 承接、广告组合流判断、同组投放商品表现、投放词证据、搜索词边界、广告位边界、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标或 Parent ASIN 搜索词表现聚合误判为自动加词或否词依据。",
+            "广告搜索词表现复核待办必须保留 Parent ASIN 入口、广告 ASIN 承接、广告组合流判断、同组投放商品表现、逐投放上下文、投放词证据、搜索词边界、广告位边界、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标或 Parent ASIN 搜索词表现聚合误判为自动加词或否词依据。",
           ),
           {
             label: "广告组合流判断",
@@ -1355,6 +1364,14 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
               ? `${adGroupSynthesisText}。复盘时必须先回到广告组和同组广告 ASIN，再判断是否需要人工调整投放结构。`
               : "当前待办没有广告组合流判断；不能只看搜索词裸指标就判断单个广告 ASIN、广告组或广告位出了问题。",
             tone: (adGroupSynthesisText ? "ready" : hasSnapshot ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
+          },
+          {
+            label: "逐投放复核顺序",
+            value: adContextRowsText ? "已回读" : hasSnapshot ? "缺少顺序" : "等待证据快照",
+            detail: adContextRowsText
+              ? `${adContextRowsText}。复盘时必须按当时的逐投放顺序回看广告组、投放词和广告 ASIN 承接，不能把排序解释成自动加词、否词或调价。`
+              : "当前待办没有逐投放上下文；不能回看当时先复核哪个广告组，也不能只凭搜索词合计指标保存复盘结论。",
+            tone: (adContextRowsText ? "ready" : hasSnapshot ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
           },
         ]
       : []),
@@ -1430,6 +1447,7 @@ function requiredReviewRecordPreflightCheckIdsForEffect(effect: ReviewEffectForU
       "ai_admission",
       "ad_group_synthesis",
       "ad_group_product_performance",
+      "ad_context_rows",
       "targeting_evidence",
       "search_term_boundary",
       "placement_boundary",
@@ -1543,7 +1561,7 @@ function reviewRecordSearchTermReviewChainPreflightText(
   const item = snapshot.find((evidenceItem) => labels.includes(String(evidenceItem.label ?? "").trim()));
   const itemText = item ? reviewRecordEvidenceItemText(item) : null;
   if (!itemText) {
-    return `${missingText}；保存前只能核对处理前后指标，不能证明当时人工判断已经看过搜索词机会的广告组合流、同组投放商品、投放词、搜索词边界、广告位边界、ABA、证据缺口或动作边界。`;
+    return `${missingText}；保存前只能核对处理前后指标，不能证明当时人工判断已经看过搜索词机会的广告组合流、同组投放商品、逐投放上下文、投放词、搜索词边界、广告位边界、ABA、证据缺口或动作边界。`;
   }
   return `${readyPrefix}：${itemText}。保存复盘前必须确认它只作为人工复盘依据，不自动加词、否词、调价或暂停广告。`;
 }
@@ -1692,6 +1710,15 @@ function reviewRecordAdGroupProductPerformancePreflightText(todo: ReviewTodoForU
     reviewRecordAdGroupProductPerformanceLabels,
     "当前待办缺少同组投放商品表现",
     "同组投放商品表现回看",
+  );
+}
+
+function reviewRecordAdContextRowsPreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordSearchTermReviewChainPreflightText(
+    todo,
+    reviewRecordAdContextRowsLabels,
+    "当前待办缺少逐投放上下文",
+    "逐投放复核顺序回看",
   );
 }
 
@@ -1892,6 +1919,7 @@ export function buildReviewRecordPreflightChecklist(
   const hasTargetingEvidence = reviewTodoHasSnapshotLabel(todo, "投放词证据");
   const hasAdGroupSynthesis = reviewTodoHasSnapshotLabel(todo, "广告组合流判断");
   const hasAdGroupProductPerformance = reviewTodoHasSnapshotLabel(todo, "同组投放商品表现");
+  const hasAdContextRows = reviewTodoHasSnapshotLabel(todo, "逐投放上下文");
   const hasAbaContext = reviewTodoHasSnapshotLabel(todo, "ABA 背景");
   const hasEvidenceGap = reviewTodoHasSnapshotLabel(todo, "证据缺口");
   const hasRequiredEvidence = reviewTodoHasSnapshotLabel(todo, "需要补证");
@@ -1950,6 +1978,11 @@ export function buildReviewRecordPreflightChecklist(
         id: hasAdGroupProductPerformance ? "ad_group_product_performance" : "ad_group_product_performance_missing",
         title: "回看同组投放商品表现",
         description: reviewRecordAdGroupProductPerformancePreflightText(todo),
+      },
+      {
+        id: hasAdContextRows ? "ad_context_rows" : "ad_context_rows_missing",
+        title: "回看逐投放复核顺序",
+        description: reviewRecordAdContextRowsPreflightText(todo),
       },
       {
         id: hasTargetingEvidence ? "targeting_evidence" : "targeting_evidence_missing",
@@ -3313,6 +3346,7 @@ function reviewRecordEvidenceSnapshotReadbackText(records: ReviewRecordForUi[]) 
             "Parent ASIN 搜索词表现聚合",
             "广告组合流判断",
             "同组投放商品表现",
+            "逐投放上下文",
             "投放词证据",
             "搜索词边界",
             "广告位边界",
@@ -3340,7 +3374,7 @@ function reviewRecordEvidenceSnapshotReadbackText(records: ReviewRecordForUi[]) 
   }
   const readbackLabels =
     records.length === 1 && normalizedPreflightTargetValue(records[0]?.object_type) === "search_term"
-      ? "对象引用 / 排查路径 / AI 准入 / Parent ASIN 搜索词表现聚合 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
+      ? "对象引用 / 排查路径 / AI 准入 / Parent ASIN 搜索词表现聚合 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
       : "对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界";
   const contextText = records.length === 1 ? reviewContextText(records[0]) : null;
   const contextSuffix = contextText ? `；复盘上下文：${contextText}` : "";
