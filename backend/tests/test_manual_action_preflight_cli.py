@@ -418,6 +418,7 @@ def test_manual_action_preflight_snapshots_diagnosis_contract_gaps(monkeypatch) 
 
     items = payload["evidence_snapshot_preview"]["items"]
     labels = [item["label"] for item in items]
+    target_item = next(item for item in items if item["label"] == "搜索词")
     judgement_item = next(item for item in items if item["label"] == "人工确认判断依据")
     proves_item = next(item for item in items if item["label"] == "能证明的事实")
     counter_item = next(item for item in items if item["label"] == "不能证明的边界")
@@ -428,6 +429,11 @@ def test_manual_action_preflight_snapshots_diagnosis_contract_gaps(monkeypatch) 
     aba_item = next(item for item in items if item["label"] == "ABA 背景")
     review_gap_item = next(item for item in items if item["label"] == "证据缺口")
     action_boundary_item = next(item for item in items if item["label"] == "动作边界")
+    assert labels[0] == "搜索词"
+    assert "beach essentials" in target_item["value"]
+    assert "search_term:1:beach essentials" in target_item["value"]
+    assert "人工确认和 7/14 天复盘对象是这个具体 SearchTerm" in target_item["detail"]
+    assert "不自动加词" in target_item["detail"]
     assert labels.index("广告组合流判断") < labels.index("投放词证据")
     assert labels.index("投放词证据") < labels.index("搜索词边界")
     assert labels.index("搜索词边界") < labels.index("广告位边界")

@@ -83,6 +83,7 @@ ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
 SEARCH_TERM_ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
     "diagnosis_path",
     "ai_admission_gate",
+    "search_term_target_identity",
     "search_term_parent_scope_context",
     "search_term_ad_asin_coverage",
     "diagnosis_judgement",
@@ -504,6 +505,7 @@ def _evidence_snapshot_preview(triage: dict[str, Any], target: dict[str, Any]) -
     drilldown = _evidence_drilldown_for_target(triage, target)
     blocks = _dict_list(drilldown.get("business_evidence_blocks"))
     blocks.extend(_actionability_snapshot_blocks(triage))
+    blocks.extend(_search_term_target_identity_snapshot_blocks(target))
     blocks.extend(_product_scope_boundary_snapshot_blocks(triage, blocks, target))
     blocks.extend(_ad_group_product_performance_snapshot_blocks(triage, target, drilldown))
     blocks.extend(_search_term_ad_context_snapshot_blocks(target, drilldown))
@@ -655,6 +657,26 @@ def _product_scope_boundary_snapshot_blocks(
         }
     )
     return blocks
+
+
+def _search_term_target_identity_snapshot_blocks(target: dict[str, Any]) -> list[dict[str, str]]:
+    if str(target.get("object_type") or "").strip() != "search_term":
+        return []
+    object_id = str(target.get("object_id") or "").strip()
+    object_label = str(target.get("object_label") or object_id or "当前搜索词").strip()
+    value = f"{object_label} / 对象ID {object_id}" if object_id and object_id != object_label else object_label
+    return [
+        {
+            "block_id": "search_term_target_identity",
+            "label": "搜索词",
+            "value": value,
+            "detail": (
+                "人工确认和 7/14 天复盘对象是这个具体 SearchTerm；Parent ASIN、广告 ASIN、投放词、"
+                "ABA 和广告位只作为证据上下文，不自动加词、否词、调价或暂停广告。"
+            ),
+            "source": "manual_action_target + ad_search_term_daily_metrics",
+        }
+    ]
 
 
 def _target_search_term_boundary_snapshot_blocks(
