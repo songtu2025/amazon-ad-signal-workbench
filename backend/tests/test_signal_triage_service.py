@@ -209,6 +209,91 @@ def test_signal_triage_exposes_review_identity_audit_from_readiness(monkeypatch)
     assert payload["review_status"]["review_identity_audit"]["earliest_metric_due_date"] == "2026-06-22"
 
 
+def test_signal_triage_top_level_diagnosis_contract_tracks_recommended_candidate(monkeypatch) -> None:
+    recommended_candidate = make_candidate()
+    recommended_candidate.update(
+        {
+            "signal_id": "sig-recommended-beach-essentials",
+            "object_type": "search_term",
+            "object_id": "search_term:1:beach essentials",
+            "object_label": "beach essentials",
+            "signal_category": "search_term_opportunity",
+            "priority": "P1",
+            "severity": 5,
+        }
+    )
+    next_candidate = make_candidate()
+    next_candidate.update(
+        {
+            "signal_id": "sig-next-b01fay0yl0",
+            "object_type": "search_term",
+            "object_id": "search_term:1:b01fay0yl0",
+            "object_label": "b01fay0yl0",
+            "signal_category": "search_term_opportunity",
+            "priority": "P0",
+            "severity": 5,
+        }
+    )
+
+    monkeypatch.setattr(
+        signal_triage,
+        "build_review_candidates_payload",
+        lambda **kwargs: {
+            "status": "ready",
+            "selected_market_id": kwargs.get("selected_market_id"),
+            "selected_product_scope_id": "parent_asin:B00K4W4AAA",
+            "signal_row_count": 2,
+            "signal_count": 2,
+            "candidate_count": 2,
+            "excluded_count": 0,
+            "excluded_summary": {},
+            "snapshot": {},
+            "candidates": [recommended_candidate, next_candidate],
+            "candidate_layers": [],
+            "recommended_candidate": recommended_candidate,
+            "recommended_evidence_drilldown": {},
+            "product_scope_drilldown": {"status": "ready", "summary": "Parent ASIN 广告证据已读取。"},
+            "recommendation_reason": "优先复核 beach essentials。",
+            "manual_action_preview": None,
+        },
+    )
+    monkeypatch.setattr(
+        signal_triage,
+        "build_review_readiness_payload",
+        lambda **kwargs: {
+            "status": "not_ready",
+            "manual_action_count": 0,
+            "review_record_count": 0,
+            "ready_count": 0,
+            "not_ready_count": 0,
+            "manual_action_identity_issue_count": 0,
+            "review_feedback": {},
+            "rule_improvement": {},
+            "review_wait_summary": {},
+            "review_identity_audit": {},
+            "next_action": "等待人工确认。",
+        },
+    )
+    monkeypatch.setattr(signal_triage, "_next_unhandled_candidate", lambda candidates, status, market_id: next_candidate)
+
+    def fake_diagnosis_contract(**kwargs):
+        candidate = kwargs.get("recommended_candidate") or {}
+        return {
+            "signal_id": candidate.get("signal_id"),
+            "object_label": candidate.get("object_label"),
+            "sections": [],
+        }
+
+    monkeypatch.setattr(signal_triage, "_diagnosis_contract", fake_diagnosis_contract)
+
+    payload = signal_triage.build_signal_triage_payload(selected_market_id=1, product_scope_id="parent_asin:B00K4W4AAA")
+
+    assert payload["recommended_candidate"]["signal_id"] == "sig-recommended-beach-essentials"
+    assert payload["recommended_diagnosis_contract"]["signal_id"] == "sig-recommended-beach-essentials"
+    assert payload["next_unhandled_diagnosis_contract"]["signal_id"] == "sig-next-b01fay0yl0"
+    assert payload["diagnosis_contract"]["signal_id"] == "sig-recommended-beach-essentials"
+
+
 def make_signal(
     signal_id: str,
     asin: str,

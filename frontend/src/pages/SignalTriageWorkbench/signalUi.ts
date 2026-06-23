@@ -5643,7 +5643,7 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       insight: searchIntentDisplayText(summary.insight),
       businessQuestion:
         searchIntentDisplayText(summary.business_question) ||
-        "这组同类广告用户搜索词在当前 Parent ASIN / 诊断入口下，是应该扩量、止损，还是只观察？",
+        "这组同类广告用户搜索词在当前 Parent ASIN 广告上下文下，是应该扩量、止损，还是只观察？",
       currentJudgement:
         searchIntentDisplayText(summary.current_judgement) ||
         "当前判断：需要结合花费、点击、订单、ACOS、广告组和投放词继续人工复核。",
@@ -5654,7 +5654,7 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       evidenceGap:
         searchIntentDisplayText(summary.evidence_gap) ||
         "证据缺口：需要继续核对投放词、广告组商品清单和广告位表现，才能转成具体人工动作。",
-      purpose: "用途：从当前 Parent ASIN / 诊断入口的广告上下文聚合用户搜索词表现，按搜索语义汇总同类搜索词，帮助运营判断搜索词表现、机会和异常。",
+      purpose: "用途：从当前 Parent ASIN 的广告上下文聚合用户搜索词表现，按搜索语义汇总同类搜索词，帮助运营判断搜索词表现、机会和异常。",
       boundary: "边界：只复核广告用户搜索词表现；不改变诊断入口，不生成 SearchTerm 筛选上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
       dataGrain: summary.data_grain || "当前诊断入口相关广告上下文中的用户搜索词表现行",
       proves: searchIntentDisplayText(summary.proves) || "能证明同类广告搜索词在当前广告上下文内的花费、点击、订单和 ABA 背景。",
@@ -5680,7 +5680,7 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
   return {
     purpose:
       firstCard?.purpose ??
-      "用途：从当前 Parent ASIN / 诊断入口视角聚合广告用户搜索词表现，帮助运营按语义复核同类搜索词表现；它不是经营商品入口、广告组入口或人工动作对象。",
+      "用途：从当前 Parent ASIN 视角聚合广告用户搜索词表现，帮助运营按语义复核同类搜索词表现；它不是经营商品入口、广告组入口或人工动作对象。",
     dataGrain: firstCard?.dataGrain ?? "当前诊断入口相关广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索意图聚合。",
     interactionBoundary:
       "点击后只改变左侧信号队列筛选和中间选中 SearchTerm，不改变顶部诊断入口筛选器，也不切换 Parent ASIN / 广告 ASIN / 广告组。",

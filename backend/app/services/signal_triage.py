@@ -197,7 +197,7 @@ def build_signal_triage_payload(
         if next_unhandled_candidate
         else None
     )
-    diagnosis_contract = next_unhandled_diagnosis_contract or recommended_diagnosis_contract
+    diagnosis_contract = recommended_diagnosis_contract or next_unhandled_diagnosis_contract
 
     return {
         "status": actionability_status["status"],

@@ -3223,7 +3223,7 @@ def search_intent_summaries(
                 aba_match_count=aba_match_count,
                 top_search_terms=top_terms,
                 data_grain=data_grain,
-                business_question="这组同类广告用户搜索词在当前 Parent ASIN / 诊断入口下，是应该扩量、止损，还是只观察？",
+                business_question="这组同类广告用户搜索词在当前 Parent ASIN 广告上下文下，是应该扩量、止损，还是只观察？",
                 current_judgement=search_intent_current_judgement(metrics),
                 metric_purpose=search_intent_metric_purpose(metrics),
                 ad_context=search_intent_ad_context(group_rows),

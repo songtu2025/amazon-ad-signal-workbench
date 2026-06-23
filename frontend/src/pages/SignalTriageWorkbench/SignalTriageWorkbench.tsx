@@ -1887,10 +1887,10 @@ export function SignalTriageWorkbench() {
             </button>
           </div>
 
-          <section className="searchIntentReviewPanel" aria-label="搜索词表现复核（语义聚合）">
+          <section className="searchIntentReviewPanel" aria-label="Parent ASIN 搜索词表现复核（语义聚合）">
             <div className="searchIntentReviewHeader">
-              <strong>搜索词表现复核</strong>
-              <span>当前诊断入口内的广告用户搜索词表现语义聚合</span>
+              <strong>Parent ASIN 搜索词表现复核</strong>
+              <span>当前 Parent ASIN 下广告用户搜索词表现的语义聚合</span>
             </div>
             <div className="searchIntentReviewScope" aria-label="搜索词表现复核数据口径">
               <span>
@@ -1982,7 +1982,7 @@ export function SignalTriageWorkbench() {
           {!loading && !error && filteredSignals.length === 0 && (
             <EmptyState
               icon="empty"
-              title={activeSearchIntentLabel ? "当前搜索词表现复核暂无对应 AI 信号" : productScopeSignalExplanation?.title ?? "暂无真实快照信号"}
+              title={activeSearchIntentLabel ? "当前 Parent ASIN 搜索词表现复核暂无对应 AI 信号" : productScopeSignalExplanation?.title ?? "暂无真实快照信号"}
               description={
                 activeSearchIntentLabel
                   ? "搜索词表现复核不切换经营商品或广告组，只在当前诊断入口内显示同组 SearchTerm 信号；如果需要看全部信号，请清除筛选。"

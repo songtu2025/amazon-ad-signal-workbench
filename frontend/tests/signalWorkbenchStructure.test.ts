@@ -143,7 +143,7 @@ assertIncludes(workbenchSource, "fetchSearchIntents(selectedMarketId, nextActive
 assertIncludes(workbenchSource, "fetchSearchIntents(selectedMarketId, activeProductScopeId)");
 assertNotIncludes(workbenchSource, "fetchSearchIntents()");
 assertIncludes(workbenchSource, "搜索词表现复核");
-assertIncludes(workbenchSource, "当前诊断入口内的广告用户搜索词表现语义聚合");
+assertIncludes(workbenchSource, "当前 Parent ASIN 下广告用户搜索词表现的语义聚合");
 assertIncludes(workbenchSource, 'aria-label="搜索词表现复核数据口径"');
 assertIncludes(workbenchSource, "searchIntentPanelContext.purpose");
 assertIncludes(workbenchSource, "searchIntentPanelContext.dataGrain");
@@ -164,8 +164,8 @@ assertIncludes(workbenchSource, "card.adContext");
 assertIncludes(workbenchSource, "card.evidenceGap");
 assertIncludes(workbenchSource, "card.boundary");
 assertIncludes(workbenchSource, "搜索词表现复核不切换经营商品或广告组");
-assertIncludes(workbenchSource, "当前搜索词表现复核暂无对应 AI 信号");
-assertIncludes(workbenchSource, 'aria-label="搜索词表现复核（语义聚合）"');
+assertIncludes(workbenchSource, "当前 Parent ASIN 搜索词表现复核暂无对应 AI 信号");
+assertIncludes(workbenchSource, 'aria-label="Parent ASIN 搜索词表现复核（语义聚合）"');
 assertNotIncludes(workbenchSource, "searchIntentReviewCards.length > 0 && (");
 assertNotIncludes(workbenchSource, 'aria-label="搜索词语义聚焦"');
 assertNotIncludes(workbenchSource, "聚焦语义组");
@@ -174,7 +174,7 @@ assertIncludes(workbenchSource, 'aria-label="SearchTerm 筛选上下文核对"')
 assertIncludes(workbenchSource, "实际写入以后端 preflight evidence_snapshot_preview 为准");
 assertIncludes(workbenchSource, "搜索语义标签不是人工动作对象");
 assertNotIncludes(workbenchSource, "当前语义组留痕");
-const searchIntentReviewPanelIndex = workbenchSource.indexOf('aria-label="搜索词表现复核（语义聚合）"');
+const searchIntentReviewPanelIndex = workbenchSource.indexOf('aria-label="Parent ASIN 搜索词表现复核（语义聚合）"');
 const queueTabsIndex = workbenchSource.indexOf('aria-label="队列筛选"');
 const signalRowsIndex = workbenchSource.indexOf('className="signalRows"');
 assert(searchIntentReviewPanelIndex > queueTabsIndex, "搜索词表现复核必须跟在队列筛选之后");

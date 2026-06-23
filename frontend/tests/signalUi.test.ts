@@ -5202,7 +5202,7 @@ const searchIntentReviewCards = buildSearchIntentReviewCards([
     semantic_source: "规则语义",
     aba_match_count: 1,
     data_grain: "当前 Parent ASIN 相关广告上下文中的用户搜索词表现行",
-    business_question: "这组同类广告用户搜索词在当前 Parent ASIN / 诊断入口下，是应该扩量、止损，还是只观察？",
+    business_question: "这组同类广告用户搜索词在当前 Parent ASIN 广告上下文下，是应该扩量、止损，还是只观察？",
     current_judgement: "当前判断：有订单且 ACOS 较低，优先复核是否存在可人工确认的扩量机会。",
     metric_purpose: "指标目的：花费 9.00 和点击 18 判断消耗规模；订单 4、CVR 22.22%、ACOS 12.86% 判断承接质量。",
     ad_context: "广告上下文：覆盖 1 个广告活动、1 个广告组、2 条搜索词表现行；Top 广告组：儿童太阳镜精准；仍需核对同广告组投放商品。",
@@ -5238,6 +5238,7 @@ assertIncludes(searchIntentReviewCards[0].metricPurpose, "花费 9.00");
 assertIncludes(searchIntentReviewCards[0].adContext, "覆盖 1 个广告活动、1 个广告组、2 条搜索词表现行");
 assertIncludes(searchIntentReviewCards[0].evidenceGap, "广告位影响需要继续打开广告位证据核对");
 assertIncludes(searchIntentReviewCards[0].purpose, "聚合用户搜索词表现");
+assertIncludes(searchIntentReviewCards[0].purpose, "当前 Parent ASIN 的广告上下文");
 assertIncludes(searchIntentReviewCards[0].purpose, "判断搜索词表现、机会和异常");
 assertIncludes(searchIntentReviewCards[0].dataGrain, "当前 Parent ASIN 相关广告上下文");
 assertIncludes(searchIntentReviewCards[0].proves, "同类广告搜索词");
@@ -5254,6 +5255,7 @@ assertEqual(searchIntentReviewCards[0].intentLabel, "规则语义：儿童太阳
 
 const searchIntentPanelContext = buildSearchIntentPanelContext(searchIntentReviewCards);
 assertIncludes(searchIntentPanelContext.purpose, "聚合用户搜索词表现");
+assertIncludes(searchIntentPanelContext.purpose, "Parent ASIN");
 assertIncludes(searchIntentPanelContext.dataGrain, "当前 Parent ASIN 相关广告上下文");
 assertIncludes(searchIntentPanelContext.interactionBoundary, "只改变左侧信号队列筛选");
 assertIncludes(searchIntentPanelContext.interactionBoundary, "不改变顶部诊断入口筛选器");
