@@ -199,6 +199,7 @@ assertIncludes(workbenchSource, "card.boundary");
 assertIncludes(workbenchSource, "广告搜索词表现复核不切换经营商品或广告组");
 assertIncludes(workbenchSource, "当前 Parent ASIN 广告搜索词表现复核暂无对应 AI 信号");
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 广告搜索词表现复核"');
+assertNotIncludes(workbenchSource, "语义组复核");
 assertNotIncludes(workbenchSource, "searchIntentReviewCards.length > 0 && (");
 assertNotIncludes(workbenchSource, 'aria-label="搜索词语义聚焦"');
 assertNotIncludes(workbenchSource, "聚焦语义组");
