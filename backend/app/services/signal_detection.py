@@ -3124,6 +3124,69 @@ def search_intent_top_terms(
     return sorted(top_terms, key=lambda item: (-item.orders, -item.cost, -item.clicks, item.search_term))[:limit]
 
 
+def search_intent_current_judgement(metrics: MetricSnapshot) -> str:
+    if metrics.orders == 0 and metrics.cost >= 30:
+        return "当前判断：高消耗无订单，优先打开花费最高的 SearchTerm 信号做止损复核。"
+    if metrics.orders >= 3 and metrics.acos is not None and metrics.acos <= 0.3:
+        return "当前判断：有订单且 ACOS 较低，优先复核是否存在可人工确认的扩量机会。"
+    if metrics.orders > 0:
+        return "当前判断：已有订单但样本或 ACOS 还不足以直接放量，先复核具体搜索词和投放词承接。"
+    if metrics.clicks >= 20:
+        return "当前判断：有点击但暂无订单，先判断搜索意图和商品承接是否偏离。"
+    return "当前判断：样本偏少，只适合观察，不应包装成广告调整建议。"
+
+
+def search_intent_metric_purpose(metrics: MetricSnapshot) -> str:
+    acos_text = f"{metrics.acos:.2%}" if metrics.acos is not None else "缺失"
+    cvr_text = f"{metrics.cvr:.2%}" if metrics.cvr is not None else "缺失"
+    return (
+        f"指标目的：花费 {metrics.cost:.2f} 和点击 {metrics.clicks} 判断消耗规模；"
+        f"订单 {metrics.orders}、CVR {cvr_text}、ACOS {acos_text} 判断承接质量。"
+    )
+
+
+def search_intent_ad_context(group_rows: list[dict]) -> str:
+    campaign_labels = sorted(
+        {
+            label
+            for row in group_rows
+            if (label := string_value(row.get("campaign_name") or row.get("campaign_id")))
+        }
+    )
+    ad_group_labels = sorted(
+        {
+            label
+            for row in group_rows
+            if (label := string_value(row.get("ad_group_name") or row.get("ad_group_id") or row.get("group_id")))
+        }
+    )
+    top_groups = "、".join(ad_group_labels[:2]) if ad_group_labels else "广告组待补齐"
+    suffix = "；多广告组时不能自动归因到单个广告 ASIN。" if len(ad_group_labels) > 1 else "；仍需核对同广告组投放商品。"
+    return f"广告上下文：覆盖 {len(campaign_labels)} 个广告活动、{len(ad_group_labels)} 个广告组、{len(group_rows)} 条搜索词表现行；Top 广告组：{top_groups}{suffix}"
+
+
+def search_intent_evidence_gap(group_rows: list[dict], aba_match_count: int) -> str:
+    gaps: list[str] = []
+    has_keyword_context = any(
+        string_value(row.get("keyword_text") or row.get("targeting_text") or row.get("targeting") or row.get("keyword_id"))
+        for row in group_rows
+    )
+    if not has_keyword_context:
+        gaps.append("缺投放词或关键词承接字段")
+    if aba_match_count == 0:
+        gaps.append("未命中 ABA 站点级热度背景")
+    gaps.append("广告位影响需要继续打开广告位证据核对")
+    return "证据缺口：" + "；".join(gaps) + "。"
+
+
+def search_intent_next_manual_step(metrics: MetricSnapshot) -> str:
+    if metrics.orders == 0 and metrics.cost >= 30:
+        return "打开花费最高且无订单的具体 SearchTerm 信号，人工核对投放词、广告组商品清单和广告位证据后，再决定记录观察或加入复盘。"
+    if metrics.orders >= 3 and metrics.acos is not None and metrics.acos <= 0.3:
+        return "打开出单最多的具体 SearchTerm 信号，核对投放词、广告组和 ABA 背景后，再人工判断是否加入扩量观察或复盘。"
+    return "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组、广告位和证据缺口后再记录观察或加入复盘。"
+
+
 def search_intent_summaries(
     rows: list[dict] | None = None,
     *,
@@ -3144,6 +3207,7 @@ def search_intent_summaries(
         metrics = metric_snapshot(merged)
         all_terms = search_intent_top_terms(group_rows, latest_aba_index, limit=len(group_rows))
         top_terms = all_terms[:5]
+        aba_match_count = sum(1 for term in all_terms if term.aba_rank is not None)
         insight = "需要观察"
         if metrics.orders == 0 and metrics.cost >= 30:
             insight = "这组广告搜索词消耗较高但没有订单，属于止损候选"
@@ -3156,9 +3220,15 @@ def search_intent_summaries(
                 metrics=metrics,
                 insight=insight,
                 semantic_source=semantic_source_for_intent_label(label),
-                aba_match_count=sum(1 for term in all_terms if term.aba_rank is not None),
+                aba_match_count=aba_match_count,
                 top_search_terms=top_terms,
                 data_grain=data_grain,
+                business_question="这组同类广告用户搜索词在当前 Parent ASIN / 诊断入口下，是应该扩量、止损，还是只观察？",
+                current_judgement=search_intent_current_judgement(metrics),
+                metric_purpose=search_intent_metric_purpose(metrics),
+                ad_context=search_intent_ad_context(group_rows),
+                evidence_gap=search_intent_evidence_gap(group_rows, aba_match_count),
+                next_manual_step=search_intent_next_manual_step(metrics),
             )
         )
     return sorted(summaries, key=lambda item: item.metrics.cost, reverse=True)

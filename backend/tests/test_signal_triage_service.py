@@ -550,11 +550,17 @@ def test_search_intent_summaries_respect_parent_asin_product_scope(monkeypatch) 
     assert "kids sunglasses" not in summaries[0].search_terms
     assert summaries[0].metrics.cost == 20.03
     assert summaries[0].data_grain == "当前 Parent ASIN 相关广告上下文中的用户搜索词表现行"
+    assert "扩量、止损，还是只观察" in summaries[0].business_question
+    assert "可人工确认的扩量机会" in summaries[0].current_judgement
+    assert "花费 20.03" in summaries[0].metric_purpose
+    assert "覆盖 1 个广告活动、1 个广告组、2 条搜索词表现行" in summaries[0].ad_context
+    assert "缺投放词或关键词承接字段" in summaries[0].evidence_gap
+    assert "广告位影响需要继续打开广告位证据核对" in summaries[0].evidence_gap
     assert "同类广告搜索词" in summaries[0].proves
     assert "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现" in summaries[0].does_not_prove
     assert "SearchTerm 筛选上下文人工动作" in summaries[0].does_not_prove
     assert "语义组人工动作" not in summaries[0].does_not_prove
-    assert "具体 SearchTerm 信号" in summaries[0].next_manual_step
+    assert "出单最多的具体 SearchTerm 信号" in summaries[0].next_manual_step
 
 
 def test_review_candidates_require_actionable_manual_triage_gate(monkeypatch) -> None:

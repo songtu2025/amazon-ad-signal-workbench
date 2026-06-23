@@ -164,6 +164,11 @@ export interface SearchIntentSummaryForUi {
   aba_match_count?: number | null;
   top_search_terms?: SearchIntentTopTermForUi[];
   data_grain?: string | null;
+  business_question?: string | null;
+  current_judgement?: string | null;
+  metric_purpose?: string | null;
+  ad_context?: string | null;
+  evidence_gap?: string | null;
   proves?: string | null;
   does_not_prove?: string | null;
   next_manual_step?: string | null;
@@ -175,6 +180,11 @@ export interface SearchIntentReviewCard {
   summary: string;
   sourceLabel: string;
   insight: string;
+  businessQuestion: string;
+  currentJudgement: string;
+  metricPurpose: string;
+  adContext: string;
+  evidenceGap: string;
   purpose: string;
   boundary: string;
   dataGrain: string;
@@ -5631,6 +5641,19 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       summary: `${metrics.orders} 单 / 花费 ${formatReviewNumber(metrics.cost)} / ACOS ${formatReviewPercent(metrics.acos)} / ABA 命中 ${abaMatchCount}`,
       sourceLabel: summary.semantic_source || "未知来源",
       insight: searchIntentDisplayText(summary.insight),
+      businessQuestion:
+        searchIntentDisplayText(summary.business_question) ||
+        "这组同类广告用户搜索词在当前 Parent ASIN / 诊断入口下，是应该扩量、止损，还是只观察？",
+      currentJudgement:
+        searchIntentDisplayText(summary.current_judgement) ||
+        "当前判断：需要结合花费、点击、订单、ACOS、广告组和投放词继续人工复核。",
+      metricPurpose:
+        searchIntentDisplayText(summary.metric_purpose) ||
+        "指标目的：花费和点击用于判断消耗规模，订单、CVR 和 ACOS 用于判断广告搜索词承接质量。",
+      adContext: searchIntentDisplayText(summary.ad_context) || "广告上下文：等待广告活动、广告组和搜索词表现行补齐。",
+      evidenceGap:
+        searchIntentDisplayText(summary.evidence_gap) ||
+        "证据缺口：需要继续核对投放词、广告组商品清单和广告位表现，才能转成具体人工动作。",
       purpose: "用途：从当前 Parent ASIN / 诊断入口的广告上下文聚合用户搜索词表现，按搜索语义汇总同类搜索词，帮助运营判断搜索词表现、机会和异常。",
       boundary: "边界：只复核广告用户搜索词表现；不改变诊断入口，不生成 SearchTerm 筛选上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
       dataGrain: summary.data_grain || "当前诊断入口相关广告上下文中的用户搜索词表现行",

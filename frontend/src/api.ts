@@ -129,6 +129,11 @@ export interface SearchIntentSummary {
   aba_match_count: number;
   top_search_terms: SearchIntentTopTerm[];
   data_grain?: string;
+  business_question?: string;
+  current_judgement?: string;
+  metric_purpose?: string;
+  ad_context?: string;
+  evidence_gap?: string;
   proves?: string;
   does_not_prove?: string;
   next_manual_step?: string;

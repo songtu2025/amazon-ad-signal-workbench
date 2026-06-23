@@ -5202,6 +5202,11 @@ const searchIntentReviewCards = buildSearchIntentReviewCards([
     semantic_source: "规则语义",
     aba_match_count: 1,
     data_grain: "当前 Parent ASIN 相关广告上下文中的用户搜索词表现行",
+    business_question: "这组同类广告用户搜索词在当前 Parent ASIN / 诊断入口下，是应该扩量、止损，还是只观察？",
+    current_judgement: "当前判断：有订单且 ACOS 较低，优先复核是否存在可人工确认的扩量机会。",
+    metric_purpose: "指标目的：花费 9.00 和点击 18 判断消耗规模；订单 4、CVR 22.22%、ACOS 12.86% 判断承接质量。",
+    ad_context: "广告上下文：覆盖 1 个广告活动、1 个广告组、2 条搜索词表现行；Top 广告组：儿童太阳镜精准；仍需核对同广告组投放商品。",
+    evidence_gap: "证据缺口：广告位影响需要继续打开广告位证据核对。",
     proves: "能证明同类广告搜索词在当前广告上下文内有订单和 ABA 背景。",
     does_not_prove: "不能证明 Parent ASIN 下全部搜索词表现，也不能证明单个 ASIN 归因，也不能生成语义组人工动作。",
     next_manual_step: "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组和广告位。",
@@ -5227,6 +5232,11 @@ assertEqual(searchIntentReviewCards[0].title, "规则语义：儿童太阳镜");
 assertEqual(searchIntentReviewCards[0].summary, "4 单 / 花费 9 / ACOS 12.86% / ABA 命中 1");
 assertEqual(searchIntentReviewCards[0].sourceLabel, "规则语义");
 assertEqual(searchIntentReviewCards[0].insight, "这组广告搜索词转化稳定，属于放量候选");
+assertIncludes(searchIntentReviewCards[0].businessQuestion, "扩量、止损，还是只观察");
+assertIncludes(searchIntentReviewCards[0].currentJudgement, "可人工确认的扩量机会");
+assertIncludes(searchIntentReviewCards[0].metricPurpose, "花费 9.00");
+assertIncludes(searchIntentReviewCards[0].adContext, "覆盖 1 个广告活动、1 个广告组、2 条搜索词表现行");
+assertIncludes(searchIntentReviewCards[0].evidenceGap, "广告位影响需要继续打开广告位证据核对");
 assertIncludes(searchIntentReviewCards[0].purpose, "聚合用户搜索词表现");
 assertIncludes(searchIntentReviewCards[0].purpose, "判断搜索词表现、机会和异常");
 assertIncludes(searchIntentReviewCards[0].dataGrain, "当前 Parent ASIN 相关广告上下文");

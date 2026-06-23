@@ -1947,6 +1947,11 @@ export function SignalTriageWorkbench() {
                       <span>{card.sourceLabel}</span>
                     </div>
                     <p>{card.summary}</p>
+                    <small>业务问题：{card.businessQuestion}</small>
+                    <small>{card.currentJudgement}</small>
+                    <small>{card.metricPurpose}</small>
+                    <small>{card.adContext}</small>
+                    <small>{card.evidenceGap}</small>
                     <small>{card.purpose}</small>
                     <small>数据口径：{card.dataGrain}</small>
                     <small>能证明：{card.proves}</small>
