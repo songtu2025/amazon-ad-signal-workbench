@@ -5452,11 +5452,11 @@ assertIncludes(searchIntentReviewCards[0].purpose, "判断搜索词表现、机�
 assertIncludes(searchIntentReviewCards[0].dataGrain, "当前 Parent ASIN 相关广告上下文");
 assertIncludes(searchIntentReviewCards[0].proves, "同类广告搜索词");
 assertIncludes(searchIntentReviewCards[0].doesNotProve, "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现");
-assertIncludes(searchIntentReviewCards[0].doesNotProve, "不能把 Parent ASIN 搜索词表现聚合当作人工动作对象");
+assertIncludes(searchIntentReviewCards[0].doesNotProve, "不能把搜索意图分组当作人工动作对象");
 assertEqual(searchIntentReviewCards[0].doesNotProve.includes("语义组人工动作"), false);
 assertIncludes(searchIntentReviewCards[0].nextManualStep, "具体 SearchTerm 信号");
 assertIncludes(searchIntentReviewCards[0].boundary, "只复核广告用户搜索词表现");
-assertIncludes(searchIntentReviewCards[0].boundary, "不把 Parent ASIN 搜索词表现聚合当作人工动作对象");
+assertIncludes(searchIntentReviewCards[0].boundary, "不把搜索意图分组当作人工动作对象");
 assertIncludes(searchIntentReviewCards[0].boundary, "不证明单个 ASIN 归因");
 assertIncludes(searchIntentReviewCards[0].boundary, "ABA 仅作站点级背景");
 assertEqual(searchIntentReviewCards[0].primarySearchTerm, "baby sunglasses");
@@ -5477,8 +5477,8 @@ assertIncludes(searchIntentPanelContext.doesNotProve, "不能证明 Parent ASIN 
 assertIncludes(searchIntentPanelContext.nextManualStep, "具体 SearchTerm 信号");
 assertIncludes(searchIntentPanelContext.signalMetricBoundary, "卡片指标覆盖当前 Parent ASIN");
 assertIncludes(searchIntentPanelContext.signalMetricBoundary, "可行动证据子集");
-assertIncludes(searchIntentPanelContext.boundary, "不把 Parent ASIN 搜索词表现聚合当作人工动作对象");
-assertIncludes(searchIntentPanelContext.emptyText, "当前展示 1 组搜索词表现聚合");
+assertIncludes(searchIntentPanelContext.boundary, "不把搜索意图分组当作人工动作对象");
+assertIncludes(searchIntentPanelContext.emptyText, "当前展示 1 组广告搜索词表现分组");
 
 const emptySearchIntentPanelContext = buildSearchIntentPanelContext([]);
 assertIncludes(emptySearchIntentPanelContext.purpose, "不是经营商品入口、广告组入口或人工动作对象");
