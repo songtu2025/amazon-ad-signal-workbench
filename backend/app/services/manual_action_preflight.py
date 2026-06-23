@@ -82,6 +82,7 @@ SEARCH_TERM_ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
     "ad_group_problem_location",
     "ad_group_evidence_synthesis",
     "ad_group_advertised_product_performance",
+    "search_term_ad_context_rows",
     "search_term_review_targeting_evidence",
     "manual_search_term_boundary",
     "manual_placement_boundary",
@@ -497,6 +498,7 @@ def _evidence_snapshot_preview(triage: dict[str, Any], target: dict[str, Any]) -
     blocks.extend(_actionability_snapshot_blocks(triage))
     blocks.extend(_product_scope_boundary_snapshot_blocks(triage, blocks, target))
     blocks.extend(_ad_group_product_performance_snapshot_blocks(triage, target, drilldown))
+    blocks.extend(_search_term_ad_context_snapshot_blocks(target, drilldown))
     blocks.extend(_diagnosis_contract_snapshot_blocks(triage, target))
     blocks.extend(_search_term_review_chain_snapshot_blocks(blocks, triage, target))
     blocks.extend(_advertised_product_review_chain_snapshot_blocks(blocks, triage, target))
@@ -904,6 +906,55 @@ def _ad_group_product_performance_item_text(product: dict[str, Any]) -> str:
     if sample_boundary:
         parts.append(sample_boundary)
     return f"{label}：" + " / ".join(parts)
+
+
+def _search_term_ad_context_snapshot_blocks(target: dict[str, Any], drilldown: dict[str, Any]) -> list[dict[str, str]]:
+    if str(target.get("object_type") or "").strip() != "search_term":
+        return []
+
+    rows = _dict_list(drilldown.get("search_term_rows"))
+    if not rows:
+        return []
+
+    object_label = str(target.get("object_label") or target.get("object_id") or "当前搜索词").strip()
+    row_texts = [text for text in (_search_term_ad_context_row_text(row) for row in rows[:4]) if text]
+    if not row_texts:
+        return []
+
+    suffix = f"；另有 {len(rows) - 4} 条投放上下文未展开" if len(rows) > 4 else ""
+    return [
+        {
+            "block_id": "search_term_ad_context_rows",
+            "label": "逐投放上下文",
+            "value": f"{object_label}：" + "；".join(row_texts) + suffix,
+            "detail": (
+                "每行只证明该用户搜索词在对应广告活动、广告组和投放词下的广告表现；"
+                "不能自动归因到单个广告 ASIN，也不能触发自动加词、否词或调价。"
+            ),
+            "source": "ad_search_term_daily_metrics",
+        }
+    ]
+
+
+def _search_term_ad_context_row_text(row: dict[str, Any]) -> str:
+    campaign = str(row.get("campaign_name") or "未知广告活动").strip()
+    ad_group = str(row.get("ad_group_name") or "未知广告组").strip()
+    targeting = str(row.get("targeting_text") or "未带投放词").strip()
+    parts = [
+        f"{campaign} / {ad_group}",
+        f"投放词 {targeting}",
+        f"点击 {_format_integer(row.get('clicks'))}",
+        f"花费 {_format_amount(row.get('spend'))}",
+        f"订单 {_format_integer(row.get('orders'))}",
+        f"销售额 {_format_amount(row.get('sales'))}",
+    ]
+    acos = _format_percent(row.get("acos"))
+    cvr = _format_percent(row.get("cvr"))
+    if acos:
+        parts.append(f"ACOS {acos}")
+    if cvr:
+        parts.append(f"CVR {cvr}")
+    return " / ".join(parts)
 
 
 def _diagnosis_contract_snapshot_blocks(triage: dict[str, Any], target: dict[str, Any]) -> list[dict[str, str]]:
