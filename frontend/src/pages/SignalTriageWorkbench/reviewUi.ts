@@ -2938,23 +2938,28 @@ export function manualActionPreflightEvidenceRows(preflight: ManualActionPreflig
 
 const manualActionPreflightPriorityEvidenceLabels = [
   "AI 准入",
+  "搜索词",
+  "搜索词表现分组",
   "Parent ASIN入口",
   "广告 ASIN承接",
   "广告商品覆盖",
-  "投放词证据",
   "广告组合流判断",
+  "同组投放商品表现",
+  "逐投放上下文",
+  "投放词证据",
+  "搜索词边界",
+  "广告位边界",
+  "广告位活动级背景",
   "ABA 背景",
   "证据缺口",
   "需要补证",
   "动作边界",
-  "搜索词边界",
-  "广告位边界",
   "广告位证据缺口",
   "诊断证据缺口",
   "人工下一步",
 ];
 
-export function manualActionPreflightPriorityEvidenceRows(preflight: ManualActionPreflightForUi | null, limit = 12) {
+export function manualActionPreflightPriorityEvidenceRows(preflight: ManualActionPreflightForUi | null, limit = 16) {
   if (!preflight?.evidence_snapshot_preview) return [];
   const priorityRank = new Map(manualActionPreflightPriorityEvidenceLabels.map((label, index) => [label, index]));
   const rows = buildManualActionDisplayEvidenceSnapshot({

@@ -472,10 +472,14 @@ async function main() {
   assert(preflightEvidenceRows.some((item) => item.label === "搜索词边界" && item.source), "完整证据快照预览应展示搜索词边界及来源。");
   assert(preflightEvidenceRows.some((item) => item.label === "广告位边界" && item.source), "完整证据快照预览应展示广告位边界及来源。");
   assertIncludes(priorityEvidenceText, "AI 准入");
+  assertIncludes(priorityEvidenceText, "搜索词表现分组");
+  assertIncludes(priorityEvidenceText, "同组投放商品表现");
+  assertIncludes(priorityEvidenceText, "逐投放上下文");
   assertIncludes(priorityEvidenceText, "投放词证据");
   assertIncludes(priorityEvidenceText, "ABA 背景");
   assertIncludes(priorityEvidenceText, "搜索词边界");
   assertIncludes(priorityEvidenceText, "广告位边界");
+  assertIncludes(priorityEvidenceText, "广告位活动级背景");
   assertIncludes(priorityEvidenceText, "证据缺口");
 
   const encodedRecommendedSignalId = encodeURIComponent(recommendedSignalId);
