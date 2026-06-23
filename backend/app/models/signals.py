@@ -165,7 +165,7 @@ class SearchIntentSummary(BaseModel):
     semantic_source: str = "未知"
     aba_match_count: int = 0
     top_search_terms: list[SearchIntentTopTerm] = Field(default_factory=list)
-    data_grain: str = "当前广告搜索词表现行按搜索意图聚合"
+    data_grain: str = "当前广告中实际产生表现的用户搜索词行按搜索意图聚合"
     business_question: str = "这组同类广告用户搜索词在当前 Parent ASIN 广告上下文下，是应该扩量、止损，还是只观察？"
     current_judgement: str = "需要结合花费、点击、订单、ACOS、广告组和投放词继续人工复核。"
     metric_purpose: str = "花费和点击用于判断消耗规模，订单、CVR 和 ACOS 用于判断广告搜索词承接质量。"

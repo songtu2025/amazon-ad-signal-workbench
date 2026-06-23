@@ -634,7 +634,7 @@ def test_search_intent_summaries_respect_parent_asin_product_scope(monkeypatch) 
     assert "beach essentials tent" in summaries[0].search_terms
     assert "kids sunglasses" not in summaries[0].search_terms
     assert summaries[0].metrics.cost == 20.03
-    assert summaries[0].data_grain == "当前 Parent ASIN 相关广告上下文中的用户搜索词表现行"
+    assert summaries[0].data_grain == "当前 Parent ASIN 相关广告上下文中实际产生表现的用户搜索词行"
     assert "扩量、止损，还是只观察" in summaries[0].business_question
     assert "可人工确认的扩量机会" in summaries[0].current_judgement
     assert "花费 20.03" in summaries[0].metric_purpose

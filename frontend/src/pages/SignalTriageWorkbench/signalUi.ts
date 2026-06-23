@@ -5685,9 +5685,9 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       evidenceGap:
         searchIntentDisplayText(summary.evidence_gap) ||
         "证据缺口：需要继续核对投放词、广告组商品清单和广告位表现，才能转成具体人工动作。",
-      purpose: "用途：从当前 Parent ASIN 视角聚合广告中的用户搜索词表现，按搜索意图汇总同类 SearchTerm，帮助运营判断搜索词表现、机会和异常。",
+      purpose: "用途：从当前 Parent ASIN 视角，聚合广告中实际产生表现的用户搜索词，按搜索意图汇总同类 SearchTerm，帮助运营判断搜索词表现、机会和异常。",
       boundary: "边界：只复核广告用户搜索词表现；不改变诊断入口，不生成广告搜索词聚合上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
-      dataGrain: summary.data_grain || "当前诊断入口相关广告上下文中的用户搜索词表现行",
+      dataGrain: summary.data_grain || "当前诊断入口相关广告上下文中实际产生表现的用户搜索词行",
       proves: searchIntentDisplayText(summary.proves) || "能证明同类广告搜索词在当前广告上下文内的花费、点击、订单和 ABA 背景。",
       doesNotProve:
         searchIntentDisplayText(summary.does_not_prove) || "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能生成广告搜索词聚合上下文人工动作。",
@@ -5713,7 +5713,7 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
   return {
     purpose:
       firstCard?.purpose ??
-      "用途：从当前 Parent ASIN 视角聚合广告用户搜索词表现，帮助运营按语义复核同类搜索词表现；它不是经营商品入口、广告组入口或人工动作对象。",
+      "用途：从当前 Parent ASIN 视角聚合广告中实际产生表现的用户搜索词，帮助运营按语义复核同类搜索词表现；它不是经营商品入口、广告组入口或人工动作对象。",
     dataGrain: firstCard?.dataGrain ?? "当前诊断入口相关广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索意图聚合。",
     interactionBoundary:
       "点击后只改变左侧信号队列筛选和中间选中 SearchTerm，不改变顶部诊断入口筛选器，也不切换 Parent ASIN / 广告 ASIN / 广告组。",
@@ -6664,7 +6664,7 @@ const queueObjectTypeLabel: Record<NonNullable<SignalForUi["object_type"]>, stri
   advertised_product: "广告商品",
   search_term: "搜索词",
   placement: "广告位",
-  search_intent: "搜索词聚合",
+  search_intent: "搜索词表现聚合",
   cross: "交叉信号",
 };
 
@@ -6719,10 +6719,10 @@ export function buildSearchIntentFocusContext(
   const signalObject = `SearchTerm：${searchTerm}`;
 
   return {
-    title: "广告搜索词聚合承接",
+    title: "广告搜索词表现承接",
     focusLabel,
     signalObject,
-    relation: `左侧聚合筛选只缩小当前 Parent ASIN 下的广告 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。`,
+    relation: `左侧表现聚合筛选只缩小当前 Parent ASIN 下的广告 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。`,
     boundary: `广告搜索词聚合上下文「${focusLabel}」不是人工动作对象；ABA 只作站点级背景，实际写入以后端 preflight evidence_snapshot_preview 为准。`,
     tone: "container",
   };
@@ -6942,7 +6942,7 @@ export function buildSignalTriggerRationale(signal: SignalForUi): SignalTriggerR
 
   if (signal.signal_category === "search_term_performance_split") {
     return {
-      objectRule: "判断对象：搜索词聚合，不是单条投放行，也不能强行归属到单个商品。",
+      objectRule: "判断对象：搜索词表现聚合，不是单条投放行，也不能强行归属到单个商品。",
       triggerRule: "触发条件：同一 normalized_query 出现在多条投放行，且同时存在出单行和无订单消耗行，说明逐行判断可能误判。",
       evidenceRule: "证据来源：ad_search_term_daily_metrics，核心字段是 normalized_query、投放行数、总花费、总订单、无订单花费占比和投放行明细。",
       confidenceBoundary: "置信边界：这是搜索词层面的结构分化，不能直接归因到单个商品。",

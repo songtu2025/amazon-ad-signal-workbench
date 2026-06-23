@@ -3273,7 +3273,7 @@ def search_intent_summaries(
     *,
     aba_rows: list[dict] | None = None,
     context_rows: list[dict] | None = None,
-    data_grain: str = "当前广告搜索词表现行按搜索意图聚合",
+    data_grain: str = "当前广告中实际产生表现的用户搜索词行按搜索意图聚合",
 ) -> list[SearchIntentSummary]:
     groups: dict[str, list[dict]] = defaultdict(list)
     for row in rows if rows is not None else []:

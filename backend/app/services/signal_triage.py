@@ -269,7 +269,7 @@ def build_search_intent_summaries(
             signal_rows,
             aba_rows=aba_rows,
             context_rows=signal_rows,
-            data_grain="当前站点广告搜索词表现行按搜索意图聚合",
+            data_grain="当前站点广告中实际产生表现的用户搜索词行按搜索意图聚合",
         )
 
     product_scope = build_product_scope_summary()
@@ -3271,12 +3271,12 @@ def _search_term_row_matches_product_scope(
 
 def _search_intent_data_grain_for_product_scope(product_scope_id: str) -> str:
     if product_scope_id.startswith("parent_asin:"):
-        return "当前 Parent ASIN 相关广告上下文中的用户搜索词表现行"
+        return "当前 Parent ASIN 相关广告上下文中实际产生表现的用户搜索词行"
     if product_scope_id.startswith("ad_asin:"):
-        return "当前广告 ASIN 相关广告上下文中的用户搜索词表现行"
+        return "当前广告 ASIN 相关广告上下文中实际产生表现的用户搜索词行"
     if product_scope_id.startswith("sales_asin:"):
-        return "当前经营 ASIN 相关广告上下文中的用户搜索词表现行"
-    return "当前诊断入口相关广告上下文中的用户搜索词表现行"
+        return "当前经营 ASIN 相关广告上下文中实际产生表现的用户搜索词行"
+    return "当前诊断入口相关广告上下文中实际产生表现的用户搜索词行"
 
 
 def _row_identity_key(row: dict[str, Any]) -> tuple[tuple[str, str], ...]:

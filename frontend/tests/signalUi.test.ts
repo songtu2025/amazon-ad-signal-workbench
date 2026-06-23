@@ -4762,10 +4762,10 @@ if (!selectedSearchIntentFocusContext) {
   throw new Error("当前语义聚焦命中搜索词信号时应生成承接提示");
 }
 
-assertEqual(selectedSearchIntentFocusContext.title, "广告搜索词聚合承接");
+assertEqual(selectedSearchIntentFocusContext.title, "广告搜索词表现承接");
 assertEqual(selectedSearchIntentFocusContext.focusLabel, "规则语义：海滩出行用品");
 assertIncludes(selectedSearchIntentFocusContext.signalObject, "SearchTerm：beach essentials");
-assertIncludes(selectedSearchIntentFocusContext.relation, "左侧聚合筛选只缩小当前 Parent ASIN 下的广告 SearchTerm 信号队列");
+assertIncludes(selectedSearchIntentFocusContext.relation, "左侧表现聚合筛选只缩小当前 Parent ASIN 下的广告 SearchTerm 信号队列");
 assertIncludes(selectedSearchIntentFocusContext.relation, "若进入人工动作");
 assertIncludes(selectedSearchIntentFocusContext.relation, "以后端预检确认的 SearchTerm 稳定对象为准");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "广告搜索词聚合上下文「规则语义：海滩出行用品」不是人工动作对象");
@@ -5211,7 +5211,7 @@ const searchIntentReviewCards = buildSearchIntentReviewCards([
     insight: "该语义类目转化稳定，属于放量候选",
     semantic_source: "规则语义",
     aba_match_count: 1,
-    data_grain: "当前 Parent ASIN 相关广告上下文中的用户搜索词表现行",
+    data_grain: "当前 Parent ASIN 相关广告上下文中实际产生表现的用户搜索词行",
     business_question: "这组同类广告用户搜索词在当前 Parent ASIN 广告上下文下，是应该扩量、止损，还是只观察？",
     current_judgement: "当前判断：有订单且 ACOS 较低，优先复核是否存在可人工确认的扩量机会。",
     metric_purpose: "指标目的：花费 9.00 和点击 18 判断消耗规模；订单 4、CVR 22.22%、ACOS 12.86% 判断承接质量。",
@@ -5247,7 +5247,7 @@ assertIncludes(searchIntentReviewCards[0].currentJudgement, "可人工确认的�
 assertIncludes(searchIntentReviewCards[0].metricPurpose, "花费 9.00");
 assertIncludes(searchIntentReviewCards[0].adContext, "覆盖 1 个广告活动、1 个广告组、2 条搜索词表现行");
 assertIncludes(searchIntentReviewCards[0].evidenceGap, "广告位影响需要继续打开广告位证据核对");
-assertIncludes(searchIntentReviewCards[0].purpose, "聚合广告中的用户搜索词表现");
+assertIncludes(searchIntentReviewCards[0].purpose, "聚合广告中实际产生表现的用户搜索词");
 assertIncludes(searchIntentReviewCards[0].purpose, "当前 Parent ASIN 视角");
 assertIncludes(searchIntentReviewCards[0].purpose, "判断搜索词表现、机会和异常");
 assertIncludes(searchIntentReviewCards[0].dataGrain, "当前 Parent ASIN 相关广告上下文");
@@ -5264,7 +5264,7 @@ assertEqual(searchIntentReviewCards[0].topTerms[0], "baby sunglasses：3 单 / �
 assertEqual(searchIntentReviewCards[0].intentLabel, "规则语义：儿童太阳镜");
 
 const searchIntentPanelContext = buildSearchIntentPanelContext(searchIntentReviewCards);
-assertIncludes(searchIntentPanelContext.purpose, "聚合广告中的用户搜索词表现");
+assertIncludes(searchIntentPanelContext.purpose, "聚合广告中实际产生表现的用户搜索词");
 assertIncludes(searchIntentPanelContext.purpose, "Parent ASIN");
 assertIncludes(searchIntentPanelContext.dataGrain, "当前 Parent ASIN 相关广告上下文");
 assertIncludes(searchIntentPanelContext.interactionBoundary, "只改变左侧信号队列筛选");
