@@ -17,6 +17,8 @@ REPAIR_ISSUE_TYPES = {
     "missing_ai_admission",
     "missing_search_term_boundary",
     "missing_placement_boundary",
+    "missing_ad_product_coverage",
+    "missing_placement_performance",
     "missing_targeting_evidence",
     "missing_ad_group_synthesis",
     "missing_ad_group_product_performance",
@@ -33,6 +35,22 @@ SEARCH_TERM_REPAIR_LABELS = (
     "广告组合流判断",
     "同组投放商品表现",
     "ABA 背景",
+    "证据缺口",
+    "需要补证",
+    "动作边界",
+)
+ADVERTISED_PRODUCT_REPAIR_LABELS = (
+    *BASE_REPAIR_LABELS,
+    "广告商品覆盖",
+    "广告组合流判断",
+    "同组投放商品表现",
+    "证据缺口",
+    "需要补证",
+    "动作边界",
+)
+PLACEMENT_REPAIR_LABELS = (
+    *BASE_REPAIR_LABELS,
+    "广告位表现",
     "证据缺口",
     "需要补证",
     "动作边界",
@@ -232,6 +250,8 @@ def _repair_item(
             "has_ai_admission": _preview_has_label(preview_items, "AI 准入"),
             "has_search_term_boundary": _preview_has_label(preview_items, "搜索词边界"),
             "has_placement_boundary": _preview_has_label(preview_items, "广告位边界"),
+            "has_ad_product_coverage": _preview_has_label(preview_items, "广告商品覆盖"),
+            "has_placement_performance": _preview_has_label(preview_items, "广告位表现"),
             "has_targeting_evidence": _preview_has_label(preview_items, "投放词证据"),
             "has_ad_group_synthesis": _preview_has_label(preview_items, "广告组合流判断"),
             "has_ad_group_product_performance": _preview_has_label(preview_items, "同组投放商品表现"),
@@ -348,8 +368,13 @@ def _target_matches_group(target: dict[str, Any], group: dict[str, Any]) -> bool
 
 
 def _required_repair_labels(group: dict[str, Any]) -> tuple[str, ...]:
-    if _text(group.get("object_type")) == "search_term":
+    object_type = _text(group.get("object_type"))
+    if object_type == "search_term":
         return SEARCH_TERM_REPAIR_LABELS
+    if object_type == "advertised_product":
+        return ADVERTISED_PRODUCT_REPAIR_LABELS
+    if object_type == "placement":
+        return PLACEMENT_REPAIR_LABELS
     return BASE_REPAIR_LABELS
 
 

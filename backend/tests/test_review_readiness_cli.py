@@ -356,10 +356,34 @@ def test_review_readiness_reports_identity_audit_for_readback_keys(monkeypatch) 
         SimpleNamespace(label="AI 准入", value="ready_for_manual_confirmation"),
         SimpleNamespace(label="搜索词边界", value="搜索词只说明同广告组上下文"),
         SimpleNamespace(label="广告位边界", value="广告位证据缺口不能自动归因"),
+        SimpleNamespace(label="广告商品覆盖", value="B016EXMW02 已回看广告投放证据"),
+        SimpleNamespace(label="广告组合流判断", value="B016EXMW02 必须按广告组容器回看搜索词和广告位"),
+        SimpleNamespace(label="同组投放商品表现", value="同组广告 ASIN 承接差异已回看"),
+        SimpleNamespace(label="证据缺口", value="不能把搜索词或广告位自动归因到 B016EXMW02"),
+        SimpleNamespace(label="需要补证", value="补齐投放词维护状态、广告位和主推策略"),
+        SimpleNamespace(label="动作边界", value="只允许人工留痕和复盘"),
     ]
     todos = [
-        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="7d", is_due=False, evidence_snapshot=evidence_snapshot),
-        SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="14d", is_due=False, evidence_snapshot=evidence_snapshot),
+        SimpleNamespace(
+            signal_id="sig-ad-product",
+            market_id=1,
+            object_type="advertised_product",
+            object_id="B016EXMW02",
+            object_label="B016EXMW02",
+            review_window="7d",
+            is_due=False,
+            evidence_snapshot=evidence_snapshot,
+        ),
+        SimpleNamespace(
+            signal_id="sig-ad-product",
+            market_id=1,
+            object_type="advertised_product",
+            object_id="B016EXMW02",
+            object_label="B016EXMW02",
+            review_window="14d",
+            is_due=False,
+            evidence_snapshot=evidence_snapshot,
+        ),
     ]
 
     def fake_effect(signal_id, *, review_window, market_id=None, signal_rows=None):
@@ -418,23 +442,24 @@ def test_review_readiness_reports_identity_audit_for_readback_keys(monkeypatch) 
     assert audit["can_save_review_records_now"] is False
     assert audit["earliest_due_date"] == "2026-06-22"
     assert audit["issues"] == []
-    assert audit["readback_keys"][0] == {
-        "signal_id": "sig-ad-product",
-        "action_id": "manual-action-ad-product",
-        "object_type": "advertised_product",
-        "object_id": "B016EXMW02",
-        "object_label": "B016EXMW02",
-        "review_window": "7d",
-        "status": "not_ready",
-        "is_due": False,
-        "due_at": "2026-06-22T00:00:00+00:00",
-        "evidence_snapshot_count": 4,
-        "has_diagnosis_path": True,
-        "has_ai_admission": True,
-        "has_search_term_boundary": True,
-        "has_placement_boundary": True,
-        "has_object_reference": None,
-    }
+    first_readback = audit["readback_keys"][0]
+    assert first_readback["signal_id"] == "sig-ad-product"
+    assert first_readback["action_id"] == "manual-action-ad-product"
+    assert first_readback["object_type"] == "advertised_product"
+    assert first_readback["object_id"] == "B016EXMW02"
+    assert first_readback["review_window"] == "7d"
+    assert first_readback["evidence_snapshot_count"] == 10
+    assert first_readback["has_diagnosis_path"] is True
+    assert first_readback["has_ai_admission"] is True
+    assert first_readback["has_search_term_boundary"] is True
+    assert first_readback["has_placement_boundary"] is True
+    assert first_readback["has_ad_product_coverage"] is True
+    assert first_readback["has_ad_group_synthesis"] is True
+    assert first_readback["has_ad_group_product_performance"] is True
+    assert first_readback["has_evidence_gap"] is True
+    assert first_readback["has_required_evidence"] is True
+    assert first_readback["has_action_boundary"] is True
+    assert first_readback["has_object_reference"] is True
 
 
 def test_review_readiness_script_blocks_legacy_todos_without_evidence_snapshot(monkeypatch) -> None:
@@ -559,6 +584,72 @@ def test_review_identity_audit_reports_ad_group_synthesis_gap() -> None:
     assert audit["status"] == "blocked"
     assert audit["missing_ad_group_synthesis_count"] == 1
     assert [issue["issue_type"] for issue in audit["issues"]] == ["missing_ad_group_synthesis"]
+
+
+def test_review_identity_audit_reports_object_review_chain_gaps() -> None:
+    module = load_review_readiness_script()
+
+    audit = module.review_identity_audit_summary(
+        [SimpleNamespace(signal_id="sig-ad-product"), SimpleNamespace(signal_id="sig-placement")],
+        [],
+        [
+            {
+                "signal_id": "sig-ad-product",
+                "action_id": "manual-action-ad-product",
+                "object_type": "advertised_product",
+                "object_id": "B016EXMW02",
+                "object_label": "B016EXMW02",
+                "review_window": "7d",
+                "status": "not_ready",
+                "is_due": False,
+                "due_at": "2026-06-29T00:00:00+00:00",
+                "evidence_snapshot_count": 4,
+                "has_diagnosis_path": True,
+                "has_ai_admission": True,
+                "has_search_term_boundary": True,
+                "has_placement_boundary": True,
+                "has_ad_product_coverage": False,
+                "has_ad_group_synthesis": False,
+                "has_ad_group_product_performance": False,
+                "has_evidence_gap": False,
+                "has_required_evidence": False,
+                "has_action_boundary": False,
+            },
+            {
+                "signal_id": "sig-placement",
+                "action_id": "manual-action-placement",
+                "object_type": "placement",
+                "object_id": "Top of Search",
+                "object_label": "Top of Search",
+                "review_window": "7d",
+                "status": "not_ready",
+                "is_due": False,
+                "due_at": "2026-06-29T00:00:00+00:00",
+                "evidence_snapshot_count": 4,
+                "has_diagnosis_path": True,
+                "has_ai_admission": True,
+                "has_search_term_boundary": True,
+                "has_placement_boundary": True,
+                "has_placement_performance": False,
+                "has_evidence_gap": False,
+                "has_required_evidence": False,
+                "has_action_boundary": False,
+            },
+        ],
+        ready_count=0,
+        identity_issues=[],
+    )
+
+    assert audit["status"] == "blocked"
+    assert audit["missing_ad_product_coverage_count"] == 1
+    assert audit["missing_placement_performance_count"] == 1
+    assert audit["missing_evidence_gap_count"] == 2
+    assert audit["missing_required_evidence_count"] == 2
+    assert audit["missing_action_boundary_count"] == 2
+    issue_types = [issue["issue_type"] for issue in audit["issues"]]
+    assert "missing_ad_product_coverage" in issue_types
+    assert "missing_placement_performance" in issue_types
+    assert issue_types.count("missing_action_boundary") == 2
 
 
 def test_review_identity_audit_separates_metric_due_date_from_cross_due_date() -> None:

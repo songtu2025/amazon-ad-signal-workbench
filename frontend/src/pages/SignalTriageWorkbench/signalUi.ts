@@ -1055,6 +1055,8 @@ export interface ReviewIdentityAuditForUi {
   missing_ai_admission_count?: number | null;
   missing_search_term_boundary_count?: number | null;
   missing_placement_boundary_count?: number | null;
+  missing_ad_product_coverage_count?: number | null;
+  missing_placement_performance_count?: number | null;
   missing_targeting_evidence_count?: number | null;
   missing_ad_group_synthesis_count?: number | null;
   missing_ad_group_product_performance_count?: number | null;
@@ -1131,6 +1133,8 @@ export interface ReviewEvidenceRepairPayloadForUi {
       has_ai_admission?: boolean | null;
       has_search_term_boundary?: boolean | null;
       has_placement_boundary?: boolean | null;
+      has_ad_product_coverage?: boolean | null;
+      has_placement_performance?: boolean | null;
       has_targeting_evidence?: boolean | null;
       has_ad_group_synthesis?: boolean | null;
       has_ad_group_product_performance?: boolean | null;
@@ -2396,6 +2400,8 @@ function buildReviewIdentityAuditSummary(
   const missingAiAdmissionCount = audit.missing_ai_admission_count ?? 0;
   const missingSearchTermBoundaryCount = audit.missing_search_term_boundary_count ?? 0;
   const missingPlacementBoundaryCount = audit.missing_placement_boundary_count ?? 0;
+  const missingAdProductCoverageCount = audit.missing_ad_product_coverage_count ?? 0;
+  const missingPlacementPerformanceCount = audit.missing_placement_performance_count ?? 0;
   const missingTargetingEvidenceCount = audit.missing_targeting_evidence_count ?? 0;
   const missingAdGroupSynthesisCount = audit.missing_ad_group_synthesis_count ?? 0;
   const missingAdGroupProductPerformanceCount = audit.missing_ad_group_product_performance_count ?? 0;
@@ -2404,7 +2410,9 @@ function buildReviewIdentityAuditSummary(
   const missingRequiredEvidenceCount = audit.missing_required_evidence_count ?? 0;
   const missingActionBoundaryCount = audit.missing_action_boundary_count ?? 0;
   const missingObjectReferenceCount = audit.missing_object_reference_count ?? 0;
-  const missingSearchTermReviewChainCount =
+  const missingObjectReviewChainCount =
+    missingAdProductCoverageCount +
+    missingPlacementPerformanceCount +
     missingTargetingEvidenceCount +
     missingAdGroupSynthesisCount +
     missingAbaContextCount +
@@ -2417,7 +2425,7 @@ function buildReviewIdentityAuditSummary(
     missingAiAdmissionCount +
     missingSearchTermBoundaryCount +
     missingPlacementBoundaryCount +
-    missingSearchTermReviewChainCount +
+    missingObjectReviewChainCount +
     missingObjectReferenceCount;
   const unstableObjectIdCount = audit.unstable_object_id_count ?? 0;
   const issueCount = audit.issues?.length ?? 0;
@@ -2444,7 +2452,7 @@ function buildReviewIdentityAuditSummary(
   return {
     title: "复盘读回身份门禁",
     status: isBlocked ? "blocked" : "ready",
-    summary: `${statusText}；缺失 action_id / object_id / review_window：${missingActionIdCount} / ${missingObjectIdCount} / ${missingReviewWindowCount}；证据快照缺口：${missingEvidenceSnapshotCount} / 排查路径 ${missingDiagnosisPathCount} / AI 准入 ${missingAiAdmissionCount} / 搜索词边界 ${missingSearchTermBoundaryCount} / 广告位边界 ${missingPlacementBoundaryCount} / 搜索词复核链 ${missingSearchTermReviewChainCount}（投放词 ${missingTargetingEvidenceCount} / 广告组合流判断 ${missingAdGroupSynthesisCount} / 同组投放商品表现 ${missingAdGroupProductPerformanceCount} / ABA ${missingAbaContextCount} / 证据缺口 ${missingEvidenceGapCount} / 需要补证 ${missingRequiredEvidenceCount} / 动作边界 ${missingActionBoundaryCount}）/ 对象引用 ${missingObjectReferenceCount}；广告指标最早复盘：${earliestMetricDueDate}。`,
+    summary: `${statusText}；缺失 action_id / object_id / review_window：${missingActionIdCount} / ${missingObjectIdCount} / ${missingReviewWindowCount}；证据快照缺口：${missingEvidenceSnapshotCount} / 排查路径 ${missingDiagnosisPathCount} / AI 准入 ${missingAiAdmissionCount} / 搜索词边界 ${missingSearchTermBoundaryCount} / 广告位边界 ${missingPlacementBoundaryCount} / 对象复核链 ${missingObjectReviewChainCount}（广告商品覆盖 ${missingAdProductCoverageCount} / 广告位表现 ${missingPlacementPerformanceCount} / 投放词 ${missingTargetingEvidenceCount} / 广告组合流判断 ${missingAdGroupSynthesisCount} / 同组投放商品表现 ${missingAdGroupProductPerformanceCount} / ABA ${missingAbaContextCount} / 证据缺口 ${missingEvidenceGapCount} / 需要补证 ${missingRequiredEvidenceCount} / 动作边界 ${missingActionBoundaryCount}）/ 对象引用 ${missingObjectReferenceCount}；广告指标最早复盘：${earliestMetricDueDate}。`,
     boundary: `${boundaryParts.join("；")}。`,
     items: [
       { label: "待读回效果", value: `${effectCount}`, tone: effectCount > 0 ? "ready" : "neutral" },
@@ -2453,9 +2461,9 @@ function buildReviewIdentityAuditSummary(
       { label: "缺失键", value: `${missingKeyCount}`, tone: missingKeyCount > 0 ? "blocked" : "ready" },
       { label: "证据快照缺口", value: `${missingEvidenceGateCount}`, tone: missingEvidenceGateCount > 0 ? "blocked" : "ready" },
       {
-        label: "搜索词复核链缺口",
-        value: `${missingSearchTermReviewChainCount}`,
-        tone: missingSearchTermReviewChainCount > 0 ? "blocked" : "ready",
+        label: "对象复核链缺口",
+        value: `${missingObjectReviewChainCount}`,
+        tone: missingObjectReviewChainCount > 0 ? "blocked" : "ready",
       },
     ],
   };
@@ -2541,6 +2549,8 @@ function reviewReadbackKeys(keys: unknown[] | null | undefined) {
         hasAiAdmission: sourceBoolean(row, "has_ai_admission"),
         hasSearchTermBoundary: sourceBoolean(row, "has_search_term_boundary"),
         hasPlacementBoundary: sourceBoolean(row, "has_placement_boundary"),
+        hasAdProductCoverage: sourceBoolean(row, "has_ad_product_coverage"),
+        hasPlacementPerformance: sourceBoolean(row, "has_placement_performance"),
         hasTargetingEvidence: sourceBoolean(row, "has_targeting_evidence"),
         hasAdGroupSynthesis: sourceBoolean(row, "has_ad_group_synthesis"),
         hasAdGroupProductPerformance: sourceBoolean(row, "has_ad_group_product_performance"),
@@ -2579,6 +2589,8 @@ function reviewEvidenceSnapshotText(readbackKeys: ReturnType<typeof reviewReadba
       key.hasObjectReference !== null,
   );
   const searchTermKeys = readbackKeys.filter((key) => key.objectType === "search_term");
+  const advertisedProductKeys = readbackKeys.filter((key) => key.objectType === "advertised_product");
+  const placementKeys = readbackKeys.filter((key) => key.objectType === "placement");
   const hasSearchTermChainFields = searchTermKeys.some(
     (key) =>
       key.hasTargetingEvidence !== null ||
@@ -2614,6 +2626,71 @@ function reviewEvidenceSnapshotText(readbackKeys: ReturnType<typeof reviewReadba
         key.hasRequiredEvidence === false ||
         key.hasActionBoundary === false,
     );
+  const hasAdvertisedProductChainFields = advertisedProductKeys.some(
+    (key) =>
+      key.hasAdProductCoverage !== null ||
+      key.hasAdGroupSynthesis !== null ||
+      key.hasAdGroupProductPerformance !== null ||
+      key.hasEvidenceGap !== null ||
+      key.hasRequiredEvidence !== null ||
+      key.hasActionBoundary !== null,
+  );
+  const allAdvertisedProductChainComplete =
+    advertisedProductKeys.length === 0 ||
+    (hasAdvertisedProductChainFields &&
+      advertisedProductKeys.every(
+        (key) =>
+          key.hasAdProductCoverage === true &&
+          key.hasAdGroupSynthesis === true &&
+          key.hasAdGroupProductPerformance === true &&
+          key.hasEvidenceGap === true &&
+          key.hasRequiredEvidence === true &&
+          key.hasActionBoundary === true,
+      ));
+  const hasAdvertisedProductChainGap =
+    hasAdvertisedProductChainFields &&
+    advertisedProductKeys.some(
+      (key) =>
+        key.hasAdProductCoverage === false ||
+        key.hasAdGroupSynthesis === false ||
+        key.hasAdGroupProductPerformance === false ||
+        key.hasEvidenceGap === false ||
+        key.hasRequiredEvidence === false ||
+        key.hasActionBoundary === false,
+    );
+  const hasPlacementChainFields = placementKeys.some(
+    (key) =>
+      key.hasPlacementPerformance !== null ||
+      key.hasEvidenceGap !== null ||
+      key.hasRequiredEvidence !== null ||
+      key.hasActionBoundary !== null,
+  );
+  const allPlacementChainComplete =
+    placementKeys.length === 0 ||
+    (hasPlacementChainFields &&
+      placementKeys.every(
+        (key) =>
+          key.hasPlacementPerformance === true &&
+          key.hasEvidenceGap === true &&
+          key.hasRequiredEvidence === true &&
+          key.hasActionBoundary === true,
+      ));
+  const hasPlacementChainGap =
+    hasPlacementChainFields &&
+    placementKeys.some(
+      (key) =>
+        key.hasPlacementPerformance === false ||
+        key.hasEvidenceGap === false ||
+        key.hasRequiredEvidence === false ||
+        key.hasActionBoundary === false,
+    );
+  const hasObjectReviewChainGap = hasSearchTermChainGap || hasAdvertisedProductChainGap || hasPlacementChainGap;
+  const hasObjectReviewChainKeys = searchTermKeys.length > 0 || advertisedProductKeys.length > 0 || placementKeys.length > 0;
+  const allObjectReviewChainsComplete =
+    hasObjectReviewChainKeys &&
+    allSearchTermChainComplete &&
+    allAdvertisedProductChainComplete &&
+    allPlacementChainComplete;
   const allBoundariesComplete =
     hasBoundaryFields &&
     readbackKeys.every(
@@ -2637,11 +2714,11 @@ function reviewEvidenceSnapshotText(readbackKeys: ReturnType<typeof reviewReadba
   const hasObjectReferenceGap = readbackKeys.some((key) => key.hasObjectReference === false);
   const boundaryText = hasObjectReferenceGap
     ? " / 对象引用缺口"
-    : hasSearchTermChainGap
-      ? " / 搜索词复核链缺口"
+    : hasObjectReviewChainGap
+      ? " / 对象复核链缺口"
       : allBoundariesComplete
-        ? searchTermKeys.length > 0 && allSearchTermChainComplete
-          ? " / 搜索词复核链齐全"
+        ? allObjectReviewChainsComplete
+          ? " / 对象复核链齐全"
           : " / 基础边界齐全"
         : hasBoundaryGap
           ? " / 关键边界缺口"
@@ -2913,18 +2990,18 @@ export function buildReviewEvidenceRepairSummary(
     return {
       title: "历史待办治理",
       status: "blocked",
-      primary: "旧证据快照没有整份缺失，但搜索词复核链仍被复盘证据门禁阻断。",
+      primary: "旧证据快照没有整份缺失，但对象复核链仍被复盘证据门禁阻断。",
       detail:
-        "当前缺口不是 legacy evidence_snapshot 为空，而是旧快照缺少搜索词复核链标签；具体缺口以“复盘证据门禁阻断”为准，不能保存 ReviewRecord。",
+        "当前缺口不是 legacy evidence_snapshot 为空，而是旧快照缺少对象复核链标签；具体缺口以“复盘证据门禁阻断”为准，不能保存 ReviewRecord。",
       boundary,
       items: [
         { label: "历史缺口动作", value: "0 个", tone: "ready" },
         { label: "复盘待办", value: `${reviewTodoCount} 条`, tone: reviewTodoCount > 0 ? "blocked" : "neutral" },
-        { label: "搜索词复核链", value: "阻断", tone: "blocked" },
+        { label: "对象复核链", value: "阻断", tone: "blocked" },
         { label: "可自动执行广告", value: "0 项", tone: "ready" },
       ],
       nextSteps: [
-        { label: "先看门禁", detail: "回到复盘证据门禁，核对缺少的是投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证还是动作边界。" },
+        { label: "先看门禁", detail: "回到复盘证据门禁，核对缺少的是广告商品覆盖、广告位表现、投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证还是动作边界。" },
         { label: "治理方式", detail: "当前可落地路径是 dry-run 作废旧待办，再重新人工留痕；不能静默补写历史 evidence_snapshot。" },
         { label: "保存限制", detail: "复核链补齐并出现 ready 复盘前，不保存 ReviewRecord，不自动改规则，不执行广告动作。" },
       ],
@@ -2988,6 +3065,8 @@ function reviewRepairIssueText(issueTypes: string[] | null | undefined): string 
     missing_ai_admission: "缺 AI 准入",
     missing_search_term_boundary: "缺搜索词边界",
     missing_placement_boundary: "缺广告位边界",
+    missing_ad_product_coverage: "缺广告商品覆盖",
+    missing_placement_performance: "缺广告位表现",
     missing_targeting_evidence: "缺投放词证据",
     missing_ad_group_synthesis: "缺广告组合流判断",
     missing_ad_group_product_performance: "缺同组投放商品表现",
@@ -3031,6 +3110,16 @@ function reviewRepairPreflightText(
       : preflight?.has_placement_boundary === false
         ? "缺广告位边界"
         : "",
+    preflight?.has_ad_product_coverage === true
+      ? "有广告商品覆盖"
+      : preflight?.has_ad_product_coverage === false
+        ? "缺广告商品覆盖"
+        : "",
+    preflight?.has_placement_performance === true
+      ? "有广告位表现"
+      : preflight?.has_placement_performance === false
+        ? "缺广告位表现"
+        : "",
     preflight?.has_targeting_evidence === true
       ? "有投放词证据"
       : preflight?.has_targeting_evidence === false
@@ -3055,6 +3144,11 @@ function reviewRepairPreflightText(
       ? "有证据缺口"
       : preflight?.has_evidence_gap === false
         ? "缺证据缺口"
+        : "",
+    preflight?.has_required_evidence === true
+      ? "有需要补证"
+      : preflight?.has_required_evidence === false
+        ? "缺需要补证"
         : "",
     preflight?.has_action_boundary === true
       ? "有动作边界"

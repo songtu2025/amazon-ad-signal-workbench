@@ -185,6 +185,8 @@ def review_todo_evidence_snapshot_audit(todo: Any) -> dict[str, Any]:
             "has_ai_admission": None,
             "has_search_term_boundary": None,
             "has_placement_boundary": None,
+            "has_ad_product_coverage": None,
+            "has_placement_performance": None,
             "has_targeting_evidence": None,
             "has_ad_group_synthesis": None,
             "has_ad_group_product_performance": None,
@@ -201,6 +203,8 @@ def review_todo_evidence_snapshot_audit(todo: Any) -> dict[str, Any]:
         "has_ai_admission": review_evidence_snapshot_has_label(evidence_snapshot, "AI 准入"),
         "has_search_term_boundary": review_evidence_snapshot_has_label(evidence_snapshot, "搜索词边界"),
         "has_placement_boundary": review_evidence_snapshot_has_label(evidence_snapshot, "广告位边界"),
+        "has_ad_product_coverage": review_evidence_snapshot_has_label(evidence_snapshot, "广告商品覆盖"),
+        "has_placement_performance": review_evidence_snapshot_has_label(evidence_snapshot, "广告位表现"),
         "has_targeting_evidence": review_evidence_snapshot_has_label(evidence_snapshot, "投放词证据"),
         "has_ad_group_synthesis": review_evidence_snapshot_has_label(evidence_snapshot, "广告组合流判断"),
         "has_ad_group_product_performance": review_evidence_snapshot_has_label(evidence_snapshot, "同组投放商品表现"),
@@ -271,13 +275,19 @@ def review_identity_audit_summary(
     missing_search_term_boundary_count = sum(1 for item in snapshot_known_keys if not item.get("has_search_term_boundary"))
     missing_placement_boundary_count = sum(1 for item in snapshot_known_keys if not item.get("has_placement_boundary"))
     search_term_snapshot_keys = [item for item in snapshot_known_keys if item.get("object_type") == "search_term"]
+    advertised_product_snapshot_keys = [item for item in snapshot_known_keys if item.get("object_type") == "advertised_product"]
+    placement_snapshot_keys = [item for item in snapshot_known_keys if item.get("object_type") == "placement"]
+    ad_group_context_snapshot_keys = [*search_term_snapshot_keys, *advertised_product_snapshot_keys]
+    object_review_chain_snapshot_keys = [*ad_group_context_snapshot_keys, *placement_snapshot_keys]
+    missing_ad_product_coverage_count = sum(1 for item in advertised_product_snapshot_keys if not item.get("has_ad_product_coverage"))
+    missing_placement_performance_count = sum(1 for item in placement_snapshot_keys if not item.get("has_placement_performance"))
     missing_targeting_evidence_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_targeting_evidence"))
-    missing_ad_group_synthesis_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_ad_group_synthesis"))
-    missing_ad_group_product_performance_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_ad_group_product_performance"))
+    missing_ad_group_synthesis_count = sum(1 for item in ad_group_context_snapshot_keys if not item.get("has_ad_group_synthesis"))
+    missing_ad_group_product_performance_count = sum(1 for item in ad_group_context_snapshot_keys if not item.get("has_ad_group_product_performance"))
     missing_aba_context_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_aba_context"))
-    missing_evidence_gap_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_evidence_gap"))
-    missing_required_evidence_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_required_evidence"))
-    missing_action_boundary_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_action_boundary"))
+    missing_evidence_gap_count = sum(1 for item in object_review_chain_snapshot_keys if not item.get("has_evidence_gap"))
+    missing_required_evidence_count = sum(1 for item in object_review_chain_snapshot_keys if not item.get("has_required_evidence"))
+    missing_action_boundary_count = sum(1 for item in object_review_chain_snapshot_keys if not item.get("has_action_boundary"))
     missing_object_reference_count = sum(1 for item in snapshot_known_keys if item.get("has_object_reference") is False)
     unstable_object_id_count = len(identity_issues)
     issues = review_identity_audit_issues(readback_keys, identity_issues)
@@ -296,6 +306,8 @@ def review_identity_audit_summary(
         "missing_ai_admission_count": missing_ai_admission_count,
         "missing_search_term_boundary_count": missing_search_term_boundary_count,
         "missing_placement_boundary_count": missing_placement_boundary_count,
+        "missing_ad_product_coverage_count": missing_ad_product_coverage_count,
+        "missing_placement_performance_count": missing_placement_performance_count,
         "missing_targeting_evidence_count": missing_targeting_evidence_count,
         "missing_ad_group_synthesis_count": missing_ad_group_synthesis_count,
         "missing_ad_group_product_performance_count": missing_ad_group_product_performance_count,
@@ -332,20 +344,17 @@ def review_readback_key(effect: dict[str, Any]) -> dict[str, Any]:
         "has_ai_admission": effect.get("has_ai_admission"),
         "has_search_term_boundary": effect.get("has_search_term_boundary"),
         "has_placement_boundary": effect.get("has_placement_boundary"),
+        "has_ad_product_coverage": effect.get("has_ad_product_coverage"),
+        "has_placement_performance": effect.get("has_placement_performance"),
+        "has_targeting_evidence": effect.get("has_targeting_evidence"),
+        "has_ad_group_synthesis": effect.get("has_ad_group_synthesis"),
+        "has_ad_group_product_performance": effect.get("has_ad_group_product_performance"),
+        "has_aba_context": effect.get("has_aba_context"),
+        "has_evidence_gap": effect.get("has_evidence_gap"),
+        "has_required_evidence": effect.get("has_required_evidence"),
+        "has_action_boundary": effect.get("has_action_boundary"),
         "has_object_reference": effect.get("has_object_reference"),
     }
-    if item["object_type"] == "search_term":
-        item.update(
-            {
-                "has_targeting_evidence": effect.get("has_targeting_evidence"),
-                "has_ad_group_synthesis": effect.get("has_ad_group_synthesis"),
-                "has_ad_group_product_performance": effect.get("has_ad_group_product_performance"),
-                "has_aba_context": effect.get("has_aba_context"),
-                "has_evidence_gap": effect.get("has_evidence_gap"),
-                "has_required_evidence": effect.get("has_required_evidence"),
-                "has_action_boundary": effect.get("has_action_boundary"),
-            }
-        )
     return item
 
 
@@ -432,6 +441,79 @@ def review_identity_audit_issues(
                     "note": "复盘待办缺少“广告位边界”，不能证明当时人工判断已看过广告位证据层级。",
                 }
             )
+        if item.get("object_type") == "advertised_product":
+            if not item.get("has_ad_product_coverage"):
+                issues.append(
+                    {
+                        "issue_type": "missing_ad_product_coverage",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "广告商品复盘待办缺少“广告商品覆盖”，不能证明当时已回看广告 ASIN 投放证据。",
+                    }
+                )
+            if not item.get("has_ad_group_synthesis"):
+                issues.append(
+                    {
+                        "issue_type": "missing_ad_group_synthesis",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "广告商品复盘待办缺少“广告组合流判断”，不能证明当时已回看广告组容器、搜索词和广告位归因边界。",
+                    }
+                )
+            if not item.get("has_ad_group_product_performance"):
+                issues.append(
+                    {
+                        "issue_type": "missing_ad_group_product_performance",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "广告商品复盘待办缺少“同组投放商品表现”，不能证明当时已回看同广告组广告 ASIN 的承接差异。",
+                    }
+                )
+            if not item.get("has_evidence_gap"):
+                issues.append(
+                    {
+                        "issue_type": "missing_evidence_gap",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "广告商品复盘待办缺少“证据缺口”，不能证明当时已保留搜索词、广告位或单 ASIN 归因不可证明项。",
+                    }
+                )
+            if not item.get("has_required_evidence"):
+                issues.append(
+                    {
+                        "issue_type": "missing_required_evidence",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "广告商品复盘待办缺少“需要补证”，不能证明当时已保存后续人工补证路径。",
+                    }
+                )
+            if not item.get("has_action_boundary"):
+                issues.append(
+                    {
+                        "issue_type": "missing_action_boundary",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "广告商品复盘待办缺少“动作边界”，不能证明当时已限制为人工留痕和复盘。",
+                    }
+                )
         if item.get("object_type") == "search_term":
             if not item.get("has_targeting_evidence"):
                 issues.append(
@@ -515,6 +597,55 @@ def review_identity_audit_issues(
                         "object_id": item.get("object_id"),
                         "review_window": item.get("review_window"),
                         "note": "搜索词复盘待办缺少“动作边界”，不能证明当时已限制为人工留痕和复盘。",
+                    }
+                )
+        if item.get("object_type") == "placement":
+            if not item.get("has_placement_performance"):
+                issues.append(
+                    {
+                        "issue_type": "missing_placement_performance",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "广告位复盘待办缺少“广告位表现”，不能证明当时已回看广告位花费、订单、ACOS 和样本量。",
+                    }
+                )
+            if not item.get("has_evidence_gap"):
+                issues.append(
+                    {
+                        "issue_type": "missing_evidence_gap",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "广告位复盘待办缺少“证据缺口”，不能证明当时已保留广告位不能自动归因到搜索词、广告组或广告 ASIN 的边界。",
+                    }
+                )
+            if not item.get("has_required_evidence"):
+                issues.append(
+                    {
+                        "issue_type": "missing_required_evidence",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "广告位复盘待办缺少“需要补证”，不能证明当时已保存广告活动 / 广告组、搜索词和广告商品承接补证路径。",
+                    }
+                )
+            if not item.get("has_action_boundary"):
+                issues.append(
+                    {
+                        "issue_type": "missing_action_boundary",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "广告位复盘待办缺少“动作边界”，不能证明当时已限制为人工留痕和复盘。",
                     }
                 )
         if item.get("has_object_reference") is False:
@@ -937,6 +1068,8 @@ def review_audit_issue_reason(issues: list[dict[str, Any]]) -> str:
         "missing_ai_admission": "缺少 AI 准入",
         "missing_search_term_boundary": "缺少搜索词边界",
         "missing_placement_boundary": "缺少广告位边界",
+        "missing_ad_product_coverage": "缺少广告商品覆盖",
+        "missing_placement_performance": "缺少广告位表现",
         "missing_targeting_evidence": "缺少投放词证据",
         "missing_ad_group_synthesis": "缺少广告组合流判断",
         "missing_ad_group_product_performance": "缺少同组投放商品表现",

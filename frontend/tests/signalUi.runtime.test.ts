@@ -339,8 +339,8 @@ async function main() {
   assertIncludes(readinessSummary?.queueSeparation?.primary ?? "", reviewObjectLabel);
   assertIncludes(readinessSummary?.queueSeparation?.primary ?? "", nextLabel);
   assertIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "条证据");
-  assertIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "搜索词复核链缺口");
-  assertNotIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "搜索词复核链齐全");
+  assertIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "对象复核链缺口");
+  assertNotIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "对象复核链齐全");
   assertNotIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "对象引用缺口");
 
   const repairSummary = buildReviewEvidenceRepairSummary(repair);

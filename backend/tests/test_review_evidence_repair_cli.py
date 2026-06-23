@@ -372,6 +372,91 @@ def test_review_evidence_repair_treats_search_term_review_chain_gaps_as_repair_i
     assert "投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证、动作边界" in item["recommended_next_step"]
 
 
+def test_review_evidence_repair_treats_placement_review_chain_gaps_as_repair_items(monkeypatch) -> None:
+    readiness = make_missing_readiness(1)
+    readiness["review_identity_audit"]["issues"] = [
+        {
+            "issue_type": issue_type,
+            "signal_id": "sig-placement",
+            "action_id": "manual-action-placement",
+            "object_type": "placement",
+            "object_id": "Top of Search",
+            "review_window": "7d",
+            "note": "广告位复核链缺少证据。",
+        }
+        for issue_type in (
+            "missing_placement_performance",
+            "missing_evidence_gap",
+            "missing_required_evidence",
+            "missing_action_boundary",
+        )
+    ]
+    placement_action = SimpleNamespace(
+        id="manual-action-placement",
+        signal_id="sig-placement",
+        action_type="add_to_review",
+        shop_id="market:1",
+        market_id=1,
+        object_type="placement",
+        object_id="Top of Search",
+        object_label="Top of Search",
+        acted_at="2026-06-15T00:00:00+00:00",
+        evidence_snapshot=[],
+    )
+    placement_todos = [
+        SimpleNamespace(**{**placement_action.__dict__, "action_id": placement_action.id}, review_window="7d"),
+    ]
+    monkeypatch.setattr(review_evidence_repair, "build_review_readiness_payload", lambda **kwargs: readiness)
+    monkeypatch.setattr(review_evidence_repair, "load_manual_actions", lambda **kwargs: [placement_action])
+    monkeypatch.setattr(review_evidence_repair, "build_review_todos", lambda **kwargs: placement_todos)
+    monkeypatch.setattr(
+        review_evidence_repair,
+        "build_manual_action_preflight_payload",
+        lambda **kwargs: {
+            "status": "ready_for_explicit_manual_write",
+            "target": {
+                "signal_id": "sig-placement",
+                "action_type": "add_to_review",
+                "shop_id": "market:1",
+                "market_id": 1,
+                "object_type": "placement",
+                "object_id": "Top of Search",
+                "object_label": "Top of Search",
+            },
+            "evidence_snapshot_preview": {
+                "status": "ready",
+                "item_count": 4,
+                "items": [
+                    {"label": "排查路径", "value": "广告位 -> 广告活动 / 广告组"},
+                    {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
+                    {"label": "搜索词边界", "value": "搜索词只作背景"},
+                    {"label": "广告位边界", "value": "Top of Search 只说明广告位表现"},
+                ],
+            },
+            "blockers": [],
+        },
+    )
+
+    payload = review_evidence_repair.build_review_evidence_repair_payload(selected_market_id=1)
+    item = payload["items"][0]
+
+    assert payload["status"] == "blocked_by_legacy_evidence_gap"
+    assert payload["counts"]["repair_issue_count"] == 4
+    assert item["issue_types"] == [
+        "missing_action_boundary",
+        "missing_evidence_gap",
+        "missing_placement_performance",
+        "missing_required_evidence",
+    ]
+    assert item["current_preflight"]["has_placement_performance"] is False
+    assert item["current_preflight"]["has_evidence_gap"] is False
+    assert item["current_preflight"]["has_required_evidence"] is False
+    assert item["current_preflight"]["has_action_boundary"] is False
+    assert item["current_preflight"]["missing_required_labels"] == ["广告位表现", "证据缺口", "需要补证", "动作边界"]
+    assert item["can_rebuild_evidence_preview"] is False
+    assert "广告位表现、证据缺口、需要补证、动作边界" in item["recommended_next_step"]
+
+
 def test_review_evidence_repair_blocks_current_signal_mismatch(monkeypatch) -> None:
     monkeypatch.setattr(review_evidence_repair, "build_review_readiness_payload", lambda **kwargs: make_missing_readiness(1))
     monkeypatch.setattr(review_evidence_repair, "load_manual_actions", lambda **kwargs: [make_legacy_action()])

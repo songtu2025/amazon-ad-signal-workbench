@@ -2080,7 +2080,7 @@ assertEqual(separatedReviewQueueGate?.queueSeparation?.items[0].label, "已加�
 assertEqual(separatedReviewQueueGate?.queueSeparation?.items[0].value, "search_term / beach essentials");
 assertIncludes(separatedReviewQueueGate?.queueSeparation?.items[1].value ?? "", "7 天 2026-06-28");
 assertIncludes(separatedReviewQueueGate?.queueSeparation?.items[1].value ?? "", "14 天 2026-07-05");
-assertEqual(separatedReviewQueueGate?.queueSeparation?.items[2].value, "2 个待办 / 17 条证据 / 搜索词复核链齐全");
+assertEqual(separatedReviewQueueGate?.queueSeparation?.items[2].value, "2 个待办 / 17 条证据 / 对象复核链齐全");
 assertEqual(separatedReviewQueueGate?.queueSeparation?.items[3].value, "search_term / boys sunglasses");
 assertEqual(separatedReviewQueueGate?.queueSeparation?.items[4].value, "不同对象，分开处理");
 assertIncludes(separatedReviewQueueGate?.queueSeparation?.boundary ?? "", "不能混合归因");
@@ -2428,10 +2428,10 @@ const searchTermChainBlockedReviewEvidenceRepair = buildReviewEvidenceRepairSumm
   next_action: "当前没有历史证据快照缺口；继续等待复盘窗口，未到期前不保存 ReviewRecord。",
 });
 assertEqual(searchTermChainBlockedReviewEvidenceRepair?.status, "blocked");
-assertIncludes(searchTermChainBlockedReviewEvidenceRepair?.primary ?? "", "搜索词复核链仍被复盘证据门禁阻断");
-assertIncludes(searchTermChainBlockedReviewEvidenceRepair?.detail ?? "", "旧快照缺少搜索词复核链标签");
+assertIncludes(searchTermChainBlockedReviewEvidenceRepair?.primary ?? "", "对象复核链仍被复盘证据门禁阻断");
+assertIncludes(searchTermChainBlockedReviewEvidenceRepair?.detail ?? "", "旧快照缺少对象复核链标签");
 assertEqual(searchTermChainBlockedReviewEvidenceRepair?.items[0].value, "0 个");
-assertEqual(searchTermChainBlockedReviewEvidenceRepair?.items[2].label, "搜索词复核链");
+assertEqual(searchTermChainBlockedReviewEvidenceRepair?.items[2].label, "对象复核链");
 assertEqual(searchTermChainBlockedReviewEvidenceRepair?.items[2].value, "阻断");
 assertIncludes(searchTermChainBlockedReviewEvidenceRepair?.nextSteps[0].detail ?? "", "投放词证据");
 assertIncludes(searchTermChainBlockedReviewEvidenceRepair?.nextSteps[0].detail ?? "", "广告组合流判断");

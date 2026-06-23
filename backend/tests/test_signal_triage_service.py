@@ -2841,6 +2841,12 @@ def test_review_readiness_next_action_waits_when_review_effects_are_not_due(monk
         SimpleNamespace(label="AI 准入", value="ready_for_manual_confirmation"),
         SimpleNamespace(label="搜索词边界", value="搜索词只说明同广告组上下文"),
         SimpleNamespace(label="广告位边界", value="广告位证据缺口不能自动归因"),
+        SimpleNamespace(label="广告商品覆盖", value="B016EXMW02 已回看广告投放证据"),
+        SimpleNamespace(label="广告组合流判断", value="B016EXMW02 必须按广告组容器回看搜索词和广告位"),
+        SimpleNamespace(label="同组投放商品表现", value="同组广告 ASIN 承接差异已回看"),
+        SimpleNamespace(label="证据缺口", value="不能把搜索词或广告位自动归因到 B016EXMW02"),
+        SimpleNamespace(label="需要补证", value="补齐投放词维护状态、广告位和主推策略"),
+        SimpleNamespace(label="动作边界", value="只允许人工留痕和复盘"),
     ]
     todos = [
         SimpleNamespace(signal_id="sig-ad-product", market_id=1, review_window="7d", is_due=False, evidence_snapshot=evidence_snapshot),
@@ -2975,11 +2981,140 @@ def test_review_readiness_blocks_legacy_todos_missing_search_term_and_placement_
     assert audit["missing_ai_admission_count"] == 0
     assert audit["missing_search_term_boundary_count"] == 2
     assert audit["missing_placement_boundary_count"] == 2
-    assert {issue["issue_type"] for issue in audit["issues"]} == {"missing_search_term_boundary", "missing_placement_boundary"}
+    issue_types = {issue["issue_type"] for issue in audit["issues"]}
+    assert "missing_search_term_boundary" in issue_types
+    assert "missing_placement_boundary" in issue_types
+    assert "missing_ad_product_coverage" in issue_types
+    assert "missing_ad_group_synthesis" in issue_types
+    assert "missing_ad_group_product_performance" in issue_types
+    assert "missing_evidence_gap" in issue_types
+    assert "missing_required_evidence" in issue_types
+    assert "missing_action_boundary" in issue_types
     assert "缺少搜索词边界 2 条" in payload["review_wait_summary"]["message"]
     assert "缺少广告位边界 2 条" in payload["review_wait_summary"]["message"]
+    assert "缺少广告商品覆盖 2 条" in payload["review_wait_summary"]["message"]
     assert payload["review_wait_summary"]["status"] == "blocked_by_review_evidence_gap"
     assert "到期后也不能直接保存复盘记录" in payload["next_action"]
+
+
+def test_review_readiness_blocks_object_review_chain_gaps(monkeypatch) -> None:
+    ad_product_snapshot = [
+        SimpleNamespace(label="排查路径", value="Parent ASIN -> 广告 ASIN B016EXMW02"),
+        SimpleNamespace(label="AI 准入", value="ready_for_manual_confirmation"),
+        SimpleNamespace(label="搜索词边界", value="搜索词只作同广告组上下文"),
+        SimpleNamespace(label="广告位边界", value="广告位只作同广告组上下文"),
+    ]
+    placement_snapshot = [
+        SimpleNamespace(label="排查路径", value="Parent ASIN -> 广告位 Top of Search"),
+        SimpleNamespace(label="AI 准入", value="ready_for_manual_confirmation"),
+        SimpleNamespace(label="搜索词边界", value="搜索词只作背景"),
+        SimpleNamespace(label="广告位边界", value="Top of Search 只说明流量位置表现"),
+    ]
+    todos = [
+        SimpleNamespace(
+            signal_id="sig-ad-product",
+            action_id="manual-action-ad-product",
+            market_id=1,
+            object_type="advertised_product",
+            object_id="B016EXMW02",
+            object_label="B016EXMW02",
+            review_window="7d",
+            is_due=False,
+            evidence_snapshot=ad_product_snapshot,
+        ),
+        SimpleNamespace(
+            signal_id="sig-placement",
+            action_id="manual-action-placement",
+            market_id=1,
+            object_type="placement",
+            object_id="Top of Search",
+            object_label="Top of Search",
+            review_window="7d",
+            is_due=False,
+            evidence_snapshot=placement_snapshot,
+        ),
+    ]
+
+    def fake_effect(signal_id, *, review_window, market_id=None, signal_rows=None):
+        if signal_id == "sig-placement":
+            return SimpleNamespace(
+                signal_id=signal_id,
+                action_id="manual-action-placement",
+                action_type="add_to_review",
+                shop_id="market:1",
+                market_id=market_id,
+                review_window=review_window,
+                status="not_ready",
+                result="unclear",
+                message="复盘效果暂不可计算：7d 复盘窗口尚未到期",
+                acted_at="2026-06-15T00:00:00+00:00",
+                due_at="2026-06-22T00:00:00+00:00",
+                object_type="placement",
+                object_id="Top of Search",
+                object_label="Top of Search",
+                before_start_date=None,
+                before_end_date=None,
+                after_start_date=None,
+                after_end_date=None,
+            )
+        return SimpleNamespace(
+            signal_id=signal_id,
+            action_id="manual-action-ad-product",
+            action_type="add_to_review",
+            shop_id="market:1",
+            market_id=market_id,
+            review_window=review_window,
+            status="not_ready",
+            result="unclear",
+            message="复盘效果暂不可计算：7d 复盘窗口尚未到期",
+            acted_at="2026-06-15T00:00:00+00:00",
+            due_at="2026-06-22T00:00:00+00:00",
+            object_type="advertised_product",
+            object_id="B016EXMW02",
+            object_label="B016EXMW02",
+            before_start_date=None,
+            before_end_date=None,
+            after_start_date=None,
+            after_end_date=None,
+        )
+
+    monkeypatch.setattr(signal_triage, "load_manual_actions", lambda market_id=None: [SimpleNamespace(signal_id="sig-ad-product"), SimpleNamespace(signal_id="sig-placement")])
+    monkeypatch.setattr(signal_triage, "load_review_records", lambda market_id=None: [])
+    monkeypatch.setattr(signal_triage, "load_signal_rows_from_success_snapshots", lambda: [{"row_id": "row-1"}])
+    monkeypatch.setattr(signal_triage, "build_review_todos", lambda market_id=None: todos)
+    monkeypatch.setattr(signal_triage, "build_review_effect_result", fake_effect)
+    monkeypatch.setattr(
+        signal_triage,
+        "load_snapshot_status",
+        lambda: SimpleNamespace(
+            model_dump=lambda mode="json": {
+                "has_snapshot": True,
+                "snapshot_id": "snapshot-not-ready",
+                "status": "success",
+                "start_date": "2026-06-08",
+                "end_date": "2026-06-15",
+            }
+        ),
+    )
+
+    payload = signal_triage.build_review_readiness_payload(selected_market_id=1)
+    audit = payload["review_identity_audit"]
+
+    assert audit["status"] == "blocked"
+    assert audit["missing_ad_product_coverage_count"] == 1
+    assert audit["missing_placement_performance_count"] == 1
+    assert audit["missing_ad_group_synthesis_count"] == 1
+    assert audit["missing_ad_group_product_performance_count"] == 1
+    assert audit["missing_evidence_gap_count"] == 2
+    assert audit["missing_required_evidence_count"] == 2
+    assert audit["missing_action_boundary_count"] == 2
+    issue_types = [issue["issue_type"] for issue in audit["issues"]]
+    assert "missing_ad_product_coverage" in issue_types
+    assert "missing_placement_performance" in issue_types
+    assert issue_types.count("missing_evidence_gap") == 2
+    assert "缺少广告商品覆盖 1 条" in payload["review_wait_summary"]["message"]
+    assert "缺少广告位表现 1 条" in payload["review_wait_summary"]["message"]
+    assert "缺少动作边界 2 条" in payload["review_wait_summary"]["message"]
 
 
 def test_review_readiness_blocks_legacy_todos_without_evidence_snapshot(monkeypatch) -> None:
