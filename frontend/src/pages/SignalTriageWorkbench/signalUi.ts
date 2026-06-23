@@ -3487,9 +3487,9 @@ function ruleFeedbackDiagnosisPathText(path: RuleFeedbackDiagnosisPathForUi | nu
 function ruleFeedbackEvidenceGroupsText(groups: RuleFeedbackRecordForUi["evidence_groups"]) {
   const parts = (groups ?? [])
     .filter((group) => group.label && group.value)
-    .slice(0, 4)
+    .slice(0, 6)
     .map((group) => `${group.label}：${group.value}`);
-  return parts.length ? `；证据上下文：${parts.join("；")}` : "";
+  return parts.length ? `；广告搜索词复核证据：${parts.join("；")}` : "";
 }
 
 export function signalTriageDepthText(summary: SignalTriageSummaryForUi | null | undefined): string {

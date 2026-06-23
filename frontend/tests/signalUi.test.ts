@@ -2668,7 +2668,7 @@ const triageReviewFeedbackSummary = {
             boundary: "worse 只能触发人工复核阈值、证据来源和建议动作；不自动改规则，不自动执行广告动作。",
           },
           evidence_drilldown: {
-            summary: "广告商品投放行 0 条，覆盖广告活动 0 个 / 广告组 0 个；同广告组搜索词上下文 1 条、广告位上下文 0 条；搜索词和广告位只说明同广告组上下文，不能自动归因到该广告 ASIN。",
+            summary: "搜索词表现行 1 条，覆盖广告活动 1 个 / 广告组 1 个；花费 28.50，订单 0；搜索词只能说明广告活动和广告组下的用户搜索表现，不能自动归因到单个广告 ASIN。",
           },
           diagnosis_path: {
             path: "搜索词 -> 广告活动 / 广告组 -> 投放词结构 -> 广告 ASIN 人工复核",
@@ -2681,10 +2681,28 @@ const triageReviewFeedbackSummary = {
             next_manual_step: "只用于回看该复盘样本的原始诊断路径；继续人工复核，不自动改规则，不自动执行广告动作。",
           },
           evidence_groups: [
-            { group_id: "product_metrics", label: "商品指标", value: "广告商品投放行 0 条" },
-            { group_id: "search_term_context", label: "搜索词上下文", value: "1 条" },
-            { group_id: "placement_context", label: "广告位上下文", value: "0 条" },
-            { group_id: "boundary", label: "边界提示", value: "搜索词和广告位只说明同广告组上下文，不能自动归因到该广告 ASIN。" },
+            {
+              group_id: "parent_search_term_review",
+              label: "Parent ASIN 广告搜索词表现复核",
+              value: "当前诊断入口下广告用户搜索词表现行 1 条；用于聚合同类搜索词表现，再进入具体 SearchTerm 人工复核",
+            },
+            { group_id: "ad_group_boundary", label: "广告组边界", value: "广告活动 1 个 / 广告组 1 个；广告组是投放容器，不是单个商品" },
+            {
+              group_id: "targeting_context",
+              label: "投放词上下文",
+              value: "1 个投放词 / 搜索词表现行 1 条；投放词：beach essentials。这些字段来自搜索词表现行，不代表完整关键词库，不能自动加词、否词或调价。",
+            },
+            { group_id: "placement_boundary", label: "广告位边界", value: "广告位上下文 0 条；缺少广告位证据时不能判断广告位影响" },
+            {
+              group_id: "snapshot_review_chain",
+              label: "复盘证据链覆盖",
+              value: "已覆盖 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景",
+            },
+            {
+              group_id: "attribution_boundary",
+              label: "归因边界",
+              value: "搜索词只能说明广告活动和广告组下的用户搜索表现，不能自动归因到单个广告 ASIN。",
+            },
           ],
         },
         {
@@ -2770,12 +2788,15 @@ assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "actionability_sta
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "诊断路径：搜索词 -> 广告活动 / 广告组 -> 投放词结构 -> 广告 ASIN 人工复核");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "路径证据：搜索词表现：花费 28.50 / 订单 0 / 销售额 0.00");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "人工下一步：只用于回看该复盘样本的原始诊断路径");
-assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "证据回看：广告商品投放行 0 条");
-assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "搜索词上下文 1 条");
-assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "证据上下文：商品指标：广告商品投放行 0 条");
-assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "搜索词上下文：1 条");
-assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "广告位上下文：0 条");
-assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "边界提示：搜索词和广告位只说明同广告组上下文");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "证据回看：搜索词表现行 1 条");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "覆盖广告活动 1 个 / 广告组 1 个");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "广告搜索词复核证据：Parent ASIN 广告搜索词表现复核");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "当前诊断入口下广告用户搜索词表现行 1 条");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "广告组边界：广告活动 1 个 / 广告组 1 个");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "投放词上下文：1 个投放词 / 搜索词表现行 1 条");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "广告位边界：广告位上下文 0 条");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "复盘证据链覆盖：已覆盖 广告组合流判断");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "归因边界：搜索词只能说明广告活动和广告组下的用户搜索表现");
 assertIncludes(ruleFeedbackPrioritySummary?.records[1] ?? "", "improved / opportunity / advertised_product / B016EXMW02 / 14d");
 assertIncludes(ruleFeedbackPrioritySummary?.records[1] ?? "", "保存快照：0 条");
 assertIncludes(ruleFeedbackPrioritySummary?.records[1] ?? "", "缺口：保存快照 / 排查路径 / AI 准入");

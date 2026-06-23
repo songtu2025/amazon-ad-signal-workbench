@@ -5650,7 +5650,7 @@ def _review_feedback_record_items(
                 "diagnosis_snapshot": _review_record_snapshot_item(evidence_snapshot, "排查路径"),
                 "ai_admission_snapshot": _review_record_snapshot_item(evidence_snapshot, "AI 准入"),
                 "evidence_drilldown": evidence_drilldown,
-                "evidence_groups": _review_feedback_evidence_groups(evidence_drilldown),
+                "evidence_groups": _review_feedback_evidence_groups(evidence_drilldown, evidence_snapshot),
                 "diagnosis_path": _review_feedback_diagnosis_path(evidence_drilldown),
             }
         )
@@ -5695,15 +5695,17 @@ def _review_feedback_metric_window(record: Any) -> dict[str, str] | None:
     return {"before": f"{before_start} 至 {before_end}", "after": f"{after_start} 至 {after_end}"}
 
 
-def _review_feedback_evidence_groups(drilldown: dict[str, Any] | None) -> list[dict[str, str]]:
+def _review_feedback_evidence_groups(
+    drilldown: dict[str, Any] | None,
+    evidence_snapshot: list[dict[str, str]] | None = None,
+) -> list[dict[str, str]]:
     if not isinstance(drilldown, dict):
         return []
     groups: list[dict[str, str]] = []
     direct_count = _int(drilldown.get("direct_ad_product_row_count"))
     metric_summary = _dict(drilldown.get("metric_summary"))
     if _string(metric_summary.get("basis")) == "search_term_daily_metrics":
-        row_count = _int(metric_summary.get("row_count")) or 0
-        groups.append({"group_id": "search_term_metrics", "label": "搜索词指标", "value": f"搜索词表现行 {row_count} 条"})
+        return _review_feedback_search_term_evidence_groups(drilldown, evidence_snapshot or [])
     elif direct_count is not None:
         groups.append({"group_id": "product_metrics", "label": "商品指标", "value": f"广告商品投放行 {direct_count} 条"})
     elif metric_summary:
@@ -5722,6 +5724,99 @@ def _review_feedback_evidence_groups(drilldown: dict[str, Any] | None) -> list[d
     if boundary:
         groups.append({"group_id": "boundary", "label": "边界提示", "value": boundary})
     return groups
+
+
+def _review_feedback_search_term_evidence_groups(
+    drilldown: dict[str, Any],
+    evidence_snapshot: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    metric_summary = _dict(drilldown.get("metric_summary"))
+    row_count = _int(metric_summary.get("row_count")) or 0
+    campaign_count = _review_feedback_list_count(drilldown.get("campaigns"))
+    ad_group_count = _review_feedback_list_count(drilldown.get("ad_groups"))
+    placement_count = _int(drilldown.get("placement_context_count")) or 0
+    targeting_value = _review_feedback_business_block_value(drilldown, "targeting_context") or "投放词证据待补齐"
+    boundary = _string(drilldown.get("boundary")).strip()
+    placement_value = (
+        f"广告位上下文 {placement_count} 条；可辅助判断广告位影响"
+        if placement_count > 0
+        else "广告位上下文 0 条；缺少广告位证据时不能判断广告位影响"
+    )
+    groups = [
+        {
+            "group_id": "parent_search_term_review",
+            "label": "Parent ASIN 广告搜索词表现复核",
+            "value": f"当前诊断入口下广告用户搜索词表现行 {row_count} 条；用于聚合同类搜索词表现，再进入具体 SearchTerm 人工复核",
+        },
+        {
+            "group_id": "ad_group_boundary",
+            "label": "广告组边界",
+            "value": f"广告活动 {campaign_count} 个 / 广告组 {ad_group_count} 个；广告组是投放容器，不是单个商品",
+        },
+        {"group_id": "targeting_context", "label": "投放词上下文", "value": targeting_value},
+        {"group_id": "placement_boundary", "label": "广告位边界", "value": placement_value},
+        {
+            "group_id": "snapshot_review_chain",
+            "label": "复盘证据链覆盖",
+            "value": _review_feedback_search_term_snapshot_coverage(evidence_snapshot),
+        },
+    ]
+    if boundary:
+        groups.append({"group_id": "attribution_boundary", "label": "归因边界", "value": boundary})
+    return groups
+
+
+def _review_feedback_list_count(value: Any) -> int:
+    if not isinstance(value, list):
+        return 0
+    return len([item for item in value if _string(item).strip()])
+
+
+def _review_feedback_business_block_value(drilldown: dict[str, Any], block_id: str) -> str:
+    blocks = drilldown.get("business_evidence_blocks")
+    if not isinstance(blocks, list):
+        return ""
+    for block in blocks:
+        if not isinstance(block, dict):
+            continue
+        if _string(block.get("block_id")) != block_id:
+            continue
+        value = _string(block.get("value")).strip()
+        detail = _string(block.get("detail")).strip()
+        return f"{value}；{detail}" if value and detail else value or detail
+    return ""
+
+
+def _review_feedback_search_term_snapshot_coverage(evidence_snapshot: list[dict[str, str]]) -> str:
+    required_labels = [
+        ("广告组合流判断", ("广告组合流判断",)),
+        ("同组投放商品表现", ("同组投放商品表现",)),
+        ("投放词证据", ("投放词证据", "投放词结构")),
+        ("搜索词边界", ("搜索词边界", "对象边界")),
+        ("广告位边界", ("广告位边界", "广告位证据缺口")),
+        ("ABA 背景", ("ABA 背景", "ABA语义参考词", "ABA周期", "ABA匹配边界")),
+    ]
+    covered: list[str] = []
+    missing: list[str] = []
+    for label, aliases in required_labels:
+        if _review_feedback_snapshot_has_label(evidence_snapshot, aliases):
+            covered.append(label)
+        else:
+            missing.append(label)
+    if not evidence_snapshot:
+        return "缺口：保存快照为空，不能回看广告搜索词表现复核链"
+    if missing:
+        covered_text = " / ".join(covered) if covered else "暂无"
+        return f"已覆盖 {covered_text}；缺口：{' / '.join(missing)}"
+    return f"已覆盖 {' / '.join(covered)}"
+
+
+def _review_feedback_snapshot_has_label(evidence_snapshot: list[dict[str, str]], aliases: tuple[str, ...]) -> bool:
+    for item in evidence_snapshot:
+        label = _string(item.get("label")).strip()
+        if label in aliases:
+            return True
+    return False
 
 
 def _review_feedback_diagnosis_path(drilldown: dict[str, Any] | None) -> dict[str, Any] | None:
