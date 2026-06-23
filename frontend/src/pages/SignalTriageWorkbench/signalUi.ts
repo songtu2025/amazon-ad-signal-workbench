@@ -1492,6 +1492,29 @@ function stringValue(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function searchTermDisplayNameFromIdentity(objectId?: string | null, objectLabel?: string | null) {
+  const label = stringValue(objectLabel);
+  if (label && !label.startsWith("search_term:")) return label;
+  const id = stringValue(objectId);
+  if (!id) return "";
+  if (!id.startsWith("search_term:")) return id;
+  const [, , ...queryParts] = id.split(":");
+  return queryParts.join(":").trim() || id;
+}
+
+function objectIdentityDisplayText(objectType?: string | null, objectId?: string | null, objectLabel?: string | null) {
+  const type = stringValue(objectType);
+  const id = stringValue(objectId);
+  const label = stringValue(objectLabel);
+  if (type === "search_term") {
+    const searchTerm = searchTermDisplayNameFromIdentity(id, label);
+    if (searchTerm && id && searchTerm !== id) return `具体 SearchTerm：${searchTerm}；稳定对象：${type} / ${id}`;
+    if (searchTerm) return `具体 SearchTerm：${searchTerm}`;
+  }
+  if (type && id) return `${type} / ${id}`;
+  return id || label || "";
+}
+
 export function signalScopedStateKey(signalId: string, marketId?: number | null) {
   return `${marketId ?? "unknown"}:${signalId}`;
 }
@@ -2278,14 +2301,12 @@ export function manualActionQueueTargetSwitchSummary(
     stringValue(recommended?.stable_object_id) ||
     stringValue(recommended?.object_id) ||
     "推荐对象";
-  const recommendedObject = uniqueNonEmpty([
-    recommended?.object_type,
-    recommended?.stable_object_id || recommended?.object_id || recommendedLabel,
-  ]).join(" / ");
   const recommendedObjectText =
-    recommendedObject && recommendedLabel && !recommendedObject.includes(recommendedLabel)
-      ? `${recommendedObject} / ${recommendedLabel}`
-      : recommendedObject || recommendedLabel;
+    objectIdentityDisplayText(
+      stringValue(recommended?.object_type),
+      stringValue(recommended?.stable_object_id || recommended?.object_id || recommendedLabel),
+      recommendedLabel,
+    ) || recommendedLabel;
   const nextSignalId = stringValue(nextPreview?.signal_id) || stringValue(nextCandidate.signal_id);
   const nextLabel =
     stringValue(nextPreview?.object_label) ||
@@ -2293,12 +2314,12 @@ export function manualActionQueueTargetSwitchSummary(
     stringValue(nextCandidate.stable_object_id) ||
     stringValue(nextCandidate.object_id) ||
     "下一个未留痕候选";
-  const nextObject = uniqueNonEmpty([
-    nextPreview?.object_type || nextCandidate.object_type,
-    nextPreview?.object_id || nextCandidate.stable_object_id || nextCandidate.object_id || nextLabel,
-  ]).join(" / ");
   const nextObjectText =
-    nextObject && nextLabel && !nextObject.includes(nextLabel) ? `${nextObject} / ${nextLabel}` : nextObject || nextLabel;
+    objectIdentityDisplayText(
+      stringValue(nextPreview?.object_type || nextCandidate.object_type),
+      stringValue(nextPreview?.object_id || nextCandidate.stable_object_id || nextCandidate.object_id || nextLabel),
+      nextLabel,
+    ) || nextLabel;
   const selectedIsRecommended = Boolean(selectedSignalId && selectedSignalId === stringValue(recommended?.signal_id));
   const selectedIsNext = Boolean(selectedSignalId && selectedSignalId === nextSignalId);
   const tone: ManualActionQueueTargetSwitchSummary["tone"] = selectedIsRecommended ? "blocked" : selectedIsNext ? "ready" : "waiting";
@@ -3015,7 +3036,10 @@ export function buildReviewEvidenceRepairSummary(
   const sampleItems = (payload.items ?? [])
     .slice(0, 3)
     .map((item) => {
-      const objectText = uniqueNonEmpty([item.object_type, item.object_label || item.object_id]).join(" / ") || "历史待办对象";
+      const objectText =
+        objectIdentityDisplayText(item.object_type, item.object_id, item.object_label) ||
+        uniqueNonEmpty([item.object_type, item.object_label || item.object_id]).join(" / ") ||
+        "历史待办对象";
       const windows = uniqueNonEmpty(item.review_windows ?? []).join(" / ") || "复盘窗口待识别";
       const action = item.action_id ? `动作 ${item.action_id}` : "历史动作";
       const nextStep = item.recommended_next_step?.trim() || "需要先 dry-run 作废旧待办，再重新人工留痕。";
@@ -3257,7 +3281,10 @@ function reviewRepairVoidPlanItem(
   if (!voidPlan) return null;
   const actionId = voidPlan.action_id?.trim() || item.action_id?.trim() || "";
   const statusText = reviewRepairVoidPlanStatusText(voidPlan.status);
+  const objectType = voidPlan.expected_object_type || item.object_type;
+  const objectId = voidPlan.expected_object_id || item.object_id;
   const objectText =
+    objectIdentityDisplayText(objectType, objectId, item.object_label) ||
     uniqueNonEmpty([voidPlan.expected_object_type, voidPlan.expected_object_id]).join(" / ") ||
     uniqueNonEmpty([item.object_type, item.object_id]).join(" / ");
   const reviewWindows =

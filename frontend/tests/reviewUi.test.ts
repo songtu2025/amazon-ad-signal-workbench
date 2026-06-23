@@ -365,6 +365,16 @@ assertEqual(
   reviewTargetReadbackText(selectedStableObjectManualActions[0]),
   "店铺：market:1；站点：market_id 1；对象：advertised_product / B016EXMW02",
 );
+assertEqual(
+  reviewTargetReadbackText({
+    shop_id: "market:1",
+    market_id: 1,
+    object_type: "search_term",
+    object_id: "search_term:1:beach essentials",
+    object_label: "beach essentials",
+  }),
+  "店铺：market:1；站点：market_id 1；对象：具体 SearchTerm：beach essentials；稳定对象：search_term / search_term:1:beach essentials",
+);
 
 const notReadyEffect: ReviewEffectForUi = {
   signal_id: "sig-previous-snapshot",
@@ -1595,16 +1605,20 @@ const manualActionIdentityGateItems = buildManualActionIdentityGateItems({
 assertEqual(manualActionIdentityGateItems.length, 4);
 assertEqual(manualActionIdentityGateItems[0].label, "当前信号");
 assertIncludes(manualActionIdentityGateItems[0].value, "sig-long-tail-beach-current");
+assertIncludes(manualActionIdentityGateItems[0].detail, "具体 SearchTerm：beach essentials for toddlers 1-3");
 assertIncludes(manualActionIdentityGateItems[0].detail, "search_term / search_term:1:beach essentials for toddlers 1-3");
 assertEqual(manualActionIdentityGateItems[1].label, "预检目标");
 assertEqual(manualActionIdentityGateItems[1].value, "身份一致");
+assertIncludes(manualActionIdentityGateItems[1].detail, "具体 SearchTerm：beach essentials for toddlers 1-3");
 assertIncludes(manualActionIdentityGateItems[1].detail, "will_write=false");
 assertEqual(manualActionIdentityGateItems[2].label, "留痕读回");
 assertEqual(manualActionIdentityGateItems[2].value, "已读回");
 assertIncludes(manualActionIdentityGateItems[2].detail, "manual-action-search-term");
+assertIncludes(manualActionIdentityGateItems[2].detail, "具体 SearchTerm：beach essentials for toddlers 1-3");
 assertEqual(manualActionIdentityGateItems[3].label, "复盘待办");
 assertEqual(manualActionIdentityGateItems[3].value, "7d 已读回");
 assertIncludes(manualActionIdentityGateItems[3].detail, "action_id manual-action-search-term");
+assertIncludes(manualActionIdentityGateItems[3].detail, "复盘对象：具体 SearchTerm：beach essentials for toddlers 1-3");
 assertIncludes(manualActionIdentityGateItems[3].detail, "待办证据快照：7d 4 条");
 assertIncludes(manualActionIdentityGateItems[3].detail, "可回看对象引用");
 const prefixedSearchTermIdentityGateItems = buildManualActionIdentityGateItems({
@@ -1643,8 +1657,10 @@ const prefixedSearchTermIdentityGateItems = buildManualActionIdentityGateItems({
   fallbackMarketId: 1,
 });
 assertEqual(prefixedSearchTermIdentityGateItems[0].value, "sig-opportunity-search-term-1-beach-essentials");
+assertIncludes(prefixedSearchTermIdentityGateItems[0].detail, "具体 SearchTerm：beach essentials");
 assertIncludes(prefixedSearchTermIdentityGateItems[0].detail, "search_term / search_term:1:beach essentials");
 assertEqual(prefixedSearchTermIdentityGateItems[1].value, "身份一致");
+assertIncludes(prefixedSearchTermIdentityGateItems[1].detail, "具体 SearchTerm：beach essentials");
 assertNotIncludes(prefixedSearchTermIdentityGateItems[1].detail, "object_id 不一致");
 const identityGateItemsWithEvidenceGap = buildManualActionIdentityGateItems({
   signal: {

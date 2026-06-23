@@ -1023,6 +1023,44 @@ const selectedNextRouteSplitText = JSON.stringify(selectedNextRouteSplit);
 assertIncludes(selectedNextRouteSplitText, "已留痕旧对象");
 assertIncludes(selectedNextRouteSplitText, "ManualAction 1 条 / ReviewTodo 2 条");
 assertIncludes(selectedNextRouteSplitText, "待授权新对象");
+
+const searchTermHandledWithNextSummary = {
+  recommended_manual_status: {
+    has_manual_action: true,
+    object_label: "beach essentials",
+    object_id: "search_term:1:beach essentials",
+  },
+  recommended_candidate: {
+    signal_id: "sig-opportunity-search-term-1-beach-essentials",
+    object_type: "search_term",
+    object_label: "beach essentials",
+    object_id: "search_term:1:beach essentials",
+    stable_object_id: "search_term:1:beach essentials",
+  },
+  next_unhandled_candidate: {
+    signal_id: "sig-opportunity-search-term-1-beach-vacation-essentials",
+    object_type: "search_term",
+    object_label: "beach vacation essentials",
+    object_id: "search_term:1:beach vacation essentials",
+    stable_object_id: "search_term:1:beach vacation essentials",
+    manual_action_preview: {
+      signal_id: "sig-opportunity-search-term-1-beach-vacation-essentials",
+      action_type: "add_to_review",
+      object_type: "search_term",
+      object_id: "search_term:1:beach vacation essentials",
+      object_label: "beach vacation essentials",
+      review_windows: ["7d", "14d"],
+    },
+  },
+};
+const selectedSearchTermTargetSwitch = manualActionQueueTargetSwitchSummary(
+  searchTermHandledWithNextSummary,
+  "sig-opportunity-search-term-1-beach-essentials",
+);
+assertIncludes(selectedSearchTermTargetSwitch?.diagnosisObject ?? "", "具体 SearchTerm：beach essentials");
+assertIncludes(selectedSearchTermTargetSwitch?.diagnosisObject ?? "", "稳定对象：search_term / search_term:1:beach essentials");
+assertIncludes(selectedSearchTermTargetSwitch?.writeTarget ?? "", "具体 SearchTerm：beach vacation essentials");
+assertIncludes(selectedSearchTermTargetSwitch?.writeTarget ?? "", "稳定对象：search_term / search_term:1:beach vacation essentials");
 assertIncludes(selectedNextRouteSplitText, "ManualAction 0 条 / ReviewTodo 0 条");
 assertIncludes(selectedNextRouteSplitText, "授权后预期：ManualAction 1 条 / ReviewTodo 2 条");
 assertIncludes(selectedNextRouteSplitText, "ready 只代表可人工确认");
@@ -2400,7 +2438,8 @@ assertEqual(previewOnlyReviewEvidenceRepair?.status, "blocked");
 assertEqual(previewOnlyReviewEvidenceRepair?.items[2].value, "1 个");
 assertEqual(previewOnlyReviewEvidenceRepair?.items[3].value, "0 个");
 assertIncludes(previewOnlyReviewEvidenceRepair?.detail ?? "", "只能重建当前证据预览");
-assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "search_term / beach essentials");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "具体 SearchTerm：beach essentials");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "稳定对象：search_term / search_term:1:beach essentials");
 assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "证据快照对象不一致");
 assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "可重建证据预览");
 assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "当前不可重新留痕");

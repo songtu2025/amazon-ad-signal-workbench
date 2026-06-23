@@ -782,7 +782,8 @@ export function reviewTargetReadbackText(
   const marketText = target.market_id != null ? `站点：market_id ${target.market_id}` : "站点：待补充";
   const objectType = String(target.object_type ?? "").trim() || "对象";
   const objectId = String(target.object_id ?? target.object_label ?? "").trim() || "待补充";
-  return `${shopText}；${marketText}；对象：${objectType} / ${objectId}`;
+  const objectText = reviewObjectIdentityDisplayText(objectType, objectId, target.object_label) || `${objectType} / ${objectId}`;
+  return `${shopText}；${marketText}；对象：${objectText}`;
 }
 
 export function reviewEffectTargetReadbackText(effect: ReviewEffectForUi | null | undefined) {
@@ -944,6 +945,29 @@ function stableSearchTermObjectIdForUi(
 
 function uniqueStableObjectIds(values: Array<string | null | undefined>) {
   return Array.from(new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean)));
+}
+
+function searchTermDisplayNameFromIdentity(objectId?: string | null, objectLabel?: string | null) {
+  const label = normalizedPreflightTargetValue(objectLabel);
+  if (label && !label.startsWith("search_term:")) return label;
+  const id = normalizedPreflightTargetValue(objectId);
+  if (!id) return "";
+  if (!id.startsWith("search_term:")) return id;
+  const [, , ...queryParts] = id.split(":");
+  return queryParts.join(":").trim() || id;
+}
+
+function reviewObjectIdentityDisplayText(objectType?: string | null, objectId?: string | null, objectLabel?: string | null) {
+  const type = normalizedPreflightTargetValue(objectType);
+  const id = normalizedPreflightTargetValue(objectId);
+  const label = normalizedPreflightTargetValue(objectLabel);
+  if (type === "search_term") {
+    const searchTerm = searchTermDisplayNameFromIdentity(id, label);
+    if (searchTerm && id && searchTerm !== id) return `具体 SearchTerm：${searchTerm}；稳定对象：${type} / ${id}`;
+    if (searchTerm) return `具体 SearchTerm：${searchTerm}`;
+  }
+  if (type && id) return `${type} / ${id}`;
+  return id || label || "";
 }
 
 export function manualActionExpectedTargetForSignal(
@@ -1306,13 +1330,14 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
   const adGroupSynthesisText = adGroupSynthesisItem ? reviewRecordEvidenceItemText(adGroupSynthesisItem) : null;
   const adContextRowsItem = snapshot.find((item) => reviewRecordAdContextRowsLabels.includes(String(item.label ?? "").trim()));
   const adContextRowsText = adContextRowsItem ? reviewRecordEvidenceItemText(adContextRowsItem) : null;
+  const objectDisplayText = reviewObjectIdentityDisplayText(objectType, objectId, objectLabel);
 
   const rows: ReviewTodoEvidenceReadbackRow[] = [
     {
       label: "待办对象",
-      value: objectReady ? `${objectType} / ${objectId}` : "对象不完整",
+      value: objectReady ? objectDisplayText || `${objectType} / ${objectId}` : "对象不完整",
       detail: objectReady
-        ? `ReviewTodo 可回读 action_id ${actionId}；${reviewWindowLabel[todo.review_window]}复盘到期 ${dueDate}；对象展示为 ${objectLabel || objectId}。`
+        ? `ReviewTodo 可回读 action_id ${actionId}；${reviewWindowLabel[todo.review_window]}复盘到期 ${dueDate}；${objectDisplayText ? `复盘对象为 ${objectDisplayText}` : `对象展示为 ${objectLabel || objectId}`}。`
         : "ReviewTodo 缺少 action_id、object_type 或 object_id，不能确认复盘待办对应哪一次人工判断。",
       tone: objectReady ? "ready" : "blocked",
     },
@@ -3423,7 +3448,12 @@ function reviewTodoEvidenceSnapshotReadbackText(todos: ReviewTodoForUi[]) {
   if (missingParts.length > 0) {
     return `待办证据快照待核对：${countText}；缺口：${missingParts.join("；")}`;
   }
-  return `待办证据快照：${countText}；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界`;
+  const objectText =
+    windowTodos.length === 1
+      ? reviewObjectIdentityDisplayText(windowTodos[0].object_type, windowTodos[0].object_id, windowTodos[0].object_label)
+      : "";
+  const objectSuffix = objectText ? `；复盘对象：${objectText}` : "";
+  return `待办证据快照：${countText}${objectSuffix}；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界`;
 }
 
 function compactIdentityParts(parts: Array<string | null | undefined>) {
@@ -3467,10 +3497,17 @@ export function buildManualActionIdentityGateItems(input: ManualActionIdentityGa
     objectIds: reviewSignalStableObjectIdCandidates(input.signal),
     marketId: input.signal?.market_id ?? input.fallbackMarketId ?? null,
   };
+  const signalObjectLabel =
+    input.signal?.evidence?.primary_object?.search_term ??
+    input.signal?.evidence?.primary_object?.label ??
+    input.signal?.evidence?.primary_object?.object_id ??
+    null;
   const signalDetail = compactIdentityParts([
     input.signal?.shop_id ? `shop_id ${input.signal.shop_id}` : null,
     expectedIdentity.marketId != null ? `market_id ${expectedIdentity.marketId}` : null,
-    expectedIdentity.objectType && expectedIdentity.objectId ? `${expectedIdentity.objectType} / ${expectedIdentity.objectId}` : null,
+    expectedIdentity.objectType && expectedIdentity.objectId
+      ? reviewObjectIdentityDisplayText(expectedIdentity.objectType, expectedIdentity.objectId, signalObjectLabel)
+      : null,
   ]);
 
   const target = input.preflight?.target ?? null;
@@ -3482,7 +3519,7 @@ export function buildManualActionIdentityGateItems(input: ManualActionIdentityGa
   });
   const preflightTargetText = compactIdentityParts([
     target?.signal_id ? `signal_id ${target.signal_id}` : null,
-    target?.object_type && target?.object_id ? `${target.object_type} / ${target.object_id}` : null,
+    target?.object_type && target?.object_id ? reviewObjectIdentityDisplayText(target.object_type, target.object_id, target.object_label) : null,
     target?.market_id != null ? `market_id ${target.market_id}` : input.preflight?.selected_market_id != null ? `market_id ${input.preflight.selected_market_id}` : null,
     `will_write=${String(input.preflight?.will_write ?? false)}`,
   ]);
@@ -3497,7 +3534,7 @@ export function buildManualActionIdentityGateItems(input: ManualActionIdentityGa
   const actionDetail = compactIdentityParts([
     action?.id ? `action_id ${action.id}` : null,
     action?.signal_id ? `signal_id ${action.signal_id}` : null,
-    action?.object_type && action?.object_id ? `${action.object_type} / ${action.object_id}` : null,
+    action?.object_type && action?.object_id ? reviewObjectIdentityDisplayText(action.object_type, action.object_id, action.object_label) : null,
     action?.market_id != null ? `market_id ${action.market_id}` : null,
     actionIssues.length > 0 ? actionIssues.join("；") : null,
   ]);
@@ -3513,7 +3550,7 @@ export function buildManualActionIdentityGateItems(input: ManualActionIdentityGa
   const todoDetail = compactIdentityParts([
     todo?.action_id ? `action_id ${todo.action_id}` : null,
     todo?.signal_id ? `signal_id ${todo.signal_id}` : null,
-    todo?.object_type && todo?.object_id ? `${todo.object_type} / ${todo.object_id}` : null,
+    todo?.object_type && todo?.object_id ? reviewObjectIdentityDisplayText(todo.object_type, todo.object_id, todo.object_label) : null,
     todo?.market_id != null ? `market_id ${todo.market_id}` : null,
     todoEvidenceReadback,
     todoIssues.length > 0 ? todoIssues.join("；") : null,
