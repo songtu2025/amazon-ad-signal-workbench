@@ -5373,6 +5373,8 @@ assertIncludes(searchIntentReviewCards[0].currentJudgement, "可人工确认的�
 assertIncludes(searchIntentReviewCards[0].metricPurpose, "花费 9.00");
 assertIncludes(searchIntentReviewCards[0].adContext, "覆盖 1 个广告活动、1 个广告组、2 条搜索词表现行");
 assertIncludes(searchIntentReviewCards[0].evidenceGap, "广告位影响需要继续打开广告位证据核对");
+assertIncludes(searchIntentReviewCards[0].signalMetricBoundary, "卡片指标覆盖当前 Parent ASIN");
+assertIncludes(searchIntentReviewCards[0].signalMetricBoundary, "可行动证据子集");
 assertIncludes(searchIntentReviewCards[0].purpose, "聚合广告中实际产生表现的用户搜索词");
 assertIncludes(searchIntentReviewCards[0].purpose, "当前 Parent ASIN 视角");
 assertIncludes(searchIntentReviewCards[0].purpose, "判断搜索词表现、机会和异常");
@@ -5389,8 +5391,8 @@ assertIncludes(searchIntentReviewCards[0].boundary, "ABA 仅作站点级背景")
 assertEqual(searchIntentReviewCards[0].primarySearchTerm, "baby sunglasses");
 assertIncludes(searchIntentReviewCards[0].primarySearchTermReason, "扩量复核");
 assertIncludes(searchIntentReviewCards[0].primarySearchTermReason, "有订单");
-assertEqual(searchIntentReviewCards[0].topTerms[0], "kids sunglasses：1 单 / 花费 2 / ACOS 40.00% / 广告组 儿童太阳镜广泛 / 投放词 kids sunglasses broad");
-assertEqual(searchIntentReviewCards[0].topTerms[1], "baby sunglasses：3 单 / 花费 7 / ACOS 14.00% / 广告组 儿童太阳镜精准 / 投放词 baby sunglasses exact / ABA 120");
+assertEqual(searchIntentReviewCards[0].topTerms[0], "kids sunglasses：1 单 / 花费 2 / ACOS 40.00% / 表现行 1 条 / 广告组 儿童太阳镜广泛 / 投放词 kids sunglasses broad");
+assertEqual(searchIntentReviewCards[0].topTerms[1], "baby sunglasses：3 单 / 花费 7 / ACOS 14.00% / 表现行 2 条 / 广告组 儿童太阳镜精准 / 投放词 baby sunglasses exact / ABA 120");
 assertEqual(searchIntentReviewCards[0].intentLabel, "规则语义：儿童太阳镜");
 
 const searchIntentPanelContext = buildSearchIntentPanelContext(searchIntentReviewCards);
@@ -5402,6 +5404,8 @@ assertIncludes(searchIntentPanelContext.interactionBoundary, "不改变顶部诊
 assertIncludes(searchIntentPanelContext.proves, "同类广告搜索词");
 assertIncludes(searchIntentPanelContext.doesNotProve, "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现");
 assertIncludes(searchIntentPanelContext.nextManualStep, "具体 SearchTerm 信号");
+assertIncludes(searchIntentPanelContext.signalMetricBoundary, "卡片指标覆盖当前 Parent ASIN");
+assertIncludes(searchIntentPanelContext.signalMetricBoundary, "可行动证据子集");
 assertIncludes(searchIntentPanelContext.boundary, "不生成广告搜索词聚合上下文人工动作");
 assertIncludes(searchIntentPanelContext.emptyText, "当前展示 1 组搜索词表现聚合");
 

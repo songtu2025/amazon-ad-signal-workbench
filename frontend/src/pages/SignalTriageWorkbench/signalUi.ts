@@ -190,6 +190,7 @@ export interface SearchIntentReviewCard {
   metricPurpose: string;
   adContext: string;
   evidenceGap: string;
+  signalMetricBoundary: string;
   purpose: string;
   boundary: string;
   dataGrain: string;
@@ -208,6 +209,7 @@ export interface SearchIntentPanelContext {
   proves: string;
   doesNotProve: string;
   nextManualStep: string;
+  signalMetricBoundary: string;
   boundary: string;
   emptyText: string;
 }
@@ -5866,7 +5868,7 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       const abaText = term.aba_rank ? ` / ABA ${term.aba_rank}` : "";
       const adGroupText = (term.ad_group_names ?? []).filter(Boolean).slice(0, 2).join("、") || "广告组待补齐";
       const targetingText = (term.targeting_texts ?? []).filter(Boolean).slice(0, 2).join("、") || "投放词待补齐";
-      return `${term.search_term}：${term.orders} 单 / 花费 ${formatReviewNumber(term.cost)} / ACOS ${formatReviewPercent(term.acos)} / 广告组 ${adGroupText} / 投放词 ${targetingText}${abaText}`;
+      return `${term.search_term}：${term.orders} 单 / 花费 ${formatReviewNumber(term.cost)} / ACOS ${formatReviewPercent(term.acos)} / 表现行 ${term.source_row_count} 条 / 广告组 ${adGroupText} / 投放词 ${targetingText}${abaText}`;
     });
     return {
       intentLabel: summary.intent_label,
@@ -5888,6 +5890,8 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       evidenceGap:
         searchIntentDisplayText(summary.evidence_gap) ||
         "证据缺口：需要继续核对投放词、广告组商品清单和广告位表现，才能转成具体人工动作。",
+      signalMetricBoundary:
+        "与具体信号关系：本卡片指标覆盖当前 Parent ASIN 广告上下文中的全部同类搜索词表现行；点开后的 AI 信号只展示通过规则准入或合并后的可行动证据子集，因此行数和合计指标可能小于卡片。",
       purpose: "用途：从当前 Parent ASIN 视角，聚合广告中实际产生表现的用户搜索词，按搜索意图汇总同类 SearchTerm，帮助运营判断搜索词表现、机会和异常。",
       boundary: "边界：只复核广告用户搜索词表现；不改变诊断入口，不生成广告搜索词聚合上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
       dataGrain: summary.data_grain || "当前 Parent ASIN 关联广告上下文中实际产生表现的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索意图聚合。",
@@ -5926,6 +5930,9 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
     nextManualStep:
       firstCard?.nextManualStep ??
       "有命中时逐条打开具体 SearchTerm 信号；无命中时先确认广告搜索词快照、广告组和投放词证据缺口，不把搜索词聚合包装成可执行动作。",
+    signalMetricBoundary:
+      firstCard?.signalMetricBoundary ??
+      "与具体信号关系：聚合卡片覆盖当前 Parent ASIN 广告上下文中的全部同类搜索词表现行；具体 AI 信号只展示通过规则准入或合并后的可行动证据子集。",
     boundary:
       firstCard?.boundary ??
       "边界：只复核广告用户搜索词表现；不改变诊断入口，不生成广告搜索词聚合上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",

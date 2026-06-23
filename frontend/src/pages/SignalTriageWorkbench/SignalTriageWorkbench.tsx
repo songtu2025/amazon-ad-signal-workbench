@@ -1924,6 +1924,10 @@ export function SignalTriageWorkbench() {
                 <b>人工下一步</b>
                 <small>{searchIntentPanelContext.nextManualStep}</small>
               </span>
+              <span>
+                <b>与具体信号关系</b>
+                <small>{searchIntentPanelContext.signalMetricBoundary}</small>
+              </span>
             </div>
             <small className="searchIntentReviewBoundary">{searchIntentPanelContext.boundary}</small>
             {activeSearchIntentLabel && (
@@ -1963,6 +1967,7 @@ export function SignalTriageWorkbench() {
                     <small>{card.metricPurpose}</small>
                     <small>{card.adContext}</small>
                     <small>{card.evidenceGap}</small>
+                    <small>{card.signalMetricBoundary}</small>
                     <small>{card.purpose}</small>
                     <small>数据口径：{card.dataGrain}</small>
                     <small>能证明：{card.proves}</small>
