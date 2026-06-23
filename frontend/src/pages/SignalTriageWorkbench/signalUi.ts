@@ -181,6 +181,9 @@ export interface SearchIntentReviewCard {
   title: string;
   summary: string;
   sourceLabel: string;
+  operationDecisionLabel: string;
+  operationDecisionReason: string;
+  operationDecisionTone: "scale" | "waste" | "observe";
   insight: string;
   businessQuestion: string;
   currentJudgement: string;
@@ -5747,11 +5750,37 @@ function formatReviewPercent(value: number | null | undefined): string {
   return typeof value === "number" && Number.isFinite(value) ? `${(value * 100).toFixed(2)}%` : "-";
 }
 
+function searchIntentOperationDecision(metrics: SearchIntentSummaryForUi["metrics"]): Pick<
+  SearchIntentReviewCard,
+  "operationDecisionLabel" | "operationDecisionReason" | "operationDecisionTone"
+> {
+  if (metrics.orders >= 3 && typeof metrics.acos === "number" && metrics.acos <= 0.3) {
+    return {
+      operationDecisionLabel: "扩量复核",
+      operationDecisionReason: `订单 ${metrics.orders} 且 ACOS ${formatReviewPercent(metrics.acos)}，优先打开具体 SearchTerm 核对投放词、广告组和广告位后再人工加入观察或复盘。`,
+      operationDecisionTone: "scale",
+    };
+  }
+  if (metrics.orders === 0 && metrics.cost >= 30) {
+    return {
+      operationDecisionLabel: "止损复核",
+      operationDecisionReason: `花费 ${formatReviewNumber(metrics.cost)} 但订单 0，优先打开具体 SearchTerm 核对投放词、广告组商品和广告位缺口后再人工判断。`,
+      operationDecisionTone: "waste",
+    };
+  }
+  return {
+    operationDecisionLabel: "观察复核",
+    operationDecisionReason: `当前订单 ${metrics.orders}、花费 ${formatReviewNumber(metrics.cost)}，样本或证据还不足以直接判断扩量或止损，先打开具体 SearchTerm 补证。`,
+    operationDecisionTone: "observe",
+  };
+}
+
 export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi[], limit = 4): SearchIntentReviewCard[] {
   return summaries.slice(0, limit).map((summary) => {
     const metrics = summary.metrics;
     const abaMatchCount = summary.aba_match_count ?? 0;
     const primaryTopTerm = (summary.top_search_terms ?? [])[0];
+    const operationDecision = searchIntentOperationDecision(metrics);
     const primarySearchTerm =
       stringValue(primaryTopTerm?.search_term) || stringValue(primaryTopTerm?.normalized_query) || stringValue(summary.search_terms[0]) || null;
     const topTerms = (summary.top_search_terms ?? []).slice(0, 3).map((term) => {
@@ -5765,6 +5794,7 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       title: summary.intent_label,
       summary: `${metrics.orders} 单 / 花费 ${formatReviewNumber(metrics.cost)} / ACOS ${formatReviewPercent(metrics.acos)} / ABA 命中 ${abaMatchCount}`,
       sourceLabel: summary.semantic_source || "未知来源",
+      ...operationDecision,
       insight: searchIntentDisplayText(summary.insight),
       businessQuestion:
         searchIntentDisplayText(summary.business_question) ||

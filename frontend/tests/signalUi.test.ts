@@ -5348,6 +5348,11 @@ assertEqual(searchIntentReviewCards.length, 1);
 assertEqual(searchIntentReviewCards[0].title, "规则语义：儿童太阳镜");
 assertEqual(searchIntentReviewCards[0].summary, "4 单 / 花费 9 / ACOS 12.86% / ABA 命中 1");
 assertEqual(searchIntentReviewCards[0].sourceLabel, "规则语义");
+assertEqual(searchIntentReviewCards[0].operationDecisionLabel, "扩量复核");
+assertEqual(searchIntentReviewCards[0].operationDecisionTone, "scale");
+assertIncludes(searchIntentReviewCards[0].operationDecisionReason, "订单 4");
+assertIncludes(searchIntentReviewCards[0].operationDecisionReason, "ACOS 12.86%");
+assertIncludes(searchIntentReviewCards[0].operationDecisionReason, "具体 SearchTerm");
 assertEqual(searchIntentReviewCards[0].insight, "这组广告搜索词转化稳定，属于放量候选");
 assertIncludes(searchIntentReviewCards[0].businessQuestion, "扩量、止损，还是只观察");
 assertIncludes(searchIntentReviewCards[0].currentJudgement, "可人工确认的扩量机会");
@@ -5393,6 +5398,49 @@ assertIncludes(emptySearchIntentPanelContext.doesNotProve, "不能证明 Parent 
 assertIncludes(emptySearchIntentPanelContext.nextManualStep, "不把搜索词聚合包装成可执行动作");
 assertIncludes(emptySearchIntentPanelContext.boundary, "不改变诊断入口");
 assertIncludes(emptySearchIntentPanelContext.emptyText, "不代表 Parent ASIN 没有自然搜索词");
+
+const wasteSearchIntentReviewCards = buildSearchIntentReviewCards([
+  {
+    intent_label: "规则语义：高花费无订单",
+    search_terms: ["kids beach gear"],
+    metrics: {
+      impressions: 0,
+      clicks: 45,
+      cost: 36,
+      orders: 0,
+      sales: 0,
+      acos: null,
+      cvr: 0,
+      cpc: 0.8,
+    },
+    insight: "这组广告搜索词消耗较高但没有订单，属于止损候选",
+  },
+]);
+assertEqual(wasteSearchIntentReviewCards[0].operationDecisionLabel, "止损复核");
+assertEqual(wasteSearchIntentReviewCards[0].operationDecisionTone, "waste");
+assertIncludes(wasteSearchIntentReviewCards[0].operationDecisionReason, "花费 36");
+assertIncludes(wasteSearchIntentReviewCards[0].operationDecisionReason, "订单 0");
+
+const observeSearchIntentReviewCards = buildSearchIntentReviewCards([
+  {
+    intent_label: "规则语义：低样本观察",
+    search_terms: ["toddler shade"],
+    metrics: {
+      impressions: 0,
+      clicks: 2,
+      cost: 1.2,
+      orders: 0,
+      sales: 0,
+      acos: null,
+      cvr: 0,
+      cpc: 0.6,
+    },
+    insight: "需要观察",
+  },
+]);
+assertEqual(observeSearchIntentReviewCards[0].operationDecisionLabel, "观察复核");
+assertEqual(observeSearchIntentReviewCards[0].operationDecisionTone, "observe");
+assertIncludes(observeSearchIntentReviewCards[0].operationDecisionReason, "证据还不足");
 
 const searchIntentFilteredSignals = filterSignalsBySearchIntent(
   [

@@ -2854,6 +2854,41 @@ button.reviewTodoQueueNext:focus-visible {
   white-space: nowrap;
 }
 
+.searchIntentDecision {
+  border: 1px solid #dbe6ef;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 6px 7px;
+  display: grid !important;
+  gap: 3px !important;
+}
+
+.searchIntentDecision.scale {
+  border-color: #bddcc7;
+  background: #f4fbf6;
+}
+
+.searchIntentDecision.waste {
+  border-color: #f2c3b8;
+  background: #fff7f5;
+}
+
+.searchIntentDecision.observe {
+  border-color: #d5deea;
+  background: #f8fafc;
+}
+
+.searchIntentDecision b {
+  color: #213047;
+  font-size: 12px;
+}
+
+.searchIntentDecision small {
+  color: #52647a;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .searchIntentReviewCard p,
 .searchIntentReviewCard small,
 .searchIntentReviewCard li {

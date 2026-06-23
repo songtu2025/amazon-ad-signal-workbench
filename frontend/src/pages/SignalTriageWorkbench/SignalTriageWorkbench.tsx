@@ -1953,6 +1953,10 @@ export function SignalTriageWorkbench() {
                       <strong>{card.title}</strong>
                       <span>{card.sourceLabel}</span>
                     </div>
+                    <div className={`searchIntentDecision ${card.operationDecisionTone}`} aria-label="广告搜索词表现运营判断">
+                      <b>{card.operationDecisionLabel}</b>
+                      <small>{card.operationDecisionReason}</small>
+                    </div>
                     <p>{card.summary}</p>
                     <small>业务问题：{card.businessQuestion}</small>
                     <small>{card.currentJudgement}</small>
