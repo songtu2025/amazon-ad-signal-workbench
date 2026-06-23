@@ -4723,7 +4723,8 @@ assertEqual(selectedSearchIntentFocusContext.title, "SearchTerm 机会筛选承�
 assertEqual(selectedSearchIntentFocusContext.focusLabel, "规则语义：海滩出行用品");
 assertIncludes(selectedSearchIntentFocusContext.signalObject, "SearchTerm：beach essentials");
 assertIncludes(selectedSearchIntentFocusContext.relation, "左侧筛选只缩小当前入口下的 SearchTerm 机会队列");
-assertIncludes(selectedSearchIntentFocusContext.relation, "右侧人工动作也必须落到这条 SearchTerm 的稳定对象");
+assertIncludes(selectedSearchIntentFocusContext.relation, "若进入人工动作");
+assertIncludes(selectedSearchIntentFocusContext.relation, "以后端预检确认的 SearchTerm 稳定对象为准");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "SearchTerm 筛选上下文「规则语义：海滩出行用品」不是人工动作对象");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "实际写入以后端 preflight evidence_snapshot_preview 为准");
 assertEqual(buildSearchIntentFocusContext("规则语义：太阳镜", searchTermSignalWithoutAsin), null);
@@ -5193,6 +5194,7 @@ assertEqual(searchIntentReviewCards[0].title, "规则语义：儿童太阳镜");
 assertEqual(searchIntentReviewCards[0].summary, "4 单 / 花费 9 / ACOS 12.86% / ABA 命中 1");
 assertEqual(searchIntentReviewCards[0].sourceLabel, "规则语义");
 assertIncludes(searchIntentReviewCards[0].purpose, "SearchTerm 机会筛选");
+assertIncludes(searchIntentReviewCards[0].purpose, "打开具体 SearchTerm 信号核对证据");
 assertIncludes(searchIntentReviewCards[0].dataGrain, "当前诊断入口内已进入 SearchTerm 机会队列");
 assertIncludes(searchIntentReviewCards[0].proves, "同类广告搜索词");
 assertIncludes(searchIntentReviewCards[0].doesNotProve, "不能证明 Parent ASIN 下全部搜索词表现");

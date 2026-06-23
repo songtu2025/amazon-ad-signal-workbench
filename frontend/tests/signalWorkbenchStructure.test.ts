@@ -104,6 +104,8 @@ assertIncludes(signalUiSource, "当前诊断入口仍是");
 assertIncludes(signalUiSource, "选中信号只决定中间证据和右侧人工确认对象");
 assertIncludes(signalUiSource, "不能自动归因");
 assertIncludes(signalUiSource, "SearchTerm 筛选上下文「${focusLabel}」不是人工动作对象");
+assertIncludes(signalUiSource, "以后端预检确认的 SearchTerm 稳定对象为准");
+assertNotIncludes(signalUiSource, "右侧人工动作也必须落到这条 SearchTerm 的稳定对象");
 assert(selectedSignalScopeContextRenderIndex > selectedSignalBranchIndex, "选中信号入口关系必须渲染在信号详情分支内");
 assert(selectedSignalScopeContextRenderIndex < signalDiagnosisRenderIndex, "选中信号入口关系必须先于信号详情展示");
 assert(searchIntentFocusContextRenderIndex > selectedSignalScopeContextRenderIndex, "SearchTerm 机会筛选承接必须跟在入口关系之后");

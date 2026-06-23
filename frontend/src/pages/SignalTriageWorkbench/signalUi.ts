@@ -5575,7 +5575,7 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       summary: `${metrics.orders} 单 / 花费 ${formatReviewNumber(metrics.cost)} / ACOS ${formatReviewPercent(metrics.acos)} / ABA 命中 ${abaMatchCount}`,
       sourceLabel: summary.semantic_source || "未知来源",
       insight: summary.insight,
-      purpose: "用途：作为当前诊断入口内的 SearchTerm 机会筛选，按搜索语义聚合同类广告搜索词，再逐条进入人工复核。",
+      purpose: "用途：作为当前诊断入口内的 SearchTerm 机会筛选，按搜索语义聚合同类广告搜索词，再逐条打开具体 SearchTerm 信号核对证据。",
       boundary: "边界：只筛 SearchTerm 机会；不改变诊断入口，不生成 SearchTerm 筛选上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
       dataGrain: summary.data_grain || "当前诊断入口内 SearchTerm 机会队列的广告搜索词表现行",
       proves: summary.proves || "能证明同类广告搜索词在当前广告上下文内的花费、点击、订单和 ABA 背景。",
@@ -6575,7 +6575,7 @@ export function buildSearchIntentFocusContext(
     title: "SearchTerm 机会筛选承接",
     focusLabel,
     signalObject,
-    relation: `左侧筛选只缩小当前入口下的 SearchTerm 机会队列；中间仍诊断 ${signalObject}，右侧人工动作也必须落到这条 SearchTerm 的稳定对象。`,
+    relation: `左侧筛选只缩小当前入口下的 SearchTerm 机会队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。`,
     boundary: `SearchTerm 筛选上下文「${focusLabel}」不是人工动作对象；ABA 只作站点级背景，实际写入以后端 preflight evidence_snapshot_preview 为准。`,
     tone: "container",
   };
