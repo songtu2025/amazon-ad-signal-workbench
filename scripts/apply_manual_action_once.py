@@ -18,6 +18,17 @@ from inspect_manual_action_preflight import build_manual_action_preflight_payloa
 
 
 REVIEWABLE_ACTION_TYPES = {"observe", "handled", "add_to_review"}
+SEARCH_TERM_REVIEW_CHAIN_LABELS = {
+    "搜索词表现分组",
+    "广告组合流判断",
+    "同组投放商品表现",
+    "逐投放上下文",
+    "投放词证据",
+    "搜索词边界",
+    "广告位边界",
+    "ABA 背景",
+    "动作边界",
+}
 
 
 def build_manual_action_apply_payload(
@@ -256,10 +267,18 @@ def _actual_review_todo_smoke_assertions(
     record_id = str(record.get("id") or "")
     record_object_id = str(record.get("object_id") or "")
     evidence_labels = [item.get("label") for item in evidence_snapshot]
+    evidence_signature = _evidence_snapshot_signature(evidence_snapshot)
     todo_counts_by_window = {
         str(row.get("review_window") or ""): len(_list(row.get("evidence_snapshot"))) for row in todo_rows
     }
     todo_object_ids = sorted({str(row.get("object_id") or "") for row in todo_rows if str(row.get("object_id") or "")})
+    todo_label_sets = [
+        {str(item.get("label") or "").strip() for item in _list(row.get("evidence_snapshot")) if str(item.get("label") or "").strip()}
+        for row in todo_rows
+    ]
+    missing_search_term_review_chain_labels = sorted(
+        SEARCH_TERM_REVIEW_CHAIN_LABELS.difference({str(label or "").strip() for label in evidence_labels})
+    )
     return {
         "actual_review_todo_count": len(todo_rows),
         "actual_review_todo_object_ids": todo_object_ids,
@@ -273,9 +292,17 @@ def _actual_review_todo_smoke_assertions(
         and all(str(row.get("action_id") or "") == record_id for row in todo_rows),
         "actual_review_todos_inherit_evidence_snapshot": bool(todo_rows)
         and all(
-            [item.get("label") for item in _list(row.get("evidence_snapshot"))] == evidence_labels
-            and len(_list(row.get("evidence_snapshot"))) == len(evidence_snapshot)
+            _evidence_snapshot_signature(_list(row.get("evidence_snapshot"))) == evidence_signature
             for row in todo_rows
+        ),
+        "actual_review_todos_include_search_term_review_chain_labels": (
+            True
+            if target_object_type != "search_term"
+            else bool(todo_label_sets)
+            and all(SEARCH_TERM_REVIEW_CHAIN_LABELS.issubset(labels) for labels in todo_label_sets)
+        ),
+        "missing_search_term_review_chain_labels": (
+            [] if target_object_type != "search_term" else missing_search_term_review_chain_labels
         ),
         "source_object_id_not_used_as_review_object": (
             True
@@ -284,6 +311,18 @@ def _actual_review_todo_smoke_assertions(
             and all(str(row.get("object_id") or "") != source_object_id for row in todo_rows)
         ),
     }
+
+
+def _evidence_snapshot_signature(items: list[Any]) -> list[tuple[str, str, str, str]]:
+    return [
+        (
+            str(_dict(item).get("label") or "").strip(),
+            str(_dict(item).get("value") or "").strip(),
+            str(_dict(item).get("detail") or "").strip(),
+            str(_dict(item).get("source") or "").strip(),
+        )
+        for item in items
+    ]
 
 
 def _sum_evidence_snapshot_counts(items: list[Any]) -> int:

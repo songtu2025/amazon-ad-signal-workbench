@@ -622,5 +622,8 @@ def test_manual_action_apply_rewrites_after_voided_legacy_todo_with_isolated_roo
     assert smoke["written_evidence_snapshot_count"] == 29
     assert smoke["post_write_max_manual_action_evidence_snapshot_count"] == 29
     assert smoke["post_write_review_todo_evidence_snapshot_counts"] == {"7d": 29, "14d": 29}
+    assert smoke["actual_review_todos_inherit_evidence_snapshot"] is True
+    assert smoke["actual_review_todos_include_search_term_review_chain_labels"] is True
+    assert smoke["missing_search_term_review_chain_labels"] == []
     assert smoke["review_records_not_saved"] is True
     assert smoke["ad_actions_not_executed"] is True

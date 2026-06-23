@@ -147,6 +147,101 @@ def diagnosis_without_label_snapshot(label: str) -> list[dict[str, str]]:
     return [item for item in diagnosis_evidence_snapshot() if item["label"] != label]
 
 
+def search_term_full_review_chain_snapshot() -> list[dict[str, str]]:
+    return [
+        {
+            "label": "排查路径",
+            "value": "Parent ASIN -> 广告 ASIN -> 广告组 -> 投放词 -> SearchTerm -> 广告位",
+            "detail": "保存复盘前必须回看 Parent ASIN 广告搜索词表现复核链。",
+            "source": "business_rule",
+        },
+        {
+            "label": "AI 准入",
+            "value": "可进入人工确认 / ready_for_manual_confirmation / 允许人工留痕",
+            "detail": "准入只证明允许人工留痕，不代表系统会自动执行广告动作。",
+            "source": "actionability_status",
+        },
+        {
+            "label": "搜索词表现分组",
+            "value": "规则语义：儿童太阳镜",
+            "detail": "搜索词表现分组只用于 Parent ASIN 下广告 SearchTerm 表现聚合，不是人工动作对象。",
+            "source": "规则语义",
+        },
+        {
+            "label": "Parent ASIN入口",
+            "value": "Parent ASIN B00K4W4AAA 下只复核有广告数据的搜索词表现。",
+            "detail": "Parent ASIN 是经营入口，不能把搜索词聚合当成独立经营对象。",
+            "source": "diagnosis_contract + sales_performance",
+        },
+        {
+            "label": "广告 ASIN承接",
+            "value": "广告 ASIN B016EXMVZS / B016EXMW02 承接 kids sunglasses 搜索词上下文。",
+            "detail": "广告 ASIN 只说明投放承接范围，不能把搜索词自动归因到单个 ASIN。",
+            "source": "diagnosis_contract + advertised_products",
+        },
+        {
+            "label": "广告组合流判断",
+            "value": "同广告组广告 ASIN 2 个；搜索词不能自动归因到单个广告 ASIN。",
+            "detail": "复盘时必须回看广告组、广告 ASIN、投放词、搜索词和广告位边界。",
+            "source": "diagnosis_contract",
+        },
+        {
+            "label": "同组投放商品表现",
+            "value": "B016EXMVZS 花费 22.78 / 订单 11；B016EXMW02 花费 18.41 / 订单 7",
+            "detail": "只说明同广告组内广告商品承接差异，不能把搜索词自动归因到单个广告 ASIN。",
+            "source": "advertised_products + ad_product_daily_metrics",
+        },
+        {
+            "label": "逐投放上下文",
+            "value": "优先复核广告组 RBK004-kids sunglasses-精准 / 投放词 kids sunglasses / 订单 0 / 花费 10",
+            "detail": "每行只证明该搜索词在对应广告活动、广告组和投放词下的广告表现。",
+            "source": "ad_search_term_daily_metrics",
+        },
+        {
+            "label": "投放词证据",
+            "value": "kids sunglasses / 1 个",
+            "detail": "用于确认用户搜索词是否已有投放词承接。",
+            "source": "ad_search_term_daily_metrics",
+        },
+        {
+            "label": "搜索词边界",
+            "value": "kids sunglasses 只说明同广告组搜索词上下文。",
+            "detail": "不能自动加词、否词或调价。",
+            "source": "ad_search_term_daily_metrics + business_rule",
+        },
+        {
+            "label": "广告位边界",
+            "value": "广告组级广告位 0 条 / 同广告活动广告位 4 条。",
+            "detail": "活动级广告位只能作背景，不能替代广告组级证据。",
+            "source": "ad_placement_daily_metrics + business_rule",
+        },
+        {
+            "label": "ABA 背景",
+            "value": "未匹配 ABA Top1000",
+            "detail": "ABA 只能作为站点级市场背景。",
+            "source": "diagnosis_contract + ABA导出",
+        },
+        {
+            "label": "证据缺口",
+            "value": "缺少广告组级广告位证据和人工主推策略确认。",
+            "detail": "复盘时不能把当前证据扩展成自动归因依据。",
+            "source": "diagnosis_contract",
+        },
+        {
+            "label": "需要补证",
+            "value": "补齐投放词维护状态、广告商品承接和主推策略。",
+            "detail": "复盘时必须回看当时还缺哪些业务事实。",
+            "source": "diagnosis_contract",
+        },
+        {
+            "label": "动作边界",
+            "value": "只允许记录观察、标记已处理、加入复盘或忽略本次。",
+            "detail": "不得自动加词、自动否词、自动调价、自动暂停或开启广告。",
+            "source": "business_rule",
+        },
+    ]
+
+
 def placement_evidence_snapshot() -> list[dict[str, str]]:
     return [
         *diagnosis_evidence_snapshot(),
@@ -2440,6 +2535,65 @@ def test_manual_action_route_persists_and_applies_latest_status(tmp_path: Path, 
     assert review_todos[0]["action_type"] == "handled"
     assert review_todos[0]["object_type"] == "search_term"
     assert review_todos[0]["object_id"] == "search_term:1:kids sunglasses"
+
+
+def test_manual_action_route_review_todos_inherit_full_search_term_snapshot(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path, raising=False)
+    monkeypatch.setattr(routes, "load_signal_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(routes, "load_aba_rows_from_latest_snapshot", lambda: [])
+    monkeypatch.setattr(routes, "detect_signals", lambda signal_rows, aba_rows=None, promotion_strategies=None: [make_signal()])
+    monkeypatch.setattr(routes, "detect_data_quality_signals", lambda *args, **kwargs: [])
+    evidence_snapshot = search_term_full_review_chain_snapshot()
+    monkeypatch.setattr(
+        routes,
+        "build_manual_action_preflight_payload",
+        lambda **kwargs: route_preflight_payload(
+            object_type="search_term",
+            object_id="kids sunglasses",
+            action_type="add_to_review",
+            evidence_snapshot=evidence_snapshot,
+        ),
+    )
+
+    response = TestClient(app).post(
+        "/api/signals/sig-test-manual-action/manual-actions?market_id=1",
+        json={
+            "action_type": "add_to_review",
+            "action_note": "加入 7/14 天复盘",
+            "operator_name": "本地运营",
+            "expected_product_scope_id": "parent_asin:B00K4W4AAA",
+            "expected_object_type": "search_term",
+            "expected_object_id": "kids sunglasses",
+            "expected_can_auto_change_rules": False,
+            "expected_can_auto_execute_ads": False,
+            "evidence_snapshot": evidence_snapshot,
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["action_type"] == "add_to_review"
+    assert payload["evidence_snapshot"] == evidence_snapshot
+
+    review_response = TestClient(app).get("/api/signals/sig-test-manual-action/review-todos?market_id=1")
+    review_todos = review_response.json()
+
+    assert review_response.status_code == 200
+    assert [todo["review_window"] for todo in review_todos] == ["7d", "14d"]
+    for todo in review_todos:
+        assert todo["action_id"] == payload["id"]
+        assert todo["object_type"] == "search_term"
+        assert todo["object_id"] == "search_term:1:kids sunglasses"
+        assert todo["evidence_snapshot"] == evidence_snapshot
+        labels = [item["label"] for item in todo["evidence_snapshot"]]
+        assert "搜索词表现分组" in labels
+        assert "广告组合流判断" in labels
+        assert "同组投放商品表现" in labels
+        assert "逐投放上下文" in labels
+        assert "投放词证据" in labels
+        assert "广告位边界" in labels
+        assert "ABA 背景" in labels
+        assert "动作边界" in labels
 
 
 def test_manual_action_route_rejects_missing_forbidden_effect_expectation(tmp_path: Path, monkeypatch) -> None:
