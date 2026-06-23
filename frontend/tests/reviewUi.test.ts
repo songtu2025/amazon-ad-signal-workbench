@@ -1106,6 +1106,39 @@ assertIncludes(searchTermReviewRecordPreflightChecklist[11].description, "补齐
 assertEqual(searchTermReviewRecordPreflightChecklist[12].id, "manual_action_boundary");
 assertIncludes(searchTermReviewRecordPreflightChecklist[12].description, "不得自动加词");
 assertEqual(canSaveReviewRecordWithPreflight(searchTermReviewEffect, searchTermReviewRecordPreflightChecklist), true);
+const searchTermSavedReviewRecord: ReviewRecordForUi = {
+  ...searchTermReviewEffect,
+  review_note: "SearchTerm 复盘已按广告结构回看",
+  evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot,
+};
+assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘证据快照：7d 15 条");
+assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景");
+assertIncludes(
+  reviewRecordReadbackStatus([searchTermSavedReviewRecord], {
+    actionId: "manual-action-search-term",
+    objectType: "search_term",
+    objectId: "search_term:1:beach essentials",
+    reviewWindow: "7d",
+  }),
+  "可回看对象引用 / 排查路径 / AI 准入 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景",
+);
+assertIncludes(
+  reviewRecordReadbackStatus(
+    [
+      {
+        ...searchTermSavedReviewRecord,
+        evidence_snapshot: searchTermSavedReviewRecord.evidence_snapshot?.filter((item) => item.label !== "广告组合流判断"),
+      },
+    ],
+    {
+      actionId: "manual-action-search-term",
+      objectType: "search_term",
+      objectId: "search_term:1:beach essentials",
+      reviewWindow: "7d",
+    },
+  ),
+  "7d 缺广告组合流判断",
+);
 for (const label of ["广告组合流判断", "同组投放商品表现", "投放词证据", "搜索词边界", "广告位边界", "ABA 背景", "证据缺口", "需要补证", "动作边界"]) {
   const checklist = buildReviewRecordPreflightChecklist(
     {

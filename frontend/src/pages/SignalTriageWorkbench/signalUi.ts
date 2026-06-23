@@ -3391,7 +3391,7 @@ function ruleFeedbackRecordText(record: RuleFeedbackRecordForUi) {
 function ruleFeedbackCandidateGroupText(group: RuleFeedbackCandidateGroupForUi) {
   const groupType =
     group.group_type === "search_intent"
-      ? "规则反馈样本上下文（SearchTerm 筛选）"
+      ? "规则反馈样本上下文（广告搜索词表现复核）"
       : group.group_type === "aba_reference_term"
         ? "规则反馈样本上下文（ABA 站点级参考）"
         : "规则反馈样本上下文";
@@ -5699,10 +5699,8 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
 
 function searchIntentDisplayText(text?: string | null): string {
   return (text ?? "")
-    .replace(/生成语义组人工动作/g, "生成 SearchTerm 筛选上下文人工动作")
-    .replace(/语义组人工动作/g, "SearchTerm 筛选上下文人工动作")
-    .replace(/生成 SearchTerm 筛选上下文人工动作/g, "生成广告搜索词聚合上下文人工动作")
-    .replace(/SearchTerm 筛选上下文人工动作/g, "广告搜索词聚合上下文人工动作")
+    .replace(/生成语义组人工动作/g, "生成广告搜索词聚合上下文人工动作")
+    .replace(/语义组人工动作/g, "广告搜索词聚合上下文人工动作")
     .replace(/该语义类目/g, "这组广告搜索词")
     .replace(/语义类目/g, "这组广告搜索词")
     .replace(/Parent ASIN 下全部搜索词表现/g, "Parent ASIN 下全部自然搜索或市场搜索表现");

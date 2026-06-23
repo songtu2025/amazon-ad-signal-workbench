@@ -3265,13 +3265,15 @@ function reviewRecordEvidenceSnapshotReadbackText(records: ReviewRecordForUi[]) 
     .join(" / ");
   const missingParts = records.flatMap((record) => {
     const window = record.review_window ?? "复盘";
+    const objectType = normalizedPreflightTargetValue(record.object_type);
+    const requiredSnapshotLabels =
+      objectType === "search_term"
+        ? ["排查路径", "AI 准入", "广告组合流判断", "同组投放商品表现", "投放词证据", "搜索词边界", "广告位边界", "ABA 背景"]
+        : ["排查路径", "AI 准入", "搜索词边界", "广告位边界"];
     const missing = [
       reviewRecordHasEvidenceSnapshot(record) ? "" : "证据快照",
       reviewRecordHasObjectReference(record) ? "" : "对象引用",
-      reviewRecordHasSnapshotLabel(record, "排查路径") ? "" : "排查路径",
-      reviewRecordHasSnapshotLabel(record, "AI 准入") ? "" : "AI 准入",
-      reviewRecordHasSnapshotLabel(record, "搜索词边界") ? "" : "搜索词边界",
-      reviewRecordHasSnapshotLabel(record, "广告位边界") ? "" : "广告位边界",
+      ...requiredSnapshotLabels.map((label) => (reviewRecordHasSnapshotLabel(record, label) ? "" : label)),
     ].filter(Boolean);
     return missing.length > 0 ? [`${window} 缺${missing.join(" / ")}`] : [];
   });
@@ -3279,7 +3281,11 @@ function reviewRecordEvidenceSnapshotReadbackText(records: ReviewRecordForUi[]) 
   if (missingParts.length > 0) {
     return `复盘证据快照待核对：${countText}；缺口：${missingParts.join("；")}`;
   }
-  return `复盘证据快照：${countText}；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界`;
+  const readbackLabels =
+    records.length === 1 && normalizedPreflightTargetValue(records[0]?.object_type) === "search_term"
+      ? "对象引用 / 排查路径 / AI 准入 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
+      : "对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界";
+  return `复盘证据快照：${countText}；可回看${readbackLabels}`;
 }
 
 function reviewTodoEvidenceSnapshotCount(todo: ReviewTodoForUi | null | undefined) {

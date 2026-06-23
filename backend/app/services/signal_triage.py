@@ -5451,7 +5451,7 @@ def _review_feedback_priority_result(by_result: dict[str, int]) -> str:
 def _review_feedback_group_recommendation(group: dict[str, Any], priority_result: str) -> str:
     count = _int(_dict(group.get("by_result")).get(priority_result)) or 0
     if group.get("group_type") == "search_intent":
-        target = "该规则反馈样本上下文（SearchTerm 筛选）"
+        target = "该规则反馈样本上下文（广告搜索词表现复核）"
     elif group.get("group_type") == "aba_reference_term":
         target = "该规则反馈样本上下文（ABA 站点级参考）"
     else:
