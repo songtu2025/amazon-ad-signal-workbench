@@ -1465,7 +1465,7 @@ const manualActionIdentityGateItems = buildManualActionIdentityGateItems({
 assertEqual(manualActionIdentityGateItems.length, 4);
 assertEqual(manualActionIdentityGateItems[0].label, "当前信号");
 assertIncludes(manualActionIdentityGateItems[0].value, "sig-long-tail-beach-current");
-assertIncludes(manualActionIdentityGateItems[0].detail, "search_term / beach essentials for toddlers 1-3");
+assertIncludes(manualActionIdentityGateItems[0].detail, "search_term / search_term:1:beach essentials for toddlers 1-3");
 assertEqual(manualActionIdentityGateItems[1].label, "预检目标");
 assertEqual(manualActionIdentityGateItems[1].value, "身份一致");
 assertIncludes(manualActionIdentityGateItems[1].detail, "will_write=false");
@@ -1780,6 +1780,60 @@ const expectedCurrentSignalTarget = manualActionExpectedTargetForSignal(
 );
 assertEqual(expectedCurrentSignalTarget.objectType, "sales_product");
 assertEqual(expectedCurrentSignalTarget.objectId, "B06VW5SQ97");
+const searchTermSignalWithSnapshotRowId = {
+  id: "sig-long-tail-opportunity-gerpgo_market_1_20260616_120443:507938343",
+  market_id: 1,
+  object_type: "search_term",
+  evidence: {
+    primary_object: {
+      object_type: "search_term",
+      object_id: "gerpgo_market_1_20260616_120443:507938343",
+      label: "b01fay0yl0",
+      search_term: "b01fay0yl0",
+    },
+  },
+};
+const searchTermStableExpectedTarget = manualActionExpectedTargetForSignal(
+  searchTermSignalWithSnapshotRowId,
+  "add_to_review",
+);
+assertEqual(searchTermStableExpectedTarget.objectType, "search_term");
+assertEqual(searchTermStableExpectedTarget.objectId, "search_term:1:b01fay0yl0");
+const searchTermStablePreflightGate = manualActionButtonGate(
+  "add_to_review",
+  {
+    ...readyManualActionPreflight,
+    target: {
+      ...readyManualActionPreflight.target,
+      action_type: "add_to_review",
+      object_type: "search_term",
+      object_id: "search_term:1:b01fay0yl0",
+    },
+  },
+  null,
+  false,
+  searchTermStableExpectedTarget,
+);
+assertEqual(searchTermStablePreflightGate.disabled, false);
+const searchTermStableReviewTodo: ReviewTodoForUi = {
+  signal_id: "sig-long-tail-opportunity-gerpgo_market_1_20260616_120443:507938343",
+  action_id: "act-search-term-b01",
+  market_id: 1,
+  object_type: "search_term",
+  object_id: "search_term:1:b01fay0yl0",
+  object_label: "b01fay0yl0",
+  review_window: "7d",
+  due_at: "2026-06-29T00:00:00+00:00",
+  is_due: false,
+  evidence_snapshot: [{ label: "搜索词", value: "b01fay0yl0" }],
+};
+assertEqual(selectReviewTodosForSignal([], [searchTermStableReviewTodo], searchTermSignalWithSnapshotRowId).length, 1);
+const searchTermReviewReadbackTarget = buildReviewRecordReadbackTarget(
+  searchTermSignalWithSnapshotRowId,
+  searchTermStableReviewTodo,
+);
+assertEqual(searchTermReviewReadbackTarget?.objectType, "search_term");
+assertEqual(searchTermReviewReadbackTarget?.objectId, "search_term:1:b01fay0yl0");
 const missingCurrentSignalTargetGate = manualActionButtonGate(
   "add_to_review",
   readyManualActionPreflight,

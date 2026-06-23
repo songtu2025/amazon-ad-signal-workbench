@@ -5277,6 +5277,8 @@ assertIncludes(searchIntentPanelContext.emptyText, "当前展示 1 组搜索词�
 
 const emptySearchIntentPanelContext = buildSearchIntentPanelContext([]);
 assertIncludes(emptySearchIntentPanelContext.purpose, "不是经营商品入口、广告组入口或人工动作对象");
+assertIncludes(emptySearchIntentPanelContext.purpose, "按搜索意图复核同类 SearchTerm 表现");
+assertIncludes(emptySearchIntentPanelContext.dataGrain, "当前 Parent ASIN 关联广告上下文");
 assertIncludes(emptySearchIntentPanelContext.dataGrain, "用户搜索词表现行");
 assertIncludes(emptySearchIntentPanelContext.interactionBoundary, "不切换 Parent ASIN / 广告 ASIN / 广告组");
 assertIncludes(emptySearchIntentPanelContext.doesNotProve, "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现");

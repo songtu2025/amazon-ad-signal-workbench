@@ -877,11 +877,7 @@ function reviewTodoMatchesProductScope(todo: ReviewTodoForUi, activeProductScope
 
 function reviewSignalStableObjectIds(signal: ReviewSignalForUi | null) {
   const primaryObject = signal?.evidence?.primary_object;
-  return new Set(
-    [primaryObject?.asin, primaryObject?.label, primaryObject?.object_id]
-      .map((value) => String(value ?? "").trim())
-      .filter(Boolean),
-  );
+  return new Set(reviewSignalStableObjectIdCandidates(signal, primaryObject));
 }
 
 function reviewTodoMatchesSignalContext(todo: ReviewTodoForUi, signal: ReviewSignalForUi | null) {
@@ -900,12 +896,59 @@ function reviewTodoMatchesSignalContext(todo: ReviewTodoForUi, signal: ReviewSig
 
 function reviewSignalStableObjectForReviewRecord(signal: ReviewSignalForUi | null) {
   const primaryObject = signal?.evidence?.primary_object;
-  const objectType = String(primaryObject?.object_type ?? signal?.object_type ?? "").trim();
-  const objectId = [primaryObject?.asin, primaryObject?.object_id, primaryObject?.label]
-    .map((value) => String(value ?? "").trim())
-    .find(Boolean);
+  const objectType = reviewSignalObjectType(signal, primaryObject);
+  const objectId = reviewSignalStableObjectIdCandidates(signal, primaryObject)[0];
   if (!objectType || !objectId) return {};
   return { objectType, objectId };
+}
+
+function reviewSignalObjectType(
+  signal: ReviewSignalForUi | null,
+  primaryObject: NonNullable<ReviewSignalForUi["evidence"]>["primary_object"] | null | undefined,
+) {
+  return String(primaryObject?.object_type ?? signal?.object_type ?? "").trim();
+}
+
+function reviewSignalStableObjectIdCandidates(
+  signal: ReviewSignalForUi | null,
+  primaryObject: NonNullable<ReviewSignalForUi["evidence"]>["primary_object"] | null | undefined = signal?.evidence?.primary_object,
+) {
+  const objectType = reviewSignalObjectType(signal, primaryObject);
+  if (objectType === "search_term") {
+    const stableSearchTermId = stableSearchTermObjectIdForUi(
+      primaryObject?.object_id,
+      primaryObject?.label,
+      primaryObject?.search_term,
+      signal?.market_id,
+    );
+    return uniqueStableObjectIds([
+      stableSearchTermId,
+      primaryObject?.object_id,
+      primaryObject?.search_term,
+      primaryObject?.label,
+    ]);
+  }
+  return uniqueStableObjectIds([primaryObject?.asin, primaryObject?.object_id, primaryObject?.label]);
+}
+
+function stableSearchTermObjectIdForUi(
+  objectId?: string | null,
+  label?: string | null,
+  searchTerm?: string | null,
+  marketId?: number | string | null,
+) {
+  const existingObjectId = String(objectId ?? "").trim();
+  if (existingObjectId.startsWith("search_term:")) return existingObjectId;
+  const query = [searchTerm, label, objectId]
+    .map((value) => String(value ?? "").trim())
+    .find(Boolean);
+  if (!query) return "";
+  const market = String(marketId ?? "").trim();
+  return market ? `search_term:${market}:${query}` : `search_term:${query}`;
+}
+
+function uniqueStableObjectIds(values: Array<string | null | undefined>) {
+  return Array.from(new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean)));
 }
 
 export function manualActionExpectedTargetForSignal(
@@ -3250,7 +3293,13 @@ function compactIdentityParts(parts: Array<string | null | undefined>) {
 }
 
 function identityIssueTexts(
-  expected: { signalId?: string | null; objectType?: string | null; objectId?: string | null; marketId?: number | null },
+  expected: {
+    signalId?: string | null;
+    objectType?: string | null;
+    objectId?: string | null;
+    objectIds?: string[] | null;
+    marketId?: number | null;
+  },
   actual: { signalId?: string | null; objectType?: string | null; objectId?: string | null; marketId?: number | null },
 ) {
   const issues: string[] = [];
@@ -3264,7 +3313,8 @@ function identityIssueTexts(
 
   const expectedObjectId = String(expected.objectId ?? "").trim();
   const actualObjectId = String(actual.objectId ?? "").trim();
-  if (expectedObjectId && actualObjectId && expectedObjectId !== actualObjectId) issues.push("object_id 不一致");
+  const expectedObjectIds = uniqueStableObjectIds([expectedObjectId, ...(expected.objectIds ?? [])]);
+  if (expectedObjectIds.length > 0 && actualObjectId && !expectedObjectIds.includes(actualObjectId)) issues.push("object_id 不一致");
 
   if (expected.marketId != null && actual.marketId != null && expected.marketId !== actual.marketId) issues.push("market_id 不一致");
   return issues;
@@ -3276,6 +3326,7 @@ export function buildManualActionIdentityGateItems(input: ManualActionIdentityGa
     signalId: input.signal?.id ?? null,
     objectType: stableObject.objectType ?? input.signal?.object_type ?? null,
     objectId: stableObject.objectId ?? null,
+    objectIds: reviewSignalStableObjectIdCandidates(input.signal),
     marketId: input.signal?.market_id ?? input.fallbackMarketId ?? null,
   };
   const signalDetail = compactIdentityParts([

@@ -5687,7 +5687,7 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
         "证据缺口：需要继续核对投放词、广告组商品清单和广告位表现，才能转成具体人工动作。",
       purpose: "用途：从当前 Parent ASIN 视角，聚合广告中实际产生表现的用户搜索词，按搜索意图汇总同类 SearchTerm，帮助运营判断搜索词表现、机会和异常。",
       boundary: "边界：只复核广告用户搜索词表现；不改变诊断入口，不生成广告搜索词聚合上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
-      dataGrain: summary.data_grain || "当前诊断入口相关广告上下文中实际产生表现的用户搜索词行",
+      dataGrain: summary.data_grain || "当前 Parent ASIN 关联广告上下文中实际产生表现的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索意图聚合。",
       proves: searchIntentDisplayText(summary.proves) || "能证明同类广告搜索词在当前广告上下文内的花费、点击、订单和 ABA 背景。",
       doesNotProve:
         searchIntentDisplayText(summary.does_not_prove) || "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能生成广告搜索词聚合上下文人工动作。",
@@ -5713,8 +5713,8 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
   return {
     purpose:
       firstCard?.purpose ??
-      "用途：从当前 Parent ASIN 视角聚合广告中实际产生表现的用户搜索词，帮助运营按语义复核同类搜索词表现；它不是经营商品入口、广告组入口或人工动作对象。",
-    dataGrain: firstCard?.dataGrain ?? "当前诊断入口相关广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索意图聚合。",
+      "用途：从当前 Parent ASIN 视角聚合广告中实际产生表现的用户搜索词，帮助运营按搜索意图复核同类 SearchTerm 表现；它不是经营商品入口、广告组入口或人工动作对象。",
+    dataGrain: firstCard?.dataGrain ?? "当前 Parent ASIN 关联广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索意图聚合。",
     interactionBoundary:
       "点击后只改变左侧信号队列筛选和中间选中 SearchTerm，不改变顶部诊断入口筛选器，也不切换 Parent ASIN / 广告 ASIN / 广告组。",
     proves: firstCard?.proves ?? "能证明当前诊断入口内同类广告搜索词的花费、点击、订单、ACOS 和 ABA 站点级背景。",
