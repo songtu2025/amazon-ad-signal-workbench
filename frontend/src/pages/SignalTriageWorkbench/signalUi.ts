@@ -5088,10 +5088,28 @@ export function buildDiagnosisPathSummary(
   const topGroup = drilldown?.items?.[0]?.top_ad_group;
   const adAsinCount = drilldown?.advertised_asin_count ?? drilldown?.items?.length ?? 0;
   const candidateCount = summary?.signal_status?.candidate_count ?? 0;
+  const canWriteManualAction = summary?.actionability_status?.can_write_manual_action === true;
+  const manualActionCount = summary?.review_status?.manual_action_count ?? 0;
+  const readyReviewCount = summary?.review_status?.ready_count ?? 0;
   const topAdGroupName = topGroup?.ad_group_name?.trim() || topGroup?.ad_group_id?.trim();
   const targetingCount = topGroup?.targeting_context?.targeting_count ?? 0;
   const searchTermCount = topGroup?.search_term_count ?? 0;
   const placementCount = topGroup?.placement_count ?? 0;
+  const manualStepValue =
+    canWriteManualAction && candidateCount > 0
+      ? `待人工确认 / 候选 ${candidateCount} 个`
+      : candidateCount > 0
+        ? `候选 ${candidateCount} 个 / 等待门禁`
+        : "只能诊断 / 候选 0 个";
+  const manualStepTone: DiagnosisPathSummaryStep["tone"] =
+    canWriteManualAction && candidateCount > 0 ? "ready" : candidateCount > 0 ? "neutral" : "blocked";
+  const reviewStepValue =
+    readyReviewCount > 0
+      ? `${readyReviewCount} 个 ready 复盘待人工保存`
+      : manualActionCount > 0
+        ? `已有 ${manualActionCount} 条人工留痕，等待 7/14 天窗口`
+        : "人工留痕后生成 ReviewTodo";
+  const reviewStepTone: DiagnosisPathSummaryStep["tone"] = readyReviewCount > 0 ? "ready" : manualActionCount > 0 ? "neutral" : "blocked";
 
   return {
     title: "当前诊断路径",
@@ -5122,8 +5140,18 @@ export function buildDiagnosisPathSummary(
         value: `${status.label} / 候选 ${candidateCount} 个`,
         tone: status.tone === "blocked" ? "blocked" : status.tone === "ready" ? "ready" : "neutral",
       },
+      {
+        label: "人工确认",
+        value: manualStepValue,
+        tone: manualStepTone,
+      },
+      {
+        label: "7/14 天复盘",
+        value: reviewStepValue,
+        tone: reviewStepTone,
+      },
     ],
-    boundary: `${diagnosisBoundary(summary)}${candidateCount === 0 ? " candidate_count=0，不能写人工动作。" : ""}`,
+    boundary: `${diagnosisBoundary(summary)}${candidateCount === 0 ? " candidate_count=0，不能写人工动作。" : ""} 未完成人工留痕和 ready 复盘前，不能保存 ReviewRecord 或判断处理有效。`,
   };
 }
 
@@ -5426,12 +5454,12 @@ function diagnosisScopeLabel(selectedScope: ProductScopeFilterOption | null): st
 
 function diagnosisPathDescription(selectedScope: ProductScopeFilterOption | null): string {
   if (selectedScope?.scope_type === "parent_asin" || selectedScope?.scope_id.startsWith("parent_asin:")) {
-    return "Parent ASIN -> 广告 ASIN -> 广告组 -> 投放词/搜索词/广告位 -> AI 准入";
+    return "Parent ASIN -> 广告 ASIN -> 广告组 -> 投放词/搜索词/广告位 -> AI 准入 -> 人工确认 -> 7/14 天复盘";
   }
   if (selectedScope?.scope_type === "advertised_asin") {
-    return "广告 ASIN -> 广告组 -> 投放词/搜索词/广告位 -> AI 准入";
+    return "广告 ASIN -> 广告组 -> 投放词/搜索词/广告位 -> AI 准入 -> 人工确认 -> 7/14 天复盘";
   }
-  return "经营入口 -> 广告证据 -> AI 准入";
+  return "经营入口 -> 广告证据 -> AI 准入 -> 人工确认 -> 7/14 天复盘";
 }
 
 function diagnosisBoundary(summary: SignalTriageSummaryForUi | null | undefined): string {

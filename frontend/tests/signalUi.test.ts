@@ -1541,7 +1541,8 @@ if (!diagnosisPathSummary) {
   throw new Error("Parent ASIN 应返回左侧诊断路径摘要");
 }
 assertEqual(diagnosisPathSummary.title, "当前诊断路径");
-assertIncludes(diagnosisPathSummary.description, "Parent ASIN -> 广告 ASIN -> 广告组 -> 投放词/搜索词/广告位 -> AI 准入");
+assertIncludes(diagnosisPathSummary.description, "Parent ASIN -> 广告 ASIN -> 广告组 -> 投放词/搜索词/广告位 -> AI 准入 -> 人工确认 -> 7/14 天复盘");
+assertEqual(diagnosisPathSummary.steps.length, 7);
 assertIncludes(
   diagnosisPathSummary.steps.map((step) => `${step.label} ${step.value}`).join(" / "),
   "RBK004-kids sunglasses-广泛",
@@ -1558,7 +1559,20 @@ assertIncludes(
   diagnosisPathSummary.steps.map((step) => `${step.label} ${step.value}`).join(" / "),
   "只能诊断",
 );
+assertIncludes(
+  diagnosisPathSummary.steps.map((step) => `${step.label} ${step.value}`).join(" / "),
+  "人工确认 只能诊断 / 候选 0 个",
+);
+assertIncludes(
+  diagnosisPathSummary.steps.map((step) => `${step.label} ${step.value}`).join(" / "),
+  "7/14 天复盘",
+);
+assertIncludes(
+  diagnosisPathSummary.steps.map((step) => `${step.label} ${step.value}`).join(" / "),
+  "ReviewTodo",
+);
 assertIncludes(diagnosisPathSummary.boundary, "不能写人工动作");
+assertIncludes(diagnosisPathSummary.boundary, "不能保存 ReviewRecord");
 
 const productScopeEvidenceMatrix = buildProductScopeEvidenceMatrix(parentDiagnosisScope, parentDiagnosisSummary);
 if (!productScopeEvidenceMatrix) {
@@ -1566,6 +1580,7 @@ if (!productScopeEvidenceMatrix) {
 }
 assertEqual(productScopeEvidenceMatrix.title, "对象证据矩阵");
 assertIncludes(productScopeEvidenceMatrix.summary, "Parent ASIN -> 广告 ASIN -> 广告组 -> 投放词/搜索词/广告位 -> AI 准入");
+assertIncludes(productScopeEvidenceMatrix.summary, "人工确认 -> 7/14 天复盘");
 assertEqual(productScopeEvidenceMatrix.rows.length, 5);
 assertIncludes(
   productScopeEvidenceMatrix.rows.map((row) => `${row.layerLabel} ${row.objectLabel} ${row.evidenceLabel} ${row.value} ${row.detail}`).join(" / "),
@@ -1882,6 +1897,14 @@ if (!readyDiagnosisPathSummary) {
 assertIncludes(
   readyDiagnosisPathSummary.steps.map((step) => `${step.label} ${step.value}`).join(" / "),
   "AI 准入 待人工确认 / 候选 3 个",
+);
+assertIncludes(
+  readyDiagnosisPathSummary.steps.map((step) => `${step.label} ${step.value}`).join(" / "),
+  "人工确认 待人工确认 / 候选 3 个",
+);
+assertIncludes(
+  readyDiagnosisPathSummary.steps.map((step) => `${step.label} ${step.value}`).join(" / "),
+  "7/14 天复盘 人工留痕后生成 ReviewTodo",
 );
 assertNotIncludes(readyDiagnosisPathSummary.boundary, "candidate_count=0");
 
