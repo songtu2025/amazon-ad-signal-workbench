@@ -3318,10 +3318,40 @@ const diagnosisContractItems = signalTriageDiagnosisContractItems({
             value: "17.7%",
             purpose: "判断放量前的效率是否可接受。",
           },
+          {
+            name: "CVR",
+            value: "55.3%",
+            purpose: "判断点击承接质量是否支持继续复核，不能单独证明应放量。",
+          },
+          {
+            name: "投放上下文",
+            value: "广告组 2 个 / 搜索词表现行 2 条",
+            purpose: "确认该词出现在哪些广告组，避免把合并结果误读为单一对象表现。",
+          },
+          {
+            name: "投放词证据",
+            value: "beach essentials / 1 个",
+            purpose: "判断用户搜索词是否已有投放词承接；这不是完整关键词库证明。",
+          },
+          {
+            name: "广告位证据",
+            value: "广告组级广告位 0 条 / 同广告活动广告位 2 条",
+            purpose: "判断是否能解释流量位置影响；只有广告组级或搜索词直连证据才可辅助广告位判断。",
+          },
+          {
+            name: "ABA市场热度",
+            value: "排名 208 / 2026-06-07 至 2026-06-13 / 上升16",
+            purpose: "判断该词是否同时具备站点级市场热度；ABA 只作为市场背景。",
+          },
+          {
+            name: "广告组承接边界",
+            value: "2/2 已匹配 / 最大同组 ASIN 1",
+            purpose: "判断搜索词机会能否安全下钻到广告组和广告 ASIN。",
+          },
         ],
         current_judgement: "当前搜索词在 2 个投放上下文中转化稳定。",
         proves: "能证明该搜索词在当前投放上下文中有转化。",
-        does_not_prove: "不能证明应该自动加词、自动调价或归因到单个 ASIN。",
+        does_not_prove: "不能证明应该自动加词、自动调价或归因到单个广告 ASIN。",
         evidence_gap: "缺少投放词是否已稳定维护、是否主推策略允许扩量的人工证据。",
         required_evidence: "需要人工核对广告商品、投放词、广告组策略和 7/14 天复盘指标。",
         next_manual_step: "人工复核广告商品和投放词后，记录观察或加入 7/14 天复盘。",
@@ -3699,14 +3729,27 @@ const metricDecisionItems = buildSignalMetricDecisionItems(
   diagnosisContractItems,
 );
 const ordersMetricDecision = metricDecisionItems.find((item) => item.label === "订单");
+const cvrMetricDecision = metricDecisionItems.find((item) => item.label === "CVR");
+const placementMetricDecision = metricDecisionItems.find((item) => item.label === "广告位证据");
+const abaMetricDecision = metricDecisionItems.find((item) => item.label === "ABA市场热度");
+const adGroupBoundaryMetricDecision = metricDecisionItems.find((item) => item.label === "广告组承接边界");
 assertEqual(
   metricDecisionItems.map((item) => item.label).join(" / "),
-  "花费 / 订单 / 销售额 / ACOS",
+  "花费 / 订单 / 销售额 / ACOS / CVR / 投放上下文 / 投放词证据 / 广告位证据 / ABA市场热度 / 广告组承接边界",
 );
 assertIncludes(ordersMetricDecision?.purpose ?? "", "判断搜索词是否已经产生真实广告转化");
 assertIncludes(ordersMetricDecision?.proves ?? "", "当前投放上下文中有转化");
 assertIncludes(ordersMetricDecision?.doesNotProve ?? "", "自动加词");
 assertIncludes(ordersMetricDecision?.nextManualStep ?? "", "加入 7/14 天复盘");
+assertEqual(cvrMetricDecision?.value, "55.3%");
+assertIncludes(cvrMetricDecision?.purpose ?? "", "点击承接质量");
+assertEqual(placementMetricDecision?.value, "广告组级广告位 0 条 / 同广告活动广告位 2 条");
+assertIncludes(placementMetricDecision?.purpose ?? "", "流量位置影响");
+assertEqual(abaMetricDecision?.value, "排名 208 / 2026-06-07 至 2026-06-13 / 上升16");
+assertIncludes(abaMetricDecision?.purpose ?? "", "站点级市场热度");
+assertEqual(adGroupBoundaryMetricDecision?.value, "2/2 已匹配 / 最大同组 ASIN 1");
+assertIncludes(adGroupBoundaryMetricDecision?.purpose ?? "", "广告组和广告 ASIN");
+assertIncludes(adGroupBoundaryMetricDecision?.doesNotProve ?? "", "单个广告 ASIN");
 
 const visibleAdAsinEvidenceItems = signalTriageBusinessEvidenceItems({
   recommended_evidence_drilldown: {

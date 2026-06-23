@@ -4467,7 +4467,7 @@ export function buildSignalMetricDecisionItems(
   metrics: SignalMetricSnapshotForUi,
   diagnosisContractItems: SignalTriageDiagnosisContractItem[] = [],
 ): SignalMetricDecisionItem[] {
-  return [
+  const baseMetrics = [
     {
       label: "花费",
       value: formatSignalMetricMoney(metrics.cost),
@@ -4488,7 +4488,41 @@ export function buildSignalMetricDecisionItems(
       value: formatSignalMetricPercent(metrics.acos ?? null),
       fallbackPurpose: "用于判断当前效率是否可接受，只能作为人工复核线索。",
     },
-  ].map((metric) => {
+  ];
+  const searchTermContract = diagnosisContractItems.find((item) => item.sectionId === "search_term_opportunity");
+  const searchTermContextMetrics = [
+    {
+      label: "CVR",
+      fallbackPurpose: "用于判断点击是否形成有效广告承接，不能单独证明应放量。",
+    },
+    {
+      label: "投放上下文",
+      fallbackPurpose: "用于确认该词出现在哪些广告组和表现行，避免把合并结果误读为单一对象表现。",
+    },
+    {
+      label: "投放词证据",
+      fallbackPurpose: "用于判断该 SearchTerm 是否已有投放词承接，不代表完整关键词库覆盖。",
+    },
+    {
+      label: "广告位证据",
+      fallbackPurpose: "用于判断是否具备广告位层级证据；缺广告组级证据时不能解释广告位影响。",
+    },
+    {
+      label: "ABA市场热度",
+      fallbackPurpose: "用于判断该词是否同时具备站点级市场背景，不能当作店铺或广告组数据。",
+    },
+    {
+      label: "广告组承接边界",
+      fallbackPurpose: "用于判断搜索词机会能否安全下钻到广告组和广告 ASIN，不能自动归因到单个 ASIN。",
+    },
+  ]
+    .map((metric) => {
+      const value = contractMetricValue(metric.label, searchTermContract);
+      return value ? { ...metric, value } : null;
+    })
+    .filter((metric): metric is { label: string; value: string; fallbackPurpose: string } => Boolean(metric));
+
+  return [...baseMetrics, ...searchTermContextMetrics].map((metric) => {
     const contractItem = diagnosisContractItemForMetric(metric.label, diagnosisContractItems);
     return {
       label: metric.label,
@@ -4501,6 +4535,13 @@ export function buildSignalMetricDecisionItems(
   });
 }
 
+function contractMetricValue(label: string, item: SignalTriageDiagnosisContractItem | undefined): string | null {
+  const part = contractMetricPart(label, item);
+  if (!part) return null;
+  const value = part.slice(`${label}：`.length).split("，")[0]?.trim();
+  return value || null;
+}
+
 function diagnosisContractItemForMetric(
   label: string,
   items: SignalTriageDiagnosisContractItem[],
@@ -4509,14 +4550,20 @@ function diagnosisContractItemForMetric(
 }
 
 function metricPurposeFromContract(label: string, item: SignalTriageDiagnosisContractItem | undefined): string | null {
-  if (!item?.metricText) return null;
-  const part = item.metricText
-    .split("；")
-    .map((text) => text.trim())
-    .find((text) => text.startsWith(`${label}：`));
+  const part = contractMetricPart(label, item);
   if (!part) return null;
   const purpose = part.split("，").slice(1).join("，").trim();
   return purpose || null;
+}
+
+function contractMetricPart(label: string, item: SignalTriageDiagnosisContractItem | undefined): string | null {
+  if (!item?.metricText) return null;
+  return (
+    item.metricText
+      .split("；")
+      .map((text) => text.trim())
+      .find((text) => text.startsWith(`${label}：`)) ?? null
+  );
 }
 
 function formatSignalMetricMoney(value: number): string {
