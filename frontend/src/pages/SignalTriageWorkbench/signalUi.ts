@@ -103,6 +103,7 @@ export interface SearchIntentFocusContext {
   title: string;
   focusLabel: string;
   signalObject: string;
+  pathItems: { label: string; value: string }[];
   relation: string;
   boundary: string;
   tone: SignalQueueScopeTone;
@@ -7144,6 +7145,7 @@ export function buildSelectedSignalScopeContext(
 export function buildSearchIntentFocusContext(
   selectedIntentLabel: string | null | undefined,
   signal: ProductScopedSignalForUi | null | undefined,
+  selectedScope: ProductScopeFilterOption | null = null,
 ): SearchIntentFocusContext | null {
   const focusLabel = selectedIntentLabel?.trim();
   if (!focusLabel || !signal) return null;
@@ -7155,12 +7157,18 @@ export function buildSearchIntentFocusContext(
     primaryObject?.label?.trim() ||
     signal.id;
   const signalObject = `SearchTerm：${searchTerm}`;
+  const scopeLabel = diagnosisScopeLabel(selectedScope);
 
   return {
     title: "Parent ASIN 广告搜索词表现复核承接",
     focusLabel,
     signalObject,
-    relation: `这个搜索意图分组来自当前 Parent ASIN 关联广告中实际产生表现的用户搜索词行；左侧只用它按搜索意图缩小广告 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。`,
+    pathItems: [
+      { label: "经营诊断入口", value: scopeLabel },
+      { label: "语义聚合口径", value: `${focusLabel}：当前 Parent ASIN 关联广告中的用户搜索词表现行` },
+      { label: "当前诊断对象", value: signalObject },
+    ],
+    relation: `这个搜索意图分组用于从 ${scopeLabel} 视角聚合广告中实际产生表现的用户搜索词行；左侧只用它按搜索意图缩小广告 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。`,
     boundary: `Parent ASIN 广告搜索词表现复核「${focusLabel}」只是分析分组，不是经营商品、广告组或人工动作对象；ABA 只作站点级背景，实际写入以后端 preflight evidence_snapshot_preview 为准。`,
     tone: "container",
   };

@@ -691,8 +691,8 @@ export function SignalTriageWorkbench() {
     [selectedProductScopeOption, selectedSignal],
   );
   const selectedSearchIntentFocusContext = useMemo(
-    () => buildSearchIntentFocusContext(activeSearchIntentLabel, selectedSignal),
-    [activeSearchIntentLabel, selectedSignal],
+    () => buildSearchIntentFocusContext(activeSearchIntentLabel, selectedSignal, selectedProductScopeOption),
+    [activeSearchIntentLabel, selectedProductScopeOption, selectedSignal],
   );
   const selectedTriageBusinessEvidenceItems =
     selectedSignal?.id && selectedSignal.id === signalTriageSummary?.recommended_candidate?.signal_id
@@ -3261,14 +3261,12 @@ function SearchIntentFocusContextStrip({ context }: { context: SearchIntentFocus
         <span>Parent ASIN 广告搜索词表现复核</span>
       </div>
       <div className="selectedSignalScopeContextGrid">
-        <span>
-          <b>搜索意图分组</b>
-          <strong>{context.focusLabel}</strong>
-        </span>
-        <span>
-          <b>诊断对象</b>
-          <strong>{context.signalObject}</strong>
-        </span>
+        {context.pathItems.map((item) => (
+          <span key={item.label}>
+            <b>{item.label}</b>
+            <strong>{item.value}</strong>
+          </span>
+        ))}
       </div>
       <p>{context.relation}</p>
       <small>{context.boundary}</small>

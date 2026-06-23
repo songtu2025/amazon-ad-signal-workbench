@@ -4905,19 +4905,23 @@ assertIncludes(selectedSearchTermScopeContext.boundary, "当前诊断入口仍�
 assertIncludes(selectedSearchTermScopeContext.boundary, "选中信号只决定中间证据和右侧人工确认对象");
 assertEqual(selectedSearchTermScopeContext.tone, "unattributed");
 
-const selectedSearchIntentFocusContext = buildSearchIntentFocusContext("规则语义：海滩出行用品", {
-  ...searchTermSignalWithoutAsin,
-  signal_category: "search_term_opportunity",
-  object_type: "search_term",
-  evidence: {
-    primary_object: {
-      object_type: "search_term",
-      label: "beach essentials",
-      search_term: "beach essentials",
-      intent_label: "规则语义：海滩出行用品",
+const selectedSearchIntentFocusContext = buildSearchIntentFocusContext(
+  "规则语义：海滩出行用品",
+  {
+    ...searchTermSignalWithoutAsin,
+    signal_category: "search_term_opportunity",
+    object_type: "search_term",
+    evidence: {
+      primary_object: {
+        object_type: "search_term",
+        label: "beach essentials",
+        search_term: "beach essentials",
+        intent_label: "规则语义：海滩出行用品",
+      },
     },
   },
-});
+  selectedParentScopeForSignalContext,
+);
 
 if (!selectedSearchIntentFocusContext) {
   throw new Error("当前语义聚焦命中搜索词信号时应生成承接提示");
@@ -4926,8 +4930,13 @@ if (!selectedSearchIntentFocusContext) {
 assertEqual(selectedSearchIntentFocusContext.title, "Parent ASIN 广告搜索词表现复核承接");
 assertEqual(selectedSearchIntentFocusContext.focusLabel, "规则语义：海滩出行用品");
 assertIncludes(selectedSearchIntentFocusContext.signalObject, "SearchTerm：beach essentials");
+assertEqual(selectedSearchIntentFocusContext.pathItems[0]?.label, "经营诊断入口");
+assertEqual(selectedSearchIntentFocusContext.pathItems[0]?.value, "Parent ASIN B0PARENT");
+assertEqual(selectedSearchIntentFocusContext.pathItems[1]?.label, "语义聚合口径");
+assertIncludes(selectedSearchIntentFocusContext.pathItems[1]?.value ?? "", "当前 Parent ASIN 关联广告中的用户搜索词表现行");
+assertEqual(selectedSearchIntentFocusContext.pathItems[2]?.label, "当前诊断对象");
 assertIncludes(selectedSearchIntentFocusContext.relation, "搜索意图分组");
-assertIncludes(selectedSearchIntentFocusContext.relation, "来自当前 Parent ASIN 关联广告中实际产生表现的用户搜索词行");
+assertIncludes(selectedSearchIntentFocusContext.relation, "从 Parent ASIN B0PARENT 视角聚合广告中实际产生表现的用户搜索词行");
 assertIncludes(selectedSearchIntentFocusContext.relation, "按搜索意图缩小广告 SearchTerm 信号队列");
 assertIncludes(selectedSearchIntentFocusContext.relation, "若进入人工动作");
 assertIncludes(selectedSearchIntentFocusContext.relation, "以后端预检确认的 SearchTerm 稳定对象为准");
