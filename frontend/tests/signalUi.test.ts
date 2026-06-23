@@ -3434,6 +3434,14 @@ const searchTermOpportunityReviewChain = buildSearchTermOpportunityReviewChain(d
 
 assertEqual(searchTermOpportunityReviewChain?.title, "广告搜索词表现复核");
 assertIncludes(searchTermOpportunityReviewChain?.objectGrain ?? "", "SearchTerm");
+assertIncludes(searchTermOpportunityReviewChain?.reviewPath ?? "", "Parent ASIN 销售盘");
+assertIncludes(searchTermOpportunityReviewChain?.reviewPath ?? "", "有广告数据的广告 ASIN");
+assertIncludes(searchTermOpportunityReviewChain?.reviewPath ?? "", "广告组容器");
+assertIncludes(searchTermOpportunityReviewChain?.reviewPath ?? "", "同组投放商品表现");
+assertIncludes(searchTermOpportunityReviewChain?.reviewPath ?? "", "投放词");
+assertIncludes(searchTermOpportunityReviewChain?.reviewPath ?? "", "广告位边界");
+assertIncludes(searchTermOpportunityReviewChain?.reviewPath ?? "", "具体 SearchTerm");
+assertIncludes(searchTermOpportunityReviewChain?.reviewPath ?? "", "7/14 天复盘");
 assertIncludes(searchTermOpportunityReviewChain?.parentScopeContext ?? "", "Parent ASIN");
 assertIncludes(searchTermOpportunityReviewChain?.parentScopeContext ?? "", "当前广告数据");
 assertIncludes(searchTermOpportunityReviewChain?.adAsinCoverage ?? "", "广告 ASIN");

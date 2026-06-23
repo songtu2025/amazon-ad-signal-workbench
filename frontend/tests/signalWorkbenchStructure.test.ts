@@ -298,11 +298,13 @@ assertIncludes(workbenchSource, 'aria-label="搜索词业务判断"');
 assertIncludes(workbenchSource, 'aria-label="广告搜索词表现复核链"');
 assertIncludes(workbenchSource, "buildSearchTermOpportunityReviewChain");
 assertIncludes(workbenchSource, "SearchTermOpportunityReviewChainPanel");
+assertIncludes(workbenchSource, "<b>复核路径</b>");
 assertIncludes(workbenchSource, "<b>Parent ASIN 入口</b>");
 assertIncludes(workbenchSource, "<b>广告 ASIN 承接</b>");
 assertIncludes(workbenchSource, "<b>广告组合流判断</b>");
 assertIncludes(workbenchSource, "<b>同组投放商品表现</b>");
 assertIncludes(workbenchSource, "<b>广告位边界</b>");
+assertIncludes(workbenchSource, "chain.reviewPath");
 assertIncludes(workbenchSource, "chain.parentScopeContext");
 assertIncludes(workbenchSource, "chain.adAsinCoverage");
 assertIncludes(workbenchSource, "chain.adGroupSynthesis");
@@ -311,13 +313,14 @@ assertIncludes(workbenchSource, "chain.placementBoundary");
 assertIncludes(workbenchSource, "chain.marketContext");
 assertIncludes(workbenchSource, "chain.actionBoundary");
 assert(
-  workbenchSource.indexOf("chain.parentScopeContext") < workbenchSource.indexOf("chain.adAsinCoverage") &&
+  workbenchSource.indexOf("chain.reviewPath") < workbenchSource.indexOf("chain.parentScopeContext") &&
+    workbenchSource.indexOf("chain.parentScopeContext") < workbenchSource.indexOf("chain.adAsinCoverage") &&
     workbenchSource.indexOf("chain.adAsinCoverage") < workbenchSource.indexOf("chain.adGroupSynthesis") &&
     workbenchSource.indexOf("chain.adGroupSynthesis") < workbenchSource.indexOf("chain.adGroupProductPerformance") &&
     workbenchSource.indexOf("chain.adGroupProductPerformance") < workbenchSource.indexOf("chain.targetingEvidence") &&
     workbenchSource.indexOf("chain.targetingEvidence") < workbenchSource.indexOf("chain.placementBoundary") &&
     workbenchSource.indexOf("chain.placementBoundary") < workbenchSource.indexOf("chain.marketContext"),
-  "广告搜索词表现复核链必须按 Parent ASIN -> 广告 ASIN -> 广告组合流判断 -> 同组投放商品表现 -> 投放词证据 -> 广告位边界 -> ABA 背景 的顺序展示。",
+  "广告搜索词表现复核链必须先展示复核路径，再按 Parent ASIN -> 广告 ASIN -> 广告组合流判断 -> 同组投放商品表现 -> 投放词证据 -> 广告位边界 -> ABA 背景 的顺序展示。",
 );
 assertIncludes(workbenchSource, "diagnosis.decision.businessQuestion");
 assertIncludes(workbenchSource, "diagnosis.decision.targetingEvidence");

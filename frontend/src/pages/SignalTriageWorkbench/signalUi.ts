@@ -3643,6 +3643,7 @@ export interface SearchTermOpportunityReviewChain {
   title: string;
   businessQuestion: string;
   objectGrain: string;
+  reviewPath: string;
   parentScopeContext: string;
   adAsinCoverage: string;
   targetingEvidence: string;
@@ -4157,6 +4158,8 @@ export function buildSearchTermOpportunityReviewChain(
       directSearchTermContract?.businessQuestion ?? "这个搜索词是否只是广告上下文，还是值得人工复核扩量或治理？",
     objectGrain:
       directSearchTermContract?.objectGrain ?? "SearchTerm + 同广告活动 / 广告组上下文 + 站点级 ABA 背景",
+    reviewPath:
+      "Parent ASIN 销售盘 -> 有广告数据的广告 ASIN -> 广告组容器 -> 同组投放商品表现 -> 投放词 -> 广告位边界 -> 具体 SearchTerm -> 人工确认 -> 7/14 天复盘",
     parentScopeContext,
     adAsinCoverage,
     targetingEvidence,

@@ -3114,6 +3114,10 @@ function SearchTermOpportunityReviewChainPanel({
           <span>{chain.objectGrain}</span>
         </li>
         <li>
+          <b>复核路径</b>
+          <span>{chain.reviewPath}</span>
+        </li>
+        <li>
           <b>Parent ASIN 入口</b>
           <span>{chain.parentScopeContext}</span>
         </li>
