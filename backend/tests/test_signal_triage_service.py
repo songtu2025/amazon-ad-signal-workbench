@@ -2758,6 +2758,8 @@ def test_signal_triage_points_to_next_unhandled_candidate_when_recommended_is_wa
     assert payload["next_unhandled_candidate"]["manual_action_preview"]["object_id"] == "B06VW5SQ97"
     assert payload["next_unhandled_candidate"]["manual_action_preview"]["preflight_checklist"][1]["check_id"] == "ad_product_coverage"
     assert payload["next_unhandled_evidence_drilldown"]["object_label"] == "RBK004-RBK004-2 深蓝"
+    assert payload["recommended_diagnosis_contract"]["signal_id"] == "sig-handled"
+    assert payload["next_unhandled_diagnosis_contract"]["signal_id"] == "sig-unhandled"
     assert payload["diagnosis_contract"]["signal_id"] == "sig-unhandled"
     assert payload["diagnosis_contract"]["object_id"] == "B06VW5SQ97"
     assert payload["diagnosis_contract"]["object_label"] == "RBK004-RBK004-2 深蓝"
