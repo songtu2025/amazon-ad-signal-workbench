@@ -2491,10 +2491,12 @@ const searchIntentManualEvidenceSnapshot = buildSearchIntentManualActionEvidence
   abaMatchBoundary: "短语包含匹配，仅作为同类 SearchTerm 市场热度背景。",
 });
 assertEqual(searchIntentManualEvidenceSnapshot.length, 6);
-assertEqual(searchIntentManualEvidenceSnapshot[0].label, "广告搜索词聚合上下文");
-assertEqual(searchIntentManualEvidenceSnapshot[0].source, "规则语义");
-assertIncludes(searchIntentManualEvidenceSnapshot[0].detail ?? "", "只用于复盘回看");
-assertEqual(searchIntentManualEvidenceSnapshot[1].label, "搜索词");
+assertEqual(searchIntentManualEvidenceSnapshot[0].label, "搜索词");
+assertEqual(searchIntentManualEvidenceSnapshot[0].value, "beach essentials");
+assertIncludes(searchIntentManualEvidenceSnapshot[0].detail ?? "", "人工处理对象仍落到具体 SearchTerm");
+assertEqual(searchIntentManualEvidenceSnapshot[1].label, "广告搜索词聚合上下文");
+assertEqual(searchIntentManualEvidenceSnapshot[1].source, "规则语义");
+assertIncludes(searchIntentManualEvidenceSnapshot[1].detail ?? "", "只用于复盘回看");
 assertEqual(searchIntentManualEvidenceSnapshot[2].label, "ABA语义参考词");
 assertEqual(searchIntentManualEvidenceSnapshot[3].label, "ABA语义参考排名");
 assertEqual(searchIntentManualEvidenceSnapshot[4].label, "ABA周期");
@@ -2515,14 +2517,23 @@ const signalManualEvidenceSnapshot = buildSignalManualActionEvidenceSnapshot({
     ],
   },
 });
-assertEqual(signalManualEvidenceSnapshot[0].label, "广告搜索词聚合上下文");
-assertEqual(signalManualEvidenceSnapshot[1].label, "搜索词");
+assertEqual(signalManualEvidenceSnapshot[0].label, "搜索词");
+assertEqual(signalManualEvidenceSnapshot[0].value, "beach essentials for toddlers 1-3");
+assertEqual(signalManualEvidenceSnapshot[1].label, "广告搜索词聚合上下文");
 assertEqual(signalManualEvidenceSnapshot[2].label, "ABA语义参考词");
 assertEqual(signalManualEvidenceSnapshot[5].label, "ABA匹配边界");
+assertIncludes(
+  manualActionEvidenceSnapshotText({ evidence_snapshot: signalManualEvidenceSnapshot }) ?? "",
+  "留痕证据快照：搜索词：beach essentials for toddlers 1-3；广告搜索词聚合上下文：规则语义：海滩出行用品",
+);
 assertIncludes(manualActionEvidenceSnapshotText({ evidence_snapshot: signalManualEvidenceSnapshot }) ?? "", "ABA语义参考词：beach essentials");
 const mergedManualEvidenceSnapshot = mergeManualActionEvidenceSnapshots(searchIntentManualEvidenceSnapshot, manualEvidenceSnapshot);
-assertEqual(mergedManualEvidenceSnapshot[0].label, "广告搜索词聚合上下文");
+assertEqual(mergedManualEvidenceSnapshot[0].label, "搜索词");
 assertEqual(mergedManualEvidenceSnapshot[6].label, "广告商品覆盖");
+assertIncludes(
+  manualActionEvidenceSnapshotText({ evidence_snapshot: mergedManualEvidenceSnapshot }) ?? "",
+  "搜索词：beach essentials",
+);
 assertIncludes(
   manualActionEvidenceSnapshotText({ evidence_snapshot: mergedManualEvidenceSnapshot }) ?? "",
   "广告搜索词聚合上下文：规则语义：海滩出行用品",
