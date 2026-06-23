@@ -944,7 +944,7 @@ def aba_phrase_context_evidence_items(aba_row: dict, row: dict) -> list[Evidence
             time_range=source_time_range(row),
             object_type=ObjectType.SEARCH_TERM.value,
             object_id=string_value(row.get("source_record_id") or row.get("row_id")),
-            explanation="广告搜索词聚合上下文用于人工复核同类广告搜索词表现，不代表自动广告动作。",
+            explanation="Parent ASIN 搜索词表现聚合用于人工复核同类广告搜索词表现，不代表自动广告动作。",
         ),
         EvidenceItem(
             label="ABA语义参考词",
@@ -1132,13 +1132,13 @@ def aggregate_search_term_opportunity_signals(signals: list[AiSignal]) -> list[A
                     label="语义组",
                     value=semantic_group,
                     source_type="积加API",
-                    source_name="广告搜索词聚合上下文",
+                    source_name="Parent ASIN 搜索词表现聚合",
                     metric_name="semantic_group",
                     metric_value=semantic_group,
                     time_range=source_time_range(api_rows[0]) if api_rows else None,
                     object_type=ObjectType.SEARCH_TERM.value,
                     object_id=primary_object.object_id,
-                    explanation="广告搜索词聚合上下文由广告搜索词 intent_label 或 normalized_query 在分析层解析，用于先按 Parent ASIN 视角复核用户搜索词表现，不代表人工确认结论。",
+                    explanation="Parent ASIN 搜索词表现聚合由广告搜索词 intent_label 或 normalized_query 在分析层解析，用于先按 Parent ASIN 视角复核用户搜索词表现，不代表人工确认结论。",
                 )
             )
         facts.extend(
@@ -1241,7 +1241,7 @@ def aggregate_search_term_opportunity_signals(signals: list[AiSignal]) -> list[A
             else group[0].suggested_action.model_copy(
                 update={
                     "description": (
-                        f"先按广告搜索词聚合上下文「{action_semantic_group}」复核同类搜索词表现，"
+                        f"先按 Parent ASIN 搜索词表现聚合「{action_semantic_group}」复核同类搜索词表现，"
                         "再人工判断是否加入精准关键词候选或小流量观察。"
                     )
                 }
@@ -1595,7 +1595,7 @@ def detect_search_intent_grouping_data_quality(rows: list[dict]) -> list[AiSigna
                 title="人工补齐搜索词语义分组",
                 description="人工先按人群、场景和商品相关性给核心广告搜索词分组；分组补齐前，只把广告搜索词聚合结果当作观察参考。",
             ),
-            risk="如果忽略该问题，运营可能把未分组搜索词的整体表现误读成同一广告搜索词聚合上下文表现。",
+            risk="如果忽略该问题，运营可能把未分组搜索词的整体表现误读成同一 Parent ASIN 搜索词表现聚合。",
             tags=["数据质量", "搜索词语义", "语义分组"],
         )
     ]

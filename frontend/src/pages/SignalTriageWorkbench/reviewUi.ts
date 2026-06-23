@@ -1346,7 +1346,7 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
             ],
             labels,
             hasSnapshot,
-            "广告搜索词表现复核待办必须保留 Parent ASIN 入口、广告 ASIN 承接、广告组合流判断、同组投放商品表现、投放词证据、搜索词边界、广告位边界、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标或广告搜索词聚合上下文误判为自动加词或否词依据。",
+            "广告搜索词表现复核待办必须保留 Parent ASIN 入口、广告 ASIN 承接、广告组合流判断、同组投放商品表现、投放词证据、搜索词边界、广告位边界、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标或 Parent ASIN 搜索词表现聚合误判为自动加词或否词依据。",
           ),
           {
             label: "广告组合流判断",
@@ -2314,7 +2314,7 @@ export function buildManualActionDisplayEvidenceSnapshot(input: ManualActionDisp
 
 export function manualActionSavableEvidenceReasonText(
   preflight: ManualActionPreflightForUi | null,
-  fallbackText = "等待后端可保存 evidence_snapshot_preview；页面广告搜索词聚合上下文和临时证据只用于只读核对，不写入人工动作。",
+  fallbackText = "等待后端可保存 evidence_snapshot_preview；页面 Parent ASIN 搜索词表现聚合和临时证据只用于只读核对，不写入人工动作。",
 ) {
   if (!preflight || !manualActionPreflightHasSavableEvidenceSnapshotPreview(preflight)) {
     return fallbackText;
@@ -2334,7 +2334,7 @@ export function buildSearchIntentManualActionEvidenceSnapshot(
   const abaRank = String(input?.abaRank ?? "").trim();
   const abaPeriod = String(input?.abaPeriod ?? "").trim();
   const abaMatchBoundary = String(input?.abaMatchBoundary ?? "").trim();
-  const semanticSource = intentLabel.startsWith("规则语义：") ? "规则语义" : "广告搜索词聚合上下文";
+  const semanticSource = intentLabel.startsWith("规则语义：") ? "规则语义" : "Parent ASIN 搜索词表现聚合";
   const snapshot: ManualActionEvidenceSnapshotForUi[] = [];
 
   if (searchTerm) {
@@ -2346,9 +2346,9 @@ export function buildSearchIntentManualActionEvidenceSnapshot(
     });
   }
   snapshot.push({
-    label: "广告搜索词聚合上下文",
+    label: "Parent ASIN 搜索词表现聚合",
     value: intentLabel,
-    detail: "只用于复盘回看同类 SearchTerm 判断链，不代表自动新增关键词、否词或调价。",
+    detail: "只用于复盘回看当前 Parent ASIN 下同类 SearchTerm 判断链，不代表自动新增关键词、否词或调价。",
     source: semanticSource,
   });
   if (abaReferenceTerm) {
@@ -2395,6 +2395,8 @@ export function buildSignalManualActionEvidenceSnapshot(
   const factValue = (label: string) => signalFactValue(facts, label);
   const intentLabel =
     String(selectedSearchIntentLabel ?? "").trim() ||
+    factValue("Parent ASIN 搜索词表现聚合") ||
+    factValue("广告搜索词聚合上下文") ||
     factValue("语义组") ||
     String(primaryObject?.intent_label ?? "").trim();
   const snapshot = buildSearchIntentManualActionEvidenceSnapshot({
@@ -2512,7 +2514,10 @@ export function manualActionEvidenceSnapshotText(
 }
 
 function manualActionEvidenceDisplayLabel(label: string) {
-  return label === "语义组" ? "广告搜索词聚合上下文" : label;
+  if (label === "语义组" || label === "广告搜索词聚合上下文") {
+    return "Parent ASIN 搜索词表现聚合";
+  }
+  return label;
 }
 
 const manualActionEvidenceReasonPriority = [
@@ -2529,6 +2534,8 @@ const manualActionEvidenceReasonPriority = [
   "上下文边界",
   "人工动作路径",
   "复盘指标",
+  "Parent ASIN 搜索词表现聚合",
+  "广告搜索词聚合上下文",
   "语义组",
   "搜索词",
   "ABA语义参考词",
@@ -2573,7 +2580,7 @@ export function reviewContextText(action: { review_context?: ReviewContextForUi 
   if (!context) return null;
   const parts: string[] = [];
   if (context.search_intent_label) {
-    parts.push(`Parent ASIN 广告搜索词聚合上下文：${context.search_intent_label}`);
+    parts.push(`Parent ASIN 搜索词表现聚合：${context.search_intent_label}`);
   }
   if (context.search_term) {
     parts.push(`具体 SearchTerm：${context.search_term}`);
@@ -3256,6 +3263,7 @@ function reviewRecordHasSearchIntentContext(record: ReviewRecordForUi | null | u
   return Boolean(
     record?.review_context?.search_intent_label ||
       reviewRecordHasSnapshotLabel(record, "语义组") ||
+      reviewRecordHasSnapshotLabel(record, "Parent ASIN 搜索词表现聚合") ||
       reviewRecordHasSnapshotLabel(record, "广告搜索词聚合上下文"),
   );
 }
@@ -3302,7 +3310,7 @@ function reviewRecordEvidenceSnapshotReadbackText(records: ReviewRecordForUi[]) 
         ? [
             "排查路径",
             "AI 准入",
-            "广告搜索词聚合上下文",
+            "Parent ASIN 搜索词表现聚合",
             "广告组合流判断",
             "同组投放商品表现",
             "投放词证据",
@@ -3315,7 +3323,7 @@ function reviewRecordEvidenceSnapshotReadbackText(records: ReviewRecordForUi[]) 
       reviewRecordHasEvidenceSnapshot(record) ? "" : "证据快照",
       reviewRecordHasObjectReference(record) ? "" : "对象引用",
       ...requiredSnapshotLabels.map((label) =>
-        label === "广告搜索词聚合上下文"
+        label === "Parent ASIN 搜索词表现聚合"
           ? reviewRecordHasSearchIntentContext(record)
             ? ""
             : label
@@ -3332,7 +3340,7 @@ function reviewRecordEvidenceSnapshotReadbackText(records: ReviewRecordForUi[]) 
   }
   const readbackLabels =
     records.length === 1 && normalizedPreflightTargetValue(records[0]?.object_type) === "search_term"
-      ? "对象引用 / 排查路径 / AI 准入 / 广告搜索词聚合上下文 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
+      ? "对象引用 / 排查路径 / AI 准入 / Parent ASIN 搜索词表现聚合 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
       : "对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界";
   const contextText = records.length === 1 ? reviewContextText(records[0]) : null;
   const contextSuffix = contextText ? `；复盘上下文：${contextText}` : "";

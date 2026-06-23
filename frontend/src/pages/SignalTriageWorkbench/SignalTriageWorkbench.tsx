@@ -2406,8 +2406,8 @@ export function SignalTriageWorkbench() {
                   </div>
                 )}
                 {selectedSearchIntentManualActionEvidenceSnapshot.length > 0 && (
-                  <div className="manualActionContextSnapshot" aria-label="广告搜索词聚合上下文核对">
-                    <strong>广告搜索词聚合上下文核对</strong>
+                  <div className="manualActionContextSnapshot" aria-label="Parent ASIN 搜索词表现聚合核对">
+                    <strong>Parent ASIN 搜索词表现聚合核对</strong>
                     <ul>
                       {selectedSearchIntentManualActionEvidenceSnapshot.map((item) => (
                         <li key={`${item.label}-${item.value}`}>
@@ -4154,7 +4154,10 @@ function MetricDecisionCell({ item }: { item: SignalMetricDecisionItem }) {
 }
 
 function evidenceFactDisplayLabel(label: string) {
-  return label === "语义组" ? "广告搜索词聚合上下文" : label;
+  if (label === "语义组" || label === "广告搜索词聚合上下文") {
+    return "Parent ASIN 搜索词表现聚合";
+  }
+  return label;
 }
 
 function EmptyState({ icon, title, description }: { icon: "loading" | "warning" | "empty"; title: string; description?: string }) {

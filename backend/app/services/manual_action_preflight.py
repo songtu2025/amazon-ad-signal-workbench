@@ -987,15 +987,15 @@ def _search_term_intent_snapshot_blocks(target: dict[str, Any], drilldown: dict[
     if not labels:
         return []
 
-    suffix = f"；另有 {len(labels) - 3} 个语义组未展开" if len(labels) > 3 else ""
-    source = "规则语义" if any(label.startswith("规则语义：") for label in labels) else "广告搜索词聚合上下文"
+    suffix = f"；另有 {len(labels) - 3} 个搜索词表现聚合未展开" if len(labels) > 3 else ""
+    source = "规则语义" if any(label.startswith("规则语义：") for label in labels) else "Parent ASIN 搜索词表现聚合"
     return [
         {
             "block_id": "search_term_intent_context",
             "label": "语义组",
             "value": "、".join(labels[:3]) + suffix,
             "detail": (
-                "该语义组来自当前 Parent ASIN 广告上下文中的用户搜索词表现行，"
+                "该聚合来自当前 Parent ASIN 广告上下文中的用户搜索词表现行，"
                 "用于复盘同类搜索词表现和重复上下文；不能替代顶部诊断入口，"
                 "也不能作为自动加词、否词、调价或暂停广告的依据。"
             ),

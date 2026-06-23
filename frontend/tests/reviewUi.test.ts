@@ -229,18 +229,18 @@ const abaContextTodo: ReviewTodoForUi = {
     aba_match_boundary: "短语包含匹配，仅作为同类 SearchTerm 市场热度背景。",
     repeat_search_intent_count: 2,
     repeat_aba_reference_count: 1,
-    repeat_summary: "同一广告搜索词聚合上下文已有 2 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。",
+    repeat_summary: "同一 Parent ASIN 搜索词表现聚合已有 2 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。",
     can_auto_change_rules: false,
     can_auto_execute_ads: false,
   },
 };
-assertIncludes(reviewContextText(abaContextTodo) ?? "", "Parent ASIN 广告搜索词聚合上下文：规则语义：海滩出行用品");
+assertIncludes(reviewContextText(abaContextTodo) ?? "", "Parent ASIN 搜索词表现聚合：规则语义：海滩出行用品");
 assertIncludes(reviewContextText(abaContextTodo) ?? "", "具体 SearchTerm：beach essentials");
 assertIncludes(reviewContextText(abaContextTodo) ?? "", "人工复盘下一步：按同类广告搜索词表现核对规则口径");
 assertIncludes(reviewContextText(abaContextTodo) ?? "", "ABA 站点级参考：beach essentials / 排名 208");
-assertIncludes(reviewContextText(abaContextTodo) ?? "", "同一广告搜索词聚合上下文已有 2 次人工留痕");
+assertIncludes(reviewContextText(abaContextTodo) ?? "", "同一 Parent ASIN 搜索词表现聚合已有 2 次人工留痕");
 assertIncludes(reviewContextText(abaContextTodo) ?? "", "不会自动改规则或执行广告");
-assertIncludes(manualActionEvidenceSnapshotText(abaContextTodo) ?? "", "复盘上下文：Parent ASIN 广告搜索词聚合上下文：规则语义：海滩出行用品");
+assertIncludes(manualActionEvidenceSnapshotText(abaContextTodo) ?? "", "复盘上下文：Parent ASIN 搜索词表现聚合：规则语义：海滩出行用品");
 const contextDetails = buildReviewTodoQueueDetails([abaContextTodo], { isGlobalScope: true });
 assertIncludes(contextDetails?.rows[0].contextText ?? "", "留痕证据快照");
 assertIncludes(contextDetails?.rows[0].contextText ?? "", "ABA语义参考词");
@@ -596,7 +596,7 @@ const savedSearchTermReviewRecord: ReviewRecordForUi = {
     search_intent_label: "规则语义：海滩出行用品",
     search_term: "beach essentials",
     repeat_search_intent_count: 4,
-    repeat_summary: "同一广告搜索词聚合上下文已有 4 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。",
+    repeat_summary: "同一 Parent ASIN 搜索词表现聚合已有 4 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。",
     can_auto_change_rules: false,
     can_auto_execute_ads: false,
   },
@@ -607,13 +607,13 @@ const searchTermReviewRecordReadback = reviewRecordReadbackStatus([savedSearchTe
   objectId: "search_term:1:beach essentials",
   reviewWindow: "7d",
 });
-assertIncludes(searchTermReviewRecordReadback, "广告搜索词聚合上下文");
-assertIncludes(searchTermReviewRecordReadback, "复盘上下文：Parent ASIN 广告搜索词聚合上下文：规则语义：海滩出行用品");
+assertIncludes(searchTermReviewRecordReadback, "Parent ASIN 搜索词表现聚合");
+assertIncludes(searchTermReviewRecordReadback, "复盘上下文：Parent ASIN 搜索词表现聚合：规则语义：海滩出行用品");
 assertIncludes(searchTermReviewRecordReadback, "具体 SearchTerm：beach essentials");
 assertIncludes(searchTermReviewRecordReadback, "人工复盘下一步：按同类广告搜索词表现核对规则口径");
-assertIncludes(searchTermReviewRecordReadback, "同一广告搜索词聚合上下文已有 4 次人工留痕");
+assertIncludes(searchTermReviewRecordReadback, "同一 Parent ASIN 搜索词表现聚合已有 4 次人工留痕");
 const searchTermRuleFeedbackCandidate = buildRuleFeedbackCandidate(savedSearchTermReviewRecord, improvedEffect);
-assertIncludes(searchTermRuleFeedbackCandidate?.basis ?? "", "复盘上下文：Parent ASIN 广告搜索词聚合上下文：规则语义：海滩出行用品");
+assertIncludes(searchTermRuleFeedbackCandidate?.basis ?? "", "复盘上下文：Parent ASIN 搜索词表现聚合：规则语义：海滩出行用品");
 assertIncludes(searchTermRuleFeedbackCandidate?.boundary ?? "", "不自动改规则，不自动执行广告动作");
 const savedReviewRecordWithoutObjectReference: ReviewRecordForUi = {
   ...savedReviewRecord,
@@ -1159,14 +1159,14 @@ const searchTermSavedReviewRecord: ReviewRecordForUi = {
     search_intent_label: "规则语义：海滩出行用品",
     search_term: "beach essentials",
     repeat_search_intent_count: 4,
-    repeat_summary: "同一广告搜索词聚合上下文已有 4 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。",
+    repeat_summary: "同一 Parent ASIN 搜索词表现聚合已有 4 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。",
     can_auto_change_rules: false,
     can_auto_execute_ads: false,
   },
 };
 assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘证据快照：7d 18 条");
-assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "广告搜索词聚合上下文 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景");
-assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘上下文：Parent ASIN 广告搜索词聚合上下文：规则语义：海滩出行用品");
+assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "Parent ASIN 搜索词表现聚合 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景");
+assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘上下文：Parent ASIN 搜索词表现聚合：规则语义：海滩出行用品");
 assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "具体 SearchTerm：beach essentials");
 assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "人工复盘下一步：按同类广告搜索词表现核对规则口径");
 assertIncludes(
@@ -1176,7 +1176,7 @@ assertIncludes(
     objectId: "search_term:1:beach essentials",
     reviewWindow: "7d",
   }),
-  "可回看对象引用 / 排查路径 / AI 准入 / 广告搜索词聚合上下文 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景",
+  "可回看对象引用 / 排查路径 / AI 准入 / Parent ASIN 搜索词表现聚合 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景",
 );
 assertIncludes(
   reviewRecordReadbackStatus(
@@ -2494,7 +2494,7 @@ const searchTermUnsavableEvidenceReason = manualActionSavableEvidenceReasonText(
   },
 });
 assertIncludes(searchTermUnsavableEvidenceReason, "等待后端可保存 evidence_snapshot_preview");
-assertIncludes(searchTermUnsavableEvidenceReason, "页面广告搜索词聚合上下文和临时证据只用于只读核对");
+assertIncludes(searchTermUnsavableEvidenceReason, "页面 Parent ASIN 搜索词表现聚合和临时证据只用于只读核对");
 assertEqual(searchTermUnsavableEvidenceReason.includes("规则语义：海滩出行用品"), false);
 const searchTermPreflightPriorityEvidenceRows = manualActionPreflightPriorityEvidenceRows({
   evidence_snapshot_preview: {
@@ -2548,7 +2548,7 @@ assertEqual(searchIntentManualEvidenceSnapshot.length, 6);
 assertEqual(searchIntentManualEvidenceSnapshot[0].label, "搜索词");
 assertEqual(searchIntentManualEvidenceSnapshot[0].value, "beach essentials");
 assertIncludes(searchIntentManualEvidenceSnapshot[0].detail ?? "", "人工处理对象仍落到具体 SearchTerm");
-assertEqual(searchIntentManualEvidenceSnapshot[1].label, "广告搜索词聚合上下文");
+assertEqual(searchIntentManualEvidenceSnapshot[1].label, "Parent ASIN 搜索词表现聚合");
 assertEqual(searchIntentManualEvidenceSnapshot[1].source, "规则语义");
 assertIncludes(searchIntentManualEvidenceSnapshot[1].detail ?? "", "只用于复盘回看");
 assertEqual(searchIntentManualEvidenceSnapshot[2].label, "ABA语义参考词");
@@ -2573,12 +2573,12 @@ const signalManualEvidenceSnapshot = buildSignalManualActionEvidenceSnapshot({
 });
 assertEqual(signalManualEvidenceSnapshot[0].label, "搜索词");
 assertEqual(signalManualEvidenceSnapshot[0].value, "beach essentials for toddlers 1-3");
-assertEqual(signalManualEvidenceSnapshot[1].label, "广告搜索词聚合上下文");
+assertEqual(signalManualEvidenceSnapshot[1].label, "Parent ASIN 搜索词表现聚合");
 assertEqual(signalManualEvidenceSnapshot[2].label, "ABA语义参考词");
 assertEqual(signalManualEvidenceSnapshot[5].label, "ABA匹配边界");
 assertIncludes(
   manualActionEvidenceSnapshotText({ evidence_snapshot: signalManualEvidenceSnapshot }) ?? "",
-  "留痕证据快照：搜索词：beach essentials for toddlers 1-3；广告搜索词聚合上下文：规则语义：海滩出行用品",
+  "留痕证据快照：搜索词：beach essentials for toddlers 1-3；Parent ASIN 搜索词表现聚合：规则语义：海滩出行用品",
 );
 assertIncludes(manualActionEvidenceSnapshotText({ evidence_snapshot: signalManualEvidenceSnapshot }) ?? "", "ABA语义参考词：beach essentials");
 const mergedManualEvidenceSnapshot = mergeManualActionEvidenceSnapshots(searchIntentManualEvidenceSnapshot, manualEvidenceSnapshot);
@@ -2590,7 +2590,7 @@ assertIncludes(
 );
 assertIncludes(
   manualActionEvidenceSnapshotText({ evidence_snapshot: mergedManualEvidenceSnapshot }) ?? "",
-  "广告搜索词聚合上下文：规则语义：海滩出行用品",
+  "Parent ASIN 搜索词表现聚合：规则语义：海滩出行用品",
 );
 const manualActionRequestPayload = buildManualActionRequestPayload({
   actionType: "add_to_review",

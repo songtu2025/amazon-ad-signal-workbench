@@ -5576,7 +5576,7 @@ def _review_closure_checklist(
             "check_id": "manual_action_context",
             "label": "复盘输入证据",
             "status": context_status,
-            "evidence": f"人工动作 {context_total} 条，证据快照 {context_evidence} 条，广告搜索词聚合上下文 {context_intent} 条，ABA 站点级参考 {context_aba} 条",
+            "evidence": f"人工动作 {context_total} 条，证据快照 {context_evidence} 条，Parent ASIN 搜索词表现聚合 {context_intent} 条，ABA 站点级参考 {context_aba} 条",
         },
         {
             "check_id": "evidence_trace",

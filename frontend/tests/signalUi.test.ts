@@ -4923,14 +4923,14 @@ if (!selectedSearchIntentFocusContext) {
   throw new Error("当前语义聚焦命中搜索词信号时应生成承接提示");
 }
 
-assertEqual(selectedSearchIntentFocusContext.title, "Parent ASIN 广告搜索词聚合承接");
+assertEqual(selectedSearchIntentFocusContext.title, "Parent ASIN 搜索词表现聚合");
 assertEqual(selectedSearchIntentFocusContext.focusLabel, "规则语义：海滩出行用品");
 assertIncludes(selectedSearchIntentFocusContext.signalObject, "SearchTerm：beach essentials");
 assertIncludes(selectedSearchIntentFocusContext.relation, "来自当前 Parent ASIN 关联广告中实际产生表现的用户搜索词行");
 assertIncludes(selectedSearchIntentFocusContext.relation, "按搜索意图缩小广告 SearchTerm 信号队列");
 assertIncludes(selectedSearchIntentFocusContext.relation, "若进入人工动作");
 assertIncludes(selectedSearchIntentFocusContext.relation, "以后端预检确认的 SearchTerm 稳定对象为准");
-assertIncludes(selectedSearchIntentFocusContext.boundary, "广告搜索词聚合上下文「规则语义：海滩出行用品」只是分析分组");
+assertIncludes(selectedSearchIntentFocusContext.boundary, "Parent ASIN 搜索词表现聚合「规则语义：海滩出行用品」只是分析分组");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "不是经营商品、广告组或人工动作对象");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "实际写入以后端 preflight evidence_snapshot_preview 为准");
 assertEqual(buildSearchIntentFocusContext("规则语义：太阳镜", searchTermSignalWithoutAsin), null);
@@ -5451,11 +5451,11 @@ assertIncludes(searchIntentReviewCards[0].purpose, "判断搜索词表现、机�
 assertIncludes(searchIntentReviewCards[0].dataGrain, "当前 Parent ASIN 相关广告上下文");
 assertIncludes(searchIntentReviewCards[0].proves, "同类广告搜索词");
 assertIncludes(searchIntentReviewCards[0].doesNotProve, "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现");
-assertIncludes(searchIntentReviewCards[0].doesNotProve, "广告搜索词聚合上下文人工动作");
+assertIncludes(searchIntentReviewCards[0].doesNotProve, "不能把 Parent ASIN 搜索词表现聚合当作人工动作对象");
 assertEqual(searchIntentReviewCards[0].doesNotProve.includes("语义组人工动作"), false);
 assertIncludes(searchIntentReviewCards[0].nextManualStep, "具体 SearchTerm 信号");
 assertIncludes(searchIntentReviewCards[0].boundary, "只复核广告用户搜索词表现");
-assertIncludes(searchIntentReviewCards[0].boundary, "不生成广告搜索词聚合上下文人工动作");
+assertIncludes(searchIntentReviewCards[0].boundary, "不把 Parent ASIN 搜索词表现聚合当作人工动作对象");
 assertIncludes(searchIntentReviewCards[0].boundary, "不证明单个 ASIN 归因");
 assertIncludes(searchIntentReviewCards[0].boundary, "ABA 仅作站点级背景");
 assertEqual(searchIntentReviewCards[0].primarySearchTerm, "baby sunglasses");
@@ -5476,7 +5476,7 @@ assertIncludes(searchIntentPanelContext.doesNotProve, "不能证明 Parent ASIN 
 assertIncludes(searchIntentPanelContext.nextManualStep, "具体 SearchTerm 信号");
 assertIncludes(searchIntentPanelContext.signalMetricBoundary, "卡片指标覆盖当前 Parent ASIN");
 assertIncludes(searchIntentPanelContext.signalMetricBoundary, "可行动证据子集");
-assertIncludes(searchIntentPanelContext.boundary, "不生成广告搜索词聚合上下文人工动作");
+assertIncludes(searchIntentPanelContext.boundary, "不把 Parent ASIN 搜索词表现聚合当作人工动作对象");
 assertIncludes(searchIntentPanelContext.emptyText, "当前展示 1 组搜索词表现聚合");
 
 const emptySearchIntentPanelContext = buildSearchIntentPanelContext([]);
