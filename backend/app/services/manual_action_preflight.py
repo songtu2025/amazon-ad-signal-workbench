@@ -8,6 +8,7 @@ from app.services.manual_actions import (
     manual_action_object_id_for_values,
 )
 from app.services.signal_triage import build_signal_triage_payload
+from app.services.snapshot_store import load_signal_rows_from_latest_snapshot
 
 
 MANUAL_ACTION_TYPES = {"observe", "handled", "add_to_review", "ignore"}
@@ -86,6 +87,7 @@ SEARCH_TERM_ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
     "search_term_review_targeting_evidence",
     "manual_search_term_boundary",
     "manual_placement_boundary",
+    "search_term_campaign_placement_context",
     "search_term_review_aba_context",
     "targeting_context",
     "search_term_market_context",
@@ -499,6 +501,7 @@ def _evidence_snapshot_preview(triage: dict[str, Any], target: dict[str, Any]) -
     blocks.extend(_product_scope_boundary_snapshot_blocks(triage, blocks, target))
     blocks.extend(_ad_group_product_performance_snapshot_blocks(triage, target, drilldown))
     blocks.extend(_search_term_ad_context_snapshot_blocks(target, drilldown))
+    blocks.extend(_search_term_campaign_placement_snapshot_blocks(target, drilldown))
     blocks.extend(_diagnosis_contract_snapshot_blocks(triage, target))
     blocks.extend(_search_term_review_chain_snapshot_blocks(blocks, triage, target))
     blocks.extend(_advertised_product_review_chain_snapshot_blocks(blocks, triage, target))
@@ -950,6 +953,85 @@ def _search_term_ad_context_row_text(row: dict[str, Any]) -> str:
     ]
     acos = _format_percent(row.get("acos"))
     cvr = _format_percent(row.get("cvr"))
+    if acos:
+        parts.append(f"ACOS {acos}")
+    if cvr:
+        parts.append(f"CVR {cvr}")
+    return " / ".join(parts)
+
+
+def _search_term_campaign_placement_snapshot_blocks(
+    target: dict[str, Any],
+    drilldown: dict[str, Any],
+) -> list[dict[str, str]]:
+    if str(target.get("object_type") or "").strip() != "search_term":
+        return []
+
+    campaign_ids = {
+        str(row.get("campaign_id") or "").strip()
+        for row in _dict_list(drilldown.get("search_term_rows"))
+        if str(row.get("campaign_id") or "").strip()
+    }
+    campaign_names = {
+        str(row.get("campaign_name") or "").strip()
+        for row in _dict_list(drilldown.get("search_term_rows"))
+        if str(row.get("campaign_name") or "").strip()
+    }
+    if not campaign_ids and not campaign_names:
+        return []
+
+    placement_rows = [
+        row
+        for row in load_signal_rows_from_latest_snapshot()
+        if str(row.get("source_table") or "").strip() == "ad_placement_daily_metrics"
+        and (
+            str(row.get("campaign_id") or "").strip() in campaign_ids
+            or str(row.get("campaign_name") or "").strip() in campaign_names
+        )
+    ]
+    if not placement_rows:
+        return []
+
+    sorted_rows = sorted(
+        placement_rows,
+        key=lambda row: (
+            str(row.get("campaign_name") or "").strip(),
+            -(_float(row.get("spend")) or 0),
+            str(row.get("placement") or row.get("placement_name") or "").strip(),
+        ),
+    )
+    row_texts = [text for text in (_campaign_placement_row_text(row) for row in sorted_rows[:6]) if text]
+    if not row_texts:
+        return []
+
+    suffix = f"；另有 {len(sorted_rows) - 6} 条活动级广告位背景未展开" if len(sorted_rows) > 6 else ""
+    return [
+        {
+            "block_id": "search_term_campaign_placement_context",
+            "label": "广告位活动级背景",
+            "value": "；".join(row_texts) + suffix,
+            "detail": (
+                "这些 ad_placement_daily_metrics 行只有 campaign_id，不能直接匹配到广告组或搜索词；"
+                "只能作为同广告活动背景，不能替代广告组级广告位归因，也不能证明应调整广告位。"
+            ),
+            "source": "ad_placement_daily_metrics + business_rule",
+        }
+    ]
+
+
+def _campaign_placement_row_text(row: dict[str, Any]) -> str:
+    campaign = str(row.get("campaign_name") or row.get("campaign_id") or "未知广告活动").strip()
+    placement = str(row.get("placement") or row.get("placement_name") or "未知广告位").strip()
+    parts = [
+        f"{campaign} / {placement}",
+        f"曝光 {_format_integer(row.get('impressions'))}",
+        f"点击 {_format_integer(row.get('clicks'))}",
+        f"花费 {_format_amount(row.get('spend'))}",
+        f"订单 {_format_integer(row.get('orders'))}",
+        f"销售额 {_format_amount(row.get('sales'))}",
+    ]
+    acos = _format_percent(row.get("acos")) or _format_ratio(row.get("spend"), row.get("sales"))
+    cvr = _format_percent(row.get("cvr")) or _format_ratio(row.get("orders"), row.get("clicks"))
     if acos:
         parts.append(f"ACOS {acos}")
     if cvr:
@@ -1795,6 +1877,14 @@ def _format_percent(value: Any) -> str:
     if number is None:
         return ""
     return f"{number * 100:.1f}%"
+
+
+def _format_ratio(numerator: Any, denominator: Any) -> str:
+    numerator_number = _float(numerator)
+    denominator_number = _float(denominator)
+    if numerator_number is None or denominator_number is None or denominator_number == 0:
+        return ""
+    return f"{numerator_number / denominator_number * 100:.1f}%"
 
 
 def _int(value: Any) -> int | None:
