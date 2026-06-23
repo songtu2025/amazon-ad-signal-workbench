@@ -3111,6 +3111,8 @@ def search_intent_top_terms(
             SearchIntentTopTerm(
                 search_term=string_value(first_row.get("search_term")) or query,
                 normalized_query=query,
+                ad_group_names=search_intent_term_ad_group_labels(group_rows),
+                targeting_texts=search_intent_term_targeting_labels(group_rows),
                 clicks=metrics.clicks,
                 cost=metrics.cost,
                 orders=metrics.orders,
@@ -3122,6 +3124,34 @@ def search_intent_top_terms(
             )
         )
     return sorted(top_terms, key=lambda item: (-item.orders, -item.cost, -item.clicks, item.search_term))[:limit]
+
+
+def search_intent_term_ad_group_labels(rows: list[dict], limit: int = 3) -> list[str]:
+    labels: list[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        label = string_value(row.get("ad_group_name") or row.get("ad_group_id") or row.get("group_id"))
+        if not label or label in seen:
+            continue
+        seen.add(label)
+        labels.append(label)
+        if len(labels) >= limit:
+            break
+    return labels
+
+
+def search_intent_term_targeting_labels(rows: list[dict], limit: int = 3) -> list[str]:
+    labels: list[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        label = string_value(row.get("targeting_text") or row.get("keyword_text") or row.get("target_id"))
+        if not label or label in seen:
+            continue
+        seen.add(label)
+        labels.append(label)
+        if len(labels) >= limit:
+            break
+    return labels
 
 
 def search_intent_current_judgement(metrics: MetricSnapshot) -> str:

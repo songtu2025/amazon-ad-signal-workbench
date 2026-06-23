@@ -142,6 +142,8 @@ export interface SearchIntentSummary {
 export interface SearchIntentTopTerm {
   search_term: string;
   normalized_query?: string | null;
+  ad_group_names?: string[];
+  targeting_texts?: string[];
   clicks: number;
   cost: number;
   orders: number;

@@ -5246,6 +5246,8 @@ const searchIntentReviewCards = buildSearchIntentReviewCards([
       {
         search_term: "baby sunglasses",
         normalized_query: "baby sunglasses",
+        ad_group_names: ["儿童太阳镜精准"],
+        targeting_texts: ["baby sunglasses exact"],
         clicks: 12,
         cost: 7,
         orders: 3,
@@ -5282,7 +5284,7 @@ assertIncludes(searchIntentReviewCards[0].boundary, "只复核广告用户搜索
 assertIncludes(searchIntentReviewCards[0].boundary, "不生成广告搜索词聚合上下文人工动作");
 assertIncludes(searchIntentReviewCards[0].boundary, "不证明单个 ASIN 归因");
 assertIncludes(searchIntentReviewCards[0].boundary, "ABA 仅作站点级背景");
-assertEqual(searchIntentReviewCards[0].topTerms[0], "baby sunglasses：3 单 / 花费 7 / ACOS 14.00% / ABA 120");
+assertEqual(searchIntentReviewCards[0].topTerms[0], "baby sunglasses：3 单 / 花费 7 / ACOS 14.00% / 广告组 儿童太阳镜精准 / 投放词 baby sunglasses exact / ABA 120");
 assertEqual(searchIntentReviewCards[0].intentLabel, "规则语义：儿童太阳镜");
 
 const searchIntentPanelContext = buildSearchIntentPanelContext(searchIntentReviewCards);

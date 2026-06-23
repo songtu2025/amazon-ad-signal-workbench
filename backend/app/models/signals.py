@@ -147,6 +147,8 @@ class AiSignal(BaseModel):
 class SearchIntentTopTerm(BaseModel):
     search_term: str
     normalized_query: str | None = None
+    ad_group_names: list[str] = Field(default_factory=list)
+    targeting_texts: list[str] = Field(default_factory=list)
     clicks: int = 0
     cost: float = 0
     orders: int = 0

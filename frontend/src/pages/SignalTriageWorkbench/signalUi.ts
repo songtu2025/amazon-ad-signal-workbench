@@ -136,6 +136,8 @@ export interface SignalLayerOverview {
 export interface SearchIntentTopTermForUi {
   search_term: string;
   normalized_query?: string | null;
+  ad_group_names?: string[];
+  targeting_texts?: string[];
   clicks: number;
   cost: number;
   orders: number;
@@ -5664,7 +5666,9 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
     const abaMatchCount = summary.aba_match_count ?? 0;
     const topTerms = (summary.top_search_terms ?? []).slice(0, 3).map((term) => {
       const abaText = term.aba_rank ? ` / ABA ${term.aba_rank}` : "";
-      return `${term.search_term}：${term.orders} 单 / 花费 ${formatReviewNumber(term.cost)} / ACOS ${formatReviewPercent(term.acos)}${abaText}`;
+      const adGroupText = (term.ad_group_names ?? []).filter(Boolean).slice(0, 2).join("、") || "广告组待补齐";
+      const targetingText = (term.targeting_texts ?? []).filter(Boolean).slice(0, 2).join("、") || "投放词待补齐";
+      return `${term.search_term}：${term.orders} 单 / 花费 ${formatReviewNumber(term.cost)} / ACOS ${formatReviewPercent(term.acos)} / 广告组 ${adGroupText} / 投放词 ${targetingText}${abaText}`;
     });
     return {
       intentLabel: summary.intent_label,

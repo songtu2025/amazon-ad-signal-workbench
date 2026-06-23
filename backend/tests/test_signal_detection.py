@@ -542,7 +542,11 @@ def test_search_intent_summary_exposes_review_terms_and_aba_matches() -> None:
     assert sunglasses.top_search_terms[0].cost == 7
     assert sunglasses.top_search_terms[0].acos == 0.14
     assert sunglasses.top_search_terms[0].aba_rank == 120
+    assert sunglasses.top_search_terms[0].ad_group_names == ["Baby sunglasses exact"]
+    assert sunglasses.top_search_terms[0].targeting_texts == ["baby sunglasses exact"]
     assert sunglasses.top_search_terms[1].search_term == "kids sunglasses"
+    assert sunglasses.top_search_terms[1].ad_group_names == []
+    assert sunglasses.top_search_terms[1].targeting_texts == []
     assert "关联 1 个广告 ASIN：B000SUN01" in sunglasses.ad_context
     assert "投放词/投放对象 1 个：baby sunglasses exact" in sunglasses.ad_context
     assert "缺广告 ASIN 覆盖上下文" not in sunglasses.evidence_gap
