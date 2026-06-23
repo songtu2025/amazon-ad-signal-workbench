@@ -220,6 +220,10 @@ async function main() {
     "广告搜索词表现聚合必须包含推荐 SearchTerm 所属的 Parent ASIN 广告搜索词行。",
   );
   const searchIntentReviewCards = buildSearchIntentReviewCards(searchIntents);
+  assert(
+    searchIntents.length <= 8 && searchIntentReviewCards.length === searchIntents.length,
+    "Parent ASIN 广告搜索词表现复核不应默认隐藏当前真实分组；小于等于 8 组时必须完整展示。",
+  );
   const searchIntentPanelContext = buildSearchIntentPanelContext(searchIntentReviewCards);
   const searchIntentRuntimeText = asText([searchIntentReviewCards, searchIntentPanelContext]);
   assertIncludes(searchIntentPanelContext.purpose, "从当前 Parent ASIN 视角");

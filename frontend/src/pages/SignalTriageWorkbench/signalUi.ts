@@ -6080,7 +6080,7 @@ function searchIntentMetricPurposeItems(
   ];
 }
 
-export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi[], limit = 4): SearchIntentReviewCard[] {
+export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi[], limit = 8): SearchIntentReviewCard[] {
   return summaries.slice(0, limit).map((summary) => {
     const metrics = summary.metrics;
     const abaMatchCount = summary.aba_match_count ?? 0;
