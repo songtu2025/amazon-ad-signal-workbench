@@ -59,9 +59,16 @@ export interface SignalObjectContextItem {
   value: string;
 }
 
+export interface SignalObjectReviewPath {
+  label: string;
+  value: string;
+  detail: string;
+}
+
 export interface SignalObjectContext {
   boundary: string;
   items: SignalObjectContextItem[];
+  reviewPath?: SignalObjectReviewPath | null;
 }
 
 export interface SignalDiagnosticScope {
@@ -4312,6 +4319,7 @@ const manualConfirmationPreferredSections = [
 export function buildManualConfirmationEvidenceItems(
   diagnosisContractItems: SignalTriageDiagnosisContractItem[],
   searchTermOpportunityReviewChain: SearchTermOpportunityReviewChain | null | undefined = null,
+  signal: (SignalForUi & { evidence?: { primary_object?: PrimaryObjectForUi | null } | null }) | null | undefined = null,
 ): ManualConfirmationEvidenceItem[] {
   const primary =
     manualConfirmationPreferredSections
@@ -4347,6 +4355,17 @@ export function buildManualConfirmationEvidenceItems(
         },
       ]
     : [];
+  const objectReviewPathItem = signal ? buildSignalObjectReviewPath(signal, signal.evidence?.primary_object ?? null) : null;
+  const objectReviewItems: ManualConfirmationEvidenceItem[] =
+    objectReviewPathItem && !searchTermOpportunityReviewChain
+      ? [
+          {
+            label: objectReviewPathItem.label,
+            value: objectReviewPathItem.value,
+            detail: objectReviewPathItem.detail,
+          },
+        ]
+      : [];
   const searchTermReviewItems: ManualConfirmationEvidenceItem[] = searchTermOpportunityReviewChain
     ? [
         {
@@ -4408,7 +4427,7 @@ export function buildManualConfirmationEvidenceItems(
       ]
     : [];
 
-  return [...primaryItems, ...searchTermReviewItems].filter((item) => item.value.trim());
+  return [...primaryItems, ...objectReviewItems, ...searchTermReviewItems].filter((item) => item.value.trim());
 }
 
 function preferredDiagnosisContractItem(
@@ -7616,9 +7635,34 @@ function pushContextItem(items: SignalObjectContextItem[], label: string, value?
   items.push({ label, value: text });
 }
 
+function buildSignalObjectReviewPath(signal: SignalForUi, primaryObject?: PrimaryObjectForUi | null): SignalObjectReviewPath | null {
+  const objectType = signal.object_type ?? primaryObject?.object_type;
+
+  if (objectType === "advertised_product") {
+    return {
+      label: "复核路径",
+      value:
+        "Parent ASIN 销售盘 -> 当前广告 ASIN -> 广告组容器 -> 同组投放商品表现 -> 投放词 / 搜索词上下文 -> 广告位边界 -> 人工确认 -> 7/14 天复盘",
+      detail: "广告 ASIN 是投放商品，不等同于经营商品；搜索词和广告位只能作为同广告组上下文，不能自动归因到该 ASIN。",
+    };
+  }
+
+  if (objectType === "placement") {
+    return {
+      label: "复核路径",
+      value:
+        "当前经营入口 -> 广告活动 / 广告组 -> 广告位表现 -> 广告 ASIN 和搜索词承接核对 -> 证据缺口 -> 人工确认 -> 7/14 天复盘",
+      detail: "广告位只说明流量位置或广告活动上下文；缺广告组或广告 ASIN 证据时不能下 ASIN 或 Parent ASIN 归因结论。",
+    };
+  }
+
+  return null;
+}
+
 export function buildSignalObjectContext(signal: SignalForUi, primaryObject: PrimaryObjectForUi): SignalObjectContext {
   const objectType = signal.object_type ?? primaryObject.object_type;
   const items: SignalObjectContextItem[] = [];
+  const reviewPath = buildSignalObjectReviewPath(signal, primaryObject);
 
   pushContextItem(items, "广告活动", primaryObject.campaign_name);
   pushContextItem(items, "广告组", primaryObject.ad_group_name);
@@ -7628,6 +7672,7 @@ export function buildSignalObjectContext(signal: SignalForUi, primaryObject: Pri
     return {
       boundary: "广告组是投放容器，不能直接归因为单个商品；商品判断必须继续看广告商品或销售商品证据。",
       items,
+      reviewPath,
     };
   }
 
@@ -7636,6 +7681,7 @@ export function buildSignalObjectContext(signal: SignalForUi, primaryObject: Pri
     return {
       boundary: "搜索词表现通常落在广告活动和广告组上下文，不能强行归属到单个商品。",
       items,
+      reviewPath,
     };
   }
 
@@ -7644,6 +7690,7 @@ export function buildSignalObjectContext(signal: SignalForUi, primaryObject: Pri
     return {
       boundary: "广告位说明流量位置和预算分配层级，不直接代表单个商品承接。",
       items,
+      reviewPath,
     };
   }
 
@@ -7655,6 +7702,7 @@ export function buildSignalObjectContext(signal: SignalForUi, primaryObject: Pri
     return {
       boundary: "广告商品代表投放商品，不等同于经营商品；销售承接需要销售商品证据。",
       items,
+      reviewPath,
     };
   }
 
@@ -7666,6 +7714,7 @@ export function buildSignalObjectContext(signal: SignalForUi, primaryObject: Pri
     return {
       boundary: "销售商品代表经营表现，广告承接需要匹配广告商品证据。",
       items,
+      reviewPath,
     };
   }
 
@@ -7674,6 +7723,7 @@ export function buildSignalObjectContext(signal: SignalForUi, primaryObject: Pri
     return {
       boundary: "广告搜索词聚合上下文用于聚合同类广告搜索词表现，不等同于关键词本身，也不是广告处理对象。",
       items,
+      reviewPath,
     };
   }
 
@@ -7681,6 +7731,7 @@ export function buildSignalObjectContext(signal: SignalForUi, primaryObject: Pri
   return {
     boundary: "跨对象信号用于说明数据链路或组合判断，不直接归因到单个商品或广告组。",
     items,
+    reviewPath,
   };
 }
 

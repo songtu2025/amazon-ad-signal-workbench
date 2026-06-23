@@ -3448,6 +3448,32 @@ button.reviewTodoQueueNext:focus-visible {
   line-height: 1.55;
 }
 
+.objectReviewPath {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #d4e3f1;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #f8fbfe;
+}
+
+.objectReviewPath span {
+  color: #66758a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.objectReviewPath b {
+  color: #243246;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.objectReviewPath p {
+  margin: 0;
+  font-size: 12px;
+}
+
 .objectContextGrid {
   display: flex;
   flex-wrap: wrap;

@@ -3735,6 +3735,28 @@ assertIncludes(manualConfirmationEvidenceByLabel["需要补证"].detail ?? "", "
 assertIncludes(manualConfirmationEvidenceByLabel["动作边界"].value, "不得自动加词");
 assertIncludes(manualConfirmationEvidenceByLabel["动作边界"].detail ?? "", "不能把 ABA 当作店铺数据");
 
+const advertisedProductManualConfirmationEvidenceItems = buildManualConfirmationEvidenceItems(
+  [],
+  null,
+  advertisedProductSignal,
+);
+assertEqual(advertisedProductManualConfirmationEvidenceItems.map((item) => item.label).join(" / "), "复核路径");
+assertIncludes(advertisedProductManualConfirmationEvidenceItems[0].value, "Parent ASIN 销售盘");
+assertIncludes(advertisedProductManualConfirmationEvidenceItems[0].value, "当前广告 ASIN");
+assertIncludes(advertisedProductManualConfirmationEvidenceItems[0].detail ?? "", "广告 ASIN 是投放商品");
+assertIncludes(advertisedProductManualConfirmationEvidenceItems[0].detail ?? "", "不能自动归因到该 ASIN");
+
+const placementManualConfirmationEvidenceItems = buildManualConfirmationEvidenceItems(
+  [],
+  null,
+  placementSignal,
+);
+assertEqual(placementManualConfirmationEvidenceItems.map((item) => item.label).join(" / "), "复核路径");
+assertIncludes(placementManualConfirmationEvidenceItems[0].value, "广告位表现");
+assertIncludes(placementManualConfirmationEvidenceItems[0].value, "广告 ASIN 和搜索词承接核对");
+assertIncludes(placementManualConfirmationEvidenceItems[0].detail ?? "", "广告位只说明流量位置");
+assertIncludes(placementManualConfirmationEvidenceItems[0].detail ?? "", "不能下 ASIN 或 Parent ASIN 归因结论");
+
 const diagnosisEvidenceSummary = buildSignalDiagnosisEvidenceSummary(
   {
     id: "sig-search-term",
@@ -5268,6 +5290,9 @@ const placementContext = buildSignalObjectContext(placementSignal, {
 assertEqual(placementContext.items[0].label, "广告活动");
 assertEqual(placementContext.items[1].label, "广告位");
 assertIncludes(placementContext.boundary, "流量位置");
+assertIncludes(placementContext.reviewPath?.value ?? "", "广告位表现");
+assertIncludes(placementContext.reviewPath?.value ?? "", "7/14 天复盘");
+assertIncludes(placementContext.reviewPath?.detail ?? "", "不能下 ASIN 或 Parent ASIN 归因结论");
 
 const advertisedProductContext = buildSignalObjectContext(advertisedProductSignal, {
   object_type: "advertised_product",
@@ -5281,6 +5306,9 @@ const advertisedProductContext = buildSignalObjectContext(advertisedProductSigna
 assertEqual(advertisedProductContext.items[2].label, "ASIN");
 assertEqual(advertisedProductContext.items[2].value, "B000TEST01");
 assertIncludes(advertisedProductContext.boundary, "不等同于经营商品");
+assertIncludes(advertisedProductContext.reviewPath?.value ?? "", "当前广告 ASIN");
+assertIncludes(advertisedProductContext.reviewPath?.value ?? "", "广告位边界");
+assertIncludes(advertisedProductContext.reviewPath?.detail ?? "", "不能自动归因到该 ASIN");
 
 const overview = buildSignalOverview([dataQualitySignal, staleSignal, searchTermSignal, opportunitySignal]);
 

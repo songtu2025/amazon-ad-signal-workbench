@@ -715,8 +715,8 @@ export function SignalTriageWorkbench() {
     [selectedDiagnosisContractItems, selectedTriageBusinessEvidenceItems],
   );
   const selectedManualConfirmationEvidenceItems = useMemo(
-    () => buildManualConfirmationEvidenceItems(selectedDiagnosisContractItems, selectedSearchTermOpportunityReviewChain),
-    [selectedDiagnosisContractItems, selectedSearchTermOpportunityReviewChain],
+    () => buildManualConfirmationEvidenceItems(selectedDiagnosisContractItems, selectedSearchTermOpportunityReviewChain, selectedSignal),
+    [selectedDiagnosisContractItems, selectedSearchTermOpportunityReviewChain, selectedSignal],
   );
   const selectedBackendManualActionPreview = canRecommendManualActionInCurrentScope
     ? manualActionPreviewForSelectedSignal(selectedSignal?.id, signalTriageSummary, selectedSignal)
@@ -3852,6 +3852,13 @@ function SignalDiagnosis({
           <strong>{signal.evidence.primary_object.label}</strong>
         </div>
         <p>{objectContext.boundary}</p>
+        {objectContext.reviewPath && (
+          <div className="objectReviewPath" aria-label="对象复核路径">
+            <span>{objectContext.reviewPath.label}</span>
+            <b>{objectContext.reviewPath.value}</b>
+            <p>{objectContext.reviewPath.detail}</p>
+          </div>
+        )}
         {objectContext.items.length > 0 && (
           <div className="objectContextGrid">
             {objectContext.items.map((item) => (
