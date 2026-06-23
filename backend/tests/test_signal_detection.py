@@ -1405,6 +1405,55 @@ def test_grouped_search_term_opportunity_exposes_semantic_group() -> None:
     assert "自动" not in signal.suggested_action.description
 
 
+def test_search_intent_signal_uses_review_context_not_ad_operation_language() -> None:
+    rows = [
+        {
+            "row_id": "fixture-intent-waste-a",
+            "campaign_name": "SP 测试活动",
+            "ad_group_name": "场景词广告组",
+            "asin": "B000TEST01",
+            "sku": "TEST-SKU-A",
+            "msku": "TEST-MSKU-A",
+            "product_name": "测试广告商品 A",
+            "search_term": "wide beach accessories",
+            "intent_label": "规则语义：宽泛海滩用品",
+            "shop_id": "market:1",
+            "shop_name": "rivbos",
+            "market_id": 1,
+            "marketplace": "US",
+            "country": "US",
+            "source_type": "api_snapshot",
+            "snapshot_id": "snapshot-test",
+            "source_table": "ad_search_term_daily_metrics",
+            "source_record_id": "fixture-intent-waste-a",
+            "start_date": "2026-06-02",
+            "end_date": "2026-06-16",
+            "impressions": 2400,
+            "clicks": 42,
+            "cost": 34.2,
+            "orders": 0,
+            "sales": 0,
+        }
+    ]
+
+    signals = detect_signals(rows)
+
+    signal = next(item for item in signals if item.signal_category == "search_intent")
+    facts = {fact.label: fact.value for fact in signal.evidence.facts}
+    suggested_action_text = f"{signal.suggested_action.title} {signal.suggested_action.description}"
+
+    assert signal.object_type == ObjectType.SEARCH_INTENT
+    assert facts["搜索意图分组"] == "规则语义：宽泛海滩用品"
+    assert "语义标签" not in facts
+    assert "人工复核这组广告搜索词表现" in signal.suggested_action.title
+    assert "Parent ASIN" in signal.suggested_action.description
+    assert "观察和复盘依据" in signal.suggested_action.description
+    assert "否词" not in suggested_action_text
+    assert "降竞价" not in suggested_action_text
+    assert "候选" not in suggested_action_text
+    assert "不是人工动作对象" in signal.risk
+
+
 def test_detects_long_tail_search_term_low_spend_high_conversion_signal() -> None:
     rows = [
         {

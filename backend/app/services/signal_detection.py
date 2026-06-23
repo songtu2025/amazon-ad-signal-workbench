@@ -3086,7 +3086,7 @@ def semantic_source_for_intent_label(label: str) -> str:
         return "规则语义"
     if is_ungrouped_intent_label(label):
         return "未分组"
-    return "原始语义标签"
+    return "原始搜索词分组"
 
 
 def search_intent_top_terms(
@@ -3401,7 +3401,7 @@ def detect_intent_signals(rows: list[dict]) -> list[AiSignal]:
                         row,
                         ObjectType.SEARCH_INTENT,
                         [
-                            EvidenceItem(label="语义标签", value=summary.intent_label),
+                            EvidenceItem(label="搜索意图分组", value=summary.intent_label),
                             EvidenceItem(label="搜索词数量", value=str(len(summary.search_terms))),
                             EvidenceItem(label="聚合花费", value=f"{metrics.cost}"),
                             EvidenceItem(label="聚合订单", value=str(metrics.orders)),
@@ -3409,10 +3409,10 @@ def detect_intent_signals(rows: list[dict]) -> list[AiSignal]:
                     ),
                     suggested_action=SuggestedAction(
                         action_type="review_intent_bucket",
-                        title="复核这组广告搜索词的投放价值",
-                        description="人工检查这组广告搜索词是否偏泛；若与商品弱相关，优先进入人工否词或降竞价候选。",
+                        title="人工复核这组广告搜索词表现",
+                        description="人工核对这组广告搜索词是否偏泛、是否匹配当前 Parent ASIN 商品和广告组策略；本系统只保留观察和复盘依据，不直接给广告操作建议。",
                     ),
-                    risk="语义标签第一版由规则生成，人工反馈后再调准。",
+                    risk="搜索意图分组第一版由规则生成，人工反馈后再调准；它不是人工动作对象。",
                     tags=["广告搜索词聚合", "异常"],
                 )
             )
