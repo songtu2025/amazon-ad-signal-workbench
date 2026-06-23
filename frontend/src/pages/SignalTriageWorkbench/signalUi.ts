@@ -7921,7 +7921,7 @@ function keyEvidencePriorityRulesForSignal(signal?: KeyEvidenceSignalContext): s
 
   if (signal.signal_category === "search_term_opportunity") {
     return [
-      ["搜索意图分组", "Parent ASIN 广告搜索词表现复核", "Parent ASIN 搜索词表现聚合", "广告搜索词聚合上下文", "语义组"],
+      ["搜索词表现分组", "搜索意图分组", "Parent ASIN 广告搜索词表现复核", "Parent ASIN 搜索词表现聚合", "广告搜索词聚合上下文", "语义组"],
       ["投放上下文数"],
       ["搜索词"],
       ["合计订单", "订单"],

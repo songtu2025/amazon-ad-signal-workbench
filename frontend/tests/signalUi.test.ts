@@ -5458,7 +5458,7 @@ assertEqual(longTailKeyEvidence[2].label, "ACOS");
 const groupedSearchTermOpportunityKeyEvidence = buildKeyEvidenceFacts(
   [
     { label: "投放上下文数", value: "2", source_type: "积加API" },
-    { label: "语义组", value: "规则语义：儿童太阳镜", source_type: "积加API" },
+    { label: "搜索词表现分组", value: "规则语义：儿童太阳镜", source_type: "积加API" },
     { label: "合计订单", value: "9", source_type: "积加API" },
     { label: "合计ACOS", value: "6.25%", source_type: "积加API" },
     { label: "ABA排名", value: "208", source_type: "ABA导出" },
@@ -5468,7 +5468,7 @@ const groupedSearchTermOpportunityKeyEvidence = buildKeyEvidenceFacts(
 );
 
 assertEqual(groupedSearchTermOpportunityKeyEvidence.length, 3);
-assertEqual(groupedSearchTermOpportunityKeyEvidence[0].label, "语义组");
+assertEqual(groupedSearchTermOpportunityKeyEvidence[0].label, "搜索词表现分组");
 assertEqual(groupedSearchTermOpportunityKeyEvidence[1].label, "投放上下文数");
 assertEqual(groupedSearchTermOpportunityKeyEvidence[2].label, "合计订单");
 
