@@ -466,6 +466,68 @@ def test_review_todos_extract_search_intent_and_aba_context(tmp_path: Path) -> N
     assert context.can_auto_execute_ads is False
 
 
+def test_review_todos_infer_search_intent_for_legacy_search_term_action(tmp_path: Path) -> None:
+    action_payloads = [
+        {
+            "id": "manual-action-beach-legacy-1",
+            "signal_id": "sig-long-tail-beach-legacy-1",
+            "action_type": "observe",
+            "operator_name": "本地运营",
+            "acted_at": "2026-06-01T00:00:00+00:00",
+            "manual_status": "observing",
+            "snapshot_id": "snapshot-legacy",
+            "shop_id": "market:1",
+            "market_id": 1,
+            "object_type": "search_term",
+            "object_id": "search_term:1:beach essentials for kids",
+            "object_label": "beach essentials for kids",
+            "evidence_snapshot": [
+                {"label": "搜索词", "value": "beach essentials for kids", "source": "积加API"},
+            ],
+        },
+        {
+            "id": "manual-action-beach-legacy-2",
+            "signal_id": "sig-long-tail-beach-legacy-2",
+            "action_type": "add_to_review",
+            "operator_name": "本地运营",
+            "acted_at": "2026-06-03T00:00:00+00:00",
+            "manual_status": "pending",
+            "snapshot_id": "snapshot-current",
+            "shop_id": "market:1",
+            "market_id": 1,
+            "object_type": "search_term",
+            "object_id": "search_term:1:beach essentials",
+            "object_label": "beach essentials",
+            "evidence_snapshot": [
+                {"label": "搜索词", "value": "beach essentials", "source": "积加API"},
+                {
+                    "label": "复盘指标",
+                    "value": "7/14 天复盘点击、订单、ACOS、CVR、是否重复出现。",
+                    "source": "积加API",
+                },
+            ],
+        },
+    ]
+    (tmp_path / "manual_actions.jsonl").write_text(
+        "\n".join(json.dumps(payload, ensure_ascii=False) for payload in action_payloads) + "\n",
+        encoding="utf-8",
+    )
+
+    todos = build_review_todos(
+        "sig-long-tail-beach-legacy-2",
+        action_root=tmp_path,
+        now=datetime(2026, 6, 10, tzinfo=UTC),
+    )
+
+    context = todos[0].review_context
+    assert context.search_term == "beach essentials"
+    assert context.search_intent_label == "规则语义：海滩出行用品"
+    assert context.repeat_search_intent_count == 2
+    assert "同一广告搜索词聚合上下文已有 2 次人工留痕" in context.repeat_summary
+    assert context.can_auto_change_rules is False
+    assert context.can_auto_execute_ads is False
+
+
 def test_review_todos_extract_manual_action_path_and_review_metrics(tmp_path: Path) -> None:
     action_payload = {
         "id": "manual-action-search-term-review-metrics",

@@ -17,6 +17,7 @@ from app.models.manual_actions import (
     ReviewWindow,
 )
 from app.models.signals import AdObjectRef, AiSignal, ObjectType, SignalStatus
+from app.services.signal_detection import resolved_search_intent_label
 from app.services.snapshot_store import PROJECT_ROOT
 
 
@@ -382,10 +383,8 @@ def _review_todo_voided(
 
 
 def review_context_for_manual_action(record: ManualActionRecord, records: list[ManualActionRecord]) -> ReviewContext | None:
-    search_intent_label = _evidence_value(record, "语义组")
-    search_term = _evidence_value(record, "搜索词")
-    if not search_term and record.object_type == ObjectType.SEARCH_TERM.value:
-        search_term = record.object_label or record.object_id
+    search_intent_label = _search_intent_label_for_review_context(record)
+    search_term = _search_term_for_review_context(record)
     aba_reference_term = _evidence_value(record, "ABA语义参考词")
     aba_reference_rank = _evidence_value(record, "ABA语义参考排名")
     aba_period = _evidence_value(record, "ABA周期")
@@ -413,10 +412,9 @@ def review_context_for_manual_action(record: ManualActionRecord, records: list[M
     ):
         return None
 
-    repeat_search_intent_count = _repeat_context_count(
+    repeat_search_intent_count = _repeat_search_intent_context_count(
         records,
         market_id=record.market_id,
-        label="语义组",
         value=search_intent_label,
     )
     repeat_aba_reference_count = _repeat_context_count(
@@ -446,6 +444,54 @@ def review_context_for_manual_action(record: ManualActionRecord, records: list[M
         can_auto_change_rules=False,
         can_auto_execute_ads=False,
     )
+
+
+def _search_term_for_review_context(record: ManualActionRecord) -> str | None:
+    search_term = _evidence_value(record, "搜索词")
+    if search_term:
+        return search_term
+    if record.object_type != ObjectType.SEARCH_TERM.value:
+        return None
+    object_label = (record.object_label or "").strip()
+    if object_label:
+        return object_label
+    object_id = (record.object_id or "").strip()
+    if not object_id:
+        return None
+    if object_id.startswith("search_term:"):
+        return object_id.rsplit(":", 1)[-1].strip() or object_id
+    return object_id
+
+
+def _search_intent_label_for_review_context(record: ManualActionRecord) -> str | None:
+    label = _evidence_value(record, "语义组") or _evidence_value(record, "广告搜索词聚合上下文")
+    if label:
+        return label
+    search_term = _search_term_for_review_context(record)
+    if not search_term or record.object_type != ObjectType.SEARCH_TERM.value:
+        return None
+    inferred_label = resolved_search_intent_label({"search_term": search_term, "normalized_query": search_term})
+    if inferred_label == "未分组搜索词":
+        return None
+    return inferred_label
+
+
+def _repeat_search_intent_context_count(
+    records: list[ManualActionRecord],
+    *,
+    market_id: int | None,
+    value: str | None,
+) -> int:
+    if not value:
+        return 0
+    normalized_value = _normalized(value)
+    count = 0
+    for record in records:
+        if record.market_id != market_id:
+            continue
+        if _normalized(_search_intent_label_for_review_context(record)) == normalized_value:
+            count += 1
+    return count
 
 
 def _evidence_value(record: ManualActionRecord, label: str) -> str | None:
