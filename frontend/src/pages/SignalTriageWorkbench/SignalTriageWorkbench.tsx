@@ -1851,54 +1851,6 @@ export function SignalTriageWorkbench() {
             </div>
           </div>
 
-          {searchIntentReviewCards.length > 0 && (
-            <section className="searchIntentReviewPanel" aria-label="搜索词语义聚焦">
-              <div className="searchIntentReviewHeader">
-                <strong>搜索词语义聚焦</strong>
-                <span>当前诊断入口内的 SearchTerm 机会聚合</span>
-              </div>
-              {selectedSearchIntentLabel && (
-                <div className="searchIntentActiveFilter" aria-label="当前语义组筛选">
-                  <span>
-                    已聚焦：{selectedSearchIntentLabel}
-                    <small>诊断入口保持不变，仅显示同组 SearchTerm 机会；不做商品归因；ABA 只作站点级背景。</small>
-                  </span>
-                  <button type="button" onClick={() => setSelectedSearchIntentLabel(null)}>
-                    清除
-                  </button>
-                </div>
-              )}
-              <div className="searchIntentReviewList">
-                {searchIntentReviewCards.map((card) => (
-                  <button
-                    type="button"
-                    className={`searchIntentReviewCard ${selectedSearchIntentLabel === card.intentLabel ? "active" : ""}`}
-                    key={card.title}
-                    onClick={() => handleSelectSearchIntent(card.intentLabel)}
-                    aria-pressed={selectedSearchIntentLabel === card.intentLabel}
-                    aria-label={`筛选语义组 ${card.title} 的搜索词机会`}
-                  >
-                    <div>
-                      <strong>{card.title}</strong>
-                      <span>{card.sourceLabel}</span>
-                    </div>
-                    <p>{card.summary}</p>
-                    <small>{card.purpose}</small>
-                    <small>{card.insight}</small>
-                    <small>{card.boundary}</small>
-                    {card.topTerms.length > 0 && (
-                      <ul>
-                        {card.topTerms.map((term) => (
-                          <li key={term}>{term}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
-
           <div className="queueTabs" aria-label="队列筛选">
             <button className={!selectedSearchIntentLabel && filter === "all" ? "active" : ""} onClick={() => handleSelectQueueFilter("all")}>
               全部
@@ -1923,15 +1875,63 @@ export function SignalTriageWorkbench() {
             </button>
           </div>
 
+          {searchIntentReviewCards.length > 0 && (
+            <section className="searchIntentReviewPanel" aria-label="搜索词机会二级筛选">
+              <div className="searchIntentReviewHeader">
+                <strong>搜索词机会二级筛选</strong>
+                <span>只缩小当前诊断入口内的 SearchTerm 机会队列</span>
+              </div>
+              {selectedSearchIntentLabel && (
+                <div className="searchIntentActiveFilter" aria-label="当前搜索词语义筛选">
+                  <span>
+                    已聚焦：{selectedSearchIntentLabel}
+                    <small>诊断入口保持不变，仅显示同组 SearchTerm 机会；不做商品归因；ABA 只作站点级背景。</small>
+                  </span>
+                  <button type="button" onClick={() => setSelectedSearchIntentLabel(null)}>
+                    清除
+                  </button>
+                </div>
+              )}
+              <div className="searchIntentReviewList">
+                {searchIntentReviewCards.map((card) => (
+                  <button
+                    type="button"
+                    className={`searchIntentReviewCard ${selectedSearchIntentLabel === card.intentLabel ? "active" : ""}`}
+                    key={card.title}
+                    onClick={() => handleSelectSearchIntent(card.intentLabel)}
+                    aria-pressed={selectedSearchIntentLabel === card.intentLabel}
+                    aria-label={`二级筛选语义组 ${card.title} 的 SearchTerm 机会`}
+                  >
+                    <div>
+                      <strong>{card.title}</strong>
+                      <span>{card.sourceLabel}</span>
+                    </div>
+                    <p>{card.summary}</p>
+                    <small>{card.purpose}</small>
+                    <small>{card.insight}</small>
+                    <small>{card.boundary}</small>
+                    {card.topTerms.length > 0 && (
+                      <ul>
+                        {card.topTerms.map((term) => (
+                          <li key={term}>{term}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
           {loading && <EmptyState icon="loading" title="正在读取信号" />}
           {error && <EmptyState icon="warning" title={error} />}
           {!loading && !error && filteredSignals.length === 0 && (
             <EmptyState
               icon="empty"
-              title={selectedSearchIntentLabel ? "当前语义组暂无对应搜索词机会" : productScopeSignalExplanation?.title ?? "暂无真实快照信号"}
+              title={selectedSearchIntentLabel ? "当前搜索词语义筛选暂无对应机会" : productScopeSignalExplanation?.title ?? "暂无真实快照信号"}
               description={
                 selectedSearchIntentLabel
-                  ? "语义组聚焦不切换经营商品或广告组，只在当前诊断入口内显示同组 SearchTerm 机会；如果需要看全部信号，请清除语义组聚焦。"
+                  ? "搜索词语义筛选不切换经营商品或广告组，只在当前诊断入口内显示同组 SearchTerm 机会；如果需要看全部信号，请清除二级筛选。"
                   : productScopeSignalExplanation?.description
                     ? productScopeSignalExplanation.description
                   : "旧样例已移除，后续信号只从真实快照或明确标记的测试 fixture 生成。"
