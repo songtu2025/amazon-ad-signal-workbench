@@ -1797,6 +1797,18 @@ function reviewTodoHasSnapshotLabel(todo: ReviewTodoForUi | null, expectedLabel:
   );
 }
 
+function reviewTodoHasSearchIntentContext(todo: ReviewTodoForUi | null | undefined) {
+  return Boolean(
+    todo?.review_context?.search_intent_label ||
+      reviewTodoHasSnapshotLabel(todo ?? null, "搜索词表现分组") ||
+      reviewTodoHasSnapshotLabel(todo ?? null, "搜索意图分组") ||
+      reviewTodoHasSnapshotLabel(todo ?? null, "语义组") ||
+      reviewTodoHasSnapshotLabel(todo ?? null, "Parent ASIN 广告搜索词表现复核") ||
+      reviewTodoHasSnapshotLabel(todo ?? null, "Parent ASIN 搜索词表现聚合") ||
+      reviewTodoHasSnapshotLabel(todo ?? null, "广告搜索词聚合上下文"),
+  );
+}
+
 function reviewTodoHasEvidenceSnapshot(todo: ReviewTodoForUi | null) {
   return (todo?.evidence_snapshot ?? []).some((item) => String(item.label ?? "").trim() !== "" && String(item.value ?? "").trim() !== "");
 }
@@ -3441,26 +3453,51 @@ function reviewTodoEvidenceSnapshotReadbackText(todos: ReviewTodoForUi[]) {
     .map((todo) => `${todo.review_window} ${reviewTodoEvidenceSnapshotCount(todo)} 条`)
     .join(" / ");
   const missingParts = windowTodos.flatMap((todo) => {
+    const objectType = normalizedPreflightTargetValue(todo.object_type);
+    const requiredSnapshotLabels =
+      objectType === "search_term"
+        ? [
+            "Parent ASIN 广告搜索词表现复核",
+            "广告组合流判断",
+            "同组投放商品表现",
+            "逐投放上下文",
+            "投放词证据",
+            "搜索词边界",
+            "广告位边界",
+            "ABA 背景",
+          ]
+        : ["搜索词边界", "广告位边界"];
     const missing = [
       reviewTodoHasEvidenceSnapshot(todo) ? "" : "证据快照",
       reviewTodoHasObjectReference(todo, null) ? "" : "对象引用",
       reviewTodoHasDiagnosisPath(todo) ? "" : "排查路径",
       reviewTodoHasAiAdmission(todo) ? "" : "AI 准入",
-      reviewTodoHasSearchTermBoundary(todo) ? "" : "搜索词边界",
-      reviewTodoHasPlacementBoundary(todo) ? "" : "广告位边界",
+      ...requiredSnapshotLabels.map((label) =>
+        label === "Parent ASIN 广告搜索词表现复核"
+          ? reviewTodoHasSearchIntentContext(todo)
+            ? ""
+            : label
+          : reviewTodoHasSnapshotLabel(todo, label)
+            ? ""
+            : label,
+      ),
     ].filter(Boolean);
     return missing.length > 0 ? [`${todo.review_window} 缺${missing.join(" / ")}`] : [];
   });
 
   if (missingParts.length > 0) {
-    return `待办证据快照待核对：${countText}；缺口：${missingParts.join("；")}`;
+    return `待办证据快照待核对：${countText}；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界；缺口：${missingParts.join("；")}`;
   }
   const objectText =
     windowTodos.length === 1
       ? reviewObjectIdentityDisplayText(windowTodos[0].object_type, windowTodos[0].object_id, windowTodos[0].object_label)
       : "";
   const objectSuffix = objectText ? `；复盘对象：${objectText}` : "";
-  return `待办证据快照：${countText}${objectSuffix}；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界`;
+  const readbackLabels =
+    windowTodos.some((todo) => normalizedPreflightTargetValue(todo.object_type) === "search_term")
+      ? "对象引用 / 排查路径 / AI 准入 / Parent ASIN 广告搜索词表现复核 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
+      : "对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界";
+  return `待办证据快照：${countText}${objectSuffix}；可回看${readbackLabels}`;
 }
 
 function compactIdentityParts(parts: Array<string | null | undefined>) {
@@ -3626,8 +3663,10 @@ export function buildManualActionReadbackPathItems(input: ManualActionReadbackPa
   const actionLabel = manualActionReadbackLabel[action.action_type];
   const isIgnoreAction = action.action_type === "ignore";
   const todoValue = isIgnoreAction ? (input.reviewTodos.length === 0 ? "0 条" : `${input.reviewTodos.length} 条待核对`) : windowText;
-  const todoComplete = isIgnoreAction ? input.reviewTodos.length === 0 : windows.length === reviewWindowOrder.length;
   const todoEvidenceReadback = reviewTodoEvidenceSnapshotReadbackText(input.reviewTodos);
+  const todoWindowsComplete = windows.length === reviewWindowOrder.length;
+  const todoEvidenceComplete = !todoEvidenceReadback?.includes("待核对");
+  const todoComplete = isIgnoreAction ? input.reviewTodos.length === 0 : todoWindowsComplete && todoEvidenceComplete;
   const reviewRecordEvidenceReadback = reviewRecordEvidenceSnapshotReadbackText(input.reviewRecords);
 
   return [
@@ -3644,9 +3683,11 @@ export function buildManualActionReadbackPathItems(input: ManualActionReadbackPa
         ? todoComplete
           ? "忽略本次不生成 7/14 天排程，符合预期；这不代表误报或删除信号。"
           : "忽略本次应为 0 条待办，需核对对象范围。"
-        : todoComplete
+        : todoWindowsComplete && todoEvidenceComplete
           ? `${todoEvidenceReadback ?? "7/14 天待办已读回"}；只表示进入排程，未到期不判断效果。`
-          : `${todoEvidenceReadback ?? "复盘类动作应读回 7d / 14d"}；缺口未补齐前不能保存结论。`,
+          : todoWindowsComplete
+            ? `${todoEvidenceReadback ?? "7/14 天待办证据待核对"}；缺口未补齐前不能保存结论，未到期不判断效果。`
+          : `${todoEvidenceReadback ?? "复盘类动作应读回 7d / 14d"}；缺口未补齐前不能保存结论，未到期不判断效果。`,
       tone: todoComplete ? "ready" : "blocked",
     },
     {
@@ -3681,6 +3722,9 @@ export function manualActionReadbackConsistencyText(
   const windows = readbackReviewWindows(reviewTodosForSelectedObject);
   const todoEvidenceReadback = reviewTodoEvidenceSnapshotReadbackText(reviewTodosForSelectedObject);
   if (windows.length === reviewWindowOrder.length) {
+    if (todoEvidenceReadback?.includes("待核对")) {
+      return `点击后读回待核对：${actionLabel}已读回留痕 + 7d / 14d，${todoEvidenceReadback}，缺口未补齐前不能保存结论，尚未保存复盘结论。`;
+    }
     const pendingEffectBoundary = reviewRecordsForSelectedObject.length === 0 ? `${reviewTodoPendingEffectBoundaryText}，` : "";
     const todoEvidenceSegment = todoEvidenceReadback ? `${todoEvidenceReadback}，` : "";
     return `点击后读回一致：${actionLabel}已读回留痕 + 7d / 14d，${todoEvidenceSegment}${pendingEffectBoundary}${reviewRecordReadbackStatus(

@@ -1148,6 +1148,36 @@ const blockedReviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary
 assertEqual(blockedReviewTodoEvidenceReadback?.tone, "blocked");
 assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadback), "缺：ABA 背景 / 证据缺口 / 需要补证");
 assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadback), "不能直接保存可复盘结论");
+const searchTermManualActionReadbackPathAfterTodo = buildManualActionReadbackPathItems({
+  latestManualAction: {
+    action_type: "add_to_review",
+    evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot,
+  },
+  reviewTodos: [
+    searchTermReviewTodoWithFullChain,
+    { ...searchTermReviewTodoWithFullChain, review_window: "14d" },
+  ],
+  reviewRecords: [],
+});
+assertIncludes(searchTermManualActionReadbackPathAfterTodo[1].detail, "待办证据快照：7d 19 条 / 14d 19 条");
+assertIncludes(
+  searchTermManualActionReadbackPathAfterTodo[1].detail,
+  "Parent ASIN 广告搜索词表现复核 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景",
+);
+const searchTermManualActionReadbackPathWithoutAdGroupSynthesis = buildManualActionReadbackPathItems({
+  latestManualAction: {
+    action_type: "add_to_review",
+    evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot,
+  },
+  reviewTodos: [
+    {
+      ...searchTermReviewTodoWithFullChain,
+      evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot?.filter((item) => item.label !== "广告组合流判断"),
+    },
+  ],
+  reviewRecords: [],
+});
+assertIncludes(searchTermManualActionReadbackPathWithoutAdGroupSynthesis[1].detail, "7d 缺广告组合流判断");
 const searchTermReviewRecordPreflightChecklist = buildReviewRecordPreflightChecklist(
   searchTermReviewTodoWithFullChain,
   searchTermReviewEffect,
@@ -1596,8 +1626,14 @@ const manualActionIdentityGateItems = buildManualActionIdentityGateItems({
     evidence_snapshot: [
       { label: "排查路径", value: "Parent ASIN -> 广告 ASIN -> 广告组 -> beach essentials for toddlers 1-3", source: "business_rule" },
       { label: "AI 准入", value: "允许人工留痕，不执行广告动作", source: "actionability_status" },
+      { label: "搜索词表现分组", value: "规则语义：海滩出行用品", source: "规则语义" },
+      { label: "广告组合流判断", value: "同广告组广告 ASIN 2 个；搜索词不能自动归因到单个广告 ASIN", source: "diagnosis_contract" },
+      { label: "同组投放商品表现", value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看", source: "ad_product_daily_metrics" },
+      { label: "逐投放上下文", value: "beach essentials for toddlers 1-3：优先复核广告组和投放词", source: "ad_search_term_daily_metrics" },
+      { label: "投放词证据", value: "beach essentials for toddlers 1-3 / 1 个", source: "ad_search_term_daily_metrics" },
       { label: "搜索词边界", value: "搜索词只说明同广告组上下文", source: "business_rule" },
       { label: "广告位边界", value: "广告位缺口不能自动归因", source: "business_rule" },
+      { label: "ABA 背景", value: "ABA 只作为站点级背景", source: "ABA导出" },
     ],
   },
   fallbackMarketId: 1,
@@ -1619,8 +1655,8 @@ assertEqual(manualActionIdentityGateItems[3].label, "复盘待办");
 assertEqual(manualActionIdentityGateItems[3].value, "7d 已读回");
 assertIncludes(manualActionIdentityGateItems[3].detail, "action_id manual-action-search-term");
 assertIncludes(manualActionIdentityGateItems[3].detail, "复盘对象：具体 SearchTerm：beach essentials for toddlers 1-3");
-assertIncludes(manualActionIdentityGateItems[3].detail, "待办证据快照：7d 4 条");
-assertIncludes(manualActionIdentityGateItems[3].detail, "可回看对象引用");
+assertIncludes(manualActionIdentityGateItems[3].detail, "待办证据快照：7d 10 条");
+assertIncludes(manualActionIdentityGateItems[3].detail, "Parent ASIN 广告搜索词表现复核 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文");
 const prefixedSearchTermIdentityGateItems = buildManualActionIdentityGateItems({
   signal: {
     id: "sig-opportunity-search-term-1-beach-essentials",
@@ -2562,23 +2598,17 @@ const searchTermPreflightPriorityEvidenceRows = manualActionPreflightPriorityEvi
   },
 });
 assertEqual(searchTermPreflightPriorityEvidenceRows.length, 10);
-assertEqual(searchTermPreflightPriorityEvidenceRows[0].label, "AI 准入");
-assertIncludes(searchTermPreflightPriorityEvidenceRows[0].value, "不会自动执行广告动作");
-assertEqual(searchTermPreflightPriorityEvidenceRows[1].label, "投放词证据");
-assertIncludes(searchTermPreflightPriorityEvidenceRows[1].value, "beach essentials");
-assertEqual(searchTermPreflightPriorityEvidenceRows[2].label, "ABA 背景");
-assertIncludes(searchTermPreflightPriorityEvidenceRows[2].value, "排名 208");
-assertEqual(searchTermPreflightPriorityEvidenceRows[3].label, "证据缺口");
-assertEqual(searchTermPreflightPriorityEvidenceRows[4].label, "需要补证");
-assertIncludes(searchTermPreflightPriorityEvidenceRows[4].value, "投放词维护状态");
-assertEqual(searchTermPreflightPriorityEvidenceRows[5].label, "动作边界");
-assertIncludes(searchTermPreflightPriorityEvidenceRows[5].value, "人工留痕");
-assertEqual(searchTermPreflightPriorityEvidenceRows[6].label, "搜索词边界");
-assertIncludes(searchTermPreflightPriorityEvidenceRows[6].detail ?? "", "不能自动归因");
-assertEqual(searchTermPreflightPriorityEvidenceRows[7].label, "广告位边界");
-assertIncludes(searchTermPreflightPriorityEvidenceRows[7].source ?? "", "ad_placement_daily_metrics");
-assertEqual(searchTermPreflightPriorityEvidenceRows[8].label, "广告位证据缺口");
-assertEqual(searchTermPreflightPriorityEvidenceRows[9].label, "诊断证据缺口");
+const searchTermPreflightPriorityRow = (label: string) => searchTermPreflightPriorityEvidenceRows.find((row) => row.label === label);
+assertIncludes(searchTermPreflightPriorityRow("AI 准入")?.value ?? "", "不会自动执行广告动作");
+assertIncludes(searchTermPreflightPriorityRow("投放词证据")?.value ?? "", "beach essentials");
+assertIncludes(searchTermPreflightPriorityRow("ABA 背景")?.value ?? "", "排名 208");
+assertIncludes(searchTermPreflightPriorityRow("需要补证")?.value ?? "", "投放词维护状态");
+assertIncludes(searchTermPreflightPriorityRow("动作边界")?.value ?? "", "人工留痕");
+assertIncludes(searchTermPreflightPriorityRow("搜索词边界")?.detail ?? "", "不能自动归因");
+assertIncludes(searchTermPreflightPriorityRow("广告位边界")?.source ?? "", "ad_placement_daily_metrics");
+assertEqual(Boolean(searchTermPreflightPriorityRow("证据缺口")), true);
+assertEqual(Boolean(searchTermPreflightPriorityRow("广告位证据缺口")), true);
+assertEqual(Boolean(searchTermPreflightPriorityRow("诊断证据缺口")), true);
 const searchIntentManualEvidenceSnapshot = buildSearchIntentManualActionEvidenceSnapshot({
   intentLabel: "规则语义：海滩出行用品",
   searchTerm: "beach essentials",
