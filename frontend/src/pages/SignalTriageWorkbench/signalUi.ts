@@ -4051,7 +4051,10 @@ export function buildSearchTermOpportunityReviewChain(
   );
 
   return {
-    title: directSearchTermContract?.title ?? "搜索词机会复核链",
+    title:
+      directSearchTermContract?.title === "搜索词机会"
+        ? "广告搜索词表现复核"
+        : directSearchTermContract?.title ?? "广告搜索词表现复核链",
     businessQuestion:
       directSearchTermContract?.businessQuestion ?? "这个搜索词是否只是广告上下文，还是值得人工复核扩量或治理？",
     objectGrain:
@@ -5683,11 +5686,11 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
         searchIntentDisplayText(summary.evidence_gap) ||
         "证据缺口：需要继续核对投放词、广告组商品清单和广告位表现，才能转成具体人工动作。",
       purpose: "用途：从当前 Parent ASIN 视角聚合广告中的用户搜索词表现，按搜索意图汇总同类 SearchTerm，帮助运营判断搜索词表现、机会和异常。",
-      boundary: "边界：只复核广告用户搜索词表现；不改变诊断入口，不生成 SearchTerm 筛选上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
+      boundary: "边界：只复核广告用户搜索词表现；不改变诊断入口，不生成广告搜索词聚合上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
       dataGrain: summary.data_grain || "当前诊断入口相关广告上下文中的用户搜索词表现行",
       proves: searchIntentDisplayText(summary.proves) || "能证明同类广告搜索词在当前广告上下文内的花费、点击、订单和 ABA 背景。",
       doesNotProve:
-        searchIntentDisplayText(summary.does_not_prove) || "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能生成 SearchTerm 筛选上下文人工动作。",
+        searchIntentDisplayText(summary.does_not_prove) || "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能生成广告搜索词聚合上下文人工动作。",
       nextManualStep: searchIntentDisplayText(summary.next_manual_step) || "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组、广告位和证据缺口后再记录观察或加入复盘。",
       topTerms,
     };
@@ -5698,6 +5701,8 @@ function searchIntentDisplayText(text?: string | null): string {
   return (text ?? "")
     .replace(/生成语义组人工动作/g, "生成 SearchTerm 筛选上下文人工动作")
     .replace(/语义组人工动作/g, "SearchTerm 筛选上下文人工动作")
+    .replace(/生成 SearchTerm 筛选上下文人工动作/g, "生成广告搜索词聚合上下文人工动作")
+    .replace(/SearchTerm 筛选上下文人工动作/g, "广告搜索词聚合上下文人工动作")
     .replace(/该语义类目/g, "这组广告搜索词")
     .replace(/语义类目/g, "这组广告搜索词")
     .replace(/Parent ASIN 下全部搜索词表现/g, "Parent ASIN 下全部自然搜索或市场搜索表现");
@@ -5715,13 +5720,13 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
     proves: firstCard?.proves ?? "能证明当前诊断入口内同类广告搜索词的花费、点击、订单、ACOS 和 ABA 站点级背景。",
     doesNotProve:
       firstCard?.doesNotProve ??
-      "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个广告 ASIN 归因，也不能生成 SearchTerm 筛选上下文人工动作。",
+      "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个广告 ASIN 归因，也不能生成广告搜索词聚合上下文人工动作。",
     nextManualStep:
       firstCard?.nextManualStep ??
       "有命中时逐条打开具体 SearchTerm 信号；无命中时先确认广告搜索词快照、广告组和投放词证据缺口，不把搜索词聚合包装成可执行动作。",
     boundary:
       firstCard?.boundary ??
-      "边界：只复核广告用户搜索词表现；不改变诊断入口，不生成 SearchTerm 筛选上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
+      "边界：只复核广告用户搜索词表现；不改变诊断入口，不生成广告搜索词聚合上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
     emptyText:
       cards.length > 0
         ? `当前展示 ${cards.length} 组搜索词表现聚合，点击后只筛选当前诊断入口内的同类 SearchTerm 信号。`
@@ -6714,11 +6719,11 @@ export function buildSearchIntentFocusContext(
   const signalObject = `SearchTerm：${searchTerm}`;
 
   return {
-    title: "搜索词表现复核承接",
+    title: "广告搜索词聚合承接",
     focusLabel,
     signalObject,
-    relation: `左侧语义筛选只缩小当前入口下的 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。`,
-    boundary: `SearchTerm 筛选上下文「${focusLabel}」不是人工动作对象；ABA 只作站点级背景，实际写入以后端 preflight evidence_snapshot_preview 为准。`,
+    relation: `左侧聚合筛选只缩小当前 Parent ASIN 下的广告 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。`,
+    boundary: `广告搜索词聚合上下文「${focusLabel}」不是人工动作对象；ABA 只作站点级背景，实际写入以后端 preflight evidence_snapshot_preview 为准。`,
     tone: "container",
   };
 }
@@ -7183,9 +7188,9 @@ export function buildSignalObjectContext(signal: SignalForUi, primaryObject: Pri
   }
 
   if (objectType === "search_intent") {
-    pushContextItem(items, "SearchTerm 筛选上下文", primaryObject.intent_label ?? primaryObject.label);
+    pushContextItem(items, "广告搜索词聚合上下文", primaryObject.intent_label ?? primaryObject.label);
     return {
-      boundary: "SearchTerm 筛选上下文用于聚合同类搜索意图，不等同于关键词本身，也不是广告处理对象。",
+      boundary: "广告搜索词聚合上下文用于聚合同类广告搜索词表现，不等同于关键词本身，也不是广告处理对象。",
       items,
     };
   }

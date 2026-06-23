@@ -2237,7 +2237,7 @@ export function buildManualActionDisplayEvidenceSnapshot(input: ManualActionDisp
 
 export function manualActionSavableEvidenceReasonText(
   preflight: ManualActionPreflightForUi | null,
-  fallbackText = "等待后端可保存 evidence_snapshot_preview；页面 SearchTerm 筛选上下文和临时证据只用于只读核对，不写入人工动作。",
+  fallbackText = "等待后端可保存 evidence_snapshot_preview；页面广告搜索词聚合上下文和临时证据只用于只读核对，不写入人工动作。",
 ) {
   if (!preflight || !manualActionPreflightHasSavableEvidenceSnapshotPreview(preflight)) {
     return fallbackText;
@@ -2257,10 +2257,10 @@ export function buildSearchIntentManualActionEvidenceSnapshot(
   const abaRank = String(input?.abaRank ?? "").trim();
   const abaPeriod = String(input?.abaPeriod ?? "").trim();
   const abaMatchBoundary = String(input?.abaMatchBoundary ?? "").trim();
-  const semanticSource = intentLabel.startsWith("规则语义：") ? "规则语义" : "SearchTerm 筛选上下文";
+  const semanticSource = intentLabel.startsWith("规则语义：") ? "规则语义" : "广告搜索词聚合上下文";
   const snapshot: ManualActionEvidenceSnapshotForUi[] = [
     {
-      label: "SearchTerm 筛选上下文",
+      label: "广告搜索词聚合上下文",
       value: intentLabel,
       detail: "只用于复盘回看同类 SearchTerm 判断链，不代表自动新增关键词、否词或调价。",
       source: semanticSource,
@@ -2271,7 +2271,7 @@ export function buildSearchIntentManualActionEvidenceSnapshot(
     snapshot.push({
       label: "搜索词",
       value: searchTerm,
-      detail: "人工处理对象仍落到具体 SearchTerm 信号，搜索语义标签只作为复盘上下文。",
+      detail: "人工处理对象仍落到具体 SearchTerm 信号，聚合标签只作为复盘上下文。",
       source: "积加API",
     });
   }
@@ -2436,7 +2436,7 @@ export function manualActionEvidenceSnapshotText(
 }
 
 function manualActionEvidenceDisplayLabel(label: string) {
-  return label === "语义组" ? "SearchTerm 筛选上下文" : label;
+  return label === "语义组" ? "广告搜索词聚合上下文" : label;
 }
 
 const manualActionEvidenceReasonPriority = [
@@ -2497,7 +2497,7 @@ export function reviewContextText(action: { review_context?: ReviewContextForUi 
   if (!context) return null;
   const parts: string[] = [];
   if (context.search_intent_label) {
-    parts.push(`SearchTerm 筛选上下文：${context.search_intent_label}`);
+    parts.push(`广告搜索词聚合上下文：${context.search_intent_label}`);
   }
   if (context.search_term) {
     parts.push(`搜索词：${context.search_term}`);

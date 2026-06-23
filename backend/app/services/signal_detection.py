@@ -944,7 +944,7 @@ def aba_phrase_context_evidence_items(aba_row: dict, row: dict) -> list[Evidence
             time_range=source_time_range(row),
             object_type=ObjectType.SEARCH_TERM.value,
             object_id=string_value(row.get("source_record_id") or row.get("row_id")),
-            explanation="SearchTerm 筛选上下文用于人工复核同类搜索意图，不代表自动广告动作。",
+            explanation="广告搜索词聚合上下文用于人工复核同类广告搜索词表现，不代表自动广告动作。",
         ),
         EvidenceItem(
             label="ABA语义参考词",
@@ -1132,13 +1132,13 @@ def aggregate_search_term_opportunity_signals(signals: list[AiSignal]) -> list[A
                     label="语义组",
                     value=semantic_group,
                     source_type="积加API",
-                    source_name="SearchTerm 筛选上下文",
+                    source_name="广告搜索词聚合上下文",
                     metric_name="semantic_group",
                     metric_value=semantic_group,
                     time_range=source_time_range(api_rows[0]) if api_rows else None,
                     object_type=ObjectType.SEARCH_TERM.value,
                     object_id=primary_object.object_id,
-                    explanation="SearchTerm 筛选上下文由广告搜索词 intent_label 或 normalized_query 在分析层解析，用于先按用户意图复核，不代表人工确认结论。",
+                    explanation="广告搜索词聚合上下文由广告搜索词 intent_label 或 normalized_query 在分析层解析，用于先按 Parent ASIN 视角复核用户搜索词表现，不代表人工确认结论。",
                 )
             )
         facts.extend(
@@ -1241,7 +1241,7 @@ def aggregate_search_term_opportunity_signals(signals: list[AiSignal]) -> list[A
             else group[0].suggested_action.model_copy(
                 update={
                     "description": (
-                        f"先按 SearchTerm 筛选上下文「{action_semantic_group}」复核同类搜索词表现，"
+                        f"先按广告搜索词聚合上下文「{action_semantic_group}」复核同类搜索词表现，"
                         "再人工判断是否加入精准关键词候选或小流量观察。"
                     )
                 }
@@ -1593,9 +1593,9 @@ def detect_search_intent_grouping_data_quality(rows: list[dict]) -> list[AiSigna
             suggested_action=SuggestedAction(
                 action_type="review_search_intent_grouping",
                 title="人工补齐搜索词语义分组",
-                description="人工先按人群、场景和商品相关性给核心搜索词分组；分组补齐前，只把语义聚合结果当作观察参考。",
+                description="人工先按人群、场景和商品相关性给核心广告搜索词分组；分组补齐前，只把广告搜索词聚合结果当作观察参考。",
             ),
-            risk="如果忽略该问题，运营可能把未分组搜索词的整体表现误读成同一 SearchTerm 筛选上下文表现。",
+            risk="如果忽略该问题，运营可能把未分组搜索词的整体表现误读成同一广告搜索词聚合上下文表现。",
             tags=["数据质量", "搜索词语义", "语义分组"],
         )
     ]
@@ -3279,12 +3279,12 @@ def detect_intent_signals(rows: list[dict]) -> list[AiSignal]:
                         priority=SignalPriority.P1,
                         confidence=ConfidenceLevel.LOW,
                         evidence_count=4,
-                        uncertainty="语义聚合第一版由规则生成，且当前仅来自单一数据源，需要人工复核。",
+                        uncertainty="广告搜索词聚合第一版由规则生成，且当前仅来自单一数据源，需要人工复核。",
                     ),
                     object_type=ObjectType.SEARCH_INTENT,
                     severity=3,
                     summary=f"{summary.intent_label} 整体消耗偏高但没有订单",
-                    why="搜索词按语义聚合后仍然没有订单，说明问题不是单个词波动，而是该类意图整体质量偏弱。",
+                    why="广告搜索词按意图聚合后仍然没有订单，说明问题不是单个词波动，而是该类意图整体质量偏弱。",
                     evidence=evidence_package(
                         row,
                         ObjectType.SEARCH_INTENT,
@@ -3301,7 +3301,7 @@ def detect_intent_signals(rows: list[dict]) -> list[AiSignal]:
                         description="人工检查这组广告搜索词是否偏泛；若与商品弱相关，优先进入人工否词或降竞价候选。",
                     ),
                     risk="语义标签第一版由规则生成，人工反馈后再调准。",
-                    tags=["语义聚合", "异常"],
+                    tags=["广告搜索词聚合", "异常"],
                 )
             )
     return signals

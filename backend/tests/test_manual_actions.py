@@ -460,7 +460,7 @@ def test_review_todos_extract_search_intent_and_aba_context(tmp_path: Path) -> N
     assert "短语包含" in (context.aba_match_boundary or "")
     assert context.repeat_search_intent_count == 2
     assert context.repeat_aba_reference_count == 1
-    assert "同一 SearchTerm 筛选上下文已有 2 次人工留痕" in context.repeat_summary
+    assert "同一广告搜索词聚合上下文已有 2 次人工留痕" in context.repeat_summary
     assert "规则反馈口径" in context.repeat_summary
     assert context.can_auto_change_rules is False
     assert context.can_auto_execute_ads is False

@@ -172,5 +172,5 @@ class SearchIntentSummary(BaseModel):
     ad_context: str = "广告上下文待补充。"
     evidence_gap: str = "需要继续核对投放词、广告组商品清单和广告位表现，才能转成具体人工动作。"
     proves: str = "能证明同类广告搜索词在当前广告上下文内的花费、点击、订单和 ABA 背景。"
-    does_not_prove: str = "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能生成 SearchTerm 筛选上下文人工动作。"
+    does_not_prove: str = "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能生成广告搜索词聚合上下文人工动作。"
     next_manual_step: str = "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组、广告位和证据缺口后再记录观察或加入复盘。"

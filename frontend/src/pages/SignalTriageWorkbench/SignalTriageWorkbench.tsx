@@ -755,8 +755,12 @@ export function SignalTriageWorkbench() {
 
   function handleSelectSearchIntent(intentLabel: string) {
     const isSameScopedFocus = activeSearchIntentLabel === intentLabel;
-    setSelectedSearchIntentLabel(isSameScopedFocus ? null : intentLabel);
-    setSelectedSearchIntentScopeId(isSameScopedFocus ? null : activeProductScopeId);
+    if (isSameScopedFocus) {
+      clearSearchIntentFocus();
+      return;
+    }
+    setSelectedSearchIntentLabel(intentLabel);
+    setSelectedSearchIntentScopeId(activeProductScopeId);
     const nextSignals = filterSignalsBySearchIntent(displayProductScopedSignals, intentLabel);
     if (nextSignals.length > 0) {
       setSelectedId(nextSignals[0].id);
@@ -2381,8 +2385,8 @@ export function SignalTriageWorkbench() {
                   </div>
                 )}
                 {selectedSearchIntentManualActionEvidenceSnapshot.length > 0 && (
-                  <div className="manualActionContextSnapshot" aria-label="SearchTerm 筛选上下文核对">
-                    <strong>SearchTerm 筛选上下文核对</strong>
+                  <div className="manualActionContextSnapshot" aria-label="广告搜索词聚合上下文核对">
+                    <strong>广告搜索词聚合上下文核对</strong>
                     <ul>
                       {selectedSearchIntentManualActionEvidenceSnapshot.map((item) => (
                         <li key={`${item.label}-${item.value}`}>
@@ -2391,7 +2395,7 @@ export function SignalTriageWorkbench() {
                         </li>
                       ))}
                     </ul>
-                    <p>只核对当前 SearchTerm 的筛选背景；实际写入以后端 preflight evidence_snapshot_preview 为准，搜索语义标签不是人工动作对象。</p>
+                    <p>只核对当前 Parent ASIN 下广告搜索词聚合背景；实际写入以后端 preflight evidence_snapshot_preview 为准，聚合标签不是人工动作对象。</p>
                   </div>
                 )}
                 {selectedBackendManualActionPreview?.preflightChecks.length ? (
@@ -3050,9 +3054,9 @@ function DiagnosisContractPanel({
 
 function SearchTermOpportunityReviewChainPanel({ chain }: { chain: SearchTermOpportunityReviewChain }) {
   return (
-    <section className="searchTermOpportunityReviewChain diagnosisStep stepEvidence" aria-label="搜索词机会复核链">
+    <section className="searchTermOpportunityReviewChain diagnosisStep stepEvidence" aria-label="广告搜索词表现复核链">
       <div className="detailSectionHeader">
-        <h3>搜索词机会复核链</h3>
+        <h3>广告搜索词表现复核链</h3>
         <span>{chain.title}</span>
       </div>
       <p>{chain.businessQuestion}</p>
@@ -3189,7 +3193,7 @@ function SelectedSignalScopeContextStrip({ context }: { context: SelectedSignalS
 
 function SearchIntentFocusContextStrip({ context }: { context: SearchIntentFocusContext }) {
   return (
-    <div className={`selectedSignalScopeContext searchIntentFocusContext ${context.tone}`} aria-label="搜索词表现复核与当前信号关系">
+    <div className={`selectedSignalScopeContext searchIntentFocusContext ${context.tone}`} aria-label="广告搜索词聚合复核与当前信号关系">
       <div className="selectedSignalScopeContextHeader">
         <strong>{context.title}</strong>
         <span>只做二级筛选</span>
@@ -4086,7 +4090,7 @@ function MetricDecisionCell({ item }: { item: SignalMetricDecisionItem }) {
 }
 
 function evidenceFactDisplayLabel(label: string) {
-  return label === "语义组" ? "SearchTerm 筛选上下文" : label;
+  return label === "语义组" ? "广告搜索词聚合上下文" : label;
 }
 
 function EmptyState({ icon, title, description }: { icon: "loading" | "warning" | "empty"; title: string; description?: string }) {

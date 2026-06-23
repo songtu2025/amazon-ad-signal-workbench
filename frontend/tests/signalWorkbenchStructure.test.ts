@@ -95,23 +95,23 @@ assertIncludes(workbenchSource, "selectedSignalScopeContext");
 assertIncludes(workbenchSource, "buildSearchIntentFocusContext");
 assertIncludes(workbenchSource, "selectedSearchIntentFocusContext");
 assertIncludes(workbenchSource, "function evidenceFactDisplayLabel");
-assertIncludes(workbenchSource, 'label === "语义组" ? "SearchTerm 筛选上下文"');
+assertIncludes(workbenchSource, 'label === "语义组" ? "广告搜索词聚合上下文"');
 assertIncludes(workbenchSource, "function SelectedSignalScopeContextStrip");
 assertIncludes(workbenchSource, "function SearchIntentFocusContextStrip");
 assertIncludes(workbenchSource, 'aria-label="选中信号与当前诊断入口关系"');
-assertIncludes(workbenchSource, 'aria-label="搜索词表现复核与当前信号关系"');
+assertIncludes(workbenchSource, 'aria-label="广告搜索词聚合复核与当前信号关系"');
 assertIncludes(signalUiSource, "buildSelectedSignalScopeContext");
 assertIncludes(signalUiSource, "buildSearchIntentFocusContext");
 assertIncludes(signalUiSource, "当前诊断入口仍是");
 assertIncludes(signalUiSource, "选中信号只决定中间证据和右侧人工确认对象");
 assertIncludes(signalUiSource, "不能自动归因");
-assertIncludes(signalUiSource, "SearchTerm 筛选上下文「${focusLabel}」不是人工动作对象");
+assertIncludes(signalUiSource, "广告搜索词聚合上下文「${focusLabel}」不是人工动作对象");
 assertIncludes(signalUiSource, "以后端预检确认的 SearchTerm 稳定对象为准");
 assertNotIncludes(signalUiSource, "右侧人工动作也必须落到这条 SearchTerm 的稳定对象");
 assert(selectedSignalScopeContextRenderIndex > selectedSignalBranchIndex, "选中信号入口关系必须渲染在信号详情分支内");
 assert(selectedSignalScopeContextRenderIndex < signalDiagnosisRenderIndex, "选中信号入口关系必须先于信号详情展示");
-assert(searchIntentFocusContextRenderIndex > selectedSignalScopeContextRenderIndex, "搜索词表现复核承接必须跟在入口关系之后");
-assert(searchIntentFocusContextRenderIndex < signalDiagnosisRenderIndex, "搜索词表现复核承接必须先于信号详情展示");
+assert(searchIntentFocusContextRenderIndex > selectedSignalScopeContextRenderIndex, "广告搜索词聚合承接必须跟在入口关系之后");
+assert(searchIntentFocusContextRenderIndex < signalDiagnosisRenderIndex, "广告搜索词聚合承接必须先于信号详情展示");
 
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 经营诊断路径"');
 assertIncludes(workbenchSource, 'aria-label="诊断入口路径说明"');
@@ -130,7 +130,10 @@ assertIncludes(workbenchSource, "selectedSearchIntentScopeId");
 assertIncludes(workbenchSource, "activeSearchIntentLabel");
 assertIncludes(workbenchSource, "function clearSearchIntentFocus");
 assertIncludes(workbenchSource, "setSelectedSearchIntentScopeId(null);");
-assertIncludes(workbenchSource, "setSelectedSearchIntentScopeId(isSameScopedFocus ? null : activeProductScopeId)");
+assertIncludes(workbenchSource, "if (isSameScopedFocus)");
+assertIncludes(workbenchSource, "clearSearchIntentFocus();");
+assertIncludes(workbenchSource, "return;");
+assertIncludes(workbenchSource, "setSelectedSearchIntentScopeId(activeProductScopeId)");
 assertIncludes(workbenchSource, "if (selectedSearchIntentScopeId === activeProductScopeId) return;");
 assertIncludes(workbenchSource, "filterSignalsBySearchIntent(displayProductScopedSignals, activeSearchIntentLabel)");
 assertIncludes(workbenchSource, "filterSignalsBySearchIntent(displayProductScopedSignals, intentLabel)");
@@ -170,9 +173,9 @@ assertNotIncludes(workbenchSource, "searchIntentReviewCards.length > 0 && (");
 assertNotIncludes(workbenchSource, 'aria-label="搜索词语义聚焦"');
 assertNotIncludes(workbenchSource, "聚焦语义组");
 assertNotIncludes(workbenchSource, "搜索词机会二级筛选");
-assertIncludes(workbenchSource, 'aria-label="SearchTerm 筛选上下文核对"');
+assertIncludes(workbenchSource, 'aria-label="广告搜索词聚合上下文核对"');
 assertIncludes(workbenchSource, "实际写入以后端 preflight evidence_snapshot_preview 为准");
-assertIncludes(workbenchSource, "搜索语义标签不是人工动作对象");
+assertIncludes(workbenchSource, "聚合标签不是人工动作对象");
 assertNotIncludes(workbenchSource, "当前语义组留痕");
 const searchIntentReviewPanelIndex = workbenchSource.indexOf('aria-label="Parent ASIN 广告搜索词聚合复核"');
 const queueTabsIndex = workbenchSource.indexOf('aria-label="队列筛选"');
@@ -255,7 +258,7 @@ assertIncludes(signalUiSource, "证据合流：搜索词分化优先");
 assertIncludes(workbenchSource, 'aria-label="广告组人工复核判断"');
 assertIncludes(workbenchSource, 'aria-label="搜索词问题定位"');
 assertIncludes(workbenchSource, 'aria-label="搜索词业务判断"');
-assertIncludes(workbenchSource, 'aria-label="搜索词机会复核链"');
+assertIncludes(workbenchSource, 'aria-label="广告搜索词表现复核链"');
 assertIncludes(workbenchSource, "buildSearchTermOpportunityReviewChain");
 assertIncludes(workbenchSource, "SearchTermOpportunityReviewChainPanel");
 assertIncludes(workbenchSource, "<b>Parent ASIN 入口</b>");
@@ -277,7 +280,7 @@ assert(
     workbenchSource.indexOf("chain.adGroupSynthesis") < workbenchSource.indexOf("chain.adGroupProductPerformance") &&
     workbenchSource.indexOf("chain.adGroupProductPerformance") < workbenchSource.indexOf("chain.placementBoundary") &&
     workbenchSource.indexOf("chain.placementBoundary") < workbenchSource.indexOf("chain.marketContext"),
-  "搜索词机会复核链必须按 Parent ASIN -> 广告 ASIN -> 投放词证据 -> 广告组合流判断 -> 同组投放商品表现 -> 广告位边界 -> ABA 背景 的顺序展示。",
+  "广告搜索词表现复核链必须按 Parent ASIN -> 广告 ASIN -> 投放词证据 -> 广告组合流判断 -> 同组投放商品表现 -> 广告位边界 -> ABA 背景 的顺序展示。",
 );
 assertIncludes(workbenchSource, "diagnosis.decision.businessQuestion");
 assertIncludes(workbenchSource, "diagnosis.decision.targetingEvidence");

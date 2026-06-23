@@ -229,16 +229,16 @@ const abaContextTodo: ReviewTodoForUi = {
     aba_match_boundary: "短语包含匹配，仅作为同类 SearchTerm 市场热度背景。",
     repeat_search_intent_count: 2,
     repeat_aba_reference_count: 1,
-    repeat_summary: "同一 SearchTerm 筛选上下文已有 2 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。",
+    repeat_summary: "同一广告搜索词聚合上下文已有 2 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。",
     can_auto_change_rules: false,
     can_auto_execute_ads: false,
   },
 };
-assertIncludes(reviewContextText(abaContextTodo) ?? "", "SearchTerm 筛选上下文：规则语义：海滩出行用品");
+assertIncludes(reviewContextText(abaContextTodo) ?? "", "广告搜索词聚合上下文：规则语义：海滩出行用品");
 assertIncludes(reviewContextText(abaContextTodo) ?? "", "ABA 站点级参考：beach essentials / 排名 208");
-assertIncludes(reviewContextText(abaContextTodo) ?? "", "同一 SearchTerm 筛选上下文已有 2 次人工留痕");
+assertIncludes(reviewContextText(abaContextTodo) ?? "", "同一广告搜索词聚合上下文已有 2 次人工留痕");
 assertIncludes(reviewContextText(abaContextTodo) ?? "", "不会自动改规则或执行广告");
-assertIncludes(manualActionEvidenceSnapshotText(abaContextTodo) ?? "", "复盘上下文：SearchTerm 筛选上下文：规则语义：海滩出行用品");
+assertIncludes(manualActionEvidenceSnapshotText(abaContextTodo) ?? "", "复盘上下文：广告搜索词聚合上下文：规则语义：海滩出行用品");
 const contextDetails = buildReviewTodoQueueDetails([abaContextTodo], { isGlobalScope: true });
 assertIncludes(contextDetails?.rows[0].contextText ?? "", "留痕证据快照");
 assertIncludes(contextDetails?.rows[0].contextText ?? "", "ABA语义参考词");
@@ -2329,7 +2329,7 @@ const searchTermUnsavableEvidenceReason = manualActionSavableEvidenceReasonText(
   },
 });
 assertIncludes(searchTermUnsavableEvidenceReason, "等待后端可保存 evidence_snapshot_preview");
-assertIncludes(searchTermUnsavableEvidenceReason, "页面 SearchTerm 筛选上下文和临时证据只用于只读核对");
+assertIncludes(searchTermUnsavableEvidenceReason, "页面广告搜索词聚合上下文和临时证据只用于只读核对");
 assertEqual(searchTermUnsavableEvidenceReason.includes("规则语义：海滩出行用品"), false);
 const searchTermPreflightPriorityEvidenceRows = manualActionPreflightPriorityEvidenceRows({
   evidence_snapshot_preview: {
@@ -2379,7 +2379,7 @@ const searchIntentManualEvidenceSnapshot = buildSearchIntentManualActionEvidence
   abaMatchBoundary: "短语包含匹配，仅作为同类 SearchTerm 市场热度背景。",
 });
 assertEqual(searchIntentManualEvidenceSnapshot.length, 6);
-assertEqual(searchIntentManualEvidenceSnapshot[0].label, "SearchTerm 筛选上下文");
+assertEqual(searchIntentManualEvidenceSnapshot[0].label, "广告搜索词聚合上下文");
 assertEqual(searchIntentManualEvidenceSnapshot[0].source, "规则语义");
 assertIncludes(searchIntentManualEvidenceSnapshot[0].detail ?? "", "只用于复盘回看");
 assertEqual(searchIntentManualEvidenceSnapshot[1].label, "搜索词");
@@ -2403,17 +2403,17 @@ const signalManualEvidenceSnapshot = buildSignalManualActionEvidenceSnapshot({
     ],
   },
 });
-assertEqual(signalManualEvidenceSnapshot[0].label, "SearchTerm 筛选上下文");
+assertEqual(signalManualEvidenceSnapshot[0].label, "广告搜索词聚合上下文");
 assertEqual(signalManualEvidenceSnapshot[1].label, "搜索词");
 assertEqual(signalManualEvidenceSnapshot[2].label, "ABA语义参考词");
 assertEqual(signalManualEvidenceSnapshot[5].label, "ABA匹配边界");
 assertIncludes(manualActionEvidenceSnapshotText({ evidence_snapshot: signalManualEvidenceSnapshot }) ?? "", "ABA语义参考词：beach essentials");
 const mergedManualEvidenceSnapshot = mergeManualActionEvidenceSnapshots(searchIntentManualEvidenceSnapshot, manualEvidenceSnapshot);
-assertEqual(mergedManualEvidenceSnapshot[0].label, "SearchTerm 筛选上下文");
+assertEqual(mergedManualEvidenceSnapshot[0].label, "广告搜索词聚合上下文");
 assertEqual(mergedManualEvidenceSnapshot[6].label, "广告商品覆盖");
 assertIncludes(
   manualActionEvidenceSnapshotText({ evidence_snapshot: mergedManualEvidenceSnapshot }) ?? "",
-  "SearchTerm 筛选上下文：规则语义：海滩出行用品",
+  "广告搜索词聚合上下文：规则语义：海滩出行用品",
 );
 const manualActionRequestPayload = buildManualActionRequestPayload({
   actionType: "add_to_review",

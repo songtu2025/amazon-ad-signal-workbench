@@ -275,7 +275,7 @@ async function main() {
     nextDiagnosisContractItems,
     nextBusinessEvidenceItems,
   );
-  assert(runtimeSearchTermReviewChain !== null, "右侧人工确认应能复用真实下一候选的搜索词机会复核链。");
+  assert(runtimeSearchTermReviewChain !== null, "右侧人工确认应能复用真实下一候选的广告搜索词表现复核链。");
 
   const manualConfirmationEvidenceItems = buildManualConfirmationEvidenceItems(
     nextDiagnosisContractItems,
@@ -283,8 +283,8 @@ async function main() {
   );
   assert(
     manualConfirmationEvidenceItems.map((item: any) => item.label).join(" / ") ===
-      "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 投放词证据 / 广告组合流判断 / 同组投放商品表现 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
-    "右侧人工确认证据依据必须保留固定业务判断结构和搜索词机会复核链。",
+      "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / Parent ASIN 入口 / 广告 ASIN 承接 / 投放词证据 / 广告组合流判断 / 同组投放商品表现 / 广告位边界 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
+    "右侧人工确认证据依据必须保留固定业务判断结构和广告搜索词表现复核链。",
   );
   assertIncludes(asText(manualConfirmationEvidenceItems), nextLabel);
   assertIncludes(asText(manualConfirmationEvidenceItems), "不能");
