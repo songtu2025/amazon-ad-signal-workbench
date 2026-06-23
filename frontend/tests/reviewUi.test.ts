@@ -573,6 +573,44 @@ assertIncludes(
   }),
   "复盘记录待读回核对",
 );
+const savedSearchTermReviewRecord: ReviewRecordForUi = {
+  ...savedReviewRecord,
+  signal_id: "sig-opportunity-search-term-1-beach-essentials",
+  action_id: "manual-action-search-term",
+  object_type: "search_term",
+  object_id: "search_term:1:beach essentials",
+  object_label: "beach essentials",
+  evidence_snapshot: [
+    { label: "排查路径", value: "Parent ASIN B00K4W4AAA -> beach essentials", source: "business_rule" },
+    { label: "AI 准入", value: "可进入人工确认 / 不自动执行广告动作", source: "actionability_status" },
+    { label: "广告组合流判断", value: "beach essentials 已串联广告组、投放词、搜索词和广告位边界。", source: "diagnosis_contract" },
+    { label: "同组投放商品表现", value: "B016EXMVZS 花费 22.78 / 订单 11", source: "ad_product_daily_metrics" },
+    { label: "投放词证据", value: "beach essentials / 1 个", source: "ad_search_term_daily_metrics" },
+    { label: "搜索词边界", value: "beach essentials 只能说明广告组上下文，不能自动归因到单个广告 ASIN。", source: "business_rule" },
+    { label: "广告位边界", value: "广告组级广告位 0 条 / 同广告活动广告位 6 条。", source: "placement_metrics" },
+    { label: "ABA 背景", value: "ABA 排名 208 / 2026-06-07 至 2026-06-13", source: "ABA导出" },
+  ],
+  review_context: {
+    search_intent_label: "规则语义：海滩出行用品",
+    search_term: "beach essentials",
+    repeat_search_intent_count: 4,
+    repeat_summary: "同一广告搜索词聚合上下文已有 4 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。",
+    can_auto_change_rules: false,
+    can_auto_execute_ads: false,
+  },
+};
+const searchTermReviewRecordReadback = reviewRecordReadbackStatus([savedSearchTermReviewRecord], {
+  actionId: "manual-action-search-term",
+  objectType: "search_term",
+  objectId: "search_term:1:beach essentials",
+  reviewWindow: "7d",
+});
+assertIncludes(searchTermReviewRecordReadback, "广告搜索词聚合上下文");
+assertIncludes(searchTermReviewRecordReadback, "复盘上下文：广告搜索词聚合上下文：规则语义：海滩出行用品");
+assertIncludes(searchTermReviewRecordReadback, "同一广告搜索词聚合上下文已有 4 次人工留痕");
+const searchTermRuleFeedbackCandidate = buildRuleFeedbackCandidate(savedSearchTermReviewRecord, improvedEffect);
+assertIncludes(searchTermRuleFeedbackCandidate?.basis ?? "", "复盘上下文：广告搜索词聚合上下文：规则语义：海滩出行用品");
+assertIncludes(searchTermRuleFeedbackCandidate?.boundary ?? "", "不自动改规则，不自动执行广告动作");
 const savedReviewRecordWithoutObjectReference: ReviewRecordForUi = {
   ...savedReviewRecord,
   evidence_snapshot: savedReviewRecord.evidence_snapshot?.map((item) => ({
@@ -1011,6 +1049,7 @@ const searchTermReviewTodoWithFullChain: ReviewTodoForUi = {
   evidence_snapshot: [
     { label: "排查路径", value: "搜索词 -> 广告活动 / 广告组 -> 投放词结构 -> 广告 ASIN 人工复核", source: "business_rule" },
     { label: "AI 准入", value: "可进入人工确认 / ready_for_manual_confirmation / 允许人工留痕", source: "actionability_status" },
+    { label: "语义组", value: "规则语义：海滩出行用品", source: "规则语义" },
     { label: "Parent ASIN入口", value: "Parent ASIN B00K4W4AAA 下只复核有广告数据的搜索词表现。", source: "diagnosis_contract + sales_performance" },
     { label: "广告 ASIN承接", value: "广告 ASIN B016EXMVZS / B016EXMW02 承接该搜索词上下文。", source: "diagnosis_contract + advertised_products" },
     {
@@ -1042,7 +1081,7 @@ const readyReviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary(s
 const searchTermSnapshotLabels = searchTermReviewTodoWithFullChain.evidence_snapshot?.map((item) => item.label).join(" / ") ?? "";
 assertEqual(
   searchTermSnapshotLabels,
-  "排查路径 / AI 准入 / Parent ASIN入口 / 广告 ASIN承接 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景 / 人工确认判断依据 / 能证明的事实 / 不能证明的边界 / 人工下一步 / 证据缺口 / 需要补证 / 动作边界",
+  "排查路径 / AI 准入 / 语义组 / Parent ASIN入口 / 广告 ASIN承接 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景 / 人工确认判断依据 / 能证明的事实 / 不能证明的边界 / 人工下一步 / 证据缺口 / 需要补证 / 动作边界",
 );
 assertEqual(readyReviewTodoEvidenceReadback?.tone, "ready");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "复盘待办证据回读核对");
@@ -1112,9 +1151,18 @@ const searchTermSavedReviewRecord: ReviewRecordForUi = {
   ...searchTermReviewEffect,
   review_note: "SearchTerm 复盘已按广告结构回看",
   evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot,
+  review_context: {
+    search_intent_label: "规则语义：海滩出行用品",
+    search_term: "beach essentials",
+    repeat_search_intent_count: 4,
+    repeat_summary: "同一广告搜索词聚合上下文已有 4 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。",
+    can_auto_change_rules: false,
+    can_auto_execute_ads: false,
+  },
 };
-assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘证据快照：7d 17 条");
-assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景");
+assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘证据快照：7d 18 条");
+assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "广告搜索词聚合上下文 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景");
+assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘上下文：广告搜索词聚合上下文：规则语义：海滩出行用品");
 assertIncludes(
   reviewRecordReadbackStatus([searchTermSavedReviewRecord], {
     actionId: "manual-action-search-term",
@@ -1122,7 +1170,7 @@ assertIncludes(
     objectId: "search_term:1:beach essentials",
     reviewWindow: "7d",
   }),
-  "可回看对象引用 / 排查路径 / AI 准入 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景",
+  "可回看对象引用 / 排查路径 / AI 准入 / 广告搜索词聚合上下文 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景",
 );
 assertIncludes(
   reviewRecordReadbackStatus(

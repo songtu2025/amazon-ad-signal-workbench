@@ -1351,6 +1351,7 @@ export interface ReviewRecord {
   before_metrics: Partial<MetricSnapshot>;
   after_metrics: Partial<MetricSnapshot>;
   evidence_snapshot?: ManualActionEvidenceSnapshot[];
+  review_context?: ReviewContext | null;
   result: "improved" | "no_change" | "worse" | "unclear";
   review_note?: string | null;
   reviewer_name: string;

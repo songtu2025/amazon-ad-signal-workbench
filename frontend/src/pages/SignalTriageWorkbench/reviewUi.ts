@@ -107,6 +107,7 @@ export interface ReviewRecordForUi {
   before_metrics?: Partial<Record<"cost" | "orders" | "sales" | "acos" | "cvr" | "cpc", number | null>>;
   after_metrics?: Partial<Record<"cost" | "orders" | "sales" | "acos" | "cvr" | "cpc", number | null>>;
   evidence_snapshot?: ManualActionEvidenceSnapshotForUi[] | null;
+  review_context?: ReviewContextForUi | null;
   result: "improved" | "no_change" | "worse" | "unclear";
   review_note?: string | null;
 }
@@ -2176,12 +2177,14 @@ export function buildRuleFeedbackCandidate(
 ): RuleFeedbackCandidate | null {
   if (!record) return null;
   const readback = reviewRecordTargetReadbackText(record) ?? "复盘对象待补充";
+  const contextText = reviewContextText(record);
   const note = record.review_note || "未填写备注";
   const windowText = reviewEffectWindowText(effect);
+  const contextSuffix = contextText ? `；复盘上下文：${contextText}` : "";
   const windowSuffix = windowText ? `；${windowText}` : "";
   return {
     title: "规则反馈候选",
-    basis: `复盘结果：${record.result} / ${note}；${readback}${windowSuffix}`,
+    basis: `复盘结果：${record.result} / ${note}；${readback}${contextSuffix}${windowSuffix}`,
     recommendation: `${reviewRuleFeedbackText(record.result)}；作为同类信号解释和规则阈值复核方向。`,
     boundary: "规则反馈候选只进入解释层和人工复核优先级，不是广告处理对象；不自动改规则，不自动执行广告动作。",
   };
@@ -3246,6 +3249,14 @@ function reviewRecordHasSnapshotLabel(record: ReviewRecordForUi | null | undefin
   );
 }
 
+function reviewRecordHasSearchIntentContext(record: ReviewRecordForUi | null | undefined) {
+  return Boolean(
+    record?.review_context?.search_intent_label ||
+      reviewRecordHasSnapshotLabel(record, "语义组") ||
+      reviewRecordHasSnapshotLabel(record, "广告搜索词聚合上下文"),
+  );
+}
+
 function reviewRecordObjectReferenceTerms(record: ReviewRecordForUi | null | undefined) {
   const terms: string[] = [];
   for (const value of [record?.object_id, record?.object_label]) {
@@ -3285,12 +3296,30 @@ function reviewRecordEvidenceSnapshotReadbackText(records: ReviewRecordForUi[]) 
     const objectType = normalizedPreflightTargetValue(record.object_type);
     const requiredSnapshotLabels =
       objectType === "search_term"
-        ? ["排查路径", "AI 准入", "广告组合流判断", "同组投放商品表现", "投放词证据", "搜索词边界", "广告位边界", "ABA 背景"]
+        ? [
+            "排查路径",
+            "AI 准入",
+            "广告搜索词聚合上下文",
+            "广告组合流判断",
+            "同组投放商品表现",
+            "投放词证据",
+            "搜索词边界",
+            "广告位边界",
+            "ABA 背景",
+          ]
         : ["排查路径", "AI 准入", "搜索词边界", "广告位边界"];
     const missing = [
       reviewRecordHasEvidenceSnapshot(record) ? "" : "证据快照",
       reviewRecordHasObjectReference(record) ? "" : "对象引用",
-      ...requiredSnapshotLabels.map((label) => (reviewRecordHasSnapshotLabel(record, label) ? "" : label)),
+      ...requiredSnapshotLabels.map((label) =>
+        label === "广告搜索词聚合上下文"
+          ? reviewRecordHasSearchIntentContext(record)
+            ? ""
+            : label
+          : reviewRecordHasSnapshotLabel(record, label)
+            ? ""
+            : label,
+      ),
     ].filter(Boolean);
     return missing.length > 0 ? [`${window} 缺${missing.join(" / ")}`] : [];
   });
@@ -3300,9 +3329,11 @@ function reviewRecordEvidenceSnapshotReadbackText(records: ReviewRecordForUi[]) 
   }
   const readbackLabels =
     records.length === 1 && normalizedPreflightTargetValue(records[0]?.object_type) === "search_term"
-      ? "对象引用 / 排查路径 / AI 准入 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
+      ? "对象引用 / 排查路径 / AI 准入 / 广告搜索词聚合上下文 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
       : "对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界";
-  return `复盘证据快照：${countText}；可回看${readbackLabels}`;
+  const contextText = records.length === 1 ? reviewContextText(records[0]) : null;
+  const contextSuffix = contextText ? `；复盘上下文：${contextText}` : "";
+  return `复盘证据快照：${countText}；可回看${readbackLabels}${contextSuffix}`;
 }
 
 function reviewTodoEvidenceSnapshotCount(todo: ReviewTodoForUi | null | undefined) {

@@ -172,6 +172,7 @@ class ReviewRecord(BaseModel):
     before_metrics: dict[str, int | float | None] = Field(default_factory=dict)
     after_metrics: dict[str, int | float | None] = Field(default_factory=dict)
     evidence_snapshot: list[ManualActionEvidenceSnapshot] = Field(default_factory=list)
+    review_context: ReviewContext | None = None
     result: ReviewEffectResultType
     review_note: str | None = None
     reviewer_name: str

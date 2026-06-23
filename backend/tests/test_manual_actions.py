@@ -1519,6 +1519,20 @@ def test_review_record_persists_ready_effect_and_can_read_latest(tmp_path: Path)
     assert save_review_record is not None
     assert load_review_records is not None
     assert latest_review_record is not None
+    search_term_review_snapshot = [
+        *diagnosis_evidence_snapshot()[:2],
+        {
+            "label": "Parent ASIN入口",
+            "value": "Parent ASIN B00K4W4AAA 下只复核有广告数据的搜索词表现。",
+            "source": "diagnosis_contract + sales_performance",
+        },
+        {
+            "label": "广告 ASIN承接",
+            "value": "广告 ASIN B016EXMVZS / B016EXMW02 承接 kids sunglasses 搜索词上下文。",
+            "source": "diagnosis_contract + advertised_products",
+        },
+        *diagnosis_evidence_snapshot()[2:],
+    ]
     action_payload = {
         "id": "manual-action-fixed",
         "signal_id": "sig-test-manual-action",
@@ -1533,7 +1547,7 @@ def test_review_record_persists_ready_effect_and_can_read_latest(tmp_path: Path)
         "object_type": "search_term",
         "object_id": "kids sunglasses",
         "object_label": "kids sunglasses",
-        "evidence_snapshot": diagnosis_evidence_snapshot(),
+        "evidence_snapshot": search_term_review_snapshot,
     }
     (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
     effect = build_review_effect_result(
@@ -1574,7 +1588,7 @@ def test_review_record_persists_ready_effect_and_can_read_latest(tmp_path: Path)
         expected_object_type="search_term",
         expected_object_id="kids sunglasses",
         expected_review_window="7d",
-        expected_evidence_snapshot=diagnosis_evidence_snapshot(),
+        expected_evidence_snapshot=search_term_review_snapshot,
         expected_can_auto_change_rules=False,
         expected_can_auto_execute_ads=False,
         review_root=tmp_path,
@@ -1596,7 +1610,14 @@ def test_review_record_persists_ready_effect_and_can_read_latest(tmp_path: Path)
     assert record.evidence_snapshot[0].label == "排查路径"
     assert record.evidence_snapshot[1].label == "AI 准入"
     assert record.evidence_snapshot[1].source == "actionability_status"
+    assert record.review_context is not None
+    assert record.review_context.search_intent_label == "规则语义：儿童太阳镜"
+    assert record.review_context.search_term == "kids sunglasses"
+    assert record.review_context.can_auto_change_rules is False
+    assert record.review_context.can_auto_execute_ads is False
     assert records == [record]
+    assert records[0].review_context is not None
+    assert records[0].review_context.search_intent_label == "规则语义：儿童太阳镜"
     assert records[0].evidence_snapshot[0].value.startswith("Parent 经营盘子")
     assert latest == record
     assert (tmp_path / "review_records.jsonl").exists()

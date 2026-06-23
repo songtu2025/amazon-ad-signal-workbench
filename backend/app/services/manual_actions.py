@@ -383,6 +383,14 @@ def _review_todo_voided(
 
 
 def review_context_for_manual_action(record: ManualActionRecord, records: list[ManualActionRecord]) -> ReviewContext | None:
+    return _review_context_from_evidence_record(record, records)
+
+
+def review_context_for_review_record(record: ReviewRecord, records: list[ReviewRecord] | None = None) -> ReviewContext | None:
+    return _review_context_from_evidence_record(record, records or [])
+
+
+def _review_context_from_evidence_record(record: Any, records: list[Any]) -> ReviewContext | None:
     search_intent_label = _search_intent_label_for_review_context(record)
     search_term = _search_term_for_review_context(record)
     aba_reference_term = _evidence_value(record, "ABA语义参考词")
@@ -446,7 +454,7 @@ def review_context_for_manual_action(record: ManualActionRecord, records: list[M
     )
 
 
-def _search_term_for_review_context(record: ManualActionRecord) -> str | None:
+def _search_term_for_review_context(record: Any) -> str | None:
     search_term = _evidence_value(record, "搜索词")
     if search_term:
         return search_term
@@ -463,7 +471,7 @@ def _search_term_for_review_context(record: ManualActionRecord) -> str | None:
     return object_id
 
 
-def _search_intent_label_for_review_context(record: ManualActionRecord) -> str | None:
+def _search_intent_label_for_review_context(record: Any) -> str | None:
     label = _evidence_value(record, "语义组") or _evidence_value(record, "广告搜索词聚合上下文")
     if label:
         return label
@@ -477,7 +485,7 @@ def _search_intent_label_for_review_context(record: ManualActionRecord) -> str |
 
 
 def _repeat_search_intent_context_count(
-    records: list[ManualActionRecord],
+    records: list[Any],
     *,
     market_id: int | None,
     value: str | None,
@@ -494,7 +502,7 @@ def _repeat_search_intent_context_count(
     return count
 
 
-def _evidence_value(record: ManualActionRecord, label: str) -> str | None:
+def _evidence_value(record: Any, label: str) -> str | None:
     for item in record.evidence_snapshot:
         if item.label == label and item.value.strip():
             return item.value.strip()
@@ -756,6 +764,7 @@ def save_review_record(
         reviewer_name=reviewer_name or "本地运营",
         reviewed_at=datetime.now(UTC).isoformat(),
     )
+    record = record.model_copy(update={"review_context": review_context_for_review_record(record, [record])})
     review_root.mkdir(parents=True, exist_ok=True)
     with _review_file(review_root).open("a", encoding="utf-8") as file:
         file.write(json.dumps(record.model_dump(mode="json"), ensure_ascii=False) + "\n")
@@ -898,7 +907,7 @@ def load_review_records(
     path = _review_file(review_root)
     if not path.exists():
         return []
-    records: list[ReviewRecord] = []
+    all_records: list[ReviewRecord] = []
     for line in path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
@@ -906,6 +915,10 @@ def load_review_records(
             record = ReviewRecord.model_validate(json.loads(line))
         except (json.JSONDecodeError, ValueError):
             continue
+        all_records.append(record)
+    records: list[ReviewRecord] = []
+    for record in all_records:
+        record = _normalize_review_record(record, all_records)
         if _review_record_matches(
             record,
             signal_id=signal_id,
@@ -915,6 +928,11 @@ def load_review_records(
         ):
             records.append(record)
     return records
+
+
+def _normalize_review_record(record: ReviewRecord, records: list[ReviewRecord]) -> ReviewRecord:
+    context = record.review_context or review_context_for_review_record(record, records)
+    return record.model_copy(update={"review_context": context})
 
 
 def latest_review_record(
