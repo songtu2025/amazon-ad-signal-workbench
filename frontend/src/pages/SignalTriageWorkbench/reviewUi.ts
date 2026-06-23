@@ -539,6 +539,8 @@ export interface ReviewRecordPreflightCheck {
     | "targeting_evidence_missing"
     | "ad_group_synthesis"
     | "ad_group_synthesis_missing"
+    | "ad_group_product_performance"
+    | "ad_group_product_performance_missing"
     | "aba_context"
     | "aba_context_missing"
     | "evidence_gap"
@@ -595,6 +597,7 @@ const baseRequiredReviewRecordPreflightCheckIds: ReviewRecordPreflightCheck["id"
 const searchTermRequiredReviewRecordPreflightCheckIds: ReviewRecordPreflightCheck["id"][] = [
   "targeting_evidence",
   "ad_group_synthesis",
+  "ad_group_product_performance",
   "aba_context",
   "evidence_gap",
   "required_evidence",
@@ -604,6 +607,7 @@ const searchTermRequiredReviewRecordPreflightCheckIds: ReviewRecordPreflightChec
 const advertisedProductRequiredReviewRecordPreflightCheckIds: ReviewRecordPreflightCheck["id"][] = [
   "ad_product_coverage",
   "ad_group_synthesis",
+  "ad_group_product_performance",
   "evidence_gap",
   "required_evidence",
   "manual_action_boundary",
@@ -635,6 +639,8 @@ const requiredReviewRecordPreflightCheckLabels: Record<ReviewRecordPreflightChec
   targeting_evidence_missing: "投放词证据缺失",
   ad_group_synthesis: "广告组合流判断",
   ad_group_synthesis_missing: "广告组合流判断缺失",
+  ad_group_product_performance: "同组投放商品表现",
+  ad_group_product_performance_missing: "同组投放商品表现缺失",
   aba_context: "ABA 背景",
   aba_context_missing: "ABA 背景缺失",
   evidence_gap: "证据缺口",
@@ -1180,6 +1186,7 @@ const reviewRecordPlacementPerformanceLabels = ["广告位表现"];
 const reviewRecordAdProductCoverageLabels = ["广告商品覆盖"];
 const reviewRecordTargetingEvidenceLabels = ["投放词证据"];
 const reviewRecordAdGroupSynthesisLabels = ["广告组合流判断"];
+const reviewRecordAdGroupProductPerformanceLabels = ["同组投放商品表现"];
 const reviewRecordAbaContextLabels = ["ABA 背景"];
 const reviewRecordEvidenceGapLabels = ["证据缺口"];
 const reviewRecordRequiredEvidenceLabels = ["需要补证"];
@@ -1191,6 +1198,7 @@ const reviewRecordDiagnosisSupportLabels = [
   "搜索词市场背景",
   "投放词证据",
   "广告组合流判断",
+  "同组投放商品表现",
   "ABA 背景",
   "证据缺口",
   "需要补证",
@@ -1290,6 +1298,7 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
             [
               reviewRecordTargetingEvidenceLabels,
               reviewRecordAdGroupSynthesisLabels,
+              reviewRecordAdGroupProductPerformanceLabels,
               reviewRecordAbaContextLabels,
               reviewRecordEvidenceGapLabels,
               reviewRecordRequiredEvidenceLabels,
@@ -1297,7 +1306,7 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
             ],
             labels,
             hasSnapshot,
-            "搜索词待办必须保留投放词证据、广告组合流判断、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标误判为自动加词或否词依据。",
+            "搜索词待办必须保留投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标误判为自动加词或否词依据。",
           ),
           {
             label: "广告组合流判断",
@@ -1316,13 +1325,14 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
             [
               reviewRecordAdProductCoverageLabels,
               reviewRecordAdGroupSynthesisLabels,
+              reviewRecordAdGroupProductPerformanceLabels,
               reviewRecordEvidenceGapLabels,
               reviewRecordRequiredEvidenceLabels,
               reviewRecordManualActionBoundaryLabels,
             ],
             labels,
             hasSnapshot,
-            "广告商品待办必须保留广告商品覆盖、广告组合流判断、证据缺口、需要补证和动作边界，避免复盘时把 ASIN 指标或同广告组搜索词背景误判为单 ASIN 自动归因。",
+            "广告商品待办必须保留广告商品覆盖、广告组合流判断、同组投放商品表现、证据缺口、需要补证和动作边界，避免复盘时把 ASIN 指标或同广告组搜索词背景误判为单 ASIN 自动归因。",
           ),
         ]
       : []),
@@ -1562,6 +1572,15 @@ function reviewRecordAdProductAdGroupSynthesisPreflightText(todo: ReviewTodoForU
   );
 }
 
+function reviewRecordAdProductAdGroupProductPerformancePreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordAdvertisedProductReviewChainPreflightText(
+    todo,
+    reviewRecordAdGroupProductPerformanceLabels,
+    "当前待办缺少同组投放商品表现",
+    "同组投放商品表现回看",
+  );
+}
+
 function reviewRecordAdProductEvidenceGapPreflightText(todo: ReviewTodoForUi | null) {
   return reviewRecordAdvertisedProductReviewChainPreflightText(
     todo,
@@ -1604,6 +1623,15 @@ function reviewRecordAdGroupSynthesisPreflightText(todo: ReviewTodoForUi | null)
     reviewRecordAdGroupSynthesisLabels,
     "当前待办缺少广告组合流判断",
     "广告组合流判断回看",
+  );
+}
+
+function reviewRecordAdGroupProductPerformancePreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordSearchTermReviewChainPreflightText(
+    todo,
+    reviewRecordAdGroupProductPerformanceLabels,
+    "当前待办缺少同组投放商品表现",
+    "同组投放商品表现回看",
   );
 }
 
@@ -1719,6 +1747,20 @@ function reviewTodoObjectReferenceTerms(todo: ReviewTodoForUi | null, effect: Re
   return Array.from(new Set(terms));
 }
 
+function reviewTodoStableObjectReferenceTerms(todo: ReviewTodoForUi | null, effect: ReviewEffectForUi | null) {
+  const terms: string[] = [];
+  for (const value of [todo?.object_id, effect?.object_id]) {
+    const text = String(value ?? "").trim();
+    if (!text) continue;
+    terms.push(text);
+    if (text.includes(":")) {
+      const tail = text.split(":").pop()?.trim();
+      if (tail) terms.push(tail);
+    }
+  }
+  return Array.from(new Set(terms));
+}
+
 function reviewEvidenceSnapshotTextForObjectReference(todo: ReviewTodoForUi | null) {
   return (todo?.evidence_snapshot ?? [])
     .map((item) => [item.label, item.value, item.detail, item.source].map((value) => String(value ?? "").trim()).filter(Boolean).join(" "))
@@ -1728,7 +1770,8 @@ function reviewEvidenceSnapshotTextForObjectReference(todo: ReviewTodoForUi | nu
 
 function reviewTodoHasObjectReference(todo: ReviewTodoForUi | null, effect: ReviewEffectForUi | null) {
   if (!todo || !reviewTodoHasEvidenceSnapshot(todo)) return false;
-  const terms = reviewTodoObjectReferenceTerms(todo, effect);
+  const stableTerms = reviewTodoStableObjectReferenceTerms(todo, effect);
+  const terms = stableTerms.length > 0 ? stableTerms : reviewTodoObjectReferenceTerms(todo, effect);
   if (terms.length === 0) return false;
   const snapshotText = reviewEvidenceSnapshotTextForObjectReference(todo);
   return terms.some((term) => snapshotText.includes(term.toLocaleLowerCase()));
@@ -1788,6 +1831,7 @@ export function buildReviewRecordPreflightChecklist(
   const hasPlacementPerformance = reviewTodoHasSnapshotLabel(todo, "广告位表现");
   const hasTargetingEvidence = reviewTodoHasSnapshotLabel(todo, "投放词证据");
   const hasAdGroupSynthesis = reviewTodoHasSnapshotLabel(todo, "广告组合流判断");
+  const hasAdGroupProductPerformance = reviewTodoHasSnapshotLabel(todo, "同组投放商品表现");
   const hasAbaContext = reviewTodoHasSnapshotLabel(todo, "ABA 背景");
   const hasEvidenceGap = reviewTodoHasSnapshotLabel(todo, "证据缺口");
   const hasRequiredEvidence = reviewTodoHasSnapshotLabel(todo, "需要补证");
@@ -1843,6 +1887,11 @@ export function buildReviewRecordPreflightChecklist(
         description: reviewRecordAdGroupSynthesisPreflightText(todo),
       },
       {
+        id: hasAdGroupProductPerformance ? "ad_group_product_performance" : "ad_group_product_performance_missing",
+        title: "回看同组投放商品表现",
+        description: reviewRecordAdGroupProductPerformancePreflightText(todo),
+      },
+      {
         id: hasAbaContext ? "aba_context" : "aba_context_missing",
         title: "回看 ABA 背景",
         description: reviewRecordAbaContextPreflightText(todo),
@@ -1876,6 +1925,11 @@ export function buildReviewRecordPreflightChecklist(
         id: hasAdGroupSynthesis ? "ad_group_synthesis" : "ad_group_synthesis_missing",
         title: "回看广告组合流判断",
         description: reviewRecordAdProductAdGroupSynthesisPreflightText(todo),
+      },
+      {
+        id: hasAdGroupProductPerformance ? "ad_group_product_performance" : "ad_group_product_performance_missing",
+        title: "回看同组投放商品表现",
+        description: reviewRecordAdProductAdGroupProductPerformancePreflightText(todo),
       },
       {
         id: hasEvidenceGap ? "evidence_gap" : "evidence_gap_missing",
@@ -2750,8 +2804,8 @@ export function manualConfirmationEvidenceReadinessSummary(
   const manualLabels = evidenceLabelSet(manualEvidenceItems);
   const snapshotLabels = evidenceLabelSet(preflightEvidenceRows);
   const hasPreflightSnapshot = preflightEvidenceRows.length > 0;
-  const searchTermReviewChainLabels = ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "需要补证", "动作边界"];
-  const advertisedProductReviewChainLabels = ["广告商品覆盖", "广告组合流判断", "证据缺口", "需要补证", "动作边界"];
+  const searchTermReviewChainLabels = ["投放词证据", "广告组合流判断", "同组投放商品表现", "ABA 背景", "证据缺口", "需要补证", "动作边界"];
+  const advertisedProductReviewChainLabels = ["广告商品覆盖", "广告组合流判断", "同组投放商品表现", "证据缺口", "需要补证", "动作边界"];
   const needsSearchTermReviewChain = searchTermReviewChainLabels.some(
     (label) => manualLabels.has(label) || snapshotLabels.has(label),
   );
@@ -2775,7 +2829,7 @@ export function manualConfirmationEvidenceReadinessSummary(
             label: "搜索词复核链",
             manual: searchTermReviewChainLabels,
             snapshot: searchTermReviewChainLabels,
-            detail: "确认搜索词进入人工确认前，投放词、广告组合流判断、ABA、证据缺口、需要补证和动作边界会一起保存。",
+            detail: "确认搜索词进入人工确认前，投放词、广告组合流判断、同组投放商品表现、ABA、证据缺口、需要补证和动作边界会一起保存。",
           },
         ]
       : []),
@@ -2785,7 +2839,7 @@ export function manualConfirmationEvidenceReadinessSummary(
             label: "广告商品复核链",
             manual: advertisedProductReviewChainLabels,
             snapshot: advertisedProductReviewChainLabels,
-            detail: "确认广告商品进入人工确认前，广告商品覆盖、广告组合流判断、证据缺口、需要补证和动作边界会一起保存。",
+            detail: "确认广告商品进入人工确认前，广告商品覆盖、广告组合流判断、同组投放商品表现、证据缺口、需要补证和动作边界会一起保存。",
           },
         ]
       : []),

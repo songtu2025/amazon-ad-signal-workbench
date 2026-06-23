@@ -545,6 +545,7 @@ def test_review_identity_audit_reports_ad_group_synthesis_gap() -> None:
                 "has_placement_boundary": True,
                 "has_targeting_evidence": True,
                 "has_ad_group_synthesis": False,
+                "has_ad_group_product_performance": True,
                 "has_aba_context": True,
                 "has_evidence_gap": True,
                 "has_required_evidence": True,

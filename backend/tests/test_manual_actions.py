@@ -68,6 +68,12 @@ def diagnosis_evidence_snapshot() -> list[dict[str, str]]:
             "source": "diagnosis_contract",
         },
         {
+            "label": "同组投放商品表现",
+            "value": "B016EXMVZS 花费 22.78 / 订单 11；B016EXMW02 花费 18.41 / 订单 7",
+            "detail": "只说明同广告组内广告商品承接差异，不能把搜索词自动归因到单个广告 ASIN。",
+            "source": "advertised_products + ad_product_daily_metrics",
+        },
+        {
             "label": "投放词证据",
             "value": "sunglasses for kids / 1 个",
             "detail": "用于确认用户搜索词是否已有投放词承接。",

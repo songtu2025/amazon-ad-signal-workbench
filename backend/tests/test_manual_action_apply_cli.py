@@ -600,13 +600,13 @@ def test_manual_action_apply_rewrites_after_voided_legacy_todo_with_isolated_roo
     assert written["status"] == "written_and_verified"
     assert written["will_write"] is True
     assert written["written_record"]["object_id"] == "search_term:1:beach essentials"
-    assert len(written["written_record"]["evidence_snapshot"]) == 22
+    assert len(written["written_record"]["evidence_snapshot"]) == 23
     smoke = written["smoke_assertions"]
     assert smoke["target_manual_action_count"] == 2
     assert smoke["target_review_todo_count"] == 2
     assert smoke["target_review_record_count"] == 0
-    assert smoke["written_evidence_snapshot_count"] == 22
-    assert smoke["post_write_max_manual_action_evidence_snapshot_count"] == 22
-    assert smoke["post_write_review_todo_evidence_snapshot_counts"] == {"7d": 22, "14d": 22}
+    assert smoke["written_evidence_snapshot_count"] == 23
+    assert smoke["post_write_max_manual_action_evidence_snapshot_count"] == 23
+    assert smoke["post_write_review_todo_evidence_snapshot_counts"] == {"7d": 23, "14d": 23}
     assert smoke["review_records_not_saved"] is True
     assert smoke["ad_actions_not_executed"] is True

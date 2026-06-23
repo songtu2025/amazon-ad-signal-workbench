@@ -708,6 +708,12 @@ const reviewTodoWithDiagnosisPath: ReviewTodoForUi = {
       detail: "不能把搜索词或广告位证据自动归因到单个广告 ASIN。",
       source: "diagnosis_contract",
     },
+    {
+      label: "同组投放商品表现",
+      value: "B016EXMVZS 花费 22.78 / 订单 11；B016EXMW02 花费 18.41 / 订单 7",
+      detail: "只说明同广告组内广告商品承接差异，不能把搜索词自动归因到单个广告 ASIN。",
+      source: "advertised_products + ad_product_daily_metrics",
+    },
     { label: "证据缺口", value: "缺少广告组级广告位证据和主推策略确认。", source: "diagnosis_contract" },
     { label: "需要补证", value: "补齐广告位、投放词维护状态和主推策略。", source: "diagnosis_contract" },
     { label: "动作边界", value: "只允许记录观察、标记已处理、加入复盘或忽略本次。", source: "business_rule" },
@@ -717,6 +723,7 @@ const readyAdProductReviewTodoEvidenceReadback = buildReviewTodoEvidenceReadback
 assertEqual(readyAdProductReviewTodoEvidenceReadback?.tone, "ready");
 assertIncludes(JSON.stringify(readyAdProductReviewTodoEvidenceReadback), "广告商品复核链");
 assertIncludes(JSON.stringify(readyAdProductReviewTodoEvidenceReadback), "广告商品覆盖");
+assertIncludes(JSON.stringify(readyAdProductReviewTodoEvidenceReadback), "同组投放商品表现");
 assertIncludes(JSON.stringify(readyAdProductReviewTodoEvidenceReadback), "动作边界");
 const blockedAdProductReviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary({
   ...reviewTodoWithDiagnosisPath,
@@ -745,7 +752,7 @@ const reviewRecordPreflightChecklist = buildReviewRecordPreflightChecklist(
     objectId: "B016EXMW02",
   },
 );
-assertEqual(reviewRecordPreflightChecklist.length, 17);
+assertEqual(reviewRecordPreflightChecklist.length, 18);
 assertEqual(reviewRecordPreflightChecklist[0].title, "确认复盘对象");
 assertIncludes(reviewRecordPreflightChecklist[0].description, "advertised_product / B016EXMW02");
 assertIncludes(reviewRecordPreflightChecklist[0].description, "sig-previous-snapshot");
@@ -770,34 +777,37 @@ assertIncludes(reviewRecordPreflightChecklist[6].description, "广告商品覆�
 assertEqual(reviewRecordPreflightChecklist[7].id, "ad_group_synthesis");
 assertIncludes(reviewRecordPreflightChecklist[7].description, "广告组合流判断回看");
 assertIncludes(reviewRecordPreflightChecklist[7].description, "不能把搜索词或广告位证据自动归因");
-assertEqual(reviewRecordPreflightChecklist[8].id, "evidence_gap");
-assertIncludes(reviewRecordPreflightChecklist[8].description, "缺少广告组级广告位证据");
-assertEqual(reviewRecordPreflightChecklist[9].id, "required_evidence");
-assertIncludes(reviewRecordPreflightChecklist[9].description, "补齐广告位");
-assertEqual(reviewRecordPreflightChecklist[10].id, "manual_action_boundary");
-assertIncludes(reviewRecordPreflightChecklist[10].description, "不自动归因搜索词");
-assertEqual(reviewRecordPreflightChecklist[11].title, "确认复盘窗口");
-assertIncludes(reviewRecordPreflightChecklist[11].description, "7 天");
-assertIncludes(reviewRecordPreflightChecklist[11].description, "ready");
-assertEqual(reviewRecordPreflightChecklist[12].title, "核对指标口径");
-assertIncludes(reviewRecordPreflightChecklist[12].description, "处理前 2026-06-01 至 2026-06-07");
-assertIncludes(reviewRecordPreflightChecklist[12].description, "花费、订单、销售额、ACOS");
-assertIncludes(reviewRecordPreflightChecklist[12].description, "不等同于归因所有业务变化");
-assertEqual(reviewRecordPreflightChecklist[13].title, "确认复盘结论边界");
-assertIncludes(reviewRecordPreflightChecklist[13].description, "处理后 7 天订单改善");
-assertIncludes(reviewRecordPreflightChecklist[13].description, "当前对象");
-assertIncludes(reviewRecordPreflightChecklist[13].description, "不证明所有业务变化");
-assertEqual(reviewRecordPreflightChecklist[14].title, "确认规则反馈边界");
-assertIncludes(reviewRecordPreflightChecklist[14].description, "只形成规则反馈候选");
-assertIncludes(reviewRecordPreflightChecklist[14].description, "不自动改规则");
-assertIncludes(reviewRecordPreflightChecklist[14].description, "不自动执行广告动作");
-assertEqual(reviewRecordPreflightChecklist[15].title, "核对待办证据一致性");
-assertIncludes(reviewRecordPreflightChecklist[15].description, "action_id manual-action-ad-product");
-assertIncludes(reviewRecordPreflightChecklist[15].description, "证据快照 14 条");
-assertIncludes(reviewRecordPreflightChecklist[15].description, "后端仍会按签名校验");
-assertEqual(reviewRecordPreflightChecklist[16].title, "核对待办证据对象引用");
-assertIncludes(reviewRecordPreflightChecklist[16].description, "advertised_product / B016EXMW02");
-assertIncludes(reviewRecordPreflightChecklist[16].description, "对象引用可回看");
+assertEqual(reviewRecordPreflightChecklist[8].id, "ad_group_product_performance");
+assertIncludes(reviewRecordPreflightChecklist[8].description, "同组投放商品表现回看");
+assertIncludes(reviewRecordPreflightChecklist[8].description, "B016EXMW02");
+assertEqual(reviewRecordPreflightChecklist[9].id, "evidence_gap");
+assertIncludes(reviewRecordPreflightChecklist[9].description, "缺少广告组级广告位证据");
+assertEqual(reviewRecordPreflightChecklist[10].id, "required_evidence");
+assertIncludes(reviewRecordPreflightChecklist[10].description, "补齐广告位");
+assertEqual(reviewRecordPreflightChecklist[11].id, "manual_action_boundary");
+assertIncludes(reviewRecordPreflightChecklist[11].description, "不自动归因搜索词");
+assertEqual(reviewRecordPreflightChecklist[12].title, "确认复盘窗口");
+assertIncludes(reviewRecordPreflightChecklist[12].description, "7 天");
+assertIncludes(reviewRecordPreflightChecklist[12].description, "ready");
+assertEqual(reviewRecordPreflightChecklist[13].title, "核对指标口径");
+assertIncludes(reviewRecordPreflightChecklist[13].description, "处理前 2026-06-01 至 2026-06-07");
+assertIncludes(reviewRecordPreflightChecklist[13].description, "花费、订单、销售额、ACOS");
+assertIncludes(reviewRecordPreflightChecklist[13].description, "不等同于归因所有业务变化");
+assertEqual(reviewRecordPreflightChecklist[14].title, "确认复盘结论边界");
+assertIncludes(reviewRecordPreflightChecklist[14].description, "处理后 7 天订单改善");
+assertIncludes(reviewRecordPreflightChecklist[14].description, "当前对象");
+assertIncludes(reviewRecordPreflightChecklist[14].description, "不证明所有业务变化");
+assertEqual(reviewRecordPreflightChecklist[15].title, "确认规则反馈边界");
+assertIncludes(reviewRecordPreflightChecklist[15].description, "只形成规则反馈候选");
+assertIncludes(reviewRecordPreflightChecklist[15].description, "不自动改规则");
+assertIncludes(reviewRecordPreflightChecklist[15].description, "不自动执行广告动作");
+assertEqual(reviewRecordPreflightChecklist[16].title, "核对待办证据一致性");
+assertIncludes(reviewRecordPreflightChecklist[16].description, "action_id manual-action-ad-product");
+assertIncludes(reviewRecordPreflightChecklist[16].description, "证据快照 15 条");
+assertIncludes(reviewRecordPreflightChecklist[16].description, "后端仍会按签名校验");
+assertEqual(reviewRecordPreflightChecklist[17].title, "核对待办证据对象引用");
+assertIncludes(reviewRecordPreflightChecklist[17].description, "advertised_product / B016EXMW02");
+assertIncludes(reviewRecordPreflightChecklist[17].description, "对象引用可回看");
 assertEqual(buildReviewRecordPreflightChecklist(dueTodo, notReadyEffect, null).length, 0);
 assertEqual(canSaveReviewRecordWithPreflight(notReadyEffect, reviewRecordPreflightChecklist), false);
 assertEqual(canSaveReviewRecordWithPreflight(improvedEffect, []), false);
@@ -894,15 +904,19 @@ const reviewRecordPreflightChecklistWithStaleTodo = buildReviewRecordPreflightCh
   },
   null,
 );
-assertEqual(reviewRecordPreflightChecklistWithStaleTodo[15].id, "todo_evidence_signature_missing");
-assertIncludes(reviewRecordPreflightChecklistWithStaleTodo[15].description, "action_id 与 ready effect 不一致");
-assertIncludes(reviewRecordPreflightChecklistWithStaleTodo[15].description, "不能用页面缓存");
+assertEqual(reviewRecordPreflightChecklistWithStaleTodo[16].id, "todo_evidence_signature_missing");
+assertIncludes(reviewRecordPreflightChecklistWithStaleTodo[16].description, "action_id 与 ready effect 不一致");
+assertIncludes(reviewRecordPreflightChecklistWithStaleTodo[16].description, "不能用页面缓存");
 assertEqual(canSaveReviewRecordWithPreflight(improvedEffect, reviewRecordPreflightChecklistWithStaleTodo), false);
 const reviewRecordPreflightChecklistWithObjectMismatch = buildReviewRecordPreflightChecklist(
   {
     ...reviewTodoWithDiagnosisPath,
     evidence_snapshot: reviewTodoWithDiagnosisPath.evidence_snapshot?.map((item) =>
-      item.label === "广告商品覆盖" ? { ...item, value: "B07OTHERASIN 覆盖 raw 投放行 6/7 / 证据行 6 条" } : item,
+      item.label === "广告商品覆盖"
+        ? { ...item, value: "B07OTHERASIN 覆盖 raw 投放行 6/7 / 证据行 6 条" }
+        : item.label === "同组投放商品表现"
+          ? { ...item, value: "B07OTHERASIN 花费 22.78 / 订单 11；B07OTHERASIN2 花费 18.41 / 订单 7" }
+          : item,
     ),
   },
   {
@@ -915,9 +929,9 @@ const reviewRecordPreflightChecklistWithObjectMismatch = buildReviewRecordPrefli
   },
   null,
 );
-assertEqual(reviewRecordPreflightChecklistWithObjectMismatch[16].id, "todo_object_reference_missing");
-assertIncludes(reviewRecordPreflightChecklistWithObjectMismatch[16].description, "证据快照未能回看 advertised_product / B016EXMW02");
-assertIncludes(reviewRecordPreflightChecklistWithObjectMismatch[16].description, "不能保存 ReviewRecord");
+assertEqual(reviewRecordPreflightChecklistWithObjectMismatch[17].id, "todo_object_reference_missing");
+assertIncludes(reviewRecordPreflightChecklistWithObjectMismatch[17].description, "证据快照未能回看 advertised_product / B016EXMW02");
+assertIncludes(reviewRecordPreflightChecklistWithObjectMismatch[17].description, "不能保存 ReviewRecord");
 assertEqual(canSaveReviewRecordWithPreflight(improvedEffect, reviewRecordPreflightChecklistWithObjectMismatch), false);
 const reviewRecordPreflightChecklistWithoutDiagnosisPath = buildReviewRecordPreflightChecklist(
   {
@@ -1008,6 +1022,12 @@ const searchTermReviewTodoWithFullChain: ReviewTodoForUi = {
       detail: "缺少广告组级广告位证据时不能判断广告位影响。",
       source: "ad_group_products + diagnosis_contract",
     },
+    {
+      label: "同组投放商品表现",
+      value: "B016EXMVZS 花费 22.78 / 订单 11；B016EXMW02 花费 18.41 / 订单 7",
+      detail: "只说明同广告组内广告商品承接差异，不能把搜索词自动归因到单个广告 ASIN。",
+      source: "advertised_products + ad_product_daily_metrics",
+    },
     { label: "ABA 背景", value: "ABA 排名 208 / 2026-06-07 至 2026-06-13", detail: "ABA 只作为站点级市场背景。", source: "diagnosis_contract + ABA导出" },
     { label: "证据缺口", value: "缺少主推策略和投放词维护状态", source: "diagnosis_contract" },
     { label: "需要补证", value: "补齐投放词维护状态、广告商品承接和主推策略", source: "diagnosis_contract" },
@@ -1021,6 +1041,7 @@ assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "业务判断");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "诊断路径");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "搜索词复核链");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "广告组合流判断");
+assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "同组投放商品表现");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "同广告组广告 ASIN");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "不能自动归因到单个广告 ASIN");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "缺少广告组级广告位证据");
@@ -1051,22 +1072,25 @@ const searchTermReviewRecordPreflightChecklist = buildReviewRecordPreflightCheck
     objectId: "search_term:1:beach essentials",
   },
 );
-assertEqual(searchTermReviewRecordPreflightChecklist.length, 18);
+assertEqual(searchTermReviewRecordPreflightChecklist.length, 19);
 assertEqual(searchTermReviewRecordPreflightChecklist[6].id, "targeting_evidence");
 assertIncludes(searchTermReviewRecordPreflightChecklist[6].description, "beach essentials");
 assertEqual(searchTermReviewRecordPreflightChecklist[7].id, "ad_group_synthesis");
 assertIncludes(searchTermReviewRecordPreflightChecklist[7].description, "同广告组广告 ASIN");
 assertIncludes(searchTermReviewRecordPreflightChecklist[7].description, "不能自动归因到单个广告 ASIN");
-assertEqual(searchTermReviewRecordPreflightChecklist[8].id, "aba_context");
-assertIncludes(searchTermReviewRecordPreflightChecklist[8].description, "ABA 排名 208");
-assertEqual(searchTermReviewRecordPreflightChecklist[9].id, "evidence_gap");
-assertIncludes(searchTermReviewRecordPreflightChecklist[9].description, "缺少主推策略");
-assertEqual(searchTermReviewRecordPreflightChecklist[10].id, "required_evidence");
-assertIncludes(searchTermReviewRecordPreflightChecklist[10].description, "补齐投放词维护状态");
-assertEqual(searchTermReviewRecordPreflightChecklist[11].id, "manual_action_boundary");
-assertIncludes(searchTermReviewRecordPreflightChecklist[11].description, "不得自动加词");
+assertEqual(searchTermReviewRecordPreflightChecklist[8].id, "ad_group_product_performance");
+assertIncludes(searchTermReviewRecordPreflightChecklist[8].description, "同组投放商品表现回看");
+assertIncludes(searchTermReviewRecordPreflightChecklist[8].description, "B016EXMVZS");
+assertEqual(searchTermReviewRecordPreflightChecklist[9].id, "aba_context");
+assertIncludes(searchTermReviewRecordPreflightChecklist[9].description, "ABA 排名 208");
+assertEqual(searchTermReviewRecordPreflightChecklist[10].id, "evidence_gap");
+assertIncludes(searchTermReviewRecordPreflightChecklist[10].description, "缺少主推策略");
+assertEqual(searchTermReviewRecordPreflightChecklist[11].id, "required_evidence");
+assertIncludes(searchTermReviewRecordPreflightChecklist[11].description, "补齐投放词维护状态");
+assertEqual(searchTermReviewRecordPreflightChecklist[12].id, "manual_action_boundary");
+assertIncludes(searchTermReviewRecordPreflightChecklist[12].description, "不得自动加词");
 assertEqual(canSaveReviewRecordWithPreflight(searchTermReviewEffect, searchTermReviewRecordPreflightChecklist), true);
-for (const label of ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "需要补证", "动作边界"]) {
+for (const label of ["投放词证据", "广告组合流判断", "同组投放商品表现", "ABA 背景", "证据缺口", "需要补证", "动作边界"]) {
   const checklist = buildReviewRecordPreflightChecklist(
     {
       ...searchTermReviewTodoWithFullChain,
@@ -1175,7 +1199,7 @@ assertEqual(reviewRecordRequestPayload.expected_action_id, "manual-action-ad-pro
 assertEqual(reviewRecordRequestPayload.expected_object_type, "advertised_product");
 assertEqual(reviewRecordRequestPayload.expected_object_id, "B016EXMW02");
 assertEqual(reviewRecordRequestPayload.expected_review_window, "7d");
-assertEqual(reviewRecordRequestPayload.expected_evidence_snapshot.length, 14);
+assertEqual(reviewRecordRequestPayload.expected_evidence_snapshot.length, 15);
 assertEqual(reviewRecordRequestPayload.expected_evidence_snapshot[0].label, "排查路径");
 assertEqual(reviewRecordRequestPayload.expected_evidence_snapshot[1].label, "AI 准入");
 assertEqual(reviewRecordRequestPayload.expected_evidence_snapshot[2].label, "搜索词边界");
@@ -2034,6 +2058,7 @@ const readyManualConfirmationEvidenceReadiness = manualConfirmationEvidenceReadi
     { label: "人工下一步", value: "加入 7/14 天复盘" },
     { label: "投放词证据", value: "关键词 / 自动投放上下文可读回" },
     { label: "广告组合流判断", value: "搜索词只能说明同广告组上下文，不能自动归因到单个广告 ASIN" },
+    { label: "同组投放商品表现", value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看" },
     { label: "ABA 背景", value: "站点级 ABA 匹配" },
     { label: "证据缺口", value: "广告位仍需补证" },
     { label: "需要补证", value: "补齐广告位和投放词维护状态" },
@@ -2046,6 +2071,7 @@ const readyManualConfirmationEvidenceReadiness = manualConfirmationEvidenceReadi
     { label: "人工下一步", value: "加入复盘" },
     { label: "投放词证据", value: "投放词上下文" },
     { label: "广告组合流判断", value: "同广告组上下文已回看" },
+    { label: "同组投放商品表现", value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看" },
     { label: "ABA 背景", value: "站点级市场背景" },
     { label: "证据缺口", value: "需要补广告位" },
     { label: "需要补证", value: "补齐广告位和投放词维护状态" },
@@ -2073,6 +2099,7 @@ const readyManualConfirmationDiagnosisBridge = manualConfirmationDiagnosisBridge
     { label: "人工下一步", value: "加入 7/14 天复盘" },
     { label: "投放词证据", value: "关键词 / 自动投放上下文可读回" },
     { label: "广告组合流判断", value: "搜索词只能说明同广告组上下文，不能自动归因到单个广告 ASIN" },
+    { label: "同组投放商品表现", value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看" },
     { label: "ABA 背景", value: "站点级 ABA 匹配" },
     { label: "证据缺口", value: "广告位仍需补证" },
     { label: "需要补证", value: "补齐广告位和投放词维护状态" },
@@ -2105,7 +2132,7 @@ const blockedManualConfirmationEvidenceReadiness = manualConfirmationEvidenceRea
   ],
 );
 assertEqual(blockedManualConfirmationEvidenceReadiness?.tone, "blocked");
-assertIncludes(JSON.stringify(blockedManualConfirmationEvidenceReadiness), "缺：广告组合流判断 / 需要补证 / ABA 背景 / 证据缺口 / 动作边界");
+assertIncludes(JSON.stringify(blockedManualConfirmationEvidenceReadiness), "缺：广告组合流判断 / 同组投放商品表现 / 需要补证 / ABA 背景 / 证据缺口 / 动作边界");
 assertIncludes(blockedManualConfirmationEvidenceReadiness?.summary ?? "", "不能把当前点击当成可复盘留痕");
 const snapshotOnlySearchTermChainReadiness = manualConfirmationEvidenceReadinessSummary(
   [
@@ -2132,7 +2159,7 @@ assertEqual(snapshotOnlySearchTermChainReadiness?.tone, "blocked");
 assertIncludes(snapshotOnlySearchTermChainReadiness?.summary ?? "", "不一致");
 assertIncludes(
   JSON.stringify(snapshotOnlySearchTermChainReadiness),
-  "页面缺少：投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
+  "页面缺少：投放词证据 / 广告组合流判断 / 同组投放商品表现 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
 );
 const blockedManualConfirmationDiagnosisBridge = manualConfirmationDiagnosisBridgeSummary(
   {

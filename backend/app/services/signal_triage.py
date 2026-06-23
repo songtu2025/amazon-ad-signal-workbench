@@ -4459,6 +4459,7 @@ def _review_todo_evidence_snapshot_audit(todo: Any) -> dict[str, Any]:
             "has_placement_boundary": None,
             "has_targeting_evidence": None,
             "has_ad_group_synthesis": None,
+            "has_ad_group_product_performance": None,
             "has_aba_context": None,
             "has_evidence_gap": None,
             "has_required_evidence": None,
@@ -4474,6 +4475,7 @@ def _review_todo_evidence_snapshot_audit(todo: Any) -> dict[str, Any]:
         "has_placement_boundary": _review_evidence_snapshot_has_label(evidence_snapshot, "广告位边界"),
         "has_targeting_evidence": _review_evidence_snapshot_has_label(evidence_snapshot, "投放词证据"),
         "has_ad_group_synthesis": _review_evidence_snapshot_has_label(evidence_snapshot, "广告组合流判断"),
+        "has_ad_group_product_performance": _review_evidence_snapshot_has_label(evidence_snapshot, "同组投放商品表现"),
         "has_aba_context": _review_evidence_snapshot_has_label(evidence_snapshot, "ABA 背景"),
         "has_evidence_gap": _review_evidence_snapshot_has_label(evidence_snapshot, "证据缺口"),
         "has_required_evidence": _review_evidence_snapshot_has_label(evidence_snapshot, "需要补证"),
@@ -4543,6 +4545,7 @@ def _review_identity_audit_summary(
     search_term_snapshot_keys = [item for item in snapshot_known_keys if item.get("object_type") == "search_term"]
     missing_targeting_evidence_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_targeting_evidence"))
     missing_ad_group_synthesis_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_ad_group_synthesis"))
+    missing_ad_group_product_performance_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_ad_group_product_performance"))
     missing_aba_context_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_aba_context"))
     missing_evidence_gap_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_evidence_gap"))
     missing_required_evidence_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_required_evidence"))
@@ -4566,6 +4569,7 @@ def _review_identity_audit_summary(
         "missing_placement_boundary_count": missing_placement_boundary_count,
         "missing_targeting_evidence_count": missing_targeting_evidence_count,
         "missing_ad_group_synthesis_count": missing_ad_group_synthesis_count,
+        "missing_ad_group_product_performance_count": missing_ad_group_product_performance_count,
         "missing_aba_context_count": missing_aba_context_count,
         "missing_evidence_gap_count": missing_evidence_gap_count,
         "missing_required_evidence_count": missing_required_evidence_count,
@@ -4606,6 +4610,7 @@ def _review_readback_key(effect: dict[str, Any]) -> dict[str, Any]:
             {
                 "has_targeting_evidence": effect.get("has_targeting_evidence"),
                 "has_ad_group_synthesis": effect.get("has_ad_group_synthesis"),
+                "has_ad_group_product_performance": effect.get("has_ad_group_product_performance"),
                 "has_aba_context": effect.get("has_aba_context"),
                 "has_evidence_gap": effect.get("has_evidence_gap"),
                 "has_required_evidence": effect.get("has_required_evidence"),
@@ -4721,6 +4726,18 @@ def _review_identity_audit_issues(
                         "object_id": item.get("object_id"),
                         "review_window": item.get("review_window"),
                         "note": "搜索词复盘待办缺少“广告组合流判断”，不能证明当时已回看同广告组广告 ASIN、单 ASIN 归因边界和广告位证据缺口。",
+                    }
+                )
+            if not item.get("has_ad_group_product_performance"):
+                issues.append(
+                    {
+                        "issue_type": "missing_ad_group_product_performance",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "搜索词复盘待办缺少“同组投放商品表现”，不能证明当时已回看同广告组广告 ASIN 的承接差异。",
                     }
                 )
             if not item.get("has_aba_context"):
@@ -5689,6 +5706,7 @@ def _review_audit_issue_reason(issues: list[dict[str, Any]]) -> str:
         "missing_placement_boundary": "缺少广告位边界",
         "missing_targeting_evidence": "缺少投放词证据",
         "missing_ad_group_synthesis": "缺少广告组合流判断",
+        "missing_ad_group_product_performance": "缺少同组投放商品表现",
         "missing_aba_context": "缺少 ABA 背景",
         "missing_evidence_gap": "缺少证据缺口",
         "missing_required_evidence": "缺少需要补证",

@@ -17,6 +17,7 @@ REQUIRED_REVIEW_EVIDENCE_LABELS = ("排查路径", "AI 准入", "搜索词边界
 SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS = (
     *REQUIRED_REVIEW_EVIDENCE_LABELS,
     "广告组合流判断",
+    "同组投放商品表现",
     "投放词证据",
     "ABA 背景",
     "证据缺口",
@@ -27,6 +28,7 @@ ADVERTISED_PRODUCT_REQUIRED_REVIEW_EVIDENCE_LABELS = (
     *REQUIRED_REVIEW_EVIDENCE_LABELS,
     "广告商品覆盖",
     "广告组合流判断",
+    "同组投放商品表现",
     "证据缺口",
     "需要补证",
     "动作边界",
@@ -44,6 +46,7 @@ ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
     "diagnosis_judgement",
     "ad_group_problem_location",
     "ad_group_evidence_synthesis",
+    "ad_group_advertised_product_performance",
     "targeting_context",
     "search_term_market_context",
     "manual_search_term_boundary",
@@ -458,6 +461,7 @@ def _evidence_snapshot_preview(triage: dict[str, Any], target: dict[str, Any]) -
     blocks = _dict_list(drilldown.get("business_evidence_blocks"))
     blocks.extend(_actionability_snapshot_blocks(triage))
     blocks.extend(_product_scope_boundary_snapshot_blocks(triage, blocks, target))
+    blocks.extend(_ad_group_product_performance_snapshot_blocks(triage, target, drilldown))
     blocks.extend(_diagnosis_contract_snapshot_blocks(triage, target))
     blocks.extend(_search_term_review_chain_snapshot_blocks(blocks, triage, target))
     blocks.extend(_advertised_product_review_chain_snapshot_blocks(blocks, triage, target))
@@ -741,6 +745,130 @@ def _ad_group_synthesis_placement_text(
     if campaign_placement_count > 0 or placement_level == "campaign":
         return f"广告组级广告位 0 条 / 同广告活动广告位 {campaign_placement_count} 条"
     return "广告组级广告位 0 条 / 同广告活动广告位 0 条"
+
+
+def _ad_group_product_performance_snapshot_blocks(
+    triage: dict[str, Any],
+    target: dict[str, Any],
+    drilldown: dict[str, Any],
+) -> list[dict[str, str]]:
+    object_type = str(target.get("object_type") or "").strip()
+    if object_type not in {"search_term", "advertised_product", "ad_group"}:
+        return []
+
+    scope = _dict(triage.get("product_scope_drilldown"))
+    rows = _dict_list(scope.get("ad_group_diagnosis_context")) or _dict_list(scope.get("ad_group_diagnosis"))
+    if not rows:
+        return []
+
+    row = _matched_ad_group_product_performance_row(rows, drilldown, target)
+    if not row:
+        return []
+
+    performance_rows = _dict_list(row.get("advertised_product_performance"))
+    if not performance_rows:
+        return []
+
+    group_name = str(row.get("ad_group_name") or row.get("ad_group_id") or "当前广告组").strip()
+    performance_text = "；".join(
+        item
+        for item in (_ad_group_product_performance_item_text(product) for product in performance_rows[:3])
+        if item
+    )
+    if not performance_text:
+        return []
+
+    total_count = len(performance_rows)
+    suffix = f"；另有 {total_count - 3} 个广告 ASIN 未展开" if total_count > 3 else ""
+    return [
+        {
+            "block_id": "ad_group_advertised_product_performance",
+            "label": "同组投放商品表现",
+            "value": f"{group_name}：{performance_text}{suffix}",
+            "detail": "该证据只说明同广告组内广告商品承接差异；搜索词、投放词和广告位仍不能自动归因到单个广告 ASIN，需人工核对主推策略和投放目的。",
+            "source": "advertised_products + ad_product_daily_metrics",
+        }
+    ]
+
+
+def _matched_ad_group_product_performance_row(
+    rows: list[dict[str, Any]],
+    drilldown: dict[str, Any],
+    target: dict[str, Any],
+) -> dict[str, Any]:
+    ad_group_ids, ad_group_names = _target_ad_group_identifiers(drilldown)
+    object_type = str(target.get("object_type") or "").strip()
+    target_label = str(target.get("object_label") or target.get("object_id") or "").strip()
+
+    for row in rows:
+        row_id = str(row.get("ad_group_id") or "").strip()
+        row_name = str(row.get("ad_group_name") or "").strip()
+        if row_id and row_id in ad_group_ids:
+            return row
+        if row_name and row_name in ad_group_names:
+            return row
+        if object_type == "advertised_product" and _row_has_advertised_product(row, target_label):
+            return row
+
+    if len(rows) == 1 and _dict_list(rows[0].get("advertised_product_performance")):
+        return rows[0]
+    return {}
+
+
+def _target_ad_group_identifiers(drilldown: dict[str, Any]) -> tuple[set[str], set[str]]:
+    ad_group_ids: set[str] = set()
+    ad_group_names: set[str] = set()
+    for value in _list(drilldown.get("ad_groups")):
+        text = str(value or "").strip()
+        if text:
+            ad_group_names.add(text)
+
+    for key in ("search_term_rows", "source_rows", "ad_product_rows", "placement_rows"):
+        for row in _dict_list(drilldown.get(key)):
+            ad_group_id = str(row.get("ad_group_id") or "").strip()
+            ad_group_name = str(row.get("ad_group_name") or "").strip()
+            if ad_group_id:
+                ad_group_ids.add(ad_group_id)
+            if ad_group_name:
+                ad_group_names.add(ad_group_name)
+    return ad_group_ids, ad_group_names
+
+
+def _row_has_advertised_product(row: dict[str, Any], target_label: str) -> bool:
+    if not target_label:
+        return False
+    target = target_label.lower()
+    for product in _dict_list(row.get("advertised_product_performance")):
+        values = (
+            product.get("asin"),
+            product.get("msku"),
+            product.get("label"),
+        )
+        if any(str(value or "").strip().lower() == target for value in values):
+            return True
+    return any(str(value or "").strip().lower() == target for value in _list(row.get("ad_group_advertised_asins")))
+
+
+def _ad_group_product_performance_item_text(product: dict[str, Any]) -> str:
+    asin = str(product.get("asin") or product.get("label") or "未知 ASIN").strip()
+    msku = str(product.get("msku") or "").strip()
+    label = f"{asin}（{msku}）" if msku and msku != asin else asin
+    parts = [
+        f"花费 {_format_amount(product.get('spend'))}",
+        f"点击 {_format_integer(product.get('clicks'))}",
+        f"订单 {_format_integer(product.get('orders'))}",
+        f"销售额 {_format_amount(product.get('sales'))}",
+    ]
+    acos = _format_percent(product.get("acos"))
+    cvr = _format_percent(product.get("cvr"))
+    if acos:
+        parts.append(f"ACOS {acos}")
+    if cvr:
+        parts.append(f"CVR {cvr}")
+    sample_boundary = str(product.get("sample_boundary") or "").strip()
+    if sample_boundary:
+        parts.append(sample_boundary)
+    return f"{label}：" + " / ".join(parts)
 
 
 def _diagnosis_contract_snapshot_blocks(triage: dict[str, Any], target: dict[str, Any]) -> list[dict[str, str]]:
@@ -1561,9 +1689,33 @@ def _optional_text(value: Any) -> str | None:
     return text or None
 
 
+def _format_amount(value: Any) -> str:
+    number = _float(value)
+    return "0" if number is None else f"{number:.2f}".rstrip("0").rstrip(".")
+
+
+def _format_integer(value: Any) -> str:
+    number = _int(value)
+    return "0" if number is None else str(number)
+
+
+def _format_percent(value: Any) -> str:
+    number = _float(value)
+    if number is None:
+        return ""
+    return f"{number * 100:.1f}%"
+
+
 def _int(value: Any) -> int | None:
     try:
         return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _float(value: Any) -> float | None:
+    try:
+        return float(value)
     except (TypeError, ValueError):
         return None
 

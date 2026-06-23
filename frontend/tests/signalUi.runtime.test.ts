@@ -283,7 +283,7 @@ async function main() {
   );
   assert(
     manualConfirmationEvidenceItems.map((item: any) => item.label).join(" / ") ===
-      "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
+      "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 投放词证据 / 广告组合流判断 / 同组投放商品表现 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
     "右侧人工确认证据依据必须保留固定业务判断结构和搜索词机会复核链。",
   );
   assertIncludes(asText(manualConfirmationEvidenceItems), nextLabel);
@@ -328,31 +328,31 @@ async function main() {
   assertIncludes(acosMetricDecision?.purpose ?? "", "不是自动调价依据");
 
   const readinessSummary = buildReviewReadinessGateSummary(triage);
-  assert(readinessSummary?.status === "waiting", "搜索词复核链齐全但复盘窗口未到期时，应进入等待窗口而不是保存复盘结论。");
-  assertIncludes(readinessSummary?.primary ?? "", "最早广告复盘");
-  assertIncludes(readinessSummary?.detail ?? "", "等待复盘窗口完整");
-  assertIncludes(readinessSummary?.boundary ?? "", "不拉取快照");
+  assert(readinessSummary?.status === "blocked", "历史待办缺同组投放商品表现时，应被复盘证据门禁阻断。");
+  assertIncludes(readinessSummary?.primary ?? "", "复盘读回门禁未通过");
+  assertIncludes(readinessSummary?.detail ?? "", "同组投放商品表现");
   assertIncludes(readinessSummary?.boundary ?? "", "不保存复盘结论");
+  assertIncludes(readinessSummary?.boundary ?? "", "不能把当前页面证据伪装成历史点击证据");
   assertIncludes(readinessSummary?.boundary ?? "", "不自动执行广告动作");
-  assertIncludes(asText(readinessSummary?.nextSteps), "到期后");
-  assertIncludes(asText(readinessSummary?.nextSteps), "只读检查");
+  assertIncludes(asText(readinessSummary?.nextSteps), "dry-run");
+  assertIncludes(asText(readinessSummary?.nextSteps), "重新人工留痕");
   assertIncludes(readinessSummary?.queueSeparation?.primary ?? "", reviewObjectLabel);
   assertIncludes(readinessSummary?.queueSeparation?.primary ?? "", nextLabel);
   assertIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "条证据");
-  assertIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "搜索词复核链齐全");
-  assertNotIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "搜索词复核链缺口");
+  assertIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "搜索词复核链缺口");
+  assertNotIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "搜索词复核链齐全");
   assertNotIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "对象引用缺口");
 
   const repairSummary = buildReviewEvidenceRepairSummary(repair);
-  assert(repairSummary?.status === "ready", "历史待办没有证据缺口时，应展示为只读治理 ready。");
-  assertIncludes(repairSummary?.primary ?? "", "当前没有历史证据快照缺口");
+  assert(repairSummary?.status === "blocked", "历史待办缺同组投放商品表现时，应展示为只读治理 blocked。");
+  assertIncludes(repairSummary?.primary ?? "", "历史动作缺证据");
   assertIncludes(repairSummary?.boundary ?? "", "will_write=false");
   assertIncludes(repairSummary?.boundary ?? "", "不能补写历史 evidence_snapshot");
   assertIncludes(repairSummary?.boundary ?? "", "不能保存 ReviewRecord");
   assertIncludes(repairSummary?.boundary ?? "", "不能自动执行广告动作");
-  assertIncludes(repairSummary?.items[0]?.value ?? "", "0 个");
-  assertIncludes(repairSummary?.items[2]?.value ?? "", "0 个");
-  assert((repairSummary?.voidPlanItems ?? []).length === 0, "没有历史缺口时不应暴露作废计划。");
+  assertIncludes(repairSummary?.items[0]?.value ?? "", "2 个");
+  assertIncludes(repairSummary?.items[1]?.value ?? "", "4 个");
+  assert((repairSummary?.voidPlanItems ?? []).length > 0, "历史缺口应暴露 dry-run 作废计划。");
   assertNotIncludes(repairSummary?.detail ?? "", "保存 ready");
 
   const preview = triage.next_unhandled_candidate?.manual_action_preview;
@@ -371,7 +371,7 @@ async function main() {
   assertIncludes(authorizationSummary?.currentState ?? "", "ManualAction 0 条 / ReviewTodo 0 条");
   assertIncludes(authorizationSummary?.authorizedResult ?? "", "ManualAction 1 条 / ReviewTodo 2 条");
   assertIncludes(authorizationSummary?.authorizedResult ?? "", "7d / 14d");
-  assertIncludes(authorizationSummary?.evidence ?? "", "22 条");
+  assertIncludes(authorizationSummary?.evidence ?? "", "23 条");
   assertIncludes(authorizationSummary?.boundary ?? "", "未授权前不写 manual_actions");
   assertIncludes(authorizationSummary?.boundary ?? "", "不生成 ReviewTodo");
   const evidenceReadinessSummary = manualConfirmationEvidenceReadinessSummary(
@@ -468,7 +468,19 @@ async function main() {
   assertIncludes(readbackConsistencyText, "可回看对象引用");
   assertIncludes(readbackConsistencyText, "排查路径");
   assertIncludes(readbackConsistencyText, "尚未保存复盘结论");
-  const reviewTodoForObjectGate = reviewTodos.find((todo: any) => todo.review_window === "7d") ?? reviewTodos[0];
+  const rawReviewTodoForObjectGate = reviewTodos.find((todo: any) => todo.review_window === "7d") ?? reviewTodos[0];
+  const reviewTodoForObjectGate = {
+    ...rawReviewTodoForObjectGate,
+    evidence_snapshot: [
+      ...(rawReviewTodoForObjectGate.evidence_snapshot ?? []),
+      {
+        label: "同组投放商品表现",
+        value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看",
+        detail: "只说明同广告组内广告商品承接差异，不能把搜索词自动归因到单个广告 ASIN。",
+        source: "advertised_products + ad_product_daily_metrics",
+      },
+    ],
+  };
   const reviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary(reviewTodoForObjectGate);
   assert(reviewTodoEvidenceReadback?.tone === "ready", "完整 ReviewTodo 搜索词复核链应允许进入到期后只读复盘。");
   const reviewTodoEvidenceReadbackText = asText(reviewTodoEvidenceReadback);

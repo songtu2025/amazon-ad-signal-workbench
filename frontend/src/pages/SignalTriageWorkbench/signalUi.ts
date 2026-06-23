@@ -1049,6 +1049,7 @@ export interface ReviewIdentityAuditForUi {
   missing_placement_boundary_count?: number | null;
   missing_targeting_evidence_count?: number | null;
   missing_ad_group_synthesis_count?: number | null;
+  missing_ad_group_product_performance_count?: number | null;
   missing_aba_context_count?: number | null;
   missing_evidence_gap_count?: number | null;
   missing_required_evidence_count?: number | null;
@@ -1124,6 +1125,7 @@ export interface ReviewEvidenceRepairPayloadForUi {
       has_placement_boundary?: boolean | null;
       has_targeting_evidence?: boolean | null;
       has_ad_group_synthesis?: boolean | null;
+      has_ad_group_product_performance?: boolean | null;
       has_aba_context?: boolean | null;
       has_evidence_gap?: boolean | null;
       has_required_evidence?: boolean | null;
@@ -2388,6 +2390,7 @@ function buildReviewIdentityAuditSummary(
   const missingPlacementBoundaryCount = audit.missing_placement_boundary_count ?? 0;
   const missingTargetingEvidenceCount = audit.missing_targeting_evidence_count ?? 0;
   const missingAdGroupSynthesisCount = audit.missing_ad_group_synthesis_count ?? 0;
+  const missingAdGroupProductPerformanceCount = audit.missing_ad_group_product_performance_count ?? 0;
   const missingAbaContextCount = audit.missing_aba_context_count ?? 0;
   const missingEvidenceGapCount = audit.missing_evidence_gap_count ?? 0;
   const missingRequiredEvidenceCount = audit.missing_required_evidence_count ?? 0;
@@ -2433,7 +2436,7 @@ function buildReviewIdentityAuditSummary(
   return {
     title: "复盘读回身份门禁",
     status: isBlocked ? "blocked" : "ready",
-    summary: `${statusText}；缺失 action_id / object_id / review_window：${missingActionIdCount} / ${missingObjectIdCount} / ${missingReviewWindowCount}；证据快照缺口：${missingEvidenceSnapshotCount} / 排查路径 ${missingDiagnosisPathCount} / AI 准入 ${missingAiAdmissionCount} / 搜索词边界 ${missingSearchTermBoundaryCount} / 广告位边界 ${missingPlacementBoundaryCount} / 搜索词复核链 ${missingSearchTermReviewChainCount}（投放词 ${missingTargetingEvidenceCount} / 广告组合流判断 ${missingAdGroupSynthesisCount} / ABA ${missingAbaContextCount} / 证据缺口 ${missingEvidenceGapCount} / 需要补证 ${missingRequiredEvidenceCount} / 动作边界 ${missingActionBoundaryCount}）/ 对象引用 ${missingObjectReferenceCount}；广告指标最早复盘：${earliestMetricDueDate}。`,
+    summary: `${statusText}；缺失 action_id / object_id / review_window：${missingActionIdCount} / ${missingObjectIdCount} / ${missingReviewWindowCount}；证据快照缺口：${missingEvidenceSnapshotCount} / 排查路径 ${missingDiagnosisPathCount} / AI 准入 ${missingAiAdmissionCount} / 搜索词边界 ${missingSearchTermBoundaryCount} / 广告位边界 ${missingPlacementBoundaryCount} / 搜索词复核链 ${missingSearchTermReviewChainCount}（投放词 ${missingTargetingEvidenceCount} / 广告组合流判断 ${missingAdGroupSynthesisCount} / 同组投放商品表现 ${missingAdGroupProductPerformanceCount} / ABA ${missingAbaContextCount} / 证据缺口 ${missingEvidenceGapCount} / 需要补证 ${missingRequiredEvidenceCount} / 动作边界 ${missingActionBoundaryCount}）/ 对象引用 ${missingObjectReferenceCount}；广告指标最早复盘：${earliestMetricDueDate}。`,
     boundary: `${boundaryParts.join("；")}。`,
     items: [
       { label: "待读回效果", value: `${effectCount}`, tone: effectCount > 0 ? "ready" : "neutral" },
@@ -2532,6 +2535,7 @@ function reviewReadbackKeys(keys: unknown[] | null | undefined) {
         hasPlacementBoundary: sourceBoolean(row, "has_placement_boundary"),
         hasTargetingEvidence: sourceBoolean(row, "has_targeting_evidence"),
         hasAdGroupSynthesis: sourceBoolean(row, "has_ad_group_synthesis"),
+        hasAdGroupProductPerformance: sourceBoolean(row, "has_ad_group_product_performance"),
         hasAbaContext: sourceBoolean(row, "has_aba_context"),
         hasEvidenceGap: sourceBoolean(row, "has_evidence_gap"),
         hasRequiredEvidence: sourceBoolean(row, "has_required_evidence"),
@@ -2571,6 +2575,7 @@ function reviewEvidenceSnapshotText(readbackKeys: ReturnType<typeof reviewReadba
     (key) =>
       key.hasTargetingEvidence !== null ||
       key.hasAdGroupSynthesis !== null ||
+      key.hasAdGroupProductPerformance !== null ||
       key.hasAbaContext !== null ||
       key.hasEvidenceGap !== null ||
       key.hasRequiredEvidence !== null ||
@@ -2583,6 +2588,7 @@ function reviewEvidenceSnapshotText(readbackKeys: ReturnType<typeof reviewReadba
         (key) =>
           key.hasTargetingEvidence === true &&
           key.hasAdGroupSynthesis === true &&
+          key.hasAdGroupProductPerformance === true &&
           key.hasAbaContext === true &&
           key.hasEvidenceGap === true &&
           key.hasRequiredEvidence === true &&
@@ -2594,6 +2600,7 @@ function reviewEvidenceSnapshotText(readbackKeys: ReturnType<typeof reviewReadba
       (key) =>
         key.hasTargetingEvidence === false ||
         key.hasAdGroupSynthesis === false ||
+        key.hasAdGroupProductPerformance === false ||
         key.hasAbaContext === false ||
         key.hasEvidenceGap === false ||
         key.hasRequiredEvidence === false ||
@@ -2710,7 +2717,7 @@ export function buildReviewReadinessGateSummary(
       waitSummary?.next_step?.trim() ||
       status.rule_improvement?.next_step?.trim() ||
       (isReviewEvidenceGateBlocked
-        ? "先 dry-run 作废旧待办，再重新人工留痕生成完整证据快照；必须包含排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、ABA 背景、证据缺口、需要补证和动作边界，不能用当前页面证据伪装成历史点击证据，不能补写历史 evidence_snapshot。"
+        ? "先 dry-run 作废旧待办，再重新人工留痕生成完整证据快照；必须包含排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证和动作边界，不能用当前页面证据伪装成历史点击证据，不能补写历史 evidence_snapshot。"
         : "先补齐复盘所需的处理前后广告指标快照，再只读检查 ready 状态。");
     const nextStep = isReviewEvidenceGateBlocked ? reviewEvidenceGateRepairStep(rawNextStep) : rawNextStep;
     const gapStatusText =
@@ -2731,7 +2738,7 @@ export function buildReviewReadinessGateSummary(
         : `已有 ${manualActionCount} 条人工留痕，但 ready 复盘 ${readyCount} 个；当前不能保存复盘结论。`,
       detail: gapReasonText,
       boundary: isReviewEvidenceGateBlocked
-        ? `缺 evidence_snapshot、排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、ABA 背景、证据缺口、需要补证或动作边界时，不能把当前页面证据伪装成历史点击证据；当前${forbiddenActionText}。`
+        ? `缺 evidence_snapshot、排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证或动作边界时，不能把当前页面证据伪装成历史点击证据；当前${forbiddenActionText}。`
         : `not_ready 只说明证据不足，不能证明处理有效或无效；当前${forbiddenActionText}。`,
       identityAudit,
       queueSeparation,
@@ -2812,6 +2819,7 @@ function reviewEvidenceGateRepairStep(value: string): string {
   const hasPlacementBoundary = text.includes("广告位边界");
   const hasTargetingEvidence = text.includes("投放词证据");
   const hasAdGroupSynthesis = text.includes("广告组合流判断");
+  const hasAdGroupProductPerformance = text.includes("同组投放商品表现");
   const hasAbaContext = text.includes("ABA 背景");
   const hasEvidenceGap = text.includes("证据缺口");
   const hasRequiredEvidence = text.includes("需要补证");
@@ -2823,6 +2831,7 @@ function reviewEvidenceGateRepairStep(value: string): string {
     hasPlacementBoundary &&
     hasTargetingEvidence &&
     hasAdGroupSynthesis &&
+    hasAdGroupProductPerformance &&
     hasAbaContext &&
     hasEvidenceGap &&
     hasRequiredEvidence &&
@@ -2839,12 +2848,13 @@ function reviewEvidenceGateRepairStep(value: string): string {
     hasPlacementBoundary &&
     hasTargetingEvidence &&
     hasAdGroupSynthesis &&
+    hasAdGroupProductPerformance &&
     hasAbaContext &&
     hasEvidenceGap &&
     hasRequiredEvidence &&
     hasActionBoundary
       ? null
-      : "重新人工留痕必须形成完整证据快照，包含排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、ABA 背景、证据缺口、需要补证和动作边界";
+      : "重新人工留痕必须形成完整证据快照，包含排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证和动作边界";
   return `${uniqueNonEmpty([base, patchPolicyText, snapshotText]).join("；")}。`;
 }
 
@@ -2906,7 +2916,7 @@ export function buildReviewEvidenceRepairSummary(
         { label: "可自动执行广告", value: "0 项", tone: "ready" },
       ],
       nextSteps: [
-        { label: "先看门禁", detail: "回到复盘证据门禁，核对缺少的是投放词证据、广告组合流判断、ABA 背景、证据缺口、需要补证还是动作边界。" },
+        { label: "先看门禁", detail: "回到复盘证据门禁，核对缺少的是投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证还是动作边界。" },
         { label: "治理方式", detail: "当前可落地路径是 dry-run 作废旧待办，再重新人工留痕；不能静默补写历史 evidence_snapshot。" },
         { label: "保存限制", detail: "复核链补齐并出现 ready 复盘前，不保存 ReviewRecord，不自动改规则，不执行广告动作。" },
       ],
@@ -2972,6 +2982,7 @@ function reviewRepairIssueText(issueTypes: string[] | null | undefined): string 
     missing_placement_boundary: "缺广告位边界",
     missing_targeting_evidence: "缺投放词证据",
     missing_ad_group_synthesis: "缺广告组合流判断",
+    missing_ad_group_product_performance: "缺同组投放商品表现",
     missing_aba_context: "缺 ABA 背景",
     missing_evidence_gap: "缺证据缺口",
     missing_required_evidence: "缺需要补证",
@@ -3021,6 +3032,11 @@ function reviewRepairPreflightText(
       ? "有广告组合流判断"
       : preflight?.has_ad_group_synthesis === false
         ? "缺广告组合流判断"
+        : "",
+    preflight?.has_ad_group_product_performance === true
+      ? "有同组投放商品表现"
+      : preflight?.has_ad_group_product_performance === false
+        ? "缺同组投放商品表现"
         : "",
     preflight?.has_aba_context === true
       ? "有 ABA 背景"
@@ -3429,6 +3445,7 @@ export interface SearchTermOpportunityReviewChain {
   objectGrain: string;
   targetingEvidence: string;
   adGroupSynthesis: string;
+  adGroupProductPerformance: string;
   marketContext: string;
   currentJudgement: string;
   proves: string;
@@ -3813,6 +3830,13 @@ export function buildSearchTermOpportunityReviewChain(
       item.blockId === "product_scope_ad_group_products" ||
       item.label.includes("广告组"),
   );
+  const adGroupProductBlock = businessEvidenceItems.find(
+    (item) =>
+      item.blockId === "ad_group_advertised_product_performance" ||
+      item.blockId === "product_scope_ad_group_products" ||
+      item.label.includes("同组投放商品表现") ||
+      item.label.includes("广告组内投放商品"),
+  );
   const marketBlock = businessEvidenceItems.find(
     (item) =>
       item.blockId === "search_term_market_context" ||
@@ -3848,6 +3872,14 @@ export function buildSearchTermOpportunityReviewChain(
     "搜索词只说明同广告组上下文，不能自动归因到单个广告 ASIN；缺少广告组级广告位证据时，不能判断广告位影响。",
     ["不能自动归因", "广告位"],
   );
+  const adGroupProductPerformance = appendBoundaryIfMissing(
+    businessEvidenceBlockSentence(
+      adGroupProductBlock,
+      "同组投放商品表现待补：需要回看同广告组广告 ASIN 的花费、点击、订单、销售额、ACOS 和 CVR。",
+    ),
+    "同组投放商品表现只说明广告组内承接差异，不能把搜索词自动归因到单个广告 ASIN。",
+    ["广告 ASIN", "不能"],
+  );
   const marketContext = appendBoundaryIfMissing(
     businessEvidenceBlockSentence(
       marketBlock,
@@ -3865,6 +3897,7 @@ export function buildSearchTermOpportunityReviewChain(
       directSearchTermContract?.objectGrain ?? "SearchTerm + 同广告活动 / 广告组上下文 + 站点级 ABA 背景",
     targetingEvidence,
     adGroupSynthesis,
+    adGroupProductPerformance,
     marketContext,
     currentJudgement: searchTermContract?.currentJudgement ?? marketBlock?.value ?? targetingBlock?.value ?? "等待补充搜索词机会判断。",
     proves:
@@ -3949,6 +3982,11 @@ export function buildManualConfirmationEvidenceItems(
           label: "广告组合流判断",
           value: searchTermOpportunityReviewChain.adGroupSynthesis,
           detail: "用于确认搜索词只说明同广告组上下文，不能自动归因到单个广告 ASIN、广告组或广告位。",
+        },
+        {
+          label: "同组投放商品表现",
+          value: searchTermOpportunityReviewChain.adGroupProductPerformance,
+          detail: "用于确认同广告组广告 ASIN 的承接差异；不能把搜索词或广告位自动归因到单个广告 ASIN。",
         },
         {
           label: "ABA 背景",

@@ -78,6 +78,7 @@ def write_complete_evidence_action(action_root: Path) -> None:
             {"label": "广告位边界", "value": "广告位证据缺口不能自动归因"},
             {"label": "投放词证据", "value": "beach essentials 同广告组投放词上下文完整"},
             {"label": "广告组合流判断", "value": "beach essentials 已串联 Parent -> 广告 ASIN -> 广告组"},
+            {"label": "同组投放商品表现", "value": "B016EXMVZS 与 B016EXMW02 同组投放表现已回看"},
             {"label": "ABA 背景", "value": "beach essentials ABA 背景已记录"},
             {"label": "证据缺口", "value": "beach essentials 当前缺口已说明"},
             {"label": "需要补证", "value": "beach essentials 后续补证路径已记录"},

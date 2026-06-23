@@ -1082,6 +1082,8 @@ export interface ReviewEvidenceRepairItem {
     has_search_term_boundary?: boolean | null;
     has_placement_boundary?: boolean | null;
     has_targeting_evidence?: boolean | null;
+    has_ad_group_synthesis?: boolean | null;
+    has_ad_group_product_performance?: boolean | null;
     has_aba_context?: boolean | null;
     has_evidence_gap?: boolean | null;
     has_action_boundary?: boolean | null;

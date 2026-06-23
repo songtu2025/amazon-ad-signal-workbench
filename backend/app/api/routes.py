@@ -282,6 +282,8 @@ def _validate_review_record_evidence_snapshot_preflight(
             raise HTTPException(status_code=409, detail="review_record_missing_ad_product_coverage")
         if not _review_record_evidence_snapshot_has_ad_group_synthesis(request.expected_evidence_snapshot):
             raise HTTPException(status_code=409, detail="review_record_missing_ad_group_synthesis")
+        if not _review_record_evidence_snapshot_has_ad_group_product_performance(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_ad_group_product_performance")
         if not _review_record_evidence_snapshot_has_evidence_gap(request.expected_evidence_snapshot):
             raise HTTPException(status_code=409, detail="review_record_missing_evidence_gap")
         if not _review_record_evidence_snapshot_has_required_evidence(request.expected_evidence_snapshot):
@@ -291,6 +293,8 @@ def _validate_review_record_evidence_snapshot_preflight(
     if request.expected_object_type == "search_term":
         if not _review_record_evidence_snapshot_has_ad_group_synthesis(request.expected_evidence_snapshot):
             raise HTTPException(status_code=409, detail="review_record_missing_ad_group_synthesis")
+        if not _review_record_evidence_snapshot_has_ad_group_product_performance(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_ad_group_product_performance")
         if not _review_record_evidence_snapshot_has_targeting_evidence(request.expected_evidence_snapshot):
             raise HTTPException(status_code=409, detail="review_record_missing_targeting_evidence")
         if not _review_record_evidence_snapshot_has_aba_context(request.expected_evidence_snapshot):
@@ -369,6 +373,10 @@ def _review_record_evidence_snapshot_has_placement_performance(items: object) ->
 
 def _review_record_evidence_snapshot_has_ad_group_synthesis(items: object) -> bool:
     return _review_record_evidence_snapshot_has_label(items, "广告组合流判断")
+
+
+def _review_record_evidence_snapshot_has_ad_group_product_performance(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "同组投放商品表现")
 
 
 def _review_record_evidence_snapshot_has_targeting_evidence(items: object) -> bool:
@@ -492,6 +500,7 @@ def _review_todo_missing_required_evidence(todo: ReviewTodo) -> bool:
         return False
     return not (
         _review_record_evidence_snapshot_has_ad_group_synthesis(todo.evidence_snapshot)
+        and _review_record_evidence_snapshot_has_ad_group_product_performance(todo.evidence_snapshot)
         and _review_record_evidence_snapshot_has_targeting_evidence(todo.evidence_snapshot)
         and _review_record_evidence_snapshot_has_aba_context(todo.evidence_snapshot)
         and _review_record_evidence_snapshot_has_evidence_gap(todo.evidence_snapshot)

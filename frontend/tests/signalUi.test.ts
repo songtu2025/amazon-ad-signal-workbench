@@ -2041,6 +2041,7 @@ const separatedReviewQueueGate = buildReviewReadinessGateSummary({
           has_placement_boundary: true,
           has_targeting_evidence: true,
           has_ad_group_synthesis: true,
+          has_ad_group_product_performance: true,
           has_aba_context: true,
           has_evidence_gap: true,
           has_required_evidence: true,
@@ -2059,6 +2060,7 @@ const separatedReviewQueueGate = buildReviewReadinessGateSummary({
           has_placement_boundary: true,
           has_targeting_evidence: true,
           has_ad_group_synthesis: true,
+          has_ad_group_product_performance: true,
           has_aba_context: true,
           has_evidence_gap: true,
           has_required_evidence: true,
@@ -2374,19 +2376,20 @@ const missingSearchTermRepairEvidence = buildReviewEvidenceRepairSummary({
         has_placement_boundary: true,
         has_targeting_evidence: false,
         has_ad_group_synthesis: false,
+        has_ad_group_product_performance: false,
         has_aba_context: false,
         has_evidence_gap: false,
         has_required_evidence: false,
         has_action_boundary: false,
         has_object_reference: true,
-        missing_required_labels: ["投放词证据", "广告组合流判断", "ABA 背景", "证据缺口", "需要补证", "动作边界"],
+        missing_required_labels: ["投放词证据", "广告组合流判断", "同组投放商品表现", "ABA 背景", "证据缺口", "需要补证", "动作边界"],
       },
       can_patch_legacy_record: false,
       can_rebuild_evidence_preview: false,
       can_recreate_from_current_signal: false,
       patch_policy:
         "当前重建证据只能作为人工核对参考，不能静默写回旧记录；MVP 不提供补写历史 evidence_snapshot 的执行入口。",
-      recommended_next_step: "当前预检目标匹配历史对象，但当前证据预览仍缺：投放词证据、广告组合流判断、ABA 背景、证据缺口、需要补证、动作边界。",
+      recommended_next_step: "当前预检目标匹配历史对象，但当前证据预览仍缺：投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证、动作边界。",
       will_write: false,
     },
   ],
@@ -2401,7 +2404,7 @@ assertIncludes(missingSearchTermRepairEvidence?.sampleItems[0] ?? "", "缺需要
 assertIncludes(missingSearchTermRepairEvidence?.sampleItems[0] ?? "", "缺动作边界");
 assertIncludes(
   missingSearchTermRepairEvidence?.sampleItems[0] ?? "",
-  "当前预览仍缺：投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
+  "当前预览仍缺：投放词证据 / 广告组合流判断 / 同组投放商品表现 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
 );
 
 const searchTermChainBlockedReviewEvidenceRepair = buildReviewEvidenceRepairSummary({
@@ -3422,18 +3425,23 @@ const manualConfirmationSearchTermEvidenceItems = buildManualConfirmationEvidenc
 );
 assertEqual(
   manualConfirmationSearchTermEvidenceItems.map((item) => item.label).join(" / "),
-  "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 投放词证据 / 广告组合流判断 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
+  "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 投放词证据 / 广告组合流判断 / 同组投放商品表现 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
 );
 assertIncludes(manualConfirmationSearchTermEvidenceItems[5].value, "投放词结构");
 assertIncludes(manualConfirmationSearchTermEvidenceItems[5].detail ?? "", "不代表完整关键词库");
 assertIncludes(manualConfirmationSearchTermEvidenceItems[6].value, "搜索词不能自动归因到单个广告 ASIN");
 assertIncludes(manualConfirmationSearchTermEvidenceItems[6].detail ?? "", "同广告组上下文");
-assertIncludes(manualConfirmationSearchTermEvidenceItems[7].value, "ABA排名 208");
-assertIncludes(manualConfirmationSearchTermEvidenceItems[7].detail ?? "", "站点 + 周期 + 标准化搜索词");
-assertIncludes(manualConfirmationSearchTermEvidenceItems[9].value, "广告商品、投放词、广告组策略");
-assertIncludes(manualConfirmationSearchTermEvidenceItems[9].detail ?? "", "7/14 天复盘回看");
-assertIncludes(manualConfirmationSearchTermEvidenceItems[10].value, "不得自动加词");
-assertIncludes(manualConfirmationSearchTermEvidenceItems[10].detail ?? "", "不能把 ABA 当作店铺数据");
+const manualConfirmationEvidenceByLabel = Object.fromEntries(
+  manualConfirmationSearchTermEvidenceItems.map((item) => [item.label, item]),
+);
+assertIncludes(manualConfirmationEvidenceByLabel["同组投放商品表现"].value, "同组投放商品");
+assertIncludes(manualConfirmationEvidenceByLabel["同组投放商品表现"].detail ?? "", "不能把搜索词或广告位自动归因到单个广告 ASIN");
+assertIncludes(manualConfirmationEvidenceByLabel["ABA 背景"].value, "ABA排名 208");
+assertIncludes(manualConfirmationEvidenceByLabel["ABA 背景"].detail ?? "", "站点 + 周期 + 标准化搜索词");
+assertIncludes(manualConfirmationEvidenceByLabel["需要补证"].value, "广告商品、投放词、广告组策略");
+assertIncludes(manualConfirmationEvidenceByLabel["需要补证"].detail ?? "", "7/14 天复盘回看");
+assertIncludes(manualConfirmationEvidenceByLabel["动作边界"].value, "不得自动加词");
+assertIncludes(manualConfirmationEvidenceByLabel["动作边界"].detail ?? "", "不能把 ABA 当作店铺数据");
 
 const diagnosisEvidenceSummary = buildSignalDiagnosisEvidenceSummary(
   {
