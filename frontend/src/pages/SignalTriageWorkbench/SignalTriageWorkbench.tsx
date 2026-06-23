@@ -1882,16 +1882,16 @@ export function SignalTriageWorkbench() {
           </div>
 
           {searchIntentReviewCards.length > 0 && (
-            <section className="searchIntentReviewPanel" aria-label="搜索词语义聚焦">
+            <section className="searchIntentReviewPanel" aria-label="SearchTerm 机会筛选（语义聚合）">
               <div className="searchIntentReviewHeader">
-                <strong>搜索词语义聚焦</strong>
-                <span>当前诊断入口内的 SearchTerm 机会聚合</span>
+                <strong>SearchTerm 机会筛选</strong>
+                <span>当前诊断入口内的广告搜索词机会语义聚合</span>
               </div>
               {activeSearchIntentLabel && (
-                <div className="searchIntentActiveFilter" aria-label="当前搜索词语义聚焦">
+                <div className="searchIntentActiveFilter" aria-label="当前 SearchTerm 机会筛选">
                   <span>
-                    已聚焦：{activeSearchIntentLabel}
-                    <small>诊断入口保持不变，仅显示同组 SearchTerm 机会；不做商品归因；ABA 只作站点级背景。</small>
+                    已筛选：{activeSearchIntentLabel}
+                    <small>诊断入口保持不变，仅显示同语义组 SearchTerm 机会；不做商品归因；ABA 只作站点级背景。</small>
                     <small>绑定诊断入口：{selectedProductScopeOption?.label ?? activeProductScopeId}</small>
                   </span>
                   <button type="button" onClick={clearSearchIntentFocus}>
@@ -1907,7 +1907,7 @@ export function SignalTriageWorkbench() {
                     key={card.title}
                     onClick={() => handleSelectSearchIntent(card.intentLabel)}
                     aria-pressed={activeSearchIntentLabel === card.intentLabel}
-                    aria-label={`聚焦语义组 ${card.title} 的 SearchTerm 机会`}
+                    aria-label={`筛选 ${card.title} 的 SearchTerm 机会`}
                   >
                     <div>
                       <strong>{card.title}</strong>
@@ -1939,10 +1939,10 @@ export function SignalTriageWorkbench() {
           {!loading && !error && filteredSignals.length === 0 && (
             <EmptyState
               icon="empty"
-              title={activeSearchIntentLabel ? "当前搜索词语义筛选暂无对应机会" : productScopeSignalExplanation?.title ?? "暂无真实快照信号"}
+              title={activeSearchIntentLabel ? "当前 SearchTerm 机会筛选暂无对应机会" : productScopeSignalExplanation?.title ?? "暂无真实快照信号"}
               description={
                 activeSearchIntentLabel
-                  ? "搜索词语义聚焦不切换经营商品或广告组，只在当前诊断入口内显示同组 SearchTerm 机会；如果需要看全部信号，请清除语义聚焦。"
+                  ? "SearchTerm 机会筛选不切换经营商品或广告组，只在当前诊断入口内显示同组 SearchTerm 机会；如果需要看全部信号，请清除筛选。"
                   : productScopeSignalExplanation?.description
                     ? productScopeSignalExplanation.description
                   : "旧样例已移除，后续信号只从真实快照或明确标记的测试 fixture 生成。"
@@ -3130,14 +3130,14 @@ function SelectedSignalScopeContextStrip({ context }: { context: SelectedSignalS
 
 function SearchIntentFocusContextStrip({ context }: { context: SearchIntentFocusContext }) {
   return (
-    <div className={`selectedSignalScopeContext searchIntentFocusContext ${context.tone}`} aria-label="搜索词语义聚焦与当前信号关系">
+    <div className={`selectedSignalScopeContext searchIntentFocusContext ${context.tone}`} aria-label="SearchTerm 机会筛选与当前信号关系">
       <div className="selectedSignalScopeContextHeader">
         <strong>{context.title}</strong>
         <span>只做二级筛选</span>
       </div>
       <div className="selectedSignalScopeContextGrid">
         <span>
-          <b>当前聚焦</b>
+          <b>当前筛选</b>
           <strong>{context.focusLabel}</strong>
         </span>
         <span>
