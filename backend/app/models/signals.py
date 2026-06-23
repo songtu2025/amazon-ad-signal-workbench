@@ -167,5 +167,5 @@ class SearchIntentSummary(BaseModel):
     top_search_terms: list[SearchIntentTopTerm] = Field(default_factory=list)
     data_grain: str = "当前广告搜索词表现行按搜索意图聚合"
     proves: str = "能证明同类广告搜索词在当前广告上下文内的花费、点击、订单和 ABA 背景。"
-    does_not_prove: str = "不能证明 Parent ASIN 下全部搜索词表现，不能证明单个 ASIN 归因，也不能生成语义组人工动作。"
+    does_not_prove: str = "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能生成 SearchTerm 筛选上下文人工动作。"
     next_manual_step: str = "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组、广告位和证据缺口后再记录观察或加入复盘。"

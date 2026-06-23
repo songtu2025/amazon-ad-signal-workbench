@@ -1887,12 +1887,12 @@ export function SignalTriageWorkbench() {
             </button>
           </div>
 
-          <section className="searchIntentReviewPanel" aria-label="SearchTerm 机会筛选（语义聚合）">
+          <section className="searchIntentReviewPanel" aria-label="搜索词表现复核（语义聚合）">
             <div className="searchIntentReviewHeader">
-              <strong>SearchTerm 机会筛选</strong>
-              <span>当前诊断入口内的广告搜索词机会语义聚合</span>
+              <strong>搜索词表现复核</strong>
+              <span>当前诊断入口内的广告用户搜索词表现语义聚合</span>
             </div>
-            <div className="searchIntentReviewScope" aria-label="SearchTerm 机会筛选数据口径">
+            <div className="searchIntentReviewScope" aria-label="搜索词表现复核数据口径">
               <span>
                 <b>作用</b>
                 <small>{searchIntentPanelContext.purpose}</small>
@@ -1920,10 +1920,10 @@ export function SignalTriageWorkbench() {
             </div>
             <small className="searchIntentReviewBoundary">{searchIntentPanelContext.boundary}</small>
             {activeSearchIntentLabel && (
-              <div className="searchIntentActiveFilter" aria-label="当前 SearchTerm 机会筛选">
+              <div className="searchIntentActiveFilter" aria-label="当前搜索词表现复核筛选">
                 <span>
                   已筛选：{activeSearchIntentLabel}
-                  <small>诊断入口保持不变，仅显示同类 SearchTerm 机会；不做商品归因；ABA 只作站点级背景。</small>
+                  <small>诊断入口保持不变，仅显示同类 SearchTerm 信号；不做商品归因；ABA 只作站点级背景。</small>
                   <small>绑定诊断入口：{selectedProductScopeOption?.label ?? activeProductScopeId}</small>
                 </span>
                 <button type="button" onClick={clearSearchIntentFocus}>
@@ -1940,7 +1940,7 @@ export function SignalTriageWorkbench() {
                     key={card.title}
                     onClick={() => handleSelectSearchIntent(card.intentLabel)}
                     aria-pressed={activeSearchIntentLabel === card.intentLabel}
-                    aria-label={`筛选 ${card.title} 的 SearchTerm 机会`}
+                    aria-label={`筛选 ${card.title} 的 SearchTerm 信号`}
                   >
                     <div>
                       <strong>{card.title}</strong>
@@ -1965,8 +1965,8 @@ export function SignalTriageWorkbench() {
                 ))}
               </div>
             ) : (
-              <div className="searchIntentReviewEmpty" aria-label="SearchTerm 机会筛选空态">
-                <strong>暂无 SearchTerm 机会聚合</strong>
+              <div className="searchIntentReviewEmpty" aria-label="搜索词表现复核空态">
+                <strong>暂无搜索词表现聚合</strong>
                 <small>{searchIntentPanelContext.emptyText}</small>
               </div>
             )}
@@ -1977,10 +1977,10 @@ export function SignalTriageWorkbench() {
           {!loading && !error && filteredSignals.length === 0 && (
             <EmptyState
               icon="empty"
-              title={activeSearchIntentLabel ? "当前 SearchTerm 机会筛选暂无对应机会" : productScopeSignalExplanation?.title ?? "暂无真实快照信号"}
+              title={activeSearchIntentLabel ? "当前搜索词表现复核暂无对应 AI 信号" : productScopeSignalExplanation?.title ?? "暂无真实快照信号"}
               description={
                 activeSearchIntentLabel
-                  ? "SearchTerm 机会筛选不切换经营商品或广告组，只在当前诊断入口内显示同组 SearchTerm 机会；如果需要看全部信号，请清除筛选。"
+                  ? "搜索词表现复核不切换经营商品或广告组，只在当前诊断入口内显示同组 SearchTerm 信号；如果需要看全部信号，请清除筛选。"
                   : productScopeSignalExplanation?.description
                     ? productScopeSignalExplanation.description
                   : "旧样例已移除，后续信号只从真实快照或明确标记的测试 fixture 生成。"
@@ -3176,7 +3176,7 @@ function SelectedSignalScopeContextStrip({ context }: { context: SelectedSignalS
 
 function SearchIntentFocusContextStrip({ context }: { context: SearchIntentFocusContext }) {
   return (
-    <div className={`selectedSignalScopeContext searchIntentFocusContext ${context.tone}`} aria-label="SearchTerm 机会筛选与当前信号关系">
+    <div className={`selectedSignalScopeContext searchIntentFocusContext ${context.tone}`} aria-label="搜索词表现复核与当前信号关系">
       <div className="selectedSignalScopeContextHeader">
         <strong>{context.title}</strong>
         <span>只做二级筛选</span>

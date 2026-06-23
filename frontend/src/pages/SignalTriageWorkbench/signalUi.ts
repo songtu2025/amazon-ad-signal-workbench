@@ -5630,17 +5630,26 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       title: summary.intent_label,
       summary: `${metrics.orders} 单 / 花费 ${formatReviewNumber(metrics.cost)} / ACOS ${formatReviewPercent(metrics.acos)} / ABA 命中 ${abaMatchCount}`,
       sourceLabel: summary.semantic_source || "未知来源",
-      insight: summary.insight,
-      purpose: "用途：作为当前诊断入口内的 SearchTerm 机会筛选，按搜索语义聚合同类广告搜索词，再逐条打开具体 SearchTerm 信号核对证据。",
-      boundary: "边界：只筛 SearchTerm 机会；不改变诊断入口，不生成 SearchTerm 筛选上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
-      dataGrain: summary.data_grain || "当前诊断入口内 SearchTerm 机会队列的广告搜索词表现行",
-      proves: summary.proves || "能证明同类广告搜索词在当前广告上下文内的花费、点击、订单和 ABA 背景。",
+      insight: searchIntentDisplayText(summary.insight),
+      purpose: "用途：从当前 Parent ASIN / 诊断入口的广告上下文聚合用户搜索词表现，按搜索语义汇总同类搜索词，帮助运营判断搜索词表现、机会和异常。",
+      boundary: "边界：只复核广告用户搜索词表现；不改变诊断入口，不生成 SearchTerm 筛选上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
+      dataGrain: summary.data_grain || "当前诊断入口相关广告上下文中的用户搜索词表现行",
+      proves: searchIntentDisplayText(summary.proves) || "能证明同类广告搜索词在当前广告上下文内的花费、点击、订单和 ABA 背景。",
       doesNotProve:
-        summary.does_not_prove || "不能证明 Parent ASIN 下全部搜索词表现，不能证明单个 ASIN 归因，也不能生成 SearchTerm 筛选上下文人工动作。",
-      nextManualStep: summary.next_manual_step || "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组、广告位和证据缺口后再记录观察或加入复盘。",
+        searchIntentDisplayText(summary.does_not_prove) || "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能生成 SearchTerm 筛选上下文人工动作。",
+      nextManualStep: searchIntentDisplayText(summary.next_manual_step) || "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组、广告位和证据缺口后再记录观察或加入复盘。",
       topTerms,
     };
   });
+}
+
+function searchIntentDisplayText(text?: string | null): string {
+  return (text ?? "")
+    .replace(/生成语义组人工动作/g, "生成 SearchTerm 筛选上下文人工动作")
+    .replace(/语义组人工动作/g, "SearchTerm 筛选上下文人工动作")
+    .replace(/该语义类目/g, "这组广告搜索词")
+    .replace(/语义类目/g, "这组广告搜索词")
+    .replace(/Parent ASIN 下全部搜索词表现/g, "Parent ASIN 下全部自然搜索或市场搜索表现");
 }
 
 export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): SearchIntentPanelContext {
@@ -5648,24 +5657,24 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
   return {
     purpose:
       firstCard?.purpose ??
-      "用途：作为当前诊断入口内的 SearchTerm 机会筛选，帮助运营缩小同类广告搜索词复核范围；它不是经营商品入口、广告组入口或人工动作对象。",
-    dataGrain: firstCard?.dataGrain ?? "当前诊断入口内已进入 SearchTerm 机会队列的广告搜索词表现行，按搜索意图聚合。",
+      "用途：从当前 Parent ASIN / 诊断入口视角聚合广告用户搜索词表现，帮助运营按语义复核同类搜索词表现；它不是经营商品入口、广告组入口或人工动作对象。",
+    dataGrain: firstCard?.dataGrain ?? "当前诊断入口相关广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索意图聚合。",
     interactionBoundary:
       "点击后只改变左侧信号队列筛选和中间选中 SearchTerm，不改变顶部诊断入口筛选器，也不切换 Parent ASIN / 广告 ASIN / 广告组。",
     proves: firstCard?.proves ?? "能证明当前诊断入口内同类广告搜索词的花费、点击、订单、ACOS 和 ABA 站点级背景。",
     doesNotProve:
       firstCard?.doesNotProve ??
-      "不能证明 Parent ASIN 下全部搜索词表现，不能证明单个广告 ASIN 归因，也不能生成 SearchTerm 筛选上下文人工动作。",
+      "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个广告 ASIN 归因，也不能生成 SearchTerm 筛选上下文人工动作。",
     nextManualStep:
       firstCard?.nextManualStep ??
-      "有命中时逐条打开具体 SearchTerm 信号；无命中时回到广告 ASIN、广告组、投放词或广告位证据缺口，不扩展浅层语义分析。",
+      "有命中时逐条打开具体 SearchTerm 信号；无命中时先确认广告搜索词快照、广告组和投放词证据缺口，不把语义聚合包装成可执行动作。",
     boundary:
       firstCard?.boundary ??
-      "边界：只筛当前诊断入口内的 SearchTerm 机会；不改变诊断入口，不生成 SearchTerm 筛选上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
+      "边界：只复核广告用户搜索词表现；不改变诊断入口，不生成 SearchTerm 筛选上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
     emptyText:
       cards.length > 0
-        ? `当前展示 ${cards.length} 组 SearchTerm 机会聚合，点击后只筛选当前诊断入口内的同类 SearchTerm 信号。`
-        : "当前诊断入口下没有已进入 SearchTerm 机会队列的广告搜索词行；这不是系统故障，也不代表 Parent ASIN 没有搜索词，只代表当前证据不足以生成 SearchTerm 机会聚合。",
+        ? `当前展示 ${cards.length} 组搜索词表现聚合，点击后只筛选当前诊断入口内的同类 SearchTerm 信号。`
+        : "当前诊断入口下没有可关联的广告用户搜索词表现行；这不是系统故障，也不代表 Parent ASIN 没有自然搜索词，只代表当前广告上下文没有可复核的 SearchTerm 表现。",
   };
 }
 
@@ -6654,10 +6663,10 @@ export function buildSearchIntentFocusContext(
   const signalObject = `SearchTerm：${searchTerm}`;
 
   return {
-    title: "SearchTerm 机会筛选承接",
+    title: "搜索词表现复核承接",
     focusLabel,
     signalObject,
-    relation: `左侧筛选只缩小当前入口下的 SearchTerm 机会队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。`,
+    relation: `左侧语义筛选只缩小当前入口下的 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。`,
     boundary: `SearchTerm 筛选上下文「${focusLabel}」不是人工动作对象；ABA 只作站点级背景，实际写入以后端 preflight evidence_snapshot_preview 为准。`,
     tone: "container",
   };

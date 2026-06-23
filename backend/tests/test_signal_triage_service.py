@@ -433,6 +433,21 @@ def test_search_intent_summaries_respect_parent_asin_product_scope(monkeypatch) 
         "orders": 8,
         "sales": 76.32,
     }
+    in_scope_search_row_without_signal = {
+        "source_table": "ad_search_term_daily_metrics",
+        "market_id": 1,
+        "campaign_id": "camp-1",
+        "campaign_name": "RBK004-beach essentials",
+        "ad_group_id": "group-1",
+        "ad_group_name": "RBK004-扩展-beach essentials",
+        "normalized_query": "beach essentials tent",
+        "search_term": "beach essentials tent",
+        "cost": 4.0,
+        "spend": 4.0,
+        "clicks": 5,
+        "orders": 1,
+        "sales": 18.0,
+    }
     out_of_scope_search_row = {
         "source_table": "ad_search_term_daily_metrics",
         "market_id": 1,
@@ -488,7 +503,13 @@ def test_search_intent_summaries_respect_parent_asin_product_scope(monkeypatch) 
     monkeypatch.setattr(
         signal_triage,
         "load_signal_rows_from_latest_snapshot",
-        lambda: [in_scope_ad_row, out_of_scope_ad_row, in_scope_search_row, out_of_scope_search_row],
+        lambda: [
+            in_scope_ad_row,
+            out_of_scope_ad_row,
+            in_scope_search_row,
+            in_scope_search_row_without_signal,
+            out_of_scope_search_row,
+        ],
     )
     monkeypatch.setattr(signal_triage, "load_aba_rows_from_latest_snapshot", lambda: [])
     monkeypatch.setattr(
@@ -525,11 +546,14 @@ def test_search_intent_summaries_respect_parent_asin_product_scope(monkeypatch) 
     assert len(summaries) == 1
     assert summaries[0].top_search_terms[0].search_term == "beach essentials"
     assert "beach essentials" in summaries[0].search_terms
+    assert "beach essentials tent" in summaries[0].search_terms
     assert "kids sunglasses" not in summaries[0].search_terms
-    assert summaries[0].metrics.cost == 16.03
-    assert summaries[0].data_grain == "当前诊断入口内已进入 SearchTerm 机会队列的广告搜索词表现行"
+    assert summaries[0].metrics.cost == 20.03
+    assert summaries[0].data_grain == "当前 Parent ASIN 相关广告上下文中的用户搜索词表现行"
     assert "同类广告搜索词" in summaries[0].proves
-    assert "不能证明 Parent ASIN 下全部搜索词表现" in summaries[0].does_not_prove
+    assert "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现" in summaries[0].does_not_prove
+    assert "SearchTerm 筛选上下文人工动作" in summaries[0].does_not_prove
+    assert "语义组人工动作" not in summaries[0].does_not_prove
     assert "具体 SearchTerm 信号" in summaries[0].next_manual_step
 
 

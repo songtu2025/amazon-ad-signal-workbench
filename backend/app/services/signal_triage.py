@@ -268,13 +268,11 @@ def build_search_intent_summaries(
         )
 
     product_scope = build_product_scope_summary()
-    signals = _current_signals(signal_rows, selected_market_id=selected_market_id)
-    scoped_signals = _filter_signals_by_product_scope(signals, normalized_scope_id, product_scope, signal_rows=signal_rows)
-    scoped_search_term_rows = _search_term_rows_from_scoped_signals(scoped_signals)
+    scoped_search_term_rows = _search_term_rows_for_product_scope(signal_rows, normalized_scope_id, product_scope)
     return search_intent_summaries(
         scoped_search_term_rows,
         aba_rows=aba_rows,
-        data_grain="当前诊断入口内已进入 SearchTerm 机会队列的广告搜索词表现行",
+        data_grain=_search_intent_data_grain_for_product_scope(normalized_scope_id),
     )
 
 
@@ -3205,25 +3203,74 @@ def _row_market_id(row: dict[str, Any]) -> int | None:
     return _int(row.get("market_id")) or _int(row.get("marketplace_id")) or _int(row.get("marketId"))
 
 
-def _search_term_rows_from_scoped_signals(signals: list[Any]) -> list[dict[str, Any]]:
+def _search_term_rows_for_product_scope(signal_rows: list[dict[str, Any]], product_scope_id: str, product_scope: Any) -> list[dict[str, Any]]:
+    if not _is_actionable_product_scope_id(product_scope_id):
+        return []
+
+    option = next(
+        (option for option in (_get(product_scope, "options") or []) if _string(_get(option, "scope_id")) == product_scope_id),
+        None,
+    )
+    if option is None:
+        return []
+
+    asins = _product_scope_asins(option)
+    context_keys = _ad_context_keys_for_asins(signal_rows, asins)
     rows: list[dict[str, Any]] = []
     seen: set[tuple[tuple[str, str], ...]] = set()
-    for signal in signals:
-        if _string(_get(signal, "signal_category")) != "search_term_opportunity":
+    for row in signal_rows:
+        if _string(row.get("source_table")) != "ad_search_term_daily_metrics":
             continue
-        if _string(_get(signal, "object_type")) != "search_term":
+        if not _search_term_row_matches_product_scope(row, product_scope_id, asins, context_keys):
             continue
-        evidence = _get(signal, "evidence") or {}
-        for row in _get(evidence, "source_rows") or []:
-            if _string(_get(row, "source_table")) != "ad_search_term_daily_metrics":
-                continue
-            row_dict = dict(row)
-            row_key = _row_identity_key(row_dict)
-            if row_key in seen:
-                continue
-            seen.add(row_key)
-            rows.append(row_dict)
+        row_dict = dict(row)
+        row_key = _row_identity_key(row_dict)
+        if row_key in seen:
+            continue
+        seen.add(row_key)
+        rows.append(row_dict)
     return rows
+
+
+def _ad_context_keys_for_asins(signal_rows: list[dict[str, Any]], asins: set[str]) -> set[tuple[str, str]]:
+    context_keys: set[tuple[str, str]] = set()
+    if not asins:
+        return context_keys
+    for row in signal_rows:
+        if _string(row.get("source_table")) != "advertised_products":
+            continue
+        if _string(row.get("asin")) not in asins:
+            continue
+        context_key = _scope_context_key(row)
+        if context_key:
+            context_keys.add(context_key)
+    return context_keys
+
+
+def _search_term_row_matches_product_scope(
+    row: dict[str, Any],
+    product_scope_id: str,
+    asins: set[str],
+    context_keys: set[tuple[str, str]],
+) -> bool:
+    row_asin = _string(row.get("asin"))
+    if row_asin and row_asin in asins:
+        return True
+    row_parent_scope_id = f"parent_asin:{_source_parent_asin(row)}" if _source_parent_asin(row) else ""
+    if row_parent_scope_id and row_parent_scope_id == product_scope_id:
+        return True
+    context_key = _scope_context_key(row)
+    return bool(context_key and context_key in context_keys)
+
+
+def _search_intent_data_grain_for_product_scope(product_scope_id: str) -> str:
+    if product_scope_id.startswith("parent_asin:"):
+        return "当前 Parent ASIN 相关广告上下文中的用户搜索词表现行"
+    if product_scope_id.startswith("ad_asin:"):
+        return "当前广告 ASIN 相关广告上下文中的用户搜索词表现行"
+    if product_scope_id.startswith("sales_asin:"):
+        return "当前经营 ASIN 相关广告上下文中的用户搜索词表现行"
+    return "当前诊断入口相关广告上下文中的用户搜索词表现行"
 
 
 def _row_identity_key(row: dict[str, Any]) -> tuple[tuple[str, str], ...]:

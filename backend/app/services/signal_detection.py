@@ -1595,7 +1595,7 @@ def detect_search_intent_grouping_data_quality(rows: list[dict]) -> list[AiSigna
                 title="人工补齐搜索词语义分组",
                 description="人工先按人群、场景和商品相关性给核心搜索词分组；分组补齐前，只把语义聚合结果当作观察参考。",
             ),
-            risk="如果忽略该问题，运营可能把未分组搜索词的整体表现误读成同一语义类目表现。",
+            risk="如果忽略该问题，运营可能把未分组搜索词的整体表现误读成同一 SearchTerm 筛选上下文表现。",
             tags=["数据质量", "搜索词语义", "语义分组"],
         )
     ]
@@ -3227,8 +3227,8 @@ def detect_intent_signals(rows: list[dict]) -> list[AiSignal]:
                     ),
                     suggested_action=SuggestedAction(
                         action_type="review_intent_bucket",
-                        title="复核该语义类目的投放价值",
-                        description="人工检查这类搜索词是否偏泛；若与商品弱相关，优先进入否词或降竞价候选。",
+                        title="复核这组广告搜索词的投放价值",
+                        description="人工检查这组广告搜索词是否偏泛；若与商品弱相关，优先进入人工否词或降竞价候选。",
                     ),
                     risk="语义标签第一版由规则生成，人工反馈后再调准。",
                     tags=["语义聚合", "异常"],

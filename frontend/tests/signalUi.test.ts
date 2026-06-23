@@ -4752,10 +4752,10 @@ if (!selectedSearchIntentFocusContext) {
   throw new Error("当前语义聚焦命中搜索词信号时应生成承接提示");
 }
 
-assertEqual(selectedSearchIntentFocusContext.title, "SearchTerm 机会筛选承接");
+assertEqual(selectedSearchIntentFocusContext.title, "搜索词表现复核承接");
 assertEqual(selectedSearchIntentFocusContext.focusLabel, "规则语义：海滩出行用品");
 assertIncludes(selectedSearchIntentFocusContext.signalObject, "SearchTerm：beach essentials");
-assertIncludes(selectedSearchIntentFocusContext.relation, "左侧筛选只缩小当前入口下的 SearchTerm 机会队列");
+assertIncludes(selectedSearchIntentFocusContext.relation, "左侧语义筛选只缩小当前入口下的 SearchTerm 信号队列");
 assertIncludes(selectedSearchIntentFocusContext.relation, "若进入人工动作");
 assertIncludes(selectedSearchIntentFocusContext.relation, "以后端预检确认的 SearchTerm 稳定对象为准");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "SearchTerm 筛选上下文「规则语义：海滩出行用品」不是人工动作对象");
@@ -5201,9 +5201,9 @@ const searchIntentReviewCards = buildSearchIntentReviewCards([
     insight: "该语义类目转化稳定，属于放量候选",
     semantic_source: "规则语义",
     aba_match_count: 1,
-    data_grain: "当前诊断入口内已进入 SearchTerm 机会队列的广告搜索词表现行",
+    data_grain: "当前 Parent ASIN 相关广告上下文中的用户搜索词表现行",
     proves: "能证明同类广告搜索词在当前广告上下文内有订单和 ABA 背景。",
-    does_not_prove: "不能证明 Parent ASIN 下全部搜索词表现，也不能证明单个 ASIN 归因。",
+    does_not_prove: "不能证明 Parent ASIN 下全部搜索词表现，也不能证明单个 ASIN 归因，也不能生成语义组人工动作。",
     next_manual_step: "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组和广告位。",
     top_search_terms: [
       {
@@ -5226,13 +5226,16 @@ assertEqual(searchIntentReviewCards.length, 1);
 assertEqual(searchIntentReviewCards[0].title, "规则语义：儿童太阳镜");
 assertEqual(searchIntentReviewCards[0].summary, "4 单 / 花费 9 / ACOS 12.86% / ABA 命中 1");
 assertEqual(searchIntentReviewCards[0].sourceLabel, "规则语义");
-assertIncludes(searchIntentReviewCards[0].purpose, "SearchTerm 机会筛选");
-assertIncludes(searchIntentReviewCards[0].purpose, "打开具体 SearchTerm 信号核对证据");
-assertIncludes(searchIntentReviewCards[0].dataGrain, "当前诊断入口内已进入 SearchTerm 机会队列");
+assertEqual(searchIntentReviewCards[0].insight, "这组广告搜索词转化稳定，属于放量候选");
+assertIncludes(searchIntentReviewCards[0].purpose, "聚合用户搜索词表现");
+assertIncludes(searchIntentReviewCards[0].purpose, "判断搜索词表现、机会和异常");
+assertIncludes(searchIntentReviewCards[0].dataGrain, "当前 Parent ASIN 相关广告上下文");
 assertIncludes(searchIntentReviewCards[0].proves, "同类广告搜索词");
-assertIncludes(searchIntentReviewCards[0].doesNotProve, "不能证明 Parent ASIN 下全部搜索词表现");
+assertIncludes(searchIntentReviewCards[0].doesNotProve, "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现");
+assertIncludes(searchIntentReviewCards[0].doesNotProve, "SearchTerm 筛选上下文人工动作");
+assertEqual(searchIntentReviewCards[0].doesNotProve.includes("语义组人工动作"), false);
 assertIncludes(searchIntentReviewCards[0].nextManualStep, "具体 SearchTerm 信号");
-assertIncludes(searchIntentReviewCards[0].boundary, "只筛 SearchTerm 机会");
+assertIncludes(searchIntentReviewCards[0].boundary, "只复核广告用户搜索词表现");
 assertIncludes(searchIntentReviewCards[0].boundary, "不生成 SearchTerm 筛选上下文人工动作");
 assertIncludes(searchIntentReviewCards[0].boundary, "不证明单个 ASIN 归因");
 assertIncludes(searchIntentReviewCards[0].boundary, "ABA 仅作站点级背景");
@@ -5240,24 +5243,24 @@ assertEqual(searchIntentReviewCards[0].topTerms[0], "baby sunglasses：3 单 / �
 assertEqual(searchIntentReviewCards[0].intentLabel, "规则语义：儿童太阳镜");
 
 const searchIntentPanelContext = buildSearchIntentPanelContext(searchIntentReviewCards);
-assertIncludes(searchIntentPanelContext.purpose, "SearchTerm 机会筛选");
-assertIncludes(searchIntentPanelContext.dataGrain, "当前诊断入口内已进入 SearchTerm 机会队列");
+assertIncludes(searchIntentPanelContext.purpose, "聚合用户搜索词表现");
+assertIncludes(searchIntentPanelContext.dataGrain, "当前 Parent ASIN 相关广告上下文");
 assertIncludes(searchIntentPanelContext.interactionBoundary, "只改变左侧信号队列筛选");
 assertIncludes(searchIntentPanelContext.interactionBoundary, "不改变顶部诊断入口筛选器");
 assertIncludes(searchIntentPanelContext.proves, "同类广告搜索词");
-assertIncludes(searchIntentPanelContext.doesNotProve, "不能证明 Parent ASIN 下全部搜索词表现");
+assertIncludes(searchIntentPanelContext.doesNotProve, "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现");
 assertIncludes(searchIntentPanelContext.nextManualStep, "具体 SearchTerm 信号");
 assertIncludes(searchIntentPanelContext.boundary, "不生成 SearchTerm 筛选上下文人工动作");
-assertIncludes(searchIntentPanelContext.emptyText, "当前展示 1 组 SearchTerm 机会聚合");
+assertIncludes(searchIntentPanelContext.emptyText, "当前展示 1 组搜索词表现聚合");
 
 const emptySearchIntentPanelContext = buildSearchIntentPanelContext([]);
 assertIncludes(emptySearchIntentPanelContext.purpose, "不是经营商品入口、广告组入口或人工动作对象");
-assertIncludes(emptySearchIntentPanelContext.dataGrain, "广告搜索词表现行");
+assertIncludes(emptySearchIntentPanelContext.dataGrain, "用户搜索词表现行");
 assertIncludes(emptySearchIntentPanelContext.interactionBoundary, "不切换 Parent ASIN / 广告 ASIN / 广告组");
-assertIncludes(emptySearchIntentPanelContext.doesNotProve, "不能证明 Parent ASIN 下全部搜索词表现");
-assertIncludes(emptySearchIntentPanelContext.nextManualStep, "不扩展浅层语义分析");
+assertIncludes(emptySearchIntentPanelContext.doesNotProve, "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现");
+assertIncludes(emptySearchIntentPanelContext.nextManualStep, "不把语义聚合包装成可执行动作");
 assertIncludes(emptySearchIntentPanelContext.boundary, "不改变诊断入口");
-assertIncludes(emptySearchIntentPanelContext.emptyText, "不代表 Parent ASIN 没有搜索词");
+assertIncludes(emptySearchIntentPanelContext.emptyText, "不代表 Parent ASIN 没有自然搜索词");
 
 const searchIntentFilteredSignals = filterSignalsBySearchIntent(
   [
