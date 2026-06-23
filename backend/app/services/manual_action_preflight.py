@@ -117,6 +117,7 @@ SEARCH_TERM_ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
     "diagnosis_contract_gap",
     "diagnosis_contract_required_evidence",
     "search_term_review_evidence_gap",
+    "search_term_review_required_evidence",
     "search_term_review_action_boundary",
     "advertised_product_review_ad_group_synthesis",
     "advertised_product_review_evidence_gap",
@@ -1313,6 +1314,7 @@ def _search_term_review_chain_snapshot_blocks(
             if value
         )
     )
+    required_value = str(required_block.get("value") or "").strip()
 
     return [
         {
@@ -1342,6 +1344,15 @@ def _search_term_review_chain_snapshot_blocks(
             "label": "证据缺口",
             "value": gap_value or "诊断合同未标记额外证据缺口；仍需人工核对投放词、广告商品承接和主推策略。",
             "detail": "保存人工动作时必须同时保留缺口，复盘时不能把当前证据扩展成自动归因或自动广告动作依据。",
+            "source": "diagnosis_contract",
+        },
+        {
+            "block_id": "search_term_review_required_evidence",
+            "label": "需要补证",
+            "value": ""
+            if required_value
+            else "需要继续核对投放词维护状态、同广告组广告商品承接、主推策略和广告位粒度后，再进入 7/14 天复盘判断。",
+            "detail": "补证路径必须随人工留痕保存，7/14 天复盘回看时不能把缺口误当作已证明结论。",
             "source": "diagnosis_contract",
         },
         {

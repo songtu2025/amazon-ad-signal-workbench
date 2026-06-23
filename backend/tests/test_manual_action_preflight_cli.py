@@ -887,12 +887,15 @@ def test_manual_action_preflight_uses_target_diagnosis_contract_when_global_poin
         for item in payload["evidence_snapshot_preview"]["items"]
         if item["source"] == "diagnosis_contract"
     )
+    snapshot_labels = {item["label"] for item in payload["evidence_snapshot_preview"]["items"]}
     snapshot_text = "\n".join(item["value"] for item in payload["evidence_snapshot_preview"]["items"])
     assert payload["target"]["signal_id"] == recommended_signal_id
     assert "beach essentials" in contract_text
     assert "boys sunglasses" not in contract_text
     assert "beach essentials -> 广告活动" in snapshot_text
     assert "boys sunglasses -> 广告活动" not in snapshot_text
+    assert "需要补证" in snapshot_labels
+    assert "投放词维护状态" in snapshot_text
     assert payload["blockers"] == []
 
 
