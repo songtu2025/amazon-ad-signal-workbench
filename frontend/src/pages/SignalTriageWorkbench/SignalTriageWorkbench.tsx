@@ -72,7 +72,6 @@ import {
   buildReviewEffectWindowLedger,
   buildReviewRecordRequestPayload,
   buildRuleFeedbackCandidate,
-  buildManualActionDisplayEvidenceSnapshot,
   buildManualActionEvidenceSnapshot,
   manualActionExpectedTargetForSignal,
   buildManualActionIdentityGateItems,
@@ -89,8 +88,8 @@ import {
   buildReviewTodoEvidenceReadbackSummary,
   manualActionBoundaryText,
   manualActionEmptyStateText,
-  manualActionEvidenceReasonText,
   manualActionEvidenceSnapshotText,
+  manualActionSavableEvidenceReasonText,
   manualActionButtonExpectationText,
   manualActionIntentText,
   manualActionPostWriteExpectationSummaryText,
@@ -1010,17 +1009,9 @@ export function SignalTriageWorkbench() {
     () => mergeManualActionEvidenceSnapshots(selectedSearchIntentManualActionEvidenceSnapshot, selectedBaseManualActionEvidenceSnapshot),
     [selectedBaseManualActionEvidenceSnapshot, selectedSearchIntentManualActionEvidenceSnapshot],
   );
-  const selectedDisplayManualActionEvidenceSnapshot = useMemo(
-    () =>
-      buildManualActionDisplayEvidenceSnapshot({
-        fallbackEvidenceSnapshot: selectedManualActionEvidenceSnapshot,
-        preflight: selectedManualActionPreviewPreflight,
-      }),
-    [selectedManualActionEvidenceSnapshot, selectedManualActionPreviewPreflight],
-  );
   const selectedManualActionEvidenceReason = useMemo(
-    () => manualActionEvidenceReasonText(selectedDisplayManualActionEvidenceSnapshot),
-    [selectedDisplayManualActionEvidenceSnapshot],
+    () => manualActionSavableEvidenceReasonText(selectedManualActionPreviewPreflight),
+    [selectedManualActionPreviewPreflight],
   );
   const selectedManualActionDecisionFactItems = useMemo(
     () =>

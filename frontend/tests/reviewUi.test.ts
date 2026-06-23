@@ -26,6 +26,7 @@ import {
   manualActionEmptyStateText,
   manualActionEvidenceSnapshotText,
   manualActionEvidenceReasonText,
+  manualActionSavableEvidenceReasonText,
   manualActionIntentText,
   manualActionButtonGate,
   manualActionButtonExpectationText,
@@ -2309,6 +2310,27 @@ assertEqual(searchTermPreflightEvidenceSnapshot.some((item) => item.label === "�
 assertEqual(searchTermPreflightEvidenceSnapshot.some((item) => item.label === "广告位边界"), true);
 assertIncludes(manualActionEvidenceReasonText(searchTermPreflightEvidenceSnapshot) ?? "", "搜索词边界");
 assertIncludes(manualActionEvidenceReasonText(searchTermPreflightEvidenceSnapshot) ?? "", "广告位边界");
+const searchTermSavableEvidenceReason = manualActionSavableEvidenceReasonText({
+  evidence_snapshot_preview: {
+    will_write: false,
+    will_save_on_authorized_write: true,
+    item_count: 6,
+    items: searchTermPreflightEvidenceSnapshot,
+  },
+});
+assertIncludes(searchTermSavableEvidenceReason, "搜索词边界");
+assertIncludes(searchTermSavableEvidenceReason, "广告位边界");
+const searchTermUnsavableEvidenceReason = manualActionSavableEvidenceReasonText({
+  evidence_snapshot_preview: {
+    will_write: false,
+    will_save_on_authorized_write: false,
+    item_count: 1,
+    items: [{ label: "语义组", value: "规则语义：海滩出行用品", source: "规则语义" }],
+  },
+});
+assertIncludes(searchTermUnsavableEvidenceReason, "等待后端可保存 evidence_snapshot_preview");
+assertIncludes(searchTermUnsavableEvidenceReason, "页面语义组和临时证据只用于只读核对");
+assertEqual(searchTermUnsavableEvidenceReason.includes("规则语义：海滩出行用品"), false);
 const searchTermPreflightPriorityEvidenceRows = manualActionPreflightPriorityEvidenceRows({
   evidence_snapshot_preview: {
     will_write: false,

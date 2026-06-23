@@ -2235,6 +2235,17 @@ export function buildManualActionDisplayEvidenceSnapshot(input: ManualActionDisp
   return input.fallbackEvidenceSnapshot ?? [];
 }
 
+export function manualActionSavableEvidenceReasonText(
+  preflight: ManualActionPreflightForUi | null,
+  fallbackText = "等待后端可保存 evidence_snapshot_preview；页面语义组和临时证据只用于只读核对，不写入人工动作。",
+) {
+  if (!preflight || !manualActionPreflightHasSavableEvidenceSnapshotPreview(preflight)) {
+    return fallbackText;
+  }
+  const previewItems = preflight.evidence_snapshot_preview?.items ?? [];
+  return manualActionEvidenceReasonText(buildManualActionEvidenceSnapshot(previewItems, previewItems.length)) ?? fallbackText;
+}
+
 export function buildSearchIntentManualActionEvidenceSnapshot(
   input: SearchIntentManualActionContextInput | null,
 ): ManualActionEvidenceSnapshotForUi[] {
