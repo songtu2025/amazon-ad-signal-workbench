@@ -1605,7 +1605,7 @@ export function SignalTriageWorkbench() {
                 </div>
                 <p>{productScopeAnalysisPath.boundary}</p>
               </div>
-              <div className="productScopeEntryGuidance" aria-label="经营商品优先入口说明">
+              <div className="productScopeEntryGuidance" aria-label="诊断入口路径说明">
                 <div className="productScopeEntryGuidanceHeader">
                   <strong>{productScopeEntryGuidance.title}</strong>
                   <span>{productScopeEntryGuidance.description}</span>

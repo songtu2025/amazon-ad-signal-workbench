@@ -5714,7 +5714,7 @@ export function buildProductScopeOptionGroups(options: ProductScopeFilterOption[
       option.scope_type === "sales_asin",
   );
   const groups: ProductScopeOptionGroup[] = [];
-  if (loadingOptions.length > 0) groups.push({ label: "经营入口状态", options: loadingOptions });
+  if (loadingOptions.length > 0) groups.push({ label: "诊断入口状态", options: loadingOptions });
   if (parentOptions.length > 0) groups.push({ label: "经营入口（Parent ASIN）", options: parentOptions });
   if (advertisedOptions.length > 0) groups.push({ label: "广告下钻入口（仅已投广告 ASIN）", options: advertisedOptions });
   if (salesBackgroundOptions.length > 0 || assistOptions.length > salesBackgroundOptions.length) {
@@ -5761,7 +5761,7 @@ export function buildProductScopeSelectionSummary(selectedScope: ProductScopeFil
     };
   }
 
-  if (selectedScope.scope_type === "advertised_asin" || selectedScope.scope_type === "sales_asin") {
+  if (selectedScope.scope_type === "advertised_asin") {
     const asin = selectedScope.asin ?? selectedScope.scope_id.replace("ad_asin:", "").replace("sales_asin:", "");
     return {
       title: "ASIN 诊断入口",
@@ -5773,6 +5773,23 @@ export function buildProductScopeSelectionSummary(selectedScope: ProductScopeFil
         directMetric: "广告商品指标可直接用于判断该 ASIN 的花费、订单、销售额和 ACOS。",
         contextBoundary: "搜索词、投放词和广告位仍是同广告组上下文，不能自动归因到该 ASIN。",
         manualBoundary: "人工动作仍以后端预检返回的 object_type / object_id 为准，不用页面筛选标签替代。",
+      },
+      tone: "product",
+    };
+  }
+
+  if (selectedScope.scope_type === "sales_asin") {
+    const asin = selectedScope.asin ?? selectedScope.scope_id.replace("sales_asin:", "");
+    return {
+      title: "销售 ASIN 背景入口",
+      description: "当前入口只作为销售表现和广告覆盖缺口背景，不作为广告下钻或人工动作对象；需要广告诊断时切到 Parent ASIN 或已投广告 ASIN。",
+      targetBoundary: "sales_asin 不能替代 advertised_product；人工处理仍必须落到后端预检确认的具体销售商品、广告商品、搜索词、广告位或数据质量对象。",
+      scopeSyncNotice: {
+        title: "销售背景已同步",
+        summary: `当前只观察 ${asin} 的销售背景和广告覆盖缺口，不能说明它已投广告。`,
+        directMetric: "销售表现可用于判断经营背景和覆盖缺口，不能直接当作广告商品指标。",
+        contextBoundary: "没有广告投放行时不进入广告 ASIN 下钻；搜索词、投放词和广告位不能归因到该销售 ASIN。",
+        manualBoundary: "人工动作仍以后端预检返回的 object_type / object_id 为准，不用销售背景筛选标签替代。",
       },
       tone: "product",
     };
@@ -5818,10 +5835,17 @@ export function buildProductScopeAnalysisPath(selectedScope: ProductScopeFilterO
     };
   }
 
-  if (selectedScope.scope_type === "advertised_asin" || selectedScope.scope_type === "sales_asin") {
+  if (selectedScope.scope_type === "advertised_asin") {
     return {
       steps: ["店铺 / 站点", "ASIN", "商品指标", "同广告组上下文"],
       boundary: "该入口只直接解释当前 ASIN 的商品指标，搜索词和广告位仍需按同广告组上下文复核。",
+    };
+  }
+
+  if (selectedScope.scope_type === "sales_asin") {
+    return {
+      steps: ["店铺 / 站点", "销售 ASIN 背景", "广告覆盖缺口", "人工排查"],
+      boundary: "销售 ASIN 只提供经营背景和覆盖缺口，不是广告 ASIN 下钻入口；没有广告投放行时不能生成广告动作对象。",
     };
   }
 
@@ -5836,24 +5860,28 @@ export function buildProductScopeEntryGuidance(
   coverage?: ProductScopeCoverageForOverview | null,
 ): ProductScopeEntryGuidance {
   const parentScopeCount = options.filter((option) => option.scope_type === "parent_asin").length;
-  const asinScopeCount = options.filter((option) => option.scope_type === "advertised_asin" || option.scope_type === "sales_asin").length;
+  const advertisedAsinScopeCount = options.filter((option) => option.scope_type === "advertised_asin").length;
+  const salesBackgroundScopeCount = options.filter((option) => option.scope_type === "sales_asin").length;
+  const salesBackgroundText = salesBackgroundScopeCount > 0 ? `，${salesBackgroundScopeCount} 个销售背景 ASIN 仅辅助` : "";
   const searchTermContextCount = coverage?.search_term_unattributed_count ?? 0;
   const placementContextCount = coverage?.placement_unattributed_count ?? 0;
   const hasParentScope = parentScopeCount > 0;
 
   return {
-    title: hasParentScope ? "经营商品优先入口" : "ASIN 临时经营入口",
+    title: hasParentScope ? "Parent ASIN 优先诊断路径" : "ASIN 临时诊断路径",
     description: hasParentScope
-      ? "首层先按 Parent ASIN / ASIN 看经营盘子，再进入广告 ASIN、广告组、投放词和搜索词证据下钻。"
-      : "当前快照缺少 Parent ASIN，先按 ASIN 观察；补齐父 ASIN 导入后再恢复商品组入口。",
+      ? "首层先按 Parent ASIN / ASIN 看经营盘子；只有广告 ASIN 进入广告下钻，销售 ASIN 只作为销售背景。"
+      : "当前快照缺少 Parent ASIN，先按已投广告 ASIN 观察；销售 ASIN 只作背景，补齐父 ASIN 导入后再恢复商品组入口。",
     items: [
       {
         label: "第一层分组",
-        value: hasParentScope ? `${parentScopeCount} 个 Parent ASIN 商品组，${asinScopeCount} 个 ASIN 可下钻` : `${asinScopeCount} 个 ASIN 可观察`,
+        value: hasParentScope
+          ? `${parentScopeCount} 个 Parent ASIN 经营入口，${advertisedAsinScopeCount} 个广告 ASIN 可下钻${salesBackgroundText}`
+          : `${advertisedAsinScopeCount} 个广告 ASIN 可观察${salesBackgroundText}`,
         tone: "primary",
       },
       {
-        label: "第二层证据",
+        label: "广告下钻证据",
         value: "广告 ASIN / 广告组 / 投放词 / 搜索词用于定位问题，不替代经营商品",
         tone: "direct",
       },

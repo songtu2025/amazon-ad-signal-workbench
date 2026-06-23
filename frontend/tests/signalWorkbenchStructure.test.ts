@@ -110,6 +110,8 @@ assert(searchIntentFocusContextRenderIndex > selectedSignalScopeContextRenderInd
 assert(searchIntentFocusContextRenderIndex < signalDiagnosisRenderIndex, "SearchTerm 机会筛选承接必须先于信号详情展示");
 
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 经营诊断路径"');
+assertIncludes(workbenchSource, 'aria-label="诊断入口路径说明"');
+assertNotIncludes(workbenchSource, 'aria-label="经营商品优先入口说明"');
 assertIncludes(workbenchSource, "productScopePathPreview");
 assertIncludes(workbenchSource, "buildProductScopeFirstScreenSummary");
 assertIncludes(workbenchSource, "productScopeBusinessPreview");

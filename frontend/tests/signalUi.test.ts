@@ -3858,11 +3858,27 @@ assertIncludes(adAsinScopeSummary.scopeSyncNotice?.contextBoundary ?? "", "同�
 assertIncludes(adAsinScopeSummary.scopeSyncNotice?.contextBoundary ?? "", "不能自动归因到该 ASIN");
 assertIncludes(adAsinScopeSummary.scopeSyncNotice?.manualBoundary ?? "", "后端预检");
 
+const salesAsinScopeSummary = buildProductScopeSelectionSummary({
+  scope_id: "sales_asin:B000SALES1",
+  scope_type: "sales_asin",
+  label: "销售 ASIN B000SALES1",
+  asin: "B000SALES1",
+});
+
+assertEqual(salesAsinScopeSummary.title, "销售 ASIN 背景入口");
+assertIncludes(salesAsinScopeSummary.description, "不作为广告下钻");
+assertIncludes(salesAsinScopeSummary.targetBoundary, "sales_asin 不能替代 advertised_product");
+assertEqual(salesAsinScopeSummary.scopeSyncNotice?.title, "销售背景已同步");
+assertIncludes(salesAsinScopeSummary.scopeSyncNotice?.summary ?? "", "不能说明它已投广告");
+assertIncludes(salesAsinScopeSummary.scopeSyncNotice?.directMetric ?? "", "不能直接当作广告商品指标");
+assertIncludes(salesAsinScopeSummary.scopeSyncNotice?.contextBoundary ?? "", "不能归因到该销售 ASIN");
+
 const productScopeEntryGuidance = buildProductScopeEntryGuidance(
   [
     { scope_id: "all", scope_type: "all", label: "全量排查" },
     { scope_id: "parent_asin:B0PARENT", scope_type: "parent_asin", label: "Parent ASIN B0PARENT" },
     { scope_id: "ad_asin:B000TEST01", scope_type: "advertised_asin", label: "广告 ASIN B000TEST01", asin: "B000TEST01" },
+    { scope_id: "sales_asin:B000SALES1", scope_type: "sales_asin", label: "销售 ASIN B000SALES1", asin: "B000SALES1" },
   ],
   {
     search_term_unattributed_count: 8,
@@ -3870,12 +3886,14 @@ const productScopeEntryGuidance = buildProductScopeEntryGuidance(
   },
 );
 
-assertEqual(productScopeEntryGuidance.title, "经营商品优先入口");
+assertEqual(productScopeEntryGuidance.title, "Parent ASIN 优先诊断路径");
 assertIncludes(productScopeEntryGuidance.description, "先按 Parent ASIN / ASIN");
 assertIncludes(productScopeEntryGuidance.description, "经营盘子");
-assertIncludes(productScopeEntryGuidance.description, "广告 ASIN");
-assertIncludes(productScopeEntryGuidance.description, "投放词");
-assertIncludes(productScopeEntryGuidance.items.map((item) => item.value).join(" / "), "1 个 Parent ASIN 商品组");
+assertIncludes(productScopeEntryGuidance.description, "只有广告 ASIN 进入广告下钻");
+assertIncludes(productScopeEntryGuidance.description, "销售 ASIN 只作为销售背景");
+assertIncludes(productScopeEntryGuidance.items.map((item) => item.value).join(" / "), "1 个 Parent ASIN 经营入口");
+assertIncludes(productScopeEntryGuidance.items.map((item) => item.value).join(" / "), "1 个广告 ASIN 可下钻");
+assertIncludes(productScopeEntryGuidance.items.map((item) => item.value).join(" / "), "1 个销售背景 ASIN 仅辅助");
 assertIncludes(productScopeEntryGuidance.items.map((item) => item.value).join(" / "), "广告 ASIN / 广告组 / 投放词 / 搜索词");
 assertIncludes(productScopeEntryGuidance.items.map((item) => item.value).join(" / "), "搜索词 8 条 / 广告位 2 条");
 
@@ -3890,17 +3908,21 @@ assertEqual(preferredAdEvidenceParentScope, "parent_asin:B0WITHADS");
 const loadingProductScopeGroups = buildProductScopeOptionGroups([
   { scope_id: "loading_product_scope", scope_type: "loading", label: "正在读取诊断入口" },
 ]);
-assertEqual(loadingProductScopeGroups[0]?.label, "经营入口状态");
+assertEqual(loadingProductScopeGroups[0]?.label, "诊断入口状态");
 assertEqual(loadingProductScopeGroups[0]?.options[0]?.scope_id, "loading_product_scope");
 
 const asinFallbackEntryGuidance = buildProductScopeEntryGuidance([
   { scope_id: "all", scope_type: "all", label: "全量排查" },
   { scope_id: "ad_asin:B000TEST01", scope_type: "advertised_asin", label: "广告 ASIN B000TEST01", asin: "B000TEST01" },
+  { scope_id: "sales_asin:B000SALES1", scope_type: "sales_asin", label: "销售 ASIN B000SALES1", asin: "B000SALES1" },
 ]);
 
-assertEqual(asinFallbackEntryGuidance.title, "ASIN 临时经营入口");
+assertEqual(asinFallbackEntryGuidance.title, "ASIN 临时诊断路径");
 assertIncludes(asinFallbackEntryGuidance.description, "缺少 Parent ASIN");
-assertIncludes(asinFallbackEntryGuidance.items.map((item) => item.value).join(" / "), "1 个 ASIN 可观察");
+assertIncludes(asinFallbackEntryGuidance.description, "已投广告 ASIN");
+assertIncludes(asinFallbackEntryGuidance.description, "销售 ASIN 只作背景");
+assertIncludes(asinFallbackEntryGuidance.items.map((item) => item.value).join(" / "), "1 个广告 ASIN 可观察");
+assertIncludes(asinFallbackEntryGuidance.items.map((item) => item.value).join(" / "), "1 个销售背景 ASIN 仅辅助");
 
 const parentScopeQueueHeader = buildProductScopeQueueHeader(
   {
