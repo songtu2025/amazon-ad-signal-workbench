@@ -957,7 +957,7 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
     snapshot_items = preflight["evidence_snapshot_preview"]["items"]
     assert {
         "搜索词边界",
-        "搜索意图分组",
+        "搜索词表现分组",
         "广告位边界",
         "Parent ASIN入口",
         "广告 ASIN承接",
@@ -982,9 +982,9 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
     assert "beach essentials" in snapshot_by_label["搜索词"]["value"]
     assert "search_term:1:beach essentials" in snapshot_by_label["搜索词"]["value"]
     assert "人工确认和 7/14 天复盘对象是这个具体 SearchTerm" in snapshot_by_label["搜索词"]["detail"]
-    assert snapshot_by_label["搜索意图分组"]["value"] == "规则语义：海滩出行用品"
-    assert snapshot_by_label["搜索意图分组"]["source"] == "规则语义"
-    assert "不能替代顶部诊断入口" in snapshot_by_label["搜索意图分组"]["detail"]
+    assert snapshot_by_label["搜索词表现分组"]["value"] == "规则语义：海滩出行用品"
+    assert snapshot_by_label["搜索词表现分组"]["source"] == "规则语义"
+    assert "不能替代顶部诊断入口" in snapshot_by_label["搜索词表现分组"]["detail"]
     assert "beach essentials" in snapshot_by_label["广告组合流判断"]["value"]
     assert "广告组级广告位 0 条 / 同广告活动广告位 6 条" in snapshot_by_label["广告组合流判断"]["value"]
     assert "自动归因到单个广告 ASIN" in snapshot_by_label["广告组合流判断"]["detail"]
@@ -1038,7 +1038,7 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
     assert {item["label"] for item in action["evidence_snapshot"]}.issuperset(
         {
             "搜索词",
-            "搜索意图分组",
+            "搜索词表现分组",
             "广告组合流判断",
             "Parent ASIN入口",
             "广告 ASIN承接",
@@ -1069,7 +1069,7 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
     assert [todo["evidence_snapshot"][0]["label"] for todo in todos] == ["排查路径", "排查路径"]
     assert [todo["evidence_snapshot"][1]["label"] for todo in todos] == ["AI 准入", "AI 准入"]
     assert {todo["evidence_snapshot"][2]["label"] for todo in todos} == {"搜索词"}
-    assert {todo["evidence_snapshot"][3]["label"] for todo in todos} == {"搜索意图分组"}
+    assert {todo["evidence_snapshot"][3]["label"] for todo in todos} == {"搜索词表现分组"}
     assert {todo["evidence_snapshot"][4]["label"] for todo in todos} == {"Parent ASIN入口"}
     assert {todo["evidence_snapshot"][5]["label"] for todo in todos} == {"广告 ASIN承接"}
     assert {todo["evidence_snapshot"][6]["label"] for todo in todos} == {"广告组合流判断"}
@@ -1153,7 +1153,7 @@ def test_beach_essentials_manual_action_post_write_readback_distinguishes_action
         assert preflight["evidence_snapshot_preview"]["items"][1]["label"] == "AI 准入"
         assert {
             "广告组合流判断",
-            "搜索意图分组",
+            "搜索词表现分组",
             "同组投放商品表现",
             "逐投放上下文",
             "广告位活动级背景",
@@ -1194,7 +1194,7 @@ def test_beach_essentials_manual_action_post_write_readback_distinguishes_action
         assert {item["label"] for item in action["evidence_snapshot"]}.issuperset(
             {
                 "搜索词",
-                "搜索意图分组",
+                "搜索词表现分组",
                 "广告组合流判断",
                 "Parent ASIN入口",
                 "广告 ASIN承接",
@@ -1213,8 +1213,8 @@ def test_beach_essentials_manual_action_post_write_readback_distinguishes_action
         snapshot_by_label = {item["label"]: item for item in action["evidence_snapshot"]}
         assert "beach essentials" in snapshot_by_label["搜索词"]["value"]
         assert "search_term:1:beach essentials" in snapshot_by_label["搜索词"]["value"]
-        assert snapshot_by_label["搜索意图分组"]["value"] == "规则语义：海滩出行用品"
-        assert "不能替代顶部诊断入口" in snapshot_by_label["搜索意图分组"]["detail"]
+        assert snapshot_by_label["搜索词表现分组"]["value"] == "规则语义：海滩出行用品"
+        assert "不能替代顶部诊断入口" in snapshot_by_label["搜索词表现分组"]["detail"]
         assert "beach essentials" in snapshot_by_label["广告组合流判断"]["value"]
         assert "广告组级广告位 0 条 / 同广告活动广告位 6 条" in snapshot_by_label["广告组合流判断"]["value"]
         assert "自动归因到单个广告 ASIN" in snapshot_by_label["广告组合流判断"]["detail"]
@@ -1235,7 +1235,7 @@ def test_beach_essentials_manual_action_post_write_readback_distinguishes_action
             assert {todo["action_id"] for todo in todos} == {action["id"]}
             assert [len(todo["evidence_snapshot"]) for todo in todos] == [29, 29]
             assert {todo["evidence_snapshot"][2]["label"] for todo in todos} == {"搜索词"}
-            assert {todo["evidence_snapshot"][3]["label"] for todo in todos} == {"搜索意图分组"}
+            assert {todo["evidence_snapshot"][3]["label"] for todo in todos} == {"搜索词表现分组"}
             assert {todo["evidence_snapshot"][4]["label"] for todo in todos} == {"Parent ASIN入口"}
             assert {todo["evidence_snapshot"][5]["label"] for todo in todos} == {"广告 ASIN承接"}
             assert {todo["evidence_snapshot"][6]["label"] for todo in todos} == {"广告组合流判断"}

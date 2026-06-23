@@ -605,8 +605,8 @@ def test_manual_action_apply_rewrites_after_voided_legacy_todo_with_isolated_roo
     assert "beach essentials" in snapshot_by_label["搜索词"]["value"]
     assert "search_term:1:beach essentials" in snapshot_by_label["搜索词"]["value"]
     assert "人工确认和 7/14 天复盘对象是这个具体 SearchTerm" in snapshot_by_label["搜索词"]["detail"]
-    assert snapshot_by_label["搜索意图分组"]["value"] == "规则语义：海滩出行用品"
-    assert "不能替代顶部诊断入口" in snapshot_by_label["搜索意图分组"]["detail"]
+    assert snapshot_by_label["搜索词表现分组"]["value"] == "规则语义：海滩出行用品"
+    assert "不能替代顶部诊断入口" in snapshot_by_label["搜索词表现分组"]["detail"]
     assert "当前商品范围" in snapshot_by_label["Parent ASIN入口"]["value"]
     assert "广告 ASIN" in snapshot_by_label["广告 ASIN承接"]["value"]
     assert "RBK004-beach essentials-精准" in snapshot_by_label["逐投放上下文"]["value"]

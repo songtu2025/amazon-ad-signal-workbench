@@ -935,7 +935,7 @@ def aba_phrase_context_evidence_items(aba_row: dict, row: dict) -> list[Evidence
     boundary = "短语包含匹配，仅作为同类 SearchTerm 市场热度背景，不代表精确搜索词份额或本店广告归因。"
     return [
         EvidenceItem(
-            label="搜索意图分组",
+            label="搜索词表现分组",
             value=resolved_search_intent_label(row),
             source_type="积加API",
             source_name="搜索词规则语义",
@@ -944,7 +944,7 @@ def aba_phrase_context_evidence_items(aba_row: dict, row: dict) -> list[Evidence
             time_range=source_time_range(row),
             object_type=ObjectType.SEARCH_TERM.value,
             object_id=string_value(row.get("source_record_id") or row.get("row_id")),
-            explanation="搜索意图分组用于在 Parent ASIN 广告搜索词表现复核中聚合同类 SearchTerm，不代表自动广告动作。",
+            explanation="搜索词表现分组用于在 Parent ASIN 广告搜索词表现复核中聚合同类 SearchTerm，不代表自动广告动作。",
         ),
         EvidenceItem(
             label="ABA语义参考词",
@@ -1129,7 +1129,7 @@ def aggregate_search_term_opportunity_signals(signals: list[AiSignal]) -> list[A
         if semantic_group:
             facts.append(
                 EvidenceItem(
-                    label="搜索意图分组",
+                    label="搜索词表现分组",
                     value=semantic_group,
                     source_type="积加API",
                     source_name="Parent ASIN 广告搜索词表现复核",
@@ -1138,7 +1138,7 @@ def aggregate_search_term_opportunity_signals(signals: list[AiSignal]) -> list[A
                     time_range=source_time_range(api_rows[0]) if api_rows else None,
                     object_type=ObjectType.SEARCH_TERM.value,
                     object_id=primary_object.object_id,
-                    explanation="搜索意图分组由广告搜索词 intent_label 或 normalized_query 在分析层解析，用于先按 Parent ASIN 视角复核广告用户搜索词表现，不代表人工确认结论。",
+                    explanation="搜索词表现分组由广告搜索词 intent_label 或 normalized_query 在分析层解析，用于先按 Parent ASIN 视角复核广告用户搜索词表现，不代表人工确认结论。",
                 )
             )
         facts.extend(
@@ -2706,7 +2706,7 @@ def detect_signals(
                 EvidenceItem(label="ACOS", value=f"{metrics.acos:.2%}"),
                 EvidenceItem(label="订单", value=str(metrics.orders)),
                 EvidenceItem(label="转化率", value=f"{(metrics.cvr or 0):.2%}"),
-                EvidenceItem(label="搜索意图分组", value=resolved_search_intent_label(row)),
+                EvidenceItem(label="搜索词表现分组", value=resolved_search_intent_label(row)),
             ]
             if is_asin_like_search_term:
                 opportunity_facts.append(asin_search_term_boundary_evidence(row))
@@ -3303,7 +3303,7 @@ def search_intent_summaries(
     *,
     aba_rows: list[dict] | None = None,
     context_rows: list[dict] | None = None,
-    data_grain: str = "当前广告中实际产生表现的用户搜索词行按搜索意图聚合",
+    data_grain: str = "当前广告中实际产生表现的用户搜索词行按搜索词表现分组聚合",
 ) -> list[SearchIntentSummary]:
     groups: dict[str, list[dict]] = defaultdict(list)
     for row in rows if rows is not None else []:
@@ -3401,7 +3401,7 @@ def detect_intent_signals(rows: list[dict]) -> list[AiSignal]:
                         row,
                         ObjectType.SEARCH_INTENT,
                         [
-                            EvidenceItem(label="搜索意图分组", value=summary.intent_label),
+                            EvidenceItem(label="搜索词表现分组", value=summary.intent_label),
                             EvidenceItem(label="搜索词数量", value=str(len(summary.search_terms))),
                             EvidenceItem(label="聚合花费", value=f"{metrics.cost}"),
                             EvidenceItem(label="聚合订单", value=str(metrics.orders)),
@@ -3412,7 +3412,7 @@ def detect_intent_signals(rows: list[dict]) -> list[AiSignal]:
                         title="人工复核这组广告搜索词表现",
                         description="人工核对这组广告搜索词是否偏泛、是否匹配当前 Parent ASIN 商品和广告组策略；本系统只保留观察和复盘依据，不直接给广告操作建议。",
                     ),
-                    risk="搜索意图分组第一版由规则生成，人工反馈后再调准；它不是人工动作对象。",
+                    risk="搜索词表现分组第一版由规则生成，人工反馈后再调准；它不是人工动作对象。",
                     tags=["广告搜索词聚合", "异常"],
                 )
             )

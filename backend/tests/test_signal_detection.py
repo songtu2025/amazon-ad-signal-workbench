@@ -1399,7 +1399,7 @@ def test_grouped_search_term_opportunity_exposes_semantic_group() -> None:
     )
     facts = {fact.label: fact.value for fact in signal.evidence.facts}
 
-    assert facts["搜索意图分组"] == "规则语义：儿童太阳镜"
+    assert facts["搜索词表现分组"] == "规则语义：儿童太阳镜"
     assert "儿童太阳镜" in signal.summary
     assert "Parent ASIN 广告搜索词表现复核" in signal.suggested_action.description
     assert "自动" not in signal.suggested_action.description
@@ -1443,7 +1443,7 @@ def test_search_intent_signal_uses_review_context_not_ad_operation_language() ->
     suggested_action_text = f"{signal.suggested_action.title} {signal.suggested_action.description}"
 
     assert signal.object_type == ObjectType.SEARCH_INTENT
-    assert facts["搜索意图分组"] == "规则语义：宽泛海滩用品"
+    assert facts["搜索词表现分组"] == "规则语义：宽泛海滩用品"
     assert "语义标签" not in facts
     assert "人工复核这组广告搜索词表现" in signal.suggested_action.title
     assert "Parent ASIN" in signal.suggested_action.description

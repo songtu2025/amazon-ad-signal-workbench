@@ -30,6 +30,7 @@ REVIEW_WINDOWS: tuple[tuple[ReviewWindow, int], ...] = (("7d", 7), ("14d", 14))
 REVIEWABLE_ACTION_TYPES: set[ManualActionType] = {"observe", "handled", "add_to_review"}
 VOID_REVIEW_TODO_DECISION_TYPES: set[ReviewTodoDecisionType] = {"void_legacy_missing_evidence"}
 SEARCH_INTENT_CONTEXT_LABELS = (
+    "搜索词表现分组",
     "搜索意图分组",
     "Parent ASIN 广告搜索词表现复核",
     "语义组",

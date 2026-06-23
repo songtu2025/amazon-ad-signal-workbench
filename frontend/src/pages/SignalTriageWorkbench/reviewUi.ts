@@ -1380,7 +1380,7 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
             ],
             labels,
             hasSnapshot,
-            "广告搜索词表现复核待办必须保留 Parent ASIN 入口、广告 ASIN 承接、广告组合流判断、同组投放商品表现、逐投放上下文、投放词证据、搜索词边界、广告位边界、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标或搜索意图分组误判为自动加词或否词依据。",
+            "广告搜索词表现复核待办必须保留 Parent ASIN 入口、广告 ASIN 承接、广告组合流判断、同组投放商品表现、逐投放上下文、投放词证据、搜索词边界、广告位边界、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标或搜索词表现分组误判为自动加词或否词依据。",
           ),
           {
             label: "广告组合流判断",
@@ -2399,7 +2399,7 @@ export function buildSearchIntentManualActionEvidenceSnapshot(
     snapshot.push({
       label: "搜索词",
       value: searchTerm,
-      detail: "人工处理对象仍落到具体 SearchTerm 信号，搜索意图分组只作为复盘上下文。",
+      detail: "人工处理对象仍落到具体 SearchTerm 信号，搜索词表现分组只作为复盘上下文。",
       source: "积加API",
     });
   }
@@ -2574,8 +2574,8 @@ export function manualActionEvidenceSnapshotText(
 }
 
 function manualActionEvidenceDisplayLabel(label: string) {
-  if (label === "语义组" || label === "广告搜索词聚合上下文" || label === "Parent ASIN 搜索词表现聚合") {
-    return "搜索意图分组";
+  if (label === "语义组" || label === "搜索意图分组" || label === "广告搜索词聚合上下文" || label === "Parent ASIN 搜索词表现聚合") {
+    return "搜索词表现分组";
   }
   return label;
 }
@@ -2594,6 +2594,7 @@ const manualActionEvidenceReasonPriority = [
   "上下文边界",
   "人工动作路径",
   "复盘指标",
+  "搜索词表现分组",
   "搜索意图分组",
   "Parent ASIN 广告搜索词表现复核",
   "Parent ASIN 搜索词表现聚合",
@@ -2664,7 +2665,7 @@ export function reviewContextText(action: { review_context?: ReviewContextForUi 
     parts.push(reviewContextDisplayText(context.repeat_summary));
   }
   if (context.search_intent_label && context.search_term) {
-    parts.push("人工复盘下一步：按同类广告搜索词表现核对规则口径，不把搜索意图分组当作广告动作对象");
+    parts.push("人工复盘下一步：按同类广告搜索词表现核对规则口径，不把搜索词表现分组当作广告动作对象");
   }
   if (context.can_auto_change_rules === false || context.can_auto_execute_ads === false) {
     parts.push("不会自动改规则或执行广告");
@@ -2675,7 +2676,8 @@ export function reviewContextText(action: { review_context?: ReviewContextForUi 
 function reviewContextDisplayText(text: string) {
   return text
     .replace(/Parent ASIN 搜索词表现聚合/g, "Parent ASIN 广告搜索词表现复核")
-    .replace(/聚合标签/g, "搜索意图分组");
+    .replace(/搜索意图分组/g, "搜索词表现分组")
+    .replace(/聚合标签/g, "搜索词表现分组");
 }
 
 export function manualActionIntentText(actionType: ManualActionForUi["action_type"]) {

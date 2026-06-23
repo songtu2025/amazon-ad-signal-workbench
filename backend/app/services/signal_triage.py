@@ -44,6 +44,7 @@ REVIEW_WAIT_FORBIDDEN_ACTIONS = ["不拉取快照", "不保存复盘结论", "�
 REVIEW_GAP_FORBIDDEN_ACTIONS = ["不保存复盘结论", "不自动改规则", "不自动执行广告动作"]
 ACTIONABLE_PRODUCT_SCOPE_PREFIXES = ("parent_asin:", "ad_asin:")
 SEARCH_INTENT_CONTEXT_LABELS = (
+    "搜索词表现分组",
     "搜索意图分组",
     "Parent ASIN 广告搜索词表现复核",
     "语义组",
@@ -277,7 +278,7 @@ def build_search_intent_summaries(
             signal_rows,
             aba_rows=aba_rows,
             context_rows=signal_rows,
-            data_grain="当前站点广告中实际产生表现的用户搜索词行按搜索意图聚合",
+            data_grain="当前站点广告中实际产生表现的用户搜索词行按搜索词表现分组聚合",
         )
 
     product_scope = build_product_scope_summary()

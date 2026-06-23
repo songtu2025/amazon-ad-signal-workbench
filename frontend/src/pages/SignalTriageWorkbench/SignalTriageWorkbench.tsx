@@ -2435,7 +2435,7 @@ export function SignalTriageWorkbench() {
                         </li>
                       ))}
                     </ul>
-                    <p>只核对当前 Parent ASIN 下广告搜索词表现复核背景；实际写入以后端 preflight evidence_snapshot_preview 为准，搜索意图分组不是人工动作对象。</p>
+                    <p>只核对当前 Parent ASIN 下广告搜索词表现复核背景；实际写入以后端 preflight evidence_snapshot_preview 为准，搜索词表现分组不是人工动作对象。</p>
                   </div>
                 )}
                 {selectedBackendManualActionPreview?.preflightChecks.length ? (
@@ -4252,8 +4252,8 @@ function isReviewRepairVoidPlanText(part: string) {
 }
 
 function evidenceFactDisplayLabel(label: string) {
-  if (label === "语义组" || label === "广告搜索词聚合上下文" || label === "Parent ASIN 搜索词表现聚合") {
-    return "搜索意图分组";
+  if (label === "语义组" || label === "搜索意图分组" || label === "广告搜索词聚合上下文" || label === "Parent ASIN 搜索词表现聚合") {
+    return "搜索词表现分组";
   }
   return label;
 }
