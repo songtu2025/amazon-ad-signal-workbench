@@ -3230,9 +3230,10 @@ def test_review_readiness_summarizes_saved_review_records_as_rule_feedback(monke
     assert feedback["candidate_groups"][0]["aba_reference_term"] == "beach essentials"
     assert feedback["candidate_groups"][0]["aba_period"] == "2026-05-10 到 2026-05-16"
     assert feedback["candidate_groups"][0]["by_result"] == {"worse": 1}
-    assert "复核该语义组的阈值、证据来源和建议动作" in feedback["candidate_groups"][0]["recommendation"]
+    assert "复核该规则反馈分组（搜索词语义）的阈值、证据来源和建议动作" in feedback["candidate_groups"][0]["recommendation"]
     assert feedback["candidate_groups"][0]["action_boundary"]["allowed_reviews"] == ["复核阈值", "复核证据来源", "复核建议动作"]
     assert "自动改规则" in feedback["candidate_groups"][0]["action_boundary"]["forbidden_actions"]
+    assert "不是广告处理对象" in feedback["candidate_groups"][0]["boundary"]
     assert "不自动改规则" in feedback["candidate_groups"][0]["boundary"]
     assert "不自动执行广告动作" in feedback["candidate_groups"][0]["boundary"]
     assert feedback["records"][1]["result"] == "unclear"
@@ -3317,7 +3318,8 @@ def test_review_readiness_groups_saved_review_record_snapshot_without_manual_act
     assert feedback["candidate_groups"][0]["sample_review_record_ids"] == ["review-record-snapshot-only"]
     assert feedback["candidate_groups"][0]["sample_action_ids"] == ["manual-action-missing"]
     assert feedback["candidate_groups"][0]["by_result"] == {"worse": 1}
-    assert "复核该语义组" in feedback["candidate_groups"][0]["recommendation"]
+    assert "复核该规则反馈分组（搜索词语义）" in feedback["candidate_groups"][0]["recommendation"]
+    assert "不是广告处理对象" in feedback["candidate_groups"][0]["boundary"]
     assert "不自动执行广告动作" in feedback["candidate_groups"][0]["boundary"]
 
 

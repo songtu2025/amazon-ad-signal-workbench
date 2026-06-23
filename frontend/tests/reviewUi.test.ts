@@ -228,16 +228,16 @@ const abaContextTodo: ReviewTodoForUi = {
     aba_match_boundary: "短语包含匹配，仅作为语义组市场热度背景。",
     repeat_search_intent_count: 2,
     repeat_aba_reference_count: 1,
-    repeat_summary: "同一语义组已有 2 次人工留痕，复盘时应判断规则是否需要调整。",
+    repeat_summary: "同一搜索词语义分组已有 2 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。",
     can_auto_change_rules: false,
     can_auto_execute_ads: false,
   },
 };
-assertIncludes(reviewContextText(abaContextTodo) ?? "", "语义组：规则语义：海滩出行用品");
+assertIncludes(reviewContextText(abaContextTodo) ?? "", "搜索词语义上下文：规则语义：海滩出行用品");
 assertIncludes(reviewContextText(abaContextTodo) ?? "", "ABA参考：beach essentials / 排名 208");
-assertIncludes(reviewContextText(abaContextTodo) ?? "", "同一语义组已有 2 次人工留痕");
+assertIncludes(reviewContextText(abaContextTodo) ?? "", "同一搜索词语义分组已有 2 次人工留痕");
 assertIncludes(reviewContextText(abaContextTodo) ?? "", "不会自动改规则或执行广告");
-assertIncludes(manualActionEvidenceSnapshotText(abaContextTodo) ?? "", "复盘上下文：语义组：规则语义：海滩出行用品");
+assertIncludes(manualActionEvidenceSnapshotText(abaContextTodo) ?? "", "复盘上下文：搜索词语义上下文：规则语义：海滩出行用品");
 const contextDetails = buildReviewTodoQueueDetails([abaContextTodo], { isGlobalScope: true });
 assertIncludes(contextDetails?.rows[0].contextText ?? "", "留痕证据快照");
 assertIncludes(contextDetails?.rows[0].contextText ?? "", "ABA语义参考词");
@@ -612,6 +612,7 @@ assertIncludes(savedRuleFeedbackCandidate?.basis ?? "", "advertised_product / B0
 assertIncludes(savedRuleFeedbackCandidate?.basis ?? "", "处理前 2026-06-01 至 2026-06-07");
 assertIncludes(savedRuleFeedbackCandidate?.recommendation ?? "", "复核阈值、证据来源和建议动作");
 assertIncludes(savedRuleFeedbackCandidate?.boundary ?? "", "只进入解释层");
+assertIncludes(savedRuleFeedbackCandidate?.boundary ?? "", "不是广告处理对象");
 assertIncludes(savedRuleFeedbackCandidate?.boundary ?? "", "不自动改规则");
 assertIncludes(savedRuleFeedbackCandidate?.boundary ?? "", "不自动执行广告动作");
 assertEqual(buildRuleFeedbackCandidate(null, improvedEffect), null);
@@ -2390,7 +2391,7 @@ assertEqual(mergedManualEvidenceSnapshot[0].label, "语义组");
 assertEqual(mergedManualEvidenceSnapshot[6].label, "广告商品覆盖");
 assertIncludes(
   manualActionEvidenceSnapshotText({ evidence_snapshot: mergedManualEvidenceSnapshot }) ?? "",
-  "语义组：规则语义：海滩出行用品",
+  "搜索词语义上下文：规则语义：海滩出行用品",
 );
 const manualActionRequestPayload = buildManualActionRequestPayload({
   actionType: "add_to_review",

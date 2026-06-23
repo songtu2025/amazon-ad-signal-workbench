@@ -2640,14 +2640,14 @@ const triageReviewFeedbackSummary = {
           priority_result: "worse",
           sample_review_record_ids: ["review-record-worse-7d"],
           sample_action_ids: ["manual-action-worse"],
-          recommendation: "worse 1：优先复核该语义组的阈值、证据来源和建议动作。",
+          recommendation: "worse 1：优先复核该规则反馈分组（搜索词语义）的阈值、证据来源和建议动作。",
           action_boundary: {
             result: "worse",
             allowed_reviews: ["复核阈值", "复核证据来源", "复核建议动作"],
             forbidden_actions: ["自动改规则", "自动调价", "自动暂停广告", "自动否词", "自动新增关键词"],
             boundary: "worse 只能触发人工复核阈值、证据来源和建议动作；不自动改规则，不自动执行广告动作。",
           },
-          boundary: "候选只进入解释层和人工复核，不自动改规则，不自动执行广告动作。",
+          boundary: "该分组只用于规则反馈样本归类和人工复核优先级，不是广告处理对象；不自动改规则，不自动执行广告动作。",
         },
       ],
       summary: "已保存 2 条复盘记录：improved 1 / worse 1。",
@@ -2669,6 +2669,8 @@ assertIncludes(ruleFeedbackPrioritySummary?.sampleSort ?? "", "improved 只作�
 assertIncludes(ruleFeedbackPrioritySummary?.actionBoundary ?? "", "worse：复核阈值 / 复核证据来源 / 复核建议动作");
 assertIncludes(ruleFeedbackPrioritySummary?.actionBoundary ?? "", "不自动改规则");
 assertIncludes(ruleFeedbackPrioritySummary?.actionBoundary ?? "", "不自动执行广告动作");
+assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "规则反馈分组（搜索词语义）");
+assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "不是广告处理对象");
 assertEqual(ruleFeedbackPrioritySummary?.closureChecklist.length, 6);
 assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[0] ?? "", "复盘结果分布 ready");
 assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[0] ?? "", "worse 1");

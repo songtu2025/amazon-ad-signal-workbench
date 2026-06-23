@@ -5214,7 +5214,7 @@ def _review_feedback_candidate_groups(
         group["priority_result"] = priority_result
         group["recommendation"] = _review_feedback_group_recommendation(group, priority_result)
         group["action_boundary"] = _review_action_boundary(priority_result)
-        group["boundary"] = "候选只进入解释层和人工复核，不自动改规则，不自动执行广告动作。"
+        group["boundary"] = "该分组只用于规则反馈样本归类和人工复核优先级，不是广告处理对象；不自动改规则，不自动执行广告动作。"
         candidates.append(group)
 
     priority_order = {result: index for index, result in enumerate(REVIEW_SAMPLE_SORT_ORDER)}
@@ -5258,7 +5258,12 @@ def _review_feedback_priority_result(by_result: dict[str, int]) -> str:
 
 def _review_feedback_group_recommendation(group: dict[str, Any], priority_result: str) -> str:
     count = _int(_dict(group.get("by_result")).get(priority_result)) or 0
-    target = "该语义组" if group.get("group_type") == "search_intent" else "该 ABA 参考词"
+    if group.get("group_type") == "search_intent":
+        target = "该规则反馈分组（搜索词语义）"
+    elif group.get("group_type") == "aba_reference_term":
+        target = "该规则反馈分组（ABA参考词）"
+    else:
+        target = "该规则反馈分组"
     if priority_result == "worse":
         return f"worse {count}：优先复核{target}的阈值、证据来源和建议动作。"
     if priority_result == "no_change":

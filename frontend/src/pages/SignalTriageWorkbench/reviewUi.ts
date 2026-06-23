@@ -2109,7 +2109,7 @@ export function buildRuleFeedbackCandidate(
     title: "规则反馈候选",
     basis: `复盘结果：${record.result} / ${note}；${readback}${windowSuffix}`,
     recommendation: `${reviewRuleFeedbackText(record.result)}；作为同类信号解释和规则阈值复核方向。`,
-    boundary: "该候选只进入解释层，不自动改规则，不自动执行广告动作。",
+    boundary: "规则反馈候选只进入解释层和人工复核优先级，不是广告处理对象；不自动改规则，不自动执行广告动作。",
   };
 }
 
@@ -2419,9 +2419,13 @@ export function manualActionEvidenceSnapshotText(
   }
   const evidenceText = snapshot
     .slice(0, 4)
-    .map((item) => `${item.label}：${item.value}`)
+    .map((item) => `${manualActionEvidenceDisplayLabel(item.label)}：${item.value}`)
     .join("；");
   return contextText ? `留痕证据快照：${evidenceText}；复盘上下文：${contextText}` : `留痕证据快照：${evidenceText}`;
+}
+
+function manualActionEvidenceDisplayLabel(label: string) {
+  return label === "语义组" ? "搜索词语义上下文" : label;
 }
 
 const manualActionEvidenceReasonPriority = [
@@ -2482,7 +2486,7 @@ export function reviewContextText(action: { review_context?: ReviewContextForUi 
   if (!context) return null;
   const parts: string[] = [];
   if (context.search_intent_label) {
-    parts.push(`语义组：${context.search_intent_label}`);
+    parts.push(`搜索词语义上下文：${context.search_intent_label}`);
   }
   if (context.search_term) {
     parts.push(`搜索词：${context.search_term}`);

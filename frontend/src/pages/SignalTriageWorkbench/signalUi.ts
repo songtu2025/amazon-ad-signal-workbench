@@ -3265,7 +3265,12 @@ function ruleFeedbackRecordText(record: RuleFeedbackRecordForUi) {
 }
 
 function ruleFeedbackCandidateGroupText(group: RuleFeedbackCandidateGroupForUi) {
-  const groupType = group.group_type === "search_intent" ? "语义组" : group.group_type === "aba_reference_term" ? "ABA参考词" : "候选分组";
+  const groupType =
+    group.group_type === "search_intent"
+      ? "规则反馈分组（搜索词语义）"
+      : group.group_type === "aba_reference_term"
+        ? "规则反馈分组（ABA参考词）"
+        : "规则反馈分组";
   const groupLabel = group.group_label || group.group_id || "分组待补充";
   const resultText = formatOrderedCounts(group.by_result ?? {}, ["worse", "no_change", "unclear", "improved"]) || "结果待补齐";
   const totalText = group.total != null ? `样本 ${group.total}` : "样本待补齐";
@@ -3279,7 +3284,11 @@ function ruleFeedbackCandidateGroupText(group: RuleFeedbackCandidateGroupForUi) 
       : "";
   const recommendation = group.recommendation ? `；${group.recommendation}` : "";
   const actionBoundary = ruleFeedbackRecordActionBoundaryText(group.action_boundary);
-  const boundary = group.boundary ? `；${group.boundary}` : actionBoundary ? "" : "；只进入解释层和人工复核，不自动改规则，不自动执行广告动作。";
+  const boundary = group.boundary
+    ? `；${group.boundary}`
+    : actionBoundary
+      ? ""
+      : "；该分组只用于规则反馈样本归类和人工复核优先级，不是广告处理对象；不自动改规则，不自动执行广告动作。";
   return `${groupType}：${groupLabel} / ${totalText} / ${resultText}${abaText}${abaBoundary}${recommendation}${actionBoundary}${boundary}`;
 }
 
