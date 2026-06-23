@@ -1891,7 +1891,7 @@ export function SignalTriageWorkbench() {
                 <div className="searchIntentActiveFilter" aria-label="当前 SearchTerm 机会筛选">
                   <span>
                     已筛选：{activeSearchIntentLabel}
-                    <small>诊断入口保持不变，仅显示同语义组 SearchTerm 机会；不做商品归因；ABA 只作站点级背景。</small>
+                    <small>诊断入口保持不变，仅显示同类 SearchTerm 机会；不做商品归因；ABA 只作站点级背景。</small>
                     <small>绑定诊断入口：{selectedProductScopeOption?.label ?? activeProductScopeId}</small>
                   </span>
                   <button type="button" onClick={clearSearchIntentFocus}>
@@ -2338,8 +2338,8 @@ export function SignalTriageWorkbench() {
                   </div>
                 )}
                 {selectedSearchIntentManualActionEvidenceSnapshot.length > 0 && (
-                  <div className="manualActionContextSnapshot" aria-label="搜索词语义上下文核对">
-                    <strong>搜索词语义上下文核对</strong>
+                  <div className="manualActionContextSnapshot" aria-label="SearchTerm 筛选上下文核对">
+                    <strong>SearchTerm 筛选上下文核对</strong>
                     <ul>
                       {selectedSearchIntentManualActionEvidenceSnapshot.map((item) => (
                         <li key={`${item.label}-${item.value}`}>
@@ -2348,7 +2348,7 @@ export function SignalTriageWorkbench() {
                         </li>
                       ))}
                     </ul>
-                    <p>只核对当前 SearchTerm 的语义背景；实际写入以后端 preflight evidence_snapshot_preview 为准，语义组不是人工动作对象。</p>
+                    <p>只核对当前 SearchTerm 的筛选背景；实际写入以后端 preflight evidence_snapshot_preview 为准，搜索语义标签不是人工动作对象。</p>
                   </div>
                 )}
                 {selectedBackendManualActionPreview?.preflightChecks.length ? (
@@ -3762,7 +3762,7 @@ function SignalDiagnosis({
               <div key={`${item.label}-${item.value}-${index}`}>
                 <span>{item.source ?? "点击时证据"}</span>
                 <strong>
-                  {item.label}：{item.value}
+                  {evidenceFactDisplayLabel(item.label)}：{item.value}
                 </strong>
                 {item.detail && <p>{item.detail}</p>}
               </div>
@@ -3831,7 +3831,7 @@ function SignalDiagnosis({
                 <div key={`${fact.label}-${fact.value}-${index}`}>
                   <span>{fact.source_type ?? "未知来源"}</span>
                   <strong>
-                    {fact.label}：{fact.value}
+                    {evidenceFactDisplayLabel(fact.label)}：{fact.value}
                   </strong>
                   <p>{fact.explanation ?? fact.note ?? fact.time_range ?? "等待补充解释"}</p>
                 </div>
@@ -3867,7 +3867,7 @@ function SignalDiagnosis({
                 <div key={`${activeEvidenceDrilldownSection.key}-${fact.label}-${fact.value}-${index}`} className="drilldownFact">
                   <span>{fact.source_type ?? "未知来源"}</span>
                   <strong>
-                    {fact.label}：{fact.value}
+                    {evidenceFactDisplayLabel(fact.label)}：{fact.value}
                   </strong>
                   <p>{fact.explanation ?? fact.note ?? fact.time_range ?? "等待补充解释"}</p>
                 </div>
@@ -3930,9 +3930,9 @@ function SignalDiagnosis({
                   {fact.source_type ?? "未知来源"} / {fact.time_range ?? "周期未知"}
                 </span>
                 <strong>
-                  {fact.label}：{fact.value}
+                  {evidenceFactDisplayLabel(fact.label)}：{fact.value}
                 </strong>
-                <p>{fact.explanation ?? fact.note ?? fact.label}</p>
+                <p>{fact.explanation ?? fact.note ?? evidenceFactDisplayLabel(fact.label)}</p>
               </div>
             ))}
           </div>
@@ -4024,6 +4024,10 @@ function MetricDecisionCell({ item }: { item: SignalMetricDecisionItem }) {
       <small>人工下一步：{item.nextManualStep}</small>
     </div>
   );
+}
+
+function evidenceFactDisplayLabel(label: string) {
+  return label === "语义组" ? "SearchTerm 筛选上下文" : label;
 }
 
 function EmptyState({ icon, title, description }: { icon: "loading" | "warning" | "empty"; title: string; description?: string }) {

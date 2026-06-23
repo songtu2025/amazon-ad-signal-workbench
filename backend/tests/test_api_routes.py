@@ -451,7 +451,7 @@ def make_api_search_term_context_signal(signal_id: str, search_term: str) -> AiS
         ],
         freshness_status=FreshnessStatus.API_SNAPSHOT,
         detected_at="2026-06-16T12:04:43+08:00",
-        uncertainty="ABA 短语包含匹配仅作为语义组市场热度背景",
+        uncertainty="ABA 短语包含匹配仅作为同类 SearchTerm 市场热度背景",
         suggested_action=SuggestedAction(action_type="manual_review", title="加入机会观察", description="人工判断是否小流量测试"),
         risk="样本量仍小，不自动加词或调价",
     )
@@ -1288,7 +1288,7 @@ def test_search_term_manual_action_api_readback_preserves_aba_review_context(mon
         {"label": "ABA周期", "value": "2026-06-07 至 2026-06-13", "source": "ABA导出"},
         {
             "label": "ABA匹配边界",
-            "value": "短语包含匹配，仅作为语义组市场热度背景，不代表精确搜索词份额或本店广告归因。",
+            "value": "短语包含匹配，仅作为同类 SearchTerm 市场热度背景，不代表精确搜索词份额或本店广告归因。",
             "source": "ABA导出",
         },
     ]
@@ -1330,7 +1330,7 @@ def test_search_term_manual_action_api_readback_preserves_aba_review_context(mon
         f"/api/signals/{old_signal_id}/manual-actions?market_id=1",
         json={
             "action_type": "observe",
-            "action_note": "历史同语义组观察",
+            "action_note": "历史同类 SearchTerm 观察",
             "operator_name": "本地运营",
             "expected_product_scope_id": "parent_asin:B00K4W4AAA",
             "expected_object_type": "search_term",

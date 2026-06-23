@@ -932,7 +932,7 @@ def aba_phrase_context_evidence_items(aba_row: dict, row: dict) -> list[Evidence
     rank = integer_value(aba_row.get("search_frequency_rank"))
     aba_query = normalized_search_query(aba_row) or ""
     source_record_id = string_value(aba_row.get("source_record_id"))
-    boundary = "短语包含匹配，仅作为语义组市场热度背景，不代表精确搜索词份额或本店广告归因。"
+    boundary = "短语包含匹配，仅作为同类 SearchTerm 市场热度背景，不代表精确搜索词份额或本店广告归因。"
     return [
         EvidenceItem(
             label="语义组",
@@ -944,7 +944,7 @@ def aba_phrase_context_evidence_items(aba_row: dict, row: dict) -> list[Evidence
             time_range=source_time_range(row),
             object_type=ObjectType.SEARCH_TERM.value,
             object_id=string_value(row.get("source_record_id") or row.get("row_id")),
-            explanation="语义组用于人工复核同类搜索意图，不代表自动广告动作。",
+            explanation="SearchTerm 筛选上下文用于人工复核同类搜索意图，不代表自动广告动作。",
         ),
         EvidenceItem(
             label="ABA语义参考词",
@@ -956,7 +956,7 @@ def aba_phrase_context_evidence_items(aba_row: dict, row: dict) -> list[Evidence
             time_range=source_time_range(aba_row),
             object_type=ObjectType.SEARCH_TERM.value,
             object_id=source_record_id,
-            explanation=f"广告搜索词包含 ABA 热词短语 {aba_query}，可作为同语义组市场热度背景。",
+            explanation=f"广告搜索词包含 ABA 热词短语 {aba_query}，可作为同类 SearchTerm 市场热度背景。",
         ),
         EvidenceItem(
             label="ABA语义参考排名",
@@ -1241,7 +1241,7 @@ def aggregate_search_term_opportunity_signals(signals: list[AiSignal]) -> list[A
             else group[0].suggested_action.model_copy(
                 update={
                     "description": (
-                        f"先按语义组「{action_semantic_group}」复核同类搜索词表现，"
+                        f"先按 SearchTerm 筛选上下文「{action_semantic_group}」复核同类搜索词表现，"
                         "再人工判断是否加入精准关键词候选或小流量观察。"
                     )
                 }
@@ -2717,7 +2717,7 @@ def detect_signals(
             if aba_support_row is not None:
                 opportunity_uncertainty = "该信号由广告搜索词转化表现和同站点 ABA 热度共同支持；ABA 是站点级市场数据，不能直接代表本店广告归因。"
             elif aba_phrase_context_row is not None:
-                opportunity_uncertainty = "该信号由广告搜索词转化表现触发，并命中同站点 ABA 热词短语参考；短语参考只作为语义组市场热度背景，不代表精确搜索词份额。"
+                opportunity_uncertainty = "该信号由广告搜索词转化表现触发，并命中同站点 ABA 热词短语参考；短语参考只作为同类 SearchTerm 市场热度背景，不代表精确搜索词份额。"
             if is_asin_like_search_term:
                 opportunity_uncertainty = (
                     "这是 ASIN 型搜索词信号，只能作为商品定向或自动投放上下文复核；"
@@ -2799,7 +2799,7 @@ def detect_signals(
         ):
             long_tail_uncertainty = "当前是低花费长尾词信号，订单样本仍少，适合人工观察或小预算验证，不能直接判断为稳定放量词。"
             if aba_phrase_context_row is not None:
-                long_tail_uncertainty += " 该搜索词同时命中同站点 ABA 热词短语参考；短语参考只作为语义组市场热度背景，不代表精确搜索词份额。"
+                long_tail_uncertainty += " 该搜索词同时命中同站点 ABA 热词短语参考；短语参考只作为同类 SearchTerm 市场热度背景，不代表精确搜索词份额。"
             long_tail_facts = [
                 EvidenceItem(label="搜索词", value=search_term_label),
                 EvidenceItem(label="花费", value=f"{metrics.cost}"),

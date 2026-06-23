@@ -434,7 +434,7 @@ def test_review_todos_extract_search_intent_and_aba_context(tmp_path: Path) -> N
                 {"label": "ABA语义参考排名", "value": "208", "source": "ABA导出"},
                 {
                     "label": "ABA匹配边界",
-                    "value": "短语包含匹配，仅作为语义组市场热度背景，不代表精确搜索词份额或本店广告归因。",
+                    "value": "短语包含匹配，仅作为同类 SearchTerm 市场热度背景，不代表精确搜索词份额或本店广告归因。",
                     "source": "ABA导出",
                 },
             ],

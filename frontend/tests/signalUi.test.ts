@@ -4658,7 +4658,7 @@ assertEqual(selectedSearchIntentFocusContext.focusLabel, "规则语义：海滩�
 assertIncludes(selectedSearchIntentFocusContext.signalObject, "SearchTerm：beach essentials");
 assertIncludes(selectedSearchIntentFocusContext.relation, "左侧筛选只缩小当前入口下的 SearchTerm 机会队列");
 assertIncludes(selectedSearchIntentFocusContext.relation, "右侧人工动作也必须落到这条 SearchTerm 的稳定对象");
-assertIncludes(selectedSearchIntentFocusContext.boundary, "语义组 规则语义：海滩出行用品 不是人工动作对象");
+assertIncludes(selectedSearchIntentFocusContext.boundary, "SearchTerm 筛选上下文「规则语义：海滩出行用品」不是人工动作对象");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "实际写入以后端 preflight evidence_snapshot_preview 为准");
 assertEqual(buildSearchIntentFocusContext("规则语义：太阳镜", searchTermSignalWithoutAsin), null);
 
@@ -5132,7 +5132,7 @@ assertIncludes(searchIntentReviewCards[0].proves, "同类广告搜索词");
 assertIncludes(searchIntentReviewCards[0].doesNotProve, "不能证明 Parent ASIN 下全部搜索词表现");
 assertIncludes(searchIntentReviewCards[0].nextManualStep, "具体 SearchTerm 信号");
 assertIncludes(searchIntentReviewCards[0].boundary, "只筛 SearchTerm 机会");
-assertIncludes(searchIntentReviewCards[0].boundary, "不生成语义组人工动作");
+assertIncludes(searchIntentReviewCards[0].boundary, "不生成 SearchTerm 筛选上下文人工动作");
 assertIncludes(searchIntentReviewCards[0].boundary, "不证明单个 ASIN 归因");
 assertIncludes(searchIntentReviewCards[0].boundary, "ABA 仅作站点级背景");
 assertEqual(searchIntentReviewCards[0].topTerms[0], "baby sunglasses：3 单 / 花费 7 / ACOS 14.00% / ABA 120");
