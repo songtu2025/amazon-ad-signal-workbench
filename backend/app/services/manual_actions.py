@@ -656,6 +656,10 @@ def save_review_record(
         if not _review_record_has_action_boundary(expected_evidence_snapshot):
             raise ValueError("review_record_missing_action_boundary")
     if _normalized(expected_object_type) == ObjectType.SEARCH_TERM.value:
+        if not _review_record_has_parent_asin_scope(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_parent_asin_scope")
+        if not _review_record_has_ad_asin_coverage(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_ad_asin_coverage")
         if not _review_record_has_ad_group_synthesis(expected_evidence_snapshot):
             raise ValueError("review_record_missing_ad_group_synthesis")
         if not _review_record_has_ad_group_product_performance(expected_evidence_snapshot):
@@ -751,6 +755,14 @@ def _review_record_has_search_term_boundary(evidence_snapshot: list[ManualAction
 
 def _review_record_has_placement_boundary(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
     return _review_record_has_snapshot_label(evidence_snapshot, "广告位边界")
+
+
+def _review_record_has_parent_asin_scope(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "Parent ASIN入口")
+
+
+def _review_record_has_ad_asin_coverage(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "广告 ASIN承接")
 
 
 def _review_record_has_ad_product_coverage(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:

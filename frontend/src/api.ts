@@ -1092,6 +1092,8 @@ export interface ReviewEvidenceRepairItem {
     has_ai_admission?: boolean | null;
     has_search_term_boundary?: boolean | null;
     has_placement_boundary?: boolean | null;
+    has_parent_asin_scope?: boolean | null;
+    has_ad_asin_coverage?: boolean | null;
     has_targeting_evidence?: boolean | null;
     has_ad_group_synthesis?: boolean | null;
     has_ad_group_product_performance?: boolean | null;

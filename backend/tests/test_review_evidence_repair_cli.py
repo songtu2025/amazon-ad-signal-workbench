@@ -302,7 +302,7 @@ def test_review_evidence_repair_treats_search_term_review_chain_gaps_as_repair_i
             "object_type": "search_term",
             "object_id": "search_term:1:beach essentials",
             "review_window": "7d",
-            "note": "搜索词复核链缺少证据。",
+            "note": "广告搜索词表现复核链缺少证据。",
         }
         for issue_type in (
             "missing_targeting_evidence",

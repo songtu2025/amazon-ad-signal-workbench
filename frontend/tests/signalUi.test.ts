@@ -2112,6 +2112,8 @@ const separatedReviewQueueGate = buildReviewReadinessGateSummary({
           has_ai_admission: true,
           has_search_term_boundary: true,
           has_placement_boundary: true,
+          has_parent_asin_scope: true,
+          has_ad_asin_coverage: true,
           has_targeting_evidence: true,
           has_ad_group_synthesis: true,
           has_ad_group_product_performance: true,
@@ -2131,6 +2133,8 @@ const separatedReviewQueueGate = buildReviewReadinessGateSummary({
           has_ai_admission: true,
           has_search_term_boundary: true,
           has_placement_boundary: true,
+          has_parent_asin_scope: true,
+          has_ad_asin_coverage: true,
           has_targeting_evidence: true,
           has_ad_group_synthesis: true,
           has_ad_group_product_performance: true,
@@ -2368,6 +2372,8 @@ const previewOnlyReviewEvidenceRepair = buildReviewEvidenceRepairSummary({
         has_ai_admission: true,
         has_search_term_boundary: true,
         has_placement_boundary: true,
+        has_parent_asin_scope: true,
+        has_ad_asin_coverage: true,
         has_targeting_evidence: true,
         has_ad_group_synthesis: true,
         has_aba_context: true,
@@ -2402,6 +2408,8 @@ assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "不可补
 assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "当前预览 17 条证据");
 assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "有搜索词边界");
 assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "有广告位边界");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "有 Parent ASIN入口");
+assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "有广告 ASIN承接");
 assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "有投放词证据");
 assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "有广告组合流判断");
 assertIncludes(previewOnlyReviewEvidenceRepair?.sampleItems[0] ?? "", "有 ABA 背景");

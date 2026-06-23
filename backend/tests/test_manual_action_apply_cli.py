@@ -600,8 +600,10 @@ def test_manual_action_apply_rewrites_after_voided_legacy_todo_with_isolated_roo
     assert written["status"] == "written_and_verified"
     assert written["will_write"] is True
     assert written["written_record"]["object_id"] == "search_term:1:beach essentials"
-    assert len(written["written_record"]["evidence_snapshot"]) == 25
+    assert len(written["written_record"]["evidence_snapshot"]) == 27
     snapshot_by_label = {item["label"]: item for item in written["written_record"]["evidence_snapshot"]}
+    assert "当前商品范围" in snapshot_by_label["Parent ASIN入口"]["value"]
+    assert "广告 ASIN" in snapshot_by_label["广告 ASIN承接"]["value"]
     assert "RBK004-beach essentials-精准" in snapshot_by_label["逐投放上下文"]["value"]
     assert "不能自动归因到单个广告 ASIN" in snapshot_by_label["逐投放上下文"]["detail"]
     assert "Top of Search on-Amazon" in snapshot_by_label["广告位活动级背景"]["value"]
@@ -610,8 +612,8 @@ def test_manual_action_apply_rewrites_after_voided_legacy_todo_with_isolated_roo
     assert smoke["target_manual_action_count"] == 2
     assert smoke["target_review_todo_count"] == 2
     assert smoke["target_review_record_count"] == 0
-    assert smoke["written_evidence_snapshot_count"] == 25
-    assert smoke["post_write_max_manual_action_evidence_snapshot_count"] == 25
-    assert smoke["post_write_review_todo_evidence_snapshot_counts"] == {"7d": 25, "14d": 25}
+    assert smoke["written_evidence_snapshot_count"] == 27
+    assert smoke["post_write_max_manual_action_evidence_snapshot_count"] == 27
+    assert smoke["post_write_review_todo_evidence_snapshot_counts"] == {"7d": 27, "14d": 27}
     assert smoke["review_records_not_saved"] is True
     assert smoke["ad_actions_not_executed"] is True

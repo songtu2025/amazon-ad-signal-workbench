@@ -1164,6 +1164,8 @@ export interface ReviewEvidenceRepairPayloadForUi {
       has_ai_admission?: boolean | null;
       has_search_term_boundary?: boolean | null;
       has_placement_boundary?: boolean | null;
+      has_parent_asin_scope?: boolean | null;
+      has_ad_asin_coverage?: boolean | null;
       has_ad_product_coverage?: boolean | null;
       has_placement_performance?: boolean | null;
       has_targeting_evidence?: boolean | null;
@@ -2581,6 +2583,8 @@ function reviewReadbackKeys(keys: unknown[] | null | undefined) {
         hasAiAdmission: sourceBoolean(row, "has_ai_admission"),
         hasSearchTermBoundary: sourceBoolean(row, "has_search_term_boundary"),
         hasPlacementBoundary: sourceBoolean(row, "has_placement_boundary"),
+        hasParentAsinScope: sourceBoolean(row, "has_parent_asin_scope"),
+        hasAdAsinCoverage: sourceBoolean(row, "has_ad_asin_coverage"),
         hasAdProductCoverage: sourceBoolean(row, "has_ad_product_coverage"),
         hasPlacementPerformance: sourceBoolean(row, "has_placement_performance"),
         hasTargetingEvidence: sourceBoolean(row, "has_targeting_evidence"),
@@ -2618,6 +2622,8 @@ function reviewEvidenceSnapshotText(readbackKeys: ReturnType<typeof reviewReadba
       key.hasAiAdmission !== null ||
       key.hasSearchTermBoundary !== null ||
       key.hasPlacementBoundary !== null ||
+      key.hasParentAsinScope !== null ||
+      key.hasAdAsinCoverage !== null ||
       key.hasObjectReference !== null,
   );
   const searchTermKeys = readbackKeys.filter((key) => key.objectType === "search_term");
@@ -2626,6 +2632,8 @@ function reviewEvidenceSnapshotText(readbackKeys: ReturnType<typeof reviewReadba
   const hasSearchTermChainFields = searchTermKeys.some(
     (key) =>
       key.hasTargetingEvidence !== null ||
+      key.hasParentAsinScope !== null ||
+      key.hasAdAsinCoverage !== null ||
       key.hasAdGroupSynthesis !== null ||
       key.hasAdGroupProductPerformance !== null ||
       key.hasAbaContext !== null ||
@@ -2639,6 +2647,8 @@ function reviewEvidenceSnapshotText(readbackKeys: ReturnType<typeof reviewReadba
       searchTermKeys.every(
         (key) =>
           key.hasTargetingEvidence === true &&
+          key.hasParentAsinScope === true &&
+          key.hasAdAsinCoverage === true &&
           key.hasAdGroupSynthesis === true &&
           key.hasAdGroupProductPerformance === true &&
           key.hasAbaContext === true &&
@@ -2651,6 +2661,8 @@ function reviewEvidenceSnapshotText(readbackKeys: ReturnType<typeof reviewReadba
     searchTermKeys.some(
       (key) =>
         key.hasTargetingEvidence === false ||
+        key.hasParentAsinScope === false ||
+        key.hasAdAsinCoverage === false ||
         key.hasAdGroupSynthesis === false ||
         key.hasAdGroupProductPerformance === false ||
         key.hasAbaContext === false ||
@@ -3141,6 +3153,16 @@ function reviewRepairPreflightText(
       ? "有广告位边界"
       : preflight?.has_placement_boundary === false
         ? "缺广告位边界"
+        : "",
+    preflight?.has_parent_asin_scope === true
+      ? "有 Parent ASIN入口"
+      : preflight?.has_parent_asin_scope === false
+        ? "缺 Parent ASIN入口"
+        : "",
+    preflight?.has_ad_asin_coverage === true
+      ? "有广告 ASIN承接"
+      : preflight?.has_ad_asin_coverage === false
+        ? "缺广告 ASIN承接"
         : "",
     preflight?.has_ad_product_coverage === true
       ? "有广告商品覆盖"

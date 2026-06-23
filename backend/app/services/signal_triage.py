@@ -4518,6 +4518,8 @@ def _review_todo_evidence_snapshot_audit(todo: Any) -> dict[str, Any]:
             "has_ai_admission": None,
             "has_search_term_boundary": None,
             "has_placement_boundary": None,
+            "has_parent_asin_scope": None,
+            "has_ad_asin_coverage": None,
             "has_ad_product_coverage": None,
             "has_placement_performance": None,
             "has_targeting_evidence": None,
@@ -4536,6 +4538,8 @@ def _review_todo_evidence_snapshot_audit(todo: Any) -> dict[str, Any]:
         "has_ai_admission": _review_evidence_snapshot_has_label(evidence_snapshot, "AI 准入"),
         "has_search_term_boundary": _review_evidence_snapshot_has_label(evidence_snapshot, "搜索词边界"),
         "has_placement_boundary": _review_evidence_snapshot_has_label(evidence_snapshot, "广告位边界"),
+        "has_parent_asin_scope": _review_evidence_snapshot_has_label(evidence_snapshot, "Parent ASIN入口"),
+        "has_ad_asin_coverage": _review_evidence_snapshot_has_label(evidence_snapshot, "广告 ASIN承接"),
         "has_ad_product_coverage": _review_evidence_snapshot_has_label(evidence_snapshot, "广告商品覆盖"),
         "has_placement_performance": _review_evidence_snapshot_has_label(evidence_snapshot, "广告位表现"),
         "has_targeting_evidence": _review_evidence_snapshot_has_label(evidence_snapshot, "投放词证据"),
@@ -4612,6 +4616,8 @@ def _review_identity_audit_summary(
     placement_snapshot_keys = [item for item in snapshot_known_keys if item.get("object_type") == "placement"]
     ad_group_context_snapshot_keys = [*search_term_snapshot_keys, *advertised_product_snapshot_keys]
     object_review_chain_snapshot_keys = [*ad_group_context_snapshot_keys, *placement_snapshot_keys]
+    missing_parent_asin_scope_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_parent_asin_scope"))
+    missing_ad_asin_coverage_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_ad_asin_coverage"))
     missing_ad_product_coverage_count = sum(1 for item in advertised_product_snapshot_keys if not item.get("has_ad_product_coverage"))
     missing_placement_performance_count = sum(1 for item in placement_snapshot_keys if not item.get("has_placement_performance"))
     missing_targeting_evidence_count = sum(1 for item in search_term_snapshot_keys if not item.get("has_targeting_evidence"))
@@ -4638,6 +4644,8 @@ def _review_identity_audit_summary(
         "missing_ai_admission_count": missing_ai_admission_count,
         "missing_search_term_boundary_count": missing_search_term_boundary_count,
         "missing_placement_boundary_count": missing_placement_boundary_count,
+        "missing_parent_asin_scope_count": missing_parent_asin_scope_count,
+        "missing_ad_asin_coverage_count": missing_ad_asin_coverage_count,
         "missing_ad_product_coverage_count": missing_ad_product_coverage_count,
         "missing_placement_performance_count": missing_placement_performance_count,
         "missing_targeting_evidence_count": missing_targeting_evidence_count,
@@ -4676,6 +4684,8 @@ def _review_readback_key(effect: dict[str, Any]) -> dict[str, Any]:
         "has_ai_admission": effect.get("has_ai_admission"),
         "has_search_term_boundary": effect.get("has_search_term_boundary"),
         "has_placement_boundary": effect.get("has_placement_boundary"),
+        "has_parent_asin_scope": effect.get("has_parent_asin_scope"),
+        "has_ad_asin_coverage": effect.get("has_ad_asin_coverage"),
         "has_ad_product_coverage": effect.get("has_ad_product_coverage"),
         "has_placement_performance": effect.get("has_placement_performance"),
         "has_targeting_evidence": effect.get("has_targeting_evidence"),
@@ -4847,6 +4857,30 @@ def _review_identity_audit_issues(
                     }
                 )
         if item.get("object_type") == "search_term":
+            if not item.get("has_parent_asin_scope"):
+                issues.append(
+                    {
+                        "issue_type": "missing_parent_asin_scope",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "广告搜索词复盘待办缺少“Parent ASIN入口”，不能证明当时人工判断先回看了经营商品盘。",
+                    }
+                )
+            if not item.get("has_ad_asin_coverage"):
+                issues.append(
+                    {
+                        "issue_type": "missing_ad_asin_coverage",
+                        "signal_id": item.get("signal_id"),
+                        "action_id": item.get("action_id"),
+                        "object_type": item.get("object_type"),
+                        "object_id": item.get("object_id"),
+                        "review_window": item.get("review_window"),
+                        "note": "广告搜索词复盘待办缺少“广告 ASIN承接”，不能证明当时人工判断已回看有广告数据的 ASIN 承接范围。",
+                    }
+                )
             if not item.get("has_targeting_evidence"):
                 issues.append(
                     {

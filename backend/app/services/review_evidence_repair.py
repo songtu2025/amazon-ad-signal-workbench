@@ -250,6 +250,8 @@ def _repair_item(
             "has_ai_admission": _preview_has_label(preview_items, "AI 准入"),
             "has_search_term_boundary": _preview_has_label(preview_items, "搜索词边界"),
             "has_placement_boundary": _preview_has_label(preview_items, "广告位边界"),
+            "has_parent_asin_scope": _preview_has_label(preview_items, "Parent ASIN入口"),
+            "has_ad_asin_coverage": _preview_has_label(preview_items, "广告 ASIN承接"),
             "has_ad_product_coverage": _preview_has_label(preview_items, "广告商品覆盖"),
             "has_placement_performance": _preview_has_label(preview_items, "广告位表现"),
             "has_targeting_evidence": _preview_has_label(preview_items, "投放词证据"),

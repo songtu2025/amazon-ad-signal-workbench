@@ -1011,6 +1011,8 @@ const searchTermReviewTodoWithFullChain: ReviewTodoForUi = {
   evidence_snapshot: [
     { label: "排查路径", value: "搜索词 -> 广告活动 / 广告组 -> 投放词结构 -> 广告 ASIN 人工复核", source: "business_rule" },
     { label: "AI 准入", value: "可进入人工确认 / ready_for_manual_confirmation / 允许人工留痕", source: "actionability_status" },
+    { label: "Parent ASIN入口", value: "Parent ASIN B00K4W4AAA 下只复核有广告数据的搜索词表现。", source: "diagnosis_contract + sales_performance" },
+    { label: "广告 ASIN承接", value: "广告 ASIN B016EXMVZS / B016EXMW02 承接该搜索词上下文。", source: "diagnosis_contract + advertised_products" },
     {
       label: "广告组合流判断",
       value: "同广告组广告 ASIN 2 个；搜索词不能自动归因到单个广告 ASIN",
@@ -1040,14 +1042,14 @@ const readyReviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary(s
 const searchTermSnapshotLabels = searchTermReviewTodoWithFullChain.evidence_snapshot?.map((item) => item.label).join(" / ") ?? "";
 assertEqual(
   searchTermSnapshotLabels,
-  "排查路径 / AI 准入 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景 / 人工确认判断依据 / 能证明的事实 / 不能证明的边界 / 人工下一步 / 证据缺口 / 需要补证 / 动作边界",
+  "排查路径 / AI 准入 / Parent ASIN入口 / 广告 ASIN承接 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景 / 人工确认判断依据 / 能证明的事实 / 不能证明的边界 / 人工下一步 / 证据缺口 / 需要补证 / 动作边界",
 );
 assertEqual(readyReviewTodoEvidenceReadback?.tone, "ready");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "复盘待办证据回读核对");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "业务判断");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "诊断路径");
-assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "搜索词复核链");
-assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "广告组合流判断、同组投放商品表现、投放词证据、搜索词边界、广告位边界、ABA 背景");
+assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "广告搜索词表现复核链");
+assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "Parent ASIN 入口、广告 ASIN 承接、广告组合流判断、同组投放商品表现、投放词证据、搜索词边界、广告位边界、ABA 背景");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "广告组合流判断");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "同组投放商品表现");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "同广告组广告 ASIN");
@@ -1111,7 +1113,7 @@ const searchTermSavedReviewRecord: ReviewRecordForUi = {
   review_note: "SearchTerm 复盘已按广告结构回看",
   evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot,
 };
-assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘证据快照：7d 15 条");
+assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘证据快照：7d 17 条");
 assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景");
 assertIncludes(
   reviewRecordReadbackStatus([searchTermSavedReviewRecord], {
@@ -2159,6 +2161,8 @@ const readyManualConfirmationEvidenceReadiness = manualConfirmationEvidenceReadi
     { label: "能证明", value: "能证明当前广告上下文有复核价值" },
     { label: "不能证明", value: "不能证明应自动加词" },
     { label: "人工下一步", value: "加入 7/14 天复盘" },
+    { label: "Parent ASIN入口", value: "Parent ASIN B00K4W4AAA 下只复核广告搜索词表现" },
+    { label: "广告 ASIN承接", value: "广告 ASIN B016EXMVZS / B016EXMW02 承接" },
     { label: "投放词证据", value: "关键词 / 自动投放上下文可读回" },
     { label: "广告组合流判断", value: "搜索词只能说明同广告组上下文，不能自动归因到单个广告 ASIN" },
     { label: "同组投放商品表现", value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看" },
@@ -2172,6 +2176,8 @@ const readyManualConfirmationEvidenceReadiness = manualConfirmationEvidenceReadi
     { label: "能证明的事实", value: "有订单" },
     { label: "不能证明的边界", value: "不能自动加词" },
     { label: "人工下一步", value: "加入复盘" },
+    { label: "Parent ASIN入口", value: "Parent ASIN B00K4W4AAA 下只复核广告搜索词表现" },
+    { label: "广告 ASIN承接", value: "广告 ASIN B016EXMVZS / B016EXMW02 承接" },
     { label: "投放词证据", value: "投放词上下文" },
     { label: "广告组合流判断", value: "同广告组上下文已回看" },
     { label: "同组投放商品表现", value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看" },
@@ -2200,6 +2206,8 @@ const readyManualConfirmationDiagnosisBridge = manualConfirmationDiagnosisBridge
     { label: "能证明", value: "能证明当前广告上下文有复核价值" },
     { label: "不能证明", value: "不能证明应自动加词" },
     { label: "人工下一步", value: "加入 7/14 天复盘" },
+    { label: "Parent ASIN入口", value: "Parent ASIN B00K4W4AAA 下只复核广告搜索词表现" },
+    { label: "广告 ASIN承接", value: "广告 ASIN B016EXMVZS / B016EXMW02 承接" },
     { label: "投放词证据", value: "关键词 / 自动投放上下文可读回" },
     { label: "广告组合流判断", value: "搜索词只能说明同广告组上下文，不能自动归因到单个广告 ASIN" },
     { label: "同组投放商品表现", value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看" },
@@ -2235,7 +2243,9 @@ const blockedManualConfirmationEvidenceReadiness = manualConfirmationEvidenceRea
   ],
 );
 assertEqual(blockedManualConfirmationEvidenceReadiness?.tone, "blocked");
-assertIncludes(JSON.stringify(blockedManualConfirmationEvidenceReadiness), "缺：广告组合流判断 / 同组投放商品表现 / 需要补证 / ABA 背景 / 证据缺口 / 动作边界");
+assertIncludes(JSON.stringify(blockedManualConfirmationEvidenceReadiness), "缺：Parent ASIN入口 / 广告 ASIN承接");
+assertIncludes(JSON.stringify(blockedManualConfirmationEvidenceReadiness), "广告组合流判断");
+assertIncludes(JSON.stringify(blockedManualConfirmationEvidenceReadiness), "动作边界");
 assertIncludes(blockedManualConfirmationEvidenceReadiness?.summary ?? "", "不能把当前点击当成可复盘留痕");
 const snapshotOnlySearchTermChainReadiness = manualConfirmationEvidenceReadinessSummary(
   [
@@ -2262,7 +2272,7 @@ assertEqual(snapshotOnlySearchTermChainReadiness?.tone, "blocked");
 assertIncludes(snapshotOnlySearchTermChainReadiness?.summary ?? "", "不一致");
 assertIncludes(
   JSON.stringify(snapshotOnlySearchTermChainReadiness),
-  "页面缺少：投放词证据 / 广告组合流判断 / 同组投放商品表现 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
+  "页面缺少：Parent ASIN入口 / 广告 ASIN承接 / 投放词证据 / 广告组合流判断 / 同组投放商品表现 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
 );
 const blockedManualConfirmationDiagnosisBridge = manualConfirmationDiagnosisBridgeSummary(
   {
@@ -2454,7 +2464,7 @@ const searchTermPreflightPriorityEvidenceRows = manualActionPreflightPriorityEvi
     ],
   },
 });
-assertEqual(searchTermPreflightPriorityEvidenceRows.length, 9);
+assertEqual(searchTermPreflightPriorityEvidenceRows.length, 10);
 assertEqual(searchTermPreflightPriorityEvidenceRows[0].label, "AI 准入");
 assertIncludes(searchTermPreflightPriorityEvidenceRows[0].value, "不会自动执行广告动作");
 assertEqual(searchTermPreflightPriorityEvidenceRows[1].label, "投放词证据");
@@ -2471,6 +2481,7 @@ assertIncludes(searchTermPreflightPriorityEvidenceRows[6].detail ?? "", "不能�
 assertEqual(searchTermPreflightPriorityEvidenceRows[7].label, "广告位边界");
 assertIncludes(searchTermPreflightPriorityEvidenceRows[7].source ?? "", "ad_placement_daily_metrics");
 assertEqual(searchTermPreflightPriorityEvidenceRows[8].label, "广告位证据缺口");
+assertEqual(searchTermPreflightPriorityEvidenceRows[9].label, "诊断证据缺口");
 const searchIntentManualEvidenceSnapshot = buildSearchIntentManualActionEvidenceSnapshot({
   intentLabel: "规则语义：海滩出行用品",
   searchTerm: "beach essentials",

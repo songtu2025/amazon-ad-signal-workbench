@@ -695,6 +695,8 @@ def test_review_todo_void_api_removes_legacy_todos_and_blocks_review_record(monk
             "expected_evidence_snapshot": [
                 {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组"},
                 {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
+                {"label": "Parent ASIN入口", "value": "当前 Parent ASIN B00K4W4AAA 下只复核广告搜索词表现"},
+                {"label": "广告 ASIN承接", "value": "广告 ASIN B016EXMVZS / B016EXMW02 承接该搜索词上下文"},
                 {"label": "搜索词边界", "value": "beach essentials 只说明同广告组搜索词上下文"},
                 {"label": "广告位边界", "value": "广告位证据缺口不能自动归因"},
                 {"label": "广告组合流判断", "value": "beach essentials 已串联广告组问题定位"},
@@ -735,6 +737,8 @@ def test_review_record_rejects_evidence_snapshot_object_mismatch(monkeypatch, tm
             "expected_evidence_snapshot": [
                 {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组"},
                 {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
+                {"label": "Parent ASIN入口", "value": "当前 Parent ASIN B00K4W4AAA 下只复核广告搜索词表现"},
+                {"label": "广告 ASIN承接", "value": "广告 ASIN B016EXMVZS / B016EXMW02 承接该搜索词上下文"},
                 {"label": "搜索词边界", "value": "boys sunglasses 只说明同广告组搜索词上下文"},
                 {"label": "广告位边界", "value": "广告位证据缺口不能自动归因"},
                 {"label": "广告组合流判断", "value": "boys sunglasses 已串联广告组问题定位"},
@@ -777,6 +781,8 @@ def test_review_record_rejects_search_term_snapshot_without_action_boundary(monk
             "expected_evidence_snapshot": [
                 {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组"},
                 {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
+                {"label": "Parent ASIN入口", "value": "当前 Parent ASIN B00K4W4AAA 下只复核广告搜索词表现"},
+                {"label": "广告 ASIN承接", "value": "广告 ASIN B016EXMVZS / B016EXMW02 承接该搜索词上下文"},
                 {"label": "搜索词边界", "value": "beach essentials 只说明同广告组搜索词上下文"},
                 {"label": "广告位边界", "value": "广告位证据缺口不能自动归因"},
                 {"label": "广告组合流判断", "value": "beach essentials 已串联广告组问题定位"},
@@ -817,6 +823,8 @@ def test_review_record_rejects_search_term_snapshot_without_required_evidence(mo
             "expected_evidence_snapshot": [
                 {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组"},
                 {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
+                {"label": "Parent ASIN入口", "value": "当前 Parent ASIN B00K4W4AAA 下只复核广告搜索词表现"},
+                {"label": "广告 ASIN承接", "value": "广告 ASIN B016EXMVZS / B016EXMW02 承接该搜索词上下文"},
                 {"label": "搜索词边界", "value": "beach essentials 只说明同广告组搜索词上下文"},
                 {"label": "广告位边界", "value": "广告位证据缺口不能自动归因"},
                 {"label": "广告组合流判断", "value": "beach essentials 已串联广告组问题定位"},
@@ -857,6 +865,8 @@ def test_review_record_rejects_search_term_snapshot_without_ad_group_synthesis(m
             "expected_evidence_snapshot": [
                 {"label": "排查路径", "value": "搜索词 -> 广告活动 / 广告组"},
                 {"label": "AI 准入", "value": "ready_for_manual_confirmation"},
+                {"label": "Parent ASIN入口", "value": "当前 Parent ASIN B00K4W4AAA 下只复核广告搜索词表现"},
+                {"label": "广告 ASIN承接", "value": "广告 ASIN B016EXMVZS / B016EXMW02 承接该搜索词上下文"},
                 {"label": "搜索词边界", "value": "beach essentials 只说明同广告组搜索词上下文"},
                 {"label": "广告位边界", "value": "广告位证据缺口不能自动归因"},
                 {"label": "投放词证据", "value": "beach essentials / 1 个"},
@@ -937,7 +947,7 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
     assert preflight["target"]["signal_id"] == "sig-opportunity-search-term-1-beach-essentials"
     assert preflight["target"]["object_type"] == "search_term"
     assert preflight["target"]["object_id"] == "search_term:1:beach essentials"
-    assert preflight["evidence_snapshot_preview"]["item_count"] == 25
+    assert preflight["evidence_snapshot_preview"]["item_count"] == 27
     assert preflight["evidence_snapshot_preview"]["items"][0]["label"] == "排查路径"
     assert preflight["evidence_snapshot_preview"]["items"][1]["label"] == "AI 准入"
     assert "搜索词 -> 广告活动 / 广告组" in preflight["evidence_snapshot_preview"]["items"][0]["value"]
@@ -947,6 +957,8 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
     assert {
         "搜索词边界",
         "广告位边界",
+        "Parent ASIN入口",
+        "广告 ASIN承接",
         "广告位活动级背景",
         "广告组合流判断",
         "同组投放商品表现",
@@ -1010,12 +1022,14 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
     assert action["market_id"] == 1
     assert action["action_note"] == "加入复盘"
     assert action["operator_name"] == "本地运营"
-    assert len(action["evidence_snapshot"]) == 25
+    assert len(action["evidence_snapshot"]) == 27
     assert action["evidence_snapshot"][0]["label"] == "排查路径"
     assert action["evidence_snapshot"][1]["label"] == "AI 准入"
     assert {item["label"] for item in action["evidence_snapshot"]}.issuperset(
         {
             "广告组合流判断",
+            "Parent ASIN入口",
+            "广告 ASIN承接",
             "同组投放商品表现",
             "逐投放上下文",
             "搜索词边界",
@@ -1039,19 +1053,21 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
     assert [todo["review_window"] for todo in todos] == ["7d", "14d"]
     assert {todo["action_id"] for todo in todos} == {action["id"]}
     assert {todo["object_id"] for todo in todos} == {"search_term:1:beach essentials"}
-    assert [len(todo["evidence_snapshot"]) for todo in todos] == [25, 25]
+    assert [len(todo["evidence_snapshot"]) for todo in todos] == [27, 27]
     assert [todo["evidence_snapshot"][0]["label"] for todo in todos] == ["排查路径", "排查路径"]
     assert [todo["evidence_snapshot"][1]["label"] for todo in todos] == ["AI 准入", "AI 准入"]
-    assert {todo["evidence_snapshot"][2]["label"] for todo in todos} == {"广告组合流判断"}
-    assert {todo["evidence_snapshot"][3]["label"] for todo in todos} == {"同组投放商品表现"}
-    assert {todo["evidence_snapshot"][4]["label"] for todo in todos} == {"逐投放上下文"}
-    assert {todo["evidence_snapshot"][5]["label"] for todo in todos} == {"投放词证据"}
-    assert {todo["evidence_snapshot"][6]["label"] for todo in todos} == {"搜索词边界"}
-    assert {todo["evidence_snapshot"][7]["label"] for todo in todos} == {"广告位边界"}
-    assert {todo["evidence_snapshot"][8]["label"] for todo in todos} == {"广告位活动级背景"}
-    assert {todo["evidence_snapshot"][9]["label"] for todo in todos} == {"ABA 背景"}
+    assert {todo["evidence_snapshot"][2]["label"] for todo in todos} == {"Parent ASIN入口"}
+    assert {todo["evidence_snapshot"][3]["label"] for todo in todos} == {"广告 ASIN承接"}
+    assert {todo["evidence_snapshot"][4]["label"] for todo in todos} == {"广告组合流判断"}
+    assert {todo["evidence_snapshot"][5]["label"] for todo in todos} == {"同组投放商品表现"}
+    assert {todo["evidence_snapshot"][6]["label"] for todo in todos} == {"逐投放上下文"}
+    assert {todo["evidence_snapshot"][7]["label"] for todo in todos} == {"投放词证据"}
+    assert {todo["evidence_snapshot"][8]["label"] for todo in todos} == {"搜索词边界"}
+    assert {todo["evidence_snapshot"][9]["label"] for todo in todos} == {"广告位边界"}
+    assert {todo["evidence_snapshot"][10]["label"] for todo in todos} == {"广告位活动级背景"}
+    assert {todo["evidence_snapshot"][11]["label"] for todo in todos} == {"ABA 背景"}
     assert {
-        "自动归因到单个广告 ASIN" in todo["evidence_snapshot"][2]["detail"] for todo in todos
+        "自动归因到单个广告 ASIN" in todo["evidence_snapshot"][4]["detail"] for todo in todos
     } == {True}
 
     post_write_response = client.get(
@@ -1076,13 +1092,13 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
             "signal_id": "sig-opportunity-search-term-1-beach-essentials",
             "object_type": "search_term",
             "object_id": "search_term:1:beach essentials",
-            "evidence_snapshot_count": 25,
+            "evidence_snapshot_count": 27,
         }
     ]
     assert {
         item["review_window"]: item["evidence_snapshot_count"]
         for item in post_write["post_write_checks"]["target_review_todo_evidence_snapshot_counts"]
-    } == {"7d": 25, "14d": 25}
+    } == {"7d": 27, "14d": 27}
     assert post_write["post_write_checks"]["target_review_record_count"] == 0
     assert "不执行广告动作" in post_write["forbidden_effects"]
 
@@ -1159,10 +1175,12 @@ def test_beach_essentials_manual_action_post_write_readback_distinguishes_action
         assert action["action_type"] == action_type
         assert action["object_type"] == "search_term"
         assert action["object_id"] == "search_term:1:beach essentials"
-        assert len(action["evidence_snapshot"]) == 25
+        assert len(action["evidence_snapshot"]) == 27
         assert {item["label"] for item in action["evidence_snapshot"]}.issuperset(
             {
                 "广告组合流判断",
+                "Parent ASIN入口",
+                "广告 ASIN承接",
                 "同组投放商品表现",
                 "逐投放上下文",
                 "搜索词边界",
@@ -1194,15 +1212,17 @@ def test_beach_essentials_manual_action_post_write_readback_distinguishes_action
             assert [todo["review_window"] for todo in todos] == ["7d", "14d"]
             assert {todo["action_type"] for todo in todos} == {action_type}
             assert {todo["action_id"] for todo in todos} == {action["id"]}
-            assert [len(todo["evidence_snapshot"]) for todo in todos] == [25, 25]
-            assert {todo["evidence_snapshot"][2]["label"] for todo in todos} == {"广告组合流判断"}
-            assert {todo["evidence_snapshot"][3]["label"] for todo in todos} == {"同组投放商品表现"}
-            assert {todo["evidence_snapshot"][4]["label"] for todo in todos} == {"逐投放上下文"}
-            assert {todo["evidence_snapshot"][5]["label"] for todo in todos} == {"投放词证据"}
-            assert {todo["evidence_snapshot"][6]["label"] for todo in todos} == {"搜索词边界"}
-            assert {todo["evidence_snapshot"][7]["label"] for todo in todos} == {"广告位边界"}
-            assert {todo["evidence_snapshot"][8]["label"] for todo in todos} == {"广告位活动级背景"}
-            assert {todo["evidence_snapshot"][9]["label"] for todo in todos} == {"ABA 背景"}
+            assert [len(todo["evidence_snapshot"]) for todo in todos] == [27, 27]
+            assert {todo["evidence_snapshot"][2]["label"] for todo in todos} == {"Parent ASIN入口"}
+            assert {todo["evidence_snapshot"][3]["label"] for todo in todos} == {"广告 ASIN承接"}
+            assert {todo["evidence_snapshot"][4]["label"] for todo in todos} == {"广告组合流判断"}
+            assert {todo["evidence_snapshot"][5]["label"] for todo in todos} == {"同组投放商品表现"}
+            assert {todo["evidence_snapshot"][6]["label"] for todo in todos} == {"逐投放上下文"}
+            assert {todo["evidence_snapshot"][7]["label"] for todo in todos} == {"投放词证据"}
+            assert {todo["evidence_snapshot"][8]["label"] for todo in todos} == {"搜索词边界"}
+            assert {todo["evidence_snapshot"][9]["label"] for todo in todos} == {"广告位边界"}
+            assert {todo["evidence_snapshot"][10]["label"] for todo in todos} == {"广告位活动级背景"}
+            assert {todo["evidence_snapshot"][11]["label"] for todo in todos} == {"ABA 背景"}
 
         post_write_response = client.get(
             "/api/manual-action/preflight",
@@ -1231,7 +1251,7 @@ def test_beach_essentials_manual_action_post_write_readback_distinguishes_action
         assert [
             item["evidence_snapshot_count"]
             for item in post_write["post_write_checks"]["target_manual_action_evidence_snapshot_counts"]
-        ] == [25]
+        ] == [27]
         assert "不执行广告动作" in post_write["forbidden_effects"]
 
 

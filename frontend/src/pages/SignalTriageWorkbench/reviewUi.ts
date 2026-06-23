@@ -1216,6 +1216,8 @@ const reviewRecordAiAdmissionLabels = ["AI 准入"];
 const reviewRecordSearchTermBoundaryLabels = ["搜索词边界"];
 const reviewRecordPlacementBoundaryLabels = ["广告位边界"];
 const reviewRecordPlacementPerformanceLabels = ["广告位表现"];
+const reviewRecordParentScopeLabels = ["Parent ASIN入口"];
+const reviewRecordAdAsinCoverageLabels = ["广告 ASIN承接"];
 const reviewRecordAdProductCoverageLabels = ["广告商品覆盖"];
 const reviewRecordTargetingEvidenceLabels = ["投放词证据"];
 const reviewRecordAdGroupSynthesisLabels = ["广告组合流判断"];
@@ -1327,8 +1329,10 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
     ...(isSearchTermTodo
       ? [
           reviewTodoReadbackRow(
-            "搜索词复核链",
+            "广告搜索词表现复核链",
             [
+              reviewRecordParentScopeLabels,
+              reviewRecordAdAsinCoverageLabels,
               reviewRecordAdGroupSynthesisLabels,
               reviewRecordAdGroupProductPerformanceLabels,
               reviewRecordTargetingEvidenceLabels,
@@ -1341,7 +1345,7 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
             ],
             labels,
             hasSnapshot,
-            "搜索词待办必须保留广告组合流判断、同组投放商品表现、投放词证据、搜索词边界、广告位边界、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标或广告搜索词聚合上下文误判为自动加词或否词依据。",
+            "广告搜索词表现复核待办必须保留 Parent ASIN 入口、广告 ASIN 承接、广告组合流判断、同组投放商品表现、投放词证据、搜索词边界、广告位边界、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标或广告搜索词聚合上下文误判为自动加词或否词依据。",
           ),
           {
             label: "广告组合流判断",
@@ -2842,7 +2846,7 @@ export function manualActionPreflightEvidenceSnapshotText(preflight: ManualActio
   return evidenceText ? `证据快照预览：${saveText}；${evidenceText}；${writeBoundaryText}。` : `证据快照预览：${saveText}；${writeBoundaryText}。`;
 }
 
-export function manualActionPreflightEvidenceRows(preflight: ManualActionPreflightForUi | null, limit = 8) {
+export function manualActionPreflightEvidenceRows(preflight: ManualActionPreflightForUi | null, limit = 10) {
   if (!preflight?.evidence_snapshot_preview) return [];
   return buildManualActionDisplayEvidenceSnapshot({
     preflight,
@@ -2852,6 +2856,8 @@ export function manualActionPreflightEvidenceRows(preflight: ManualActionPreflig
 
 const manualActionPreflightPriorityEvidenceLabels = [
   "AI 准入",
+  "Parent ASIN入口",
+  "广告 ASIN承接",
   "广告商品覆盖",
   "投放词证据",
   "广告组合流判断",
@@ -2866,7 +2872,7 @@ const manualActionPreflightPriorityEvidenceLabels = [
   "人工下一步",
 ];
 
-export function manualActionPreflightPriorityEvidenceRows(preflight: ManualActionPreflightForUi | null, limit = 9) {
+export function manualActionPreflightPriorityEvidenceRows(preflight: ManualActionPreflightForUi | null, limit = 12) {
   if (!preflight?.evidence_snapshot_preview) return [];
   const priorityRank = new Map(manualActionPreflightPriorityEvidenceLabels.map((label, index) => [label, index]));
   const rows = buildManualActionDisplayEvidenceSnapshot({
@@ -2889,7 +2895,17 @@ export function manualConfirmationEvidenceReadinessSummary(
   const manualLabels = evidenceLabelSet(manualEvidenceItems);
   const snapshotLabels = evidenceLabelSet(preflightEvidenceRows);
   const hasPreflightSnapshot = preflightEvidenceRows.length > 0;
-  const searchTermReviewChainLabels = ["投放词证据", "广告组合流判断", "同组投放商品表现", "ABA 背景", "证据缺口", "需要补证", "动作边界"];
+  const searchTermReviewChainLabels = [
+    "Parent ASIN入口",
+    "广告 ASIN承接",
+    "投放词证据",
+    "广告组合流判断",
+    "同组投放商品表现",
+    "ABA 背景",
+    "证据缺口",
+    "需要补证",
+    "动作边界",
+  ];
   const advertisedProductReviewChainLabels = ["广告商品覆盖", "广告组合流判断", "同组投放商品表现", "证据缺口", "需要补证", "动作边界"];
   const needsSearchTermReviewChain = searchTermReviewChainLabels.some(
     (label) => manualLabels.has(label) || snapshotLabels.has(label),
@@ -2911,10 +2927,10 @@ export function manualConfirmationEvidenceReadinessSummary(
     ...(needsSearchTermReviewChain
       ? [
           {
-            label: "搜索词复核链",
+            label: "广告搜索词表现复核链",
             manual: searchTermReviewChainLabels,
             snapshot: searchTermReviewChainLabels,
-            detail: "确认搜索词进入人工确认前，投放词、广告组合流判断、同组投放商品表现、ABA、证据缺口、需要补证和动作边界会一起保存。",
+            detail: "确认搜索词进入人工确认前，Parent ASIN 入口、广告 ASIN 承接、投放词、广告组合流判断、同组投放商品表现、ABA、证据缺口、需要补证和动作边界会一起保存。",
           },
         ]
       : []),
@@ -2999,7 +3015,9 @@ export function manualConfirmationDiagnosisBridgeSummary(
   const evidenceGapTone = evidenceGap
     ? bridgeRowTone(
         manualLabels.has("证据缺口"),
-        readinessToneForLabel(readinessRows, "搜索词复核链") ?? readinessToneForLabel(readinessRows, "证明边界"),
+        readinessToneForLabel(readinessRows, "广告搜索词表现复核链") ??
+          readinessToneForLabel(readinessRows, "搜索词复核链") ??
+          readinessToneForLabel(readinessRows, "证明边界"),
       )
     : "ready";
   const snapshotTone = readinessSummary?.tone ?? "waiting";
@@ -3645,7 +3663,19 @@ function numberOrZero(value: number | null | undefined) {
 }
 
 function evidenceLabelSet(items: Array<{ label?: string | null }>) {
-  return new Set(items.map((item) => item.label?.trim()).filter((label): label is string => Boolean(label)));
+  return new Set(
+    items
+      .map((item) => canonicalEvidenceLabel(item.label))
+      .filter((label): label is string => Boolean(label)),
+  );
+}
+
+function canonicalEvidenceLabel(label: string | null | undefined) {
+  const trimmed = label?.trim();
+  if (!trimmed) return "";
+  if (trimmed === "Parent ASIN 入口") return "Parent ASIN入口";
+  if (trimmed === "广告 ASIN 承接") return "广告 ASIN承接";
+  return trimmed;
 }
 
 function missingEvidenceLabels(labels: Set<string>, requiredLabels: string[]) {

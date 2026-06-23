@@ -17,6 +17,8 @@ REVIEW_WINDOW_ORDER = ("7d", "14d")
 REQUIRED_REVIEW_EVIDENCE_LABELS = ("排查路径", "AI 准入", "搜索词边界", "广告位边界")
 SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS = (
     *REQUIRED_REVIEW_EVIDENCE_LABELS,
+    "Parent ASIN入口",
+    "广告 ASIN承接",
     "广告组合流判断",
     "同组投放商品表现",
     "投放词证据",
@@ -44,6 +46,8 @@ PLACEMENT_REQUIRED_REVIEW_EVIDENCE_LABELS = (
 ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
     "diagnosis_path",
     "ai_admission_gate",
+    "search_term_parent_scope_context",
+    "search_term_ad_asin_coverage",
     "diagnosis_judgement",
     "ad_group_problem_location",
     "ad_group_evidence_synthesis",
@@ -79,6 +83,8 @@ ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
 SEARCH_TERM_ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
     "diagnosis_path",
     "ai_admission_gate",
+    "search_term_parent_scope_context",
+    "search_term_ad_asin_coverage",
     "diagnosis_judgement",
     "ad_group_problem_location",
     "ad_group_evidence_synthesis",
@@ -503,6 +509,7 @@ def _evidence_snapshot_preview(triage: dict[str, Any], target: dict[str, Any]) -
     blocks.extend(_search_term_ad_context_snapshot_blocks(target, drilldown))
     blocks.extend(_search_term_campaign_placement_snapshot_blocks(target, drilldown))
     blocks.extend(_diagnosis_contract_snapshot_blocks(triage, target))
+    blocks.extend(_search_term_entry_scope_snapshot_blocks(triage, target))
     blocks.extend(_search_term_review_chain_snapshot_blocks(blocks, triage, target))
     blocks.extend(_advertised_product_review_chain_snapshot_blocks(blocks, triage, target))
     blocks.extend(_placement_review_chain_snapshot_blocks(blocks, triage, target))
@@ -1119,6 +1126,54 @@ def _diagnosis_contract_snapshot_blocks(triage: dict[str, Any], target: dict[str
             }
         )
     return blocks
+
+
+def _search_term_entry_scope_snapshot_blocks(triage: dict[str, Any], target: dict[str, Any]) -> list[dict[str, str]]:
+    if str(target.get("object_type") or "").strip() != "search_term":
+        return []
+
+    contract = _diagnosis_contract_for_target(triage, target)
+    sections = _dict_list(contract.get("sections"))
+    parent_section = _diagnosis_contract_section(sections, "parent_asin_scope")
+    ad_asin_section = _diagnosis_contract_section(sections, "ad_asin_coverage")
+
+    parent_value = _first_non_empty(
+        parent_section.get("current_judgement"),
+        parent_section.get("proves"),
+        "Parent ASIN 经营入口待补：需要确认销售表现和当前广告数据只覆盖有投放的 ASIN。",
+    )
+    parent_detail = _first_non_empty(
+        parent_section.get("does_not_prove"),
+        parent_section.get("evidence_gap"),
+        "Parent ASIN 是经营盘入口，不代表所有子 ASIN 都进入广告分析；未投放子 ASIN 只能作为销售背景。",
+    )
+    ad_asin_value = _first_non_empty(
+        ad_asin_section.get("current_judgement"),
+        ad_asin_section.get("proves"),
+        "广告 ASIN 承接待补：需要确认当前搜索词由哪些有广告表现的 ASIN 和广告组承接。",
+    )
+    ad_asin_detail = _first_non_empty(
+        ad_asin_section.get("does_not_prove"),
+        ad_asin_section.get("evidence_gap"),
+        "只有有广告数据的广告 ASIN 才能进入 SearchTerm 承接复核；搜索词不能自动归因到单个广告 ASIN。",
+    )
+
+    return [
+        {
+            "block_id": "search_term_parent_scope_context",
+            "label": "Parent ASIN入口",
+            "value": str(parent_value).strip(),
+            "detail": str(parent_detail).strip(),
+            "source": "diagnosis_contract + sales_performance",
+        },
+        {
+            "block_id": "search_term_ad_asin_coverage",
+            "label": "广告 ASIN承接",
+            "value": str(ad_asin_value).strip(),
+            "detail": str(ad_asin_detail).strip(),
+            "source": "diagnosis_contract + advertised_products",
+        },
+    ]
 
 
 def _search_term_review_chain_snapshot_blocks(
@@ -1860,6 +1915,14 @@ def _dict_list(value: Any) -> list[dict[str, Any]]:
 def _optional_text(value: Any) -> str | None:
     text = str(value or "").strip()
     return text or None
+
+
+def _first_non_empty(*values: Any) -> str:
+    for value in values:
+        text = str(value or "").strip()
+        if text:
+            return text
+    return ""
 
 
 def _format_amount(value: Any) -> str:

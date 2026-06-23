@@ -244,6 +244,8 @@ def create_signal_review_record(
             "review_record_forbidden_effect",
             "review_record_missing_diagnosis_path",
             "review_record_missing_ai_admission",
+            "review_record_missing_parent_asin_scope",
+            "review_record_missing_ad_asin_coverage",
             "review_record_missing_search_term_boundary",
             "review_record_missing_placement_boundary",
             "review_record_missing_ad_product_coverage",
@@ -291,6 +293,10 @@ def _validate_review_record_evidence_snapshot_preflight(
         if not _review_record_evidence_snapshot_has_action_boundary(request.expected_evidence_snapshot):
             raise HTTPException(status_code=409, detail="review_record_missing_action_boundary")
     if request.expected_object_type == "search_term":
+        if not _review_record_evidence_snapshot_has_parent_asin_scope(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_parent_asin_scope")
+        if not _review_record_evidence_snapshot_has_ad_asin_coverage(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_ad_asin_coverage")
         if not _review_record_evidence_snapshot_has_ad_group_synthesis(request.expected_evidence_snapshot):
             raise HTTPException(status_code=409, detail="review_record_missing_ad_group_synthesis")
         if not _review_record_evidence_snapshot_has_ad_group_product_performance(request.expected_evidence_snapshot):
@@ -361,6 +367,14 @@ def _review_record_evidence_snapshot_has_search_term_boundary(items: object) -> 
 
 def _review_record_evidence_snapshot_has_placement_boundary(items: object) -> bool:
     return _review_record_evidence_snapshot_has_label(items, "广告位边界")
+
+
+def _review_record_evidence_snapshot_has_parent_asin_scope(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "Parent ASIN入口")
+
+
+def _review_record_evidence_snapshot_has_ad_asin_coverage(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "广告 ASIN承接")
 
 
 def _review_record_evidence_snapshot_has_ad_product_coverage(items: object) -> bool:
@@ -499,7 +513,9 @@ def _review_todo_missing_required_evidence(todo: ReviewTodo) -> bool:
     if todo.object_type != "search_term":
         return False
     return not (
-        _review_record_evidence_snapshot_has_ad_group_synthesis(todo.evidence_snapshot)
+        _review_record_evidence_snapshot_has_parent_asin_scope(todo.evidence_snapshot)
+        and _review_record_evidence_snapshot_has_ad_asin_coverage(todo.evidence_snapshot)
+        and _review_record_evidence_snapshot_has_ad_group_synthesis(todo.evidence_snapshot)
         and _review_record_evidence_snapshot_has_ad_group_product_performance(todo.evidence_snapshot)
         and _review_record_evidence_snapshot_has_targeting_evidence(todo.evidence_snapshot)
         and _review_record_evidence_snapshot_has_aba_context(todo.evidence_snapshot)

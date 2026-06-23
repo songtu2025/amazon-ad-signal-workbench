@@ -376,7 +376,7 @@ async function main() {
   assertIncludes(authorizationSummary?.authorizedResult ?? "", "ManualAction 1 条 / ReviewTodo 2 条");
   assertIncludes(authorizationSummary?.authorizedResult ?? "", "7d / 14d");
   const evidenceSnapshotCount = preflight.evidence_snapshot_preview?.item_count ?? 0;
-  assert(evidenceSnapshotCount >= 25, "下一候选预检应包含逐投放上下文和广告位活动级背景后的完整证据快照。");
+  assert(evidenceSnapshotCount >= 27, "下一候选预检应包含 Parent ASIN、广告 ASIN、逐投放上下文和广告位活动级背景后的完整证据快照。");
   assertIncludes(authorizationSummary?.evidence ?? "", `${evidenceSnapshotCount} 条`);
   assertIncludes(authorizationSummary?.boundary ?? "", "未授权前不写 manual_actions");
   assertIncludes(authorizationSummary?.boundary ?? "", "不生成 ReviewTodo");
@@ -388,7 +388,7 @@ async function main() {
   const evidenceReadinessText = asText(evidenceReadinessSummary);
   assertIncludes(evidenceReadinessText, "业务判断");
   assertIncludes(evidenceReadinessText, "证明边界");
-  assertIncludes(evidenceReadinessText, "搜索词复核链");
+  assertIncludes(evidenceReadinessText, "广告搜索词表现复核链");
   assertIncludes(evidenceReadinessText, "evidence_snapshot 对齐");
   assertIncludes(evidenceReadinessText, "未授权前不写 manual_actions");
   const diagnosisBridgeSummary = manualConfirmationDiagnosisBridgeSummary(
@@ -480,20 +480,38 @@ async function main() {
     evidence_snapshot: [
       ...(rawReviewTodoForObjectGate.evidence_snapshot ?? []),
       {
+        label: "Parent ASIN入口",
+        value: "当前 Parent ASIN B00K4W4AAA 下只复核广告搜索词表现",
+        detail: "Parent ASIN 是经营入口；没有广告数据的子 ASIN 不进入广告搜索词复核。",
+        source: "diagnosis_contract + sales_performance",
+      },
+      {
+        label: "广告 ASIN承接",
+        value: "广告 ASIN B016EXMVZS / B016EXMW02 承接该搜索词上下文",
+        detail: "只说明这些广告 ASIN 具备广告承接证据，不能把搜索词自动归因到单个 ASIN。",
+        source: "diagnosis_contract + advertised_products",
+      },
+      {
         label: "同组投放商品表现",
         value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看",
         detail: "只说明同广告组内广告商品承接差异，不能把搜索词自动归因到单个广告 ASIN。",
         source: "advertised_products + ad_product_daily_metrics",
       },
+      {
+        label: "投放词证据",
+        value: "beach essentials / 1 个",
+        detail: "投放词来自搜索词表现行，不代表完整关键词库，不能自动加词、否词或调价。",
+        source: "ad_search_term_daily_metrics",
+      },
     ],
   };
   const reviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary(reviewTodoForObjectGate);
-  assert(reviewTodoEvidenceReadback?.tone === "ready", "完整 ReviewTodo 搜索词复核链应允许进入到期后只读复盘。");
+  assert(reviewTodoEvidenceReadback?.tone === "ready", "完整 ReviewTodo 广告搜索词表现复核链应允许进入到期后只读复盘。");
   const reviewTodoEvidenceReadbackText = asText(reviewTodoEvidenceReadback);
   assertIncludes(reviewTodoEvidenceReadbackText, "复盘待办证据回读核对");
   assertIncludes(reviewTodoEvidenceReadbackText, "业务判断");
   assertIncludes(reviewTodoEvidenceReadbackText, "诊断路径");
-  assertIncludes(reviewTodoEvidenceReadbackText, "搜索词复核链");
+  assertIncludes(reviewTodoEvidenceReadbackText, "广告搜索词表现复核链");
   assertIncludes(reviewTodoEvidenceReadbackText, "投放词证据");
   assertIncludes(reviewTodoEvidenceReadbackText, "需要补证");
   assertNotIncludes(reviewTodoEvidenceReadbackText, "缺：投放词证据");
@@ -548,7 +566,7 @@ async function main() {
   assertNotIncludes(reviewRecordPreflightText, "缺少动作边界");
   assert(
     canSaveReviewRecordWithPreflight(simulatedReadyEffect, reviewRecordPreflight),
-    "完整 ReviewTodo 搜索词复核链且指标 ready 时，前端预检应允许人工保存 ReviewRecord。",
+    "完整 ReviewTodo 广告搜索词表现复核链且指标 ready 时，前端预检应允许人工保存 ReviewRecord。",
   );
 }
 
