@@ -2573,10 +2573,10 @@ export function reviewContextText(action: { review_context?: ReviewContextForUi 
   if (!context) return null;
   const parts: string[] = [];
   if (context.search_intent_label) {
-    parts.push(`广告搜索词聚合上下文：${context.search_intent_label}`);
+    parts.push(`Parent ASIN 广告搜索词聚合上下文：${context.search_intent_label}`);
   }
   if (context.search_term) {
-    parts.push(`搜索词：${context.search_term}`);
+    parts.push(`具体 SearchTerm：${context.search_term}`);
   }
   if (context.aba_reference_term) {
     const rankText = context.aba_reference_rank ? ` / 排名 ${context.aba_reference_rank}` : "";
@@ -2593,6 +2593,9 @@ export function reviewContextText(action: { review_context?: ReviewContextForUi 
   }
   if (context.repeat_summary) {
     parts.push(context.repeat_summary);
+  }
+  if (context.search_intent_label && context.search_term) {
+    parts.push("人工复盘下一步：按同类广告搜索词表现核对规则口径，不把聚合标签当作广告动作对象");
   }
   if (context.can_auto_change_rules === false || context.can_auto_execute_ads === false) {
     parts.push("不会自动改规则或执行广告");
