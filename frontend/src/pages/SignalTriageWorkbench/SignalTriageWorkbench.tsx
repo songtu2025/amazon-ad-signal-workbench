@@ -3062,6 +3062,14 @@ function SearchTermOpportunityReviewChainPanel({ chain }: { chain: SearchTermOpp
           <span>{chain.objectGrain}</span>
         </li>
         <li>
+          <b>Parent ASIN 入口</b>
+          <span>{chain.parentScopeContext}</span>
+        </li>
+        <li>
+          <b>广告 ASIN 承接</b>
+          <span>{chain.adAsinCoverage}</span>
+        </li>
+        <li>
           <b>投放词证据</b>
           <span>{chain.targetingEvidence}</span>
         </li>

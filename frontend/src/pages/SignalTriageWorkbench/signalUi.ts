@@ -3576,6 +3576,8 @@ export interface SearchTermOpportunityReviewChain {
   title: string;
   businessQuestion: string;
   objectGrain: string;
+  parentScopeContext: string;
+  adAsinCoverage: string;
   targetingEvidence: string;
   adGroupSynthesis: string;
   adGroupProductPerformance: string;
@@ -3955,6 +3957,8 @@ export function buildSearchTermOpportunityReviewChain(
     return text.includes("search_term") || text.includes("搜索词") || text.includes("aba");
   });
   const searchTermContract = directSearchTermContract ?? searchTermContextContract;
+  const parentScopeContract = diagnosisContractItems.find((item) => item.sectionId === "parent_asin_scope");
+  const adAsinContract = diagnosisContractItems.find((item) => item.sectionId === "ad_asin_coverage");
   const placementContract = diagnosisContractItems.find((item) => item.sectionId === "placement_gap");
   const targetingBlock = businessEvidenceItems.find(
     (item) => item.blockId === "targeting_context" || item.label.includes("投放词"),
@@ -4000,6 +4004,18 @@ export function buildSearchTermOpportunityReviewChain(
     "投放词证据只说明当前投放上下文，不代表完整关键词库覆盖。",
     ["完整关键词库"],
   );
+  const parentScopeContext = appendBoundaryIfMissing(
+    uniqueNonEmpty([parentScopeContract?.currentJudgement, parentScopeContract?.proves]).join("；") ||
+      "Parent ASIN 经营入口待补：需要先确认销售表现和当前广告数据只覆盖有投放的 ASIN。",
+    "Parent ASIN 是经营盘入口，不代表所有子 ASIN 都进入广告分析；未投放子 ASIN 只能作为销售背景。",
+    ["Parent ASIN", "广告"],
+  );
+  const adAsinCoverage = appendBoundaryIfMissing(
+    uniqueNonEmpty([adAsinContract?.currentJudgement, adAsinContract?.doesNotProve]).join("；") ||
+      "广告 ASIN 承接待补：需要确认当前搜索词由哪些有广告表现的 ASIN 和广告组承接。",
+    "只有有广告数据的广告 ASIN 才能进入 SearchTerm 承接复核；搜索词不能自动归因到单个广告 ASIN。",
+    ["广告 ASIN", "不能"],
+  );
   const adGroupSynthesis = appendBoundaryIfMissing(
     businessEvidenceBlockSentence(
       adGroupBlock,
@@ -4040,6 +4056,8 @@ export function buildSearchTermOpportunityReviewChain(
       directSearchTermContract?.businessQuestion ?? "这个搜索词是否只是广告上下文，还是值得人工复核扩量或治理？",
     objectGrain:
       directSearchTermContract?.objectGrain ?? "SearchTerm + 同广告活动 / 广告组上下文 + 站点级 ABA 背景",
+    parentScopeContext,
+    adAsinCoverage,
     targetingEvidence,
     adGroupSynthesis,
     adGroupProductPerformance,
@@ -4119,6 +4137,16 @@ export function buildManualConfirmationEvidenceItems(
     : [];
   const searchTermReviewItems: ManualConfirmationEvidenceItem[] = searchTermOpportunityReviewChain
     ? [
+        {
+          label: "Parent ASIN 入口",
+          value: searchTermOpportunityReviewChain.parentScopeContext,
+          detail: "用于确认这条搜索词复核仍从当前 Parent ASIN 经营盘进入，不把未投放子 ASIN 当广告问题。",
+        },
+        {
+          label: "广告 ASIN 承接",
+          value: searchTermOpportunityReviewChain.adAsinCoverage,
+          detail: "用于确认只有有广告数据的广告 ASIN 进入承接复核；搜索词不能自动归因到单个广告 ASIN。",
+        },
         {
           label: "投放词证据",
           value: searchTermOpportunityReviewChain.targetingEvidence,
