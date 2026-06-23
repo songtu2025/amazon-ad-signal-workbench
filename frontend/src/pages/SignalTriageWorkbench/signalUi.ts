@@ -3369,15 +3369,15 @@ function ruleFeedbackRecordText(record: RuleFeedbackRecordForUi) {
 function ruleFeedbackCandidateGroupText(group: RuleFeedbackCandidateGroupForUi) {
   const groupType =
     group.group_type === "search_intent"
-      ? "规则反馈分组（搜索词语义）"
+      ? "规则反馈样本上下文（SearchTerm 筛选）"
       : group.group_type === "aba_reference_term"
-        ? "规则反馈分组（ABA参考词）"
-        : "规则反馈分组";
-  const groupLabel = group.group_label || group.group_id || "分组待补充";
+        ? "规则反馈样本上下文（ABA 站点级参考）"
+        : "规则反馈样本上下文";
+  const groupLabel = group.group_label || group.group_id || "上下文待补充";
   const resultText = formatOrderedCounts(group.by_result ?? {}, ["worse", "no_change", "unclear", "improved"]) || "结果待补齐";
   const totalText = group.total != null ? `样本 ${group.total}` : "样本待补齐";
   const abaText = group.aba_reference_term
-    ? `；ABA参考：${group.aba_reference_term}${group.aba_period ? ` / ${group.aba_period}` : ""}`
+    ? `；ABA 站点级参考：${group.aba_reference_term}${group.aba_period ? ` / ${group.aba_period}` : ""}`
     : "";
   const abaBoundary = group.aba_match_boundary
     ? `；ABA边界：${group.aba_match_boundary}`
@@ -3390,7 +3390,7 @@ function ruleFeedbackCandidateGroupText(group: RuleFeedbackCandidateGroupForUi) 
     ? `；${group.boundary}`
     : actionBoundary
       ? ""
-      : "；该分组只用于规则反馈样本归类和人工复核优先级，不是广告处理对象；不自动改规则，不自动执行广告动作。";
+      : "；该上下文只用于规则反馈样本归类和人工复核优先级，不是广告处理对象；不自动改规则，不自动执行广告动作。";
   return `${groupType}：${groupLabel} / ${totalText} / ${resultText}${abaText}${abaBoundary}${recommendation}${actionBoundary}${boundary}`;
 }
 
@@ -3467,7 +3467,7 @@ function ruleFeedbackEvidenceGroupsText(groups: RuleFeedbackRecordForUi["evidenc
     .filter((group) => group.label && group.value)
     .slice(0, 4)
     .map((group) => `${group.label}：${group.value}`);
-  return parts.length ? `；证据分组：${parts.join("；")}` : "";
+  return parts.length ? `；证据上下文：${parts.join("；")}` : "";
 }
 
 export function signalTriageDepthText(summary: SignalTriageSummaryForUi | null | undefined): string {
@@ -7012,9 +7012,9 @@ export function buildSignalObjectContext(signal: SignalForUi, primaryObject: Pri
   }
 
   if (objectType === "search_intent") {
-    pushContextItem(items, "语义分组", primaryObject.intent_label ?? primaryObject.label);
+    pushContextItem(items, "SearchTerm 筛选上下文", primaryObject.intent_label ?? primaryObject.label);
     return {
-      boundary: "语义分组用于聚合搜索意图，不等同于关键词本身。",
+      boundary: "SearchTerm 筛选上下文用于聚合同类搜索意图，不等同于关键词本身，也不是广告处理对象。",
       items,
     };
   }

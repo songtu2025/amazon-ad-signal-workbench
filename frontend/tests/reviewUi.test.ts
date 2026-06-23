@@ -229,20 +229,20 @@ const abaContextTodo: ReviewTodoForUi = {
     aba_match_boundary: "短语包含匹配，仅作为同类 SearchTerm 市场热度背景。",
     repeat_search_intent_count: 2,
     repeat_aba_reference_count: 1,
-    repeat_summary: "同一搜索词语义分组已有 2 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。",
+    repeat_summary: "同一 SearchTerm 筛选上下文已有 2 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。",
     can_auto_change_rules: false,
     can_auto_execute_ads: false,
   },
 };
 assertIncludes(reviewContextText(abaContextTodo) ?? "", "SearchTerm 筛选上下文：规则语义：海滩出行用品");
-assertIncludes(reviewContextText(abaContextTodo) ?? "", "ABA参考：beach essentials / 排名 208");
-assertIncludes(reviewContextText(abaContextTodo) ?? "", "同一搜索词语义分组已有 2 次人工留痕");
+assertIncludes(reviewContextText(abaContextTodo) ?? "", "ABA 站点级参考：beach essentials / 排名 208");
+assertIncludes(reviewContextText(abaContextTodo) ?? "", "同一 SearchTerm 筛选上下文已有 2 次人工留痕");
 assertIncludes(reviewContextText(abaContextTodo) ?? "", "不会自动改规则或执行广告");
 assertIncludes(manualActionEvidenceSnapshotText(abaContextTodo) ?? "", "复盘上下文：SearchTerm 筛选上下文：规则语义：海滩出行用品");
 const contextDetails = buildReviewTodoQueueDetails([abaContextTodo], { isGlobalScope: true });
 assertIncludes(contextDetails?.rows[0].contextText ?? "", "留痕证据快照");
 assertIncludes(contextDetails?.rows[0].contextText ?? "", "ABA语义参考词");
-assertIncludes(contextDetails?.rows[0].contextText ?? "", "ABA参考：beach essentials / 排名 208");
+assertIncludes(contextDetails?.rows[0].contextText ?? "", "ABA 站点级参考：beach essentials / 排名 208");
 assertEqual(
   buildReviewTodoQueueDetails([pendingTodo, dueTodo], {
     isGlobalScope: false,

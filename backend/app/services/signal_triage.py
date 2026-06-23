@@ -5353,7 +5353,7 @@ def _review_feedback_candidate_groups(
         group["priority_result"] = priority_result
         group["recommendation"] = _review_feedback_group_recommendation(group, priority_result)
         group["action_boundary"] = _review_action_boundary(priority_result)
-        group["boundary"] = "该分组只用于规则反馈样本归类和人工复核优先级，不是广告处理对象；不自动改规则，不自动执行广告动作。"
+        group["boundary"] = "该样本上下文只用于规则反馈样本归类和人工复核优先级，不是广告处理对象；不自动改规则，不自动执行广告动作。"
         candidates.append(group)
 
     priority_order = {result: index for index, result in enumerate(REVIEW_SAMPLE_SORT_ORDER)}
@@ -5398,11 +5398,11 @@ def _review_feedback_priority_result(by_result: dict[str, int]) -> str:
 def _review_feedback_group_recommendation(group: dict[str, Any], priority_result: str) -> str:
     count = _int(_dict(group.get("by_result")).get(priority_result)) or 0
     if group.get("group_type") == "search_intent":
-        target = "该规则反馈分组（搜索词语义）"
+        target = "该规则反馈样本上下文（SearchTerm 筛选）"
     elif group.get("group_type") == "aba_reference_term":
-        target = "该规则反馈分组（ABA参考词）"
+        target = "该规则反馈样本上下文（ABA 站点级参考）"
     else:
-        target = "该规则反馈分组"
+        target = "该规则反馈样本上下文"
     if priority_result == "worse":
         return f"worse {count}：优先复核{target}的阈值、证据来源和建议动作。"
     if priority_result == "no_change":
@@ -5487,13 +5487,13 @@ def _review_closure_checklist(
             "check_id": "manual_action_context",
             "label": "复盘输入证据",
             "status": context_status,
-            "evidence": f"人工动作 {context_total} 条，证据快照 {context_evidence} 条，语义组 {context_intent} 条，ABA参考 {context_aba} 条",
+            "evidence": f"人工动作 {context_total} 条，证据快照 {context_evidence} 条，SearchTerm 筛选上下文 {context_intent} 条，ABA 站点级参考 {context_aba} 条",
         },
         {
             "check_id": "evidence_trace",
             "label": "证据追溯",
             "status": evidence_status,
-            "evidence": f"{evidence_count} / {record_count} 条样本带证据分组",
+            "evidence": f"{evidence_count} / {record_count} 条样本带证据上下文",
         },
         {
             "check_id": "review_record_trace",

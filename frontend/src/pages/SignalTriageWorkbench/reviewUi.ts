@@ -2257,7 +2257,7 @@ export function buildSearchIntentManualActionEvidenceSnapshot(
   const abaRank = String(input?.abaRank ?? "").trim();
   const abaPeriod = String(input?.abaPeriod ?? "").trim();
   const abaMatchBoundary = String(input?.abaMatchBoundary ?? "").trim();
-  const semanticSource = intentLabel.startsWith("规则语义：") ? "规则语义" : "搜索词语义分组";
+  const semanticSource = intentLabel.startsWith("规则语义：") ? "规则语义" : "SearchTerm 筛选上下文";
   const snapshot: ManualActionEvidenceSnapshotForUi[] = [
     {
       label: "SearchTerm 筛选上下文",
@@ -2504,7 +2504,7 @@ export function reviewContextText(action: { review_context?: ReviewContextForUi 
   }
   if (context.aba_reference_term) {
     const rankText = context.aba_reference_rank ? ` / 排名 ${context.aba_reference_rank}` : "";
-    parts.push(`ABA参考：${context.aba_reference_term}${rankText}`);
+    parts.push(`ABA 站点级参考：${context.aba_reference_term}${rankText}`);
   }
   if (context.aba_match_boundary) {
     parts.push(`边界：${context.aba_match_boundary}`);

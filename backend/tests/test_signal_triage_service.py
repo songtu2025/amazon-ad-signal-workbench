@@ -3369,7 +3369,7 @@ def test_review_readiness_summarizes_saved_review_records_as_rule_feedback(monke
     assert feedback["candidate_groups"][0]["aba_reference_term"] == "beach essentials"
     assert feedback["candidate_groups"][0]["aba_period"] == "2026-05-10 到 2026-05-16"
     assert feedback["candidate_groups"][0]["by_result"] == {"worse": 1}
-    assert "复核该规则反馈分组（搜索词语义）的阈值、证据来源和建议动作" in feedback["candidate_groups"][0]["recommendation"]
+    assert "复核该规则反馈样本上下文（SearchTerm 筛选）的阈值、证据来源和建议动作" in feedback["candidate_groups"][0]["recommendation"]
     assert feedback["candidate_groups"][0]["action_boundary"]["allowed_reviews"] == ["复核阈值", "复核证据来源", "复核建议动作"]
     assert "自动改规则" in feedback["candidate_groups"][0]["action_boundary"]["forbidden_actions"]
     assert "不是广告处理对象" in feedback["candidate_groups"][0]["boundary"]
@@ -3457,7 +3457,7 @@ def test_review_readiness_groups_saved_review_record_snapshot_without_manual_act
     assert feedback["candidate_groups"][0]["sample_review_record_ids"] == ["review-record-snapshot-only"]
     assert feedback["candidate_groups"][0]["sample_action_ids"] == ["manual-action-missing"]
     assert feedback["candidate_groups"][0]["by_result"] == {"worse": 1}
-    assert "复核该规则反馈分组（搜索词语义）" in feedback["candidate_groups"][0]["recommendation"]
+    assert "复核该规则反馈样本上下文（SearchTerm 筛选）" in feedback["candidate_groups"][0]["recommendation"]
     assert "不是广告处理对象" in feedback["candidate_groups"][0]["boundary"]
     assert "不自动执行广告动作" in feedback["candidate_groups"][0]["boundary"]
 
@@ -3515,8 +3515,8 @@ def test_review_readiness_shows_manual_action_context_coverage_without_saved_rev
     assert checklist["manual_action_context"]["status"] == "partial"
     assert "人工动作 2 条" in checklist["manual_action_context"]["evidence"]
     assert "证据快照 1 条" in checklist["manual_action_context"]["evidence"]
-    assert "语义组 1 条" in checklist["manual_action_context"]["evidence"]
-    assert "ABA参考 1 条" in checklist["manual_action_context"]["evidence"]
+    assert "SearchTerm 筛选上下文 1 条" in checklist["manual_action_context"]["evidence"]
+    assert "ABA 站点级参考 1 条" in checklist["manual_action_context"]["evidence"]
 
 
 def test_signal_triage_matches_recommended_manual_status_by_stable_object(monkeypatch) -> None:

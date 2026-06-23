@@ -483,9 +483,9 @@ def _review_context_repeat_summary(
 ) -> str | None:
     parts: list[str] = []
     if search_intent_label and repeat_search_intent_count >= 2:
-        parts.append(f"同一搜索词语义分组已有 {repeat_search_intent_count} 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。")
+        parts.append(f"同一 SearchTerm 筛选上下文已有 {repeat_search_intent_count} 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。")
     if aba_reference_term and repeat_aba_reference_count >= 2:
-        parts.append(f"同一 ABA 参考词上下文已有 {repeat_aba_reference_count} 次人工留痕，复盘时应合并查看市场热词承接。")
+        parts.append(f"同一 ABA 站点级参考上下文已有 {repeat_aba_reference_count} 次人工留痕，复盘时应合并查看市场热词承接。")
     return " ".join(parts) or None
 
 

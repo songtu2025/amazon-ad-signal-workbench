@@ -2543,7 +2543,7 @@ const triageReviewFeedbackSummary = {
           status: "ready",
           evidence: "排序：worse -> no_change -> unclear -> improved",
         },
-        { check_id: "evidence_trace", label: "证据追溯", status: "partial", evidence: "1 / 2 条样本带证据分组" },
+        { check_id: "evidence_trace", label: "证据追溯", status: "partial", evidence: "1 / 2 条样本带证据上下文" },
         {
           check_id: "review_record_trace",
           label: "复盘记录来源",
@@ -2643,7 +2643,7 @@ const triageReviewFeedbackSummary = {
           priority_result: "worse",
           sample_review_record_ids: ["review-record-worse-7d"],
           sample_action_ids: ["manual-action-worse"],
-          recommendation: "worse 1：优先复核该规则反馈分组（搜索词语义）的阈值、证据来源和建议动作。",
+          recommendation: "worse 1：优先复核该规则反馈样本上下文（SearchTerm 筛选）的阈值、证据来源和建议动作。",
           action_boundary: {
             result: "worse",
             allowed_reviews: ["复核阈值", "复核证据来源", "复核建议动作"],
@@ -2672,13 +2672,13 @@ assertIncludes(ruleFeedbackPrioritySummary?.sampleSort ?? "", "improved 只作�
 assertIncludes(ruleFeedbackPrioritySummary?.actionBoundary ?? "", "worse：复核阈值 / 复核证据来源 / 复核建议动作");
 assertIncludes(ruleFeedbackPrioritySummary?.actionBoundary ?? "", "不自动改规则");
 assertIncludes(ruleFeedbackPrioritySummary?.actionBoundary ?? "", "不自动执行广告动作");
-assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "规则反馈分组（搜索词语义）");
+assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "规则反馈样本上下文（SearchTerm 筛选）");
 assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "不是广告处理对象");
 assertEqual(ruleFeedbackPrioritySummary?.closureChecklist.length, 6);
 assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[0] ?? "", "复盘结果分布 ready");
 assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[0] ?? "", "worse 1");
 assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[2] ?? "", "证据追溯 partial");
-assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[2] ?? "", "1 / 2 条样本带证据分组");
+assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[2] ?? "", "1 / 2 条样本带证据上下文");
 assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[3] ?? "", "复盘记录来源 partial");
 assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[3] ?? "", "review_record_id / action_id / 指标窗口");
 assertIncludes(ruleFeedbackPrioritySummary?.closureChecklist[4] ?? "", "复盘证据快照 partial");
@@ -2704,7 +2704,7 @@ assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "路径证据：�
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "人工下一步：只用于回看该复盘样本的原始诊断路径");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "证据回看：广告商品投放行 0 条");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "搜索词上下文 1 条");
-assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "证据分组：商品指标：广告商品投放行 0 条");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "证据上下文：商品指标：广告商品投放行 0 条");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "搜索词上下文：1 条");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "广告位上下文：0 条");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "边界提示：搜索词和广告位只说明同广告组上下文");
@@ -2740,9 +2740,9 @@ const triageWithoutSavedReviewFeedback = {
           check_id: "manual_action_context",
           label: "复盘输入证据",
           status: "partial",
-          evidence: "人工动作 2 条，证据快照 1 条，语义组 1 条，ABA参考 1 条",
+          evidence: "人工动作 2 条，证据快照 1 条，SearchTerm 筛选上下文 1 条，ABA 站点级参考 1 条",
         },
-        { check_id: "evidence_trace", label: "证据追溯", status: "blocked", evidence: "0 / 0 条样本带证据分组" },
+        { check_id: "evidence_trace", label: "证据追溯", status: "blocked", evidence: "0 / 0 条样本带证据上下文" },
         { check_id: "action_boundary", label: "动作边界", status: "ready", evidence: "只允许人工复核；不自动改规则，不自动执行广告动作" },
       ],
       summary: "暂无已保存复盘记录。",
@@ -2766,7 +2766,7 @@ assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[0] ?? "", "�
 assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[2] ?? "", "复盘输入证据 partial");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[2] ?? "", "证据快照 1 条");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[3] ?? "", "证据追溯 blocked");
-assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[3] ?? "", "0 / 0 条样本带证据分组");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[3] ?? "", "0 / 0 条样本带证据上下文");
 assertEqual(blockedRuleFeedbackPrioritySummary?.records.length, 0);
 assertEqual(blockedRuleFeedbackPrioritySummary?.candidateGroups.length, 0);
 assertIncludes(blockedRuleFeedbackPrioritySummary?.boundary ?? "", "门槛检查");
@@ -4230,7 +4230,7 @@ const parentScopeLegacyActionGapExplanation = buildProductScopeSignalExplanation
               check_id: "manual_action_context",
               label: "复盘输入证据",
               status: "blocked",
-              evidence: "人工动作 15 条，证据快照 0 条，语义组 0 条，ABA参考 0 条",
+              evidence: "人工动作 15 条，证据快照 0 条，SearchTerm 筛选上下文 0 条，ABA 站点级参考 0 条",
             },
           ],
         },

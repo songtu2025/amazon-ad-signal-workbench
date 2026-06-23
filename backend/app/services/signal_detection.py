@@ -1132,13 +1132,13 @@ def aggregate_search_term_opportunity_signals(signals: list[AiSignal]) -> list[A
                     label="语义组",
                     value=semantic_group,
                     source_type="积加API",
-                    source_name="搜索词语义分组",
+                    source_name="SearchTerm 筛选上下文",
                     metric_name="semantic_group",
                     metric_value=semantic_group,
                     time_range=source_time_range(api_rows[0]) if api_rows else None,
                     object_type=ObjectType.SEARCH_TERM.value,
                     object_id=primary_object.object_id,
-                    explanation="语义组由广告搜索词 intent_label 或 normalized_query 在分析层解析，用于先按用户意图复核，不代表人工确认结论。",
+                    explanation="SearchTerm 筛选上下文由广告搜索词 intent_label 或 normalized_query 在分析层解析，用于先按用户意图复核，不代表人工确认结论。",
                 )
             )
         facts.extend(

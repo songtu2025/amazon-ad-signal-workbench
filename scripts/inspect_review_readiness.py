@@ -830,7 +830,7 @@ def review_closure_checklist(by_result: dict[str, int], records: list[dict[str, 
             "check_id": "evidence_trace",
             "label": "证据追溯",
             "status": evidence_status,
-            "evidence": f"{evidence_count} / {record_count} 条样本带证据分组",
+            "evidence": f"{evidence_count} / {record_count} 条样本带证据上下文",
         },
         {
             "check_id": "review_record_trace",
