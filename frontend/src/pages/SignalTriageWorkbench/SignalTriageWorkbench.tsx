@@ -4252,7 +4252,7 @@ function isReviewRepairVoidPlanText(part: string) {
 }
 
 function evidenceFactDisplayLabel(label: string) {
-  if (label === "语义组" || label === "广告搜索词聚合上下文") {
+  if (label === "语义组" || label === "广告搜索词聚合上下文" || label === "Parent ASIN 搜索词表现聚合") {
     return "搜索意图分组";
   }
   return label;

@@ -5323,6 +5323,17 @@ assertIncludes(advertisedProductContext.reviewPath?.value ?? "", "当前广告 A
 assertIncludes(advertisedProductContext.reviewPath?.value ?? "", "广告位边界");
 assertIncludes(advertisedProductContext.reviewPath?.detail ?? "", "不能自动归因到该 ASIN");
 
+const searchIntentSignal = { ...searchTermSignal, object_type: "search_intent" as const };
+const searchIntentObjectContext = buildSignalObjectContext(searchIntentSignal, {
+  object_type: "search_intent",
+  label: "规则语义：儿童太阳镜",
+  intent_label: "规则语义：儿童太阳镜",
+});
+
+assertEqual(searchIntentObjectContext.items[0].label, "Parent ASIN 广告搜索词表现复核");
+assertIncludes(searchIntentObjectContext.boundary, "Parent ASIN 广告搜索词表现复核用于聚合同类广告搜索词表现");
+assertIncludes(searchIntentObjectContext.boundary, "不是广告处理对象");
+
 const overview = buildSignalOverview([dataQualitySignal, staleSignal, searchTermSignal, opportunitySignal]);
 
 assertEqual(overview.high, 2);
@@ -5727,6 +5738,19 @@ const searchIntentFilteredSignals = filterSignalsBySearchIntent(
       },
     },
     {
+      id: "sig-search-intent-legacy-parent-label",
+      signal_type: "opportunity",
+      signal_category: "search_term_opportunity",
+      object_type: "search_term",
+      severity: 4,
+      status: "pending",
+      freshness_status: "api_snapshot",
+      evidence: {
+        primary_object: { label: "toddler sunglasses" },
+        facts: [{ label: "Parent ASIN 搜索词表现聚合", value: "规则语义：儿童太阳镜" }],
+      },
+    },
+    {
       id: "sig-ad-group",
       signal_type: "opportunity",
       signal_category: "ad_group_structure",
@@ -5743,9 +5767,10 @@ const searchIntentFilteredSignals = filterSignalsBySearchIntent(
   "规则语义：儿童太阳镜",
 );
 
-assertEqual(searchIntentFilteredSignals.length, 2);
+assertEqual(searchIntentFilteredSignals.length, 3);
 assertEqual(searchIntentFilteredSignals[0].id, "sig-search-intent-primary");
 assertEqual(searchIntentFilteredSignals[1].id, "sig-search-intent-visible-context");
+assertEqual(searchIntentFilteredSignals[2].id, "sig-search-intent-legacy-parent-label");
 
 const preferredSearchIntentSignalId = selectSearchIntentSignalId(
   [

@@ -95,6 +95,7 @@ assertIncludes(workbenchSource, "selectedSignalScopeContext");
 assertIncludes(workbenchSource, "buildSearchIntentFocusContext");
 assertIncludes(workbenchSource, "selectedSearchIntentFocusContext");
 assertIncludes(workbenchSource, "function evidenceFactDisplayLabel");
+assertIncludes(workbenchSource, 'label === "Parent ASIN 搜索词表现聚合"');
 assertIncludes(workbenchSource, 'return "搜索意图分组";');
 assertIncludes(workbenchSource, "function SelectedSignalScopeContextStrip");
 assertIncludes(workbenchSource, "function SearchIntentFocusContextStrip");
@@ -107,6 +108,7 @@ assertIncludes(signalUiSource, "选中信号只决定中间证据和右侧人工
 assertIncludes(signalUiSource, "不能自动归因");
 assertIncludes(signalUiSource, "视角聚合广告中实际产生表现的用户搜索词行");
 assertIncludes(signalUiSource, "Parent ASIN 广告搜索词表现复核「${focusLabel}」只是分析分组");
+assertIncludes(signalUiSource, "Parent ASIN 广告搜索词表现复核用于聚合同类广告搜索词表现");
 assertIncludes(signalUiSource, "经营诊断入口");
 assertIncludes(signalUiSource, "搜索词聚合口径");
 assertIncludes(signalUiSource, "当前诊断对象");

@@ -6177,7 +6177,13 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
 export function filterSignalsBySearchIntent<T extends SearchIntentFilterSignalForUi>(signals: T[], intentLabel: string | null | undefined): T[] {
   const selectedIntentLabel = intentLabel?.trim();
   if (!selectedIntentLabel) return signals;
-  const contextLabels = new Set(["搜索意图分组", "Parent ASIN 广告搜索词表现复核", "广告搜索词聚合上下文", "语义组"]);
+  const contextLabels = new Set([
+    "搜索意图分组",
+    "Parent ASIN 广告搜索词表现复核",
+    "Parent ASIN 搜索词表现聚合",
+    "广告搜索词聚合上下文",
+    "语义组",
+  ]);
   return signals.filter((signal) => {
     if (signal.signal_category !== "search_term_opportunity" || signal.object_type !== "search_term") return false;
     const primaryIntentLabel = signal.evidence?.primary_object?.intent_label?.trim();
@@ -7728,9 +7734,9 @@ export function buildSignalObjectContext(signal: SignalForUi, primaryObject: Pri
   }
 
   if (objectType === "search_intent") {
-    pushContextItem(items, "广告搜索词聚合上下文", primaryObject.intent_label ?? primaryObject.label);
+    pushContextItem(items, "Parent ASIN 广告搜索词表现复核", primaryObject.intent_label ?? primaryObject.label);
     return {
-      boundary: "广告搜索词聚合上下文用于聚合同类广告搜索词表现，不等同于关键词本身，也不是广告处理对象。",
+      boundary: "Parent ASIN 广告搜索词表现复核用于聚合同类广告搜索词表现，不等同于关键词本身，也不是广告处理对象。",
       items,
       reviewPath,
     };
@@ -7882,7 +7888,7 @@ function keyEvidencePriorityRulesForSignal(signal?: KeyEvidenceSignalContext): s
 
   if (signal.signal_category === "search_term_opportunity") {
     return [
-      ["搜索意图分组", "Parent ASIN 广告搜索词表现复核", "广告搜索词聚合上下文", "语义组"],
+      ["搜索意图分组", "Parent ASIN 广告搜索词表现复核", "Parent ASIN 搜索词表现聚合", "广告搜索词聚合上下文", "语义组"],
       ["投放上下文数"],
       ["搜索词"],
       ["合计订单", "订单"],
