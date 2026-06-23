@@ -3323,7 +3323,7 @@ const diagnosisContractItems = signalTriageDiagnosisContractItems({
 });
 
 assertEqual(diagnosisContractItems.length, 1);
-assertEqual(diagnosisContractItems[0].title, "搜索词机会");
+assertEqual(diagnosisContractItems[0].title, "广告搜索词表现复核");
 assertIncludes(diagnosisContractItems[0].metricText, "订单：21，用于判断搜索词是否已经产生真实广告转化");
 assertIncludes(diagnosisContractItems[0].proves, "能证明该搜索词");
 assertIncludes(diagnosisContractItems[0].doesNotProve, "不能证明应该自动加词");
@@ -3664,7 +3664,7 @@ const diagnosisEvidenceSummary = buildSignalDiagnosisEvidenceSummary(
   },
   diagnosisContractItems,
 );
-assertEqual(diagnosisEvidenceSummary?.title, "搜索词机会");
+assertEqual(diagnosisEvidenceSummary?.title, "广告搜索词表现复核");
 assertEqual(diagnosisEvidenceSummary?.strengthLabel, "证据强度：中");
 assertEqual(diagnosisEvidenceSummary?.tone, "medium");
 assertIncludes(diagnosisEvidenceSummary?.objectReadback ?? "", "search_term");

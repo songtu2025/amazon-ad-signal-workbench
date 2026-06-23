@@ -3961,7 +3961,7 @@ export function signalTriageDiagnosisContractItems(
     .filter((section) => section.title && section.business_question && section.current_judgement)
     .map((section) => ({
       sectionId: section.section_id ?? section.title ?? "diagnosis_contract_section",
-      title: section.title ?? "诊断合同",
+      title: diagnosisContractDisplayTitle(section.section_id, section.title),
       businessQuestion: section.business_question ?? "等待补充业务问题",
       objectGrain: section.object_grain ?? "等待补充对象粒度",
       metricText: diagnosisContractMetricText(section.metrics),
@@ -3972,6 +3972,13 @@ export function signalTriageDiagnosisContractItems(
       requiredEvidence: section.required_evidence ?? "等待补充所需证据",
       nextManualStep: section.next_manual_step ?? "等待人工复核",
     }));
+}
+
+function diagnosisContractDisplayTitle(sectionId?: string | null, title?: string | null): string {
+  if (sectionId === "search_term_opportunity" || title === "搜索词机会") {
+    return "广告搜索词表现复核";
+  }
+  return title ?? "诊断合同";
 }
 
 export function buildSearchTermOpportunityReviewChain(

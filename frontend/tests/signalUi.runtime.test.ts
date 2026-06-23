@@ -261,6 +261,10 @@ async function main() {
 
   const nextDiagnosisContractItems = signalTriageDiagnosisContractItems(triage, diagnosisContract);
   assert(nextDiagnosisContractItems.length >= 6, "前端 helper 应把真实诊断合同转成完整判断块。");
+  assert(
+    nextDiagnosisContractItems.some((item) => item.sectionId === "search_term_opportunity" && item.title === "广告搜索词表现复核"),
+    "搜索词机会诊断合同在用户可见层必须显示为广告搜索词表现复核。",
+  );
   const nextDiagnosisContractText = asText(nextDiagnosisContractItems);
   assertIncludes(nextDiagnosisContractText, nextLabel);
   assertIncludes(nextDiagnosisContractText, "SearchTerm + 同广告活动 / 广告组上下文");
@@ -371,7 +375,9 @@ async function main() {
   assertIncludes(authorizationSummary?.currentState ?? "", "ManualAction 0 条 / ReviewTodo 0 条");
   assertIncludes(authorizationSummary?.authorizedResult ?? "", "ManualAction 1 条 / ReviewTodo 2 条");
   assertIncludes(authorizationSummary?.authorizedResult ?? "", "7d / 14d");
-  assertIncludes(authorizationSummary?.evidence ?? "", "23 条");
+  const evidenceSnapshotCount = preflight.evidence_snapshot_preview?.item_count ?? 0;
+  assert(evidenceSnapshotCount >= 25, "下一候选预检应包含逐投放上下文和广告位活动级背景后的完整证据快照。");
+  assertIncludes(authorizationSummary?.evidence ?? "", `${evidenceSnapshotCount} 条`);
   assertIncludes(authorizationSummary?.boundary ?? "", "未授权前不写 manual_actions");
   assertIncludes(authorizationSummary?.boundary ?? "", "不生成 ReviewTodo");
   const evidenceReadinessSummary = manualConfirmationEvidenceReadinessSummary(
