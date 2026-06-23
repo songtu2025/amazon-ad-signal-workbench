@@ -5247,8 +5247,8 @@ assertIncludes(searchIntentReviewCards[0].currentJudgement, "可人工确认的�
 assertIncludes(searchIntentReviewCards[0].metricPurpose, "花费 9.00");
 assertIncludes(searchIntentReviewCards[0].adContext, "覆盖 1 个广告活动、1 个广告组、2 条搜索词表现行");
 assertIncludes(searchIntentReviewCards[0].evidenceGap, "广告位影响需要继续打开广告位证据核对");
-assertIncludes(searchIntentReviewCards[0].purpose, "聚合用户搜索词表现");
-assertIncludes(searchIntentReviewCards[0].purpose, "当前 Parent ASIN 的广告上下文");
+assertIncludes(searchIntentReviewCards[0].purpose, "聚合广告中的用户搜索词表现");
+assertIncludes(searchIntentReviewCards[0].purpose, "当前 Parent ASIN 视角");
 assertIncludes(searchIntentReviewCards[0].purpose, "判断搜索词表现、机会和异常");
 assertIncludes(searchIntentReviewCards[0].dataGrain, "当前 Parent ASIN 相关广告上下文");
 assertIncludes(searchIntentReviewCards[0].proves, "同类广告搜索词");
@@ -5264,7 +5264,7 @@ assertEqual(searchIntentReviewCards[0].topTerms[0], "baby sunglasses：3 单 / �
 assertEqual(searchIntentReviewCards[0].intentLabel, "规则语义：儿童太阳镜");
 
 const searchIntentPanelContext = buildSearchIntentPanelContext(searchIntentReviewCards);
-assertIncludes(searchIntentPanelContext.purpose, "聚合用户搜索词表现");
+assertIncludes(searchIntentPanelContext.purpose, "聚合广告中的用户搜索词表现");
 assertIncludes(searchIntentPanelContext.purpose, "Parent ASIN");
 assertIncludes(searchIntentPanelContext.dataGrain, "当前 Parent ASIN 相关广告上下文");
 assertIncludes(searchIntentPanelContext.interactionBoundary, "只改变左侧信号队列筛选");
@@ -5280,7 +5280,7 @@ assertIncludes(emptySearchIntentPanelContext.purpose, "不是经营商品入口�
 assertIncludes(emptySearchIntentPanelContext.dataGrain, "用户搜索词表现行");
 assertIncludes(emptySearchIntentPanelContext.interactionBoundary, "不切换 Parent ASIN / 广告 ASIN / 广告组");
 assertIncludes(emptySearchIntentPanelContext.doesNotProve, "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现");
-assertIncludes(emptySearchIntentPanelContext.nextManualStep, "不把语义聚合包装成可执行动作");
+assertIncludes(emptySearchIntentPanelContext.nextManualStep, "不把搜索词聚合包装成可执行动作");
 assertIncludes(emptySearchIntentPanelContext.boundary, "不改变诊断入口");
 assertIncludes(emptySearchIntentPanelContext.emptyText, "不代表 Parent ASIN 没有自然搜索词");
 

@@ -5682,7 +5682,7 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       evidenceGap:
         searchIntentDisplayText(summary.evidence_gap) ||
         "证据缺口：需要继续核对投放词、广告组商品清单和广告位表现，才能转成具体人工动作。",
-      purpose: "用途：从当前 Parent ASIN 的广告上下文聚合用户搜索词表现，按搜索语义汇总同类搜索词，帮助运营判断搜索词表现、机会和异常。",
+      purpose: "用途：从当前 Parent ASIN 视角聚合广告中的用户搜索词表现，按搜索意图汇总同类 SearchTerm，帮助运营判断搜索词表现、机会和异常。",
       boundary: "边界：只复核广告用户搜索词表现；不改变诊断入口，不生成 SearchTerm 筛选上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
       dataGrain: summary.data_grain || "当前诊断入口相关广告上下文中的用户搜索词表现行",
       proves: searchIntentDisplayText(summary.proves) || "能证明同类广告搜索词在当前广告上下文内的花费、点击、订单和 ABA 背景。",
@@ -5718,7 +5718,7 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
       "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个广告 ASIN 归因，也不能生成 SearchTerm 筛选上下文人工动作。",
     nextManualStep:
       firstCard?.nextManualStep ??
-      "有命中时逐条打开具体 SearchTerm 信号；无命中时先确认广告搜索词快照、广告组和投放词证据缺口，不把语义聚合包装成可执行动作。",
+      "有命中时逐条打开具体 SearchTerm 信号；无命中时先确认广告搜索词快照、广告组和投放词证据缺口，不把搜索词聚合包装成可执行动作。",
     boundary:
       firstCard?.boundary ??
       "边界：只复核广告用户搜索词表现；不改变诊断入口，不生成 SearchTerm 筛选上下文人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
@@ -6659,7 +6659,7 @@ const queueObjectTypeLabel: Record<NonNullable<SignalForUi["object_type"]>, stri
   advertised_product: "广告商品",
   search_term: "搜索词",
   placement: "广告位",
-  search_intent: "语义聚合",
+  search_intent: "搜索词聚合",
   cross: "交叉信号",
 };
 
