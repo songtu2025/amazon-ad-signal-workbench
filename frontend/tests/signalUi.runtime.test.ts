@@ -330,6 +330,25 @@ async function main() {
   assertIncludes(asText(manualConfirmationEvidenceItems), "ABA");
   assertIncludes(asText(manualConfirmationEvidenceItems), "不得自动");
 
+  const recommendedDiagnosisContract = triage.recommended_diagnosis_contract;
+  assert(recommendedDiagnosisContract?.object_label === recommendedLabel, "推荐候选诊断合同必须绑定推荐 SearchTerm。");
+  const recommendedDiagnosisContractItems = signalTriageDiagnosisContractItems(triage, recommendedDiagnosisContract);
+  const recommendedBusinessEvidenceItems = signalTriageBusinessEvidenceItems(triage, "recommended");
+  const recommendedSearchTermReviewChain = buildSearchTermOpportunityReviewChain(
+    recommendedDiagnosisContractItems,
+    recommendedBusinessEvidenceItems,
+  );
+  assert(recommendedSearchTermReviewChain !== null, "推荐候选也必须能生成广告搜索词表现复核链。");
+  const recommendedReviewChainText = asText(recommendedSearchTermReviewChain);
+  assertIncludes(recommendedReviewChainText, recommendedLabel);
+  assertIncludes(recommendedReviewChainText, "RBK004-扩展-beach essentials");
+  assertIncludes(recommendedReviewChainText, "B016EXMVZS");
+  assertIncludes(recommendedReviewChainText, "B07BS9754Q");
+  assertIncludes(recommendedReviewChainText, "B016EXMW02");
+  assertIncludes(recommendedReviewChainText, "广告组级广告位 0 条 / 同广告活动广告位 6 条");
+  assertNotIncludes(recommendedReviewChainText, "广告组合流判断待补");
+  assertNotIncludes(recommendedReviewChainText, "同组投放商品表现待补");
+
   const nextSignal = signalFromCandidate(triage.next_unhandled_candidate);
   const diagnosisEvidenceSummary = buildSignalDiagnosisEvidenceSummary(nextSignal, nextDiagnosisContractItems);
   assert(diagnosisEvidenceSummary !== null, "中间诊断区应能从真实诊断合同生成证据强度摘要。");

@@ -4065,6 +4065,7 @@ export function buildSearchTermOpportunityReviewChain(
   const searchTermContract = directSearchTermContract ?? searchTermContextContract;
   const parentScopeContract = diagnosisContractItems.find((item) => item.sectionId === "parent_asin_scope");
   const adAsinContract = diagnosisContractItems.find((item) => item.sectionId === "ad_asin_coverage");
+  const adGroupBoundaryContract = diagnosisContractItems.find((item) => item.sectionId === "ad_group_boundary");
   const placementContract = diagnosisContractItems.find((item) => item.sectionId === "placement_gap");
   const targetingBlock = businessEvidenceItems.find(
     (item) => item.blockId === "targeting_context" || item.label.includes("投放词"),
@@ -4123,18 +4124,20 @@ export function buildSearchTermOpportunityReviewChain(
     ["广告 ASIN", "不能"],
   );
   const adGroupSynthesis = appendBoundaryIfMissing(
-    businessEvidenceBlockSentence(
-      adGroupBlock,
-      "广告组合流判断待补：搜索词不能自动归因到单个广告 ASIN，需回到同广告组广告 ASIN、广告组结构和广告位证据缺口。",
-    ),
+    uniqueNonEmpty([adGroupBoundaryContract?.currentJudgement, adGroupBoundaryContract?.doesNotProve, adGroupBoundaryContract?.evidenceGap]).join("；") ||
+      businessEvidenceBlockSentence(
+        adGroupBlock,
+        "广告组合流判断待补：搜索词不能自动归因到单个广告 ASIN，需回到同广告组广告 ASIN、广告组结构和广告位证据缺口。",
+      ),
     "搜索词只说明同广告组上下文，不能自动归因到单个广告 ASIN；缺少广告组级广告位证据时，不能判断广告位影响。",
     ["不能自动归因", "广告位"],
   );
   const adGroupProductPerformance = appendBoundaryIfMissing(
-    businessEvidenceBlockSentence(
-      adGroupProductBlock,
-      "同组投放商品表现待补：需要回看同广告组广告 ASIN 的花费、点击、订单、销售额、ACOS 和 CVR。",
-    ),
+    adGroupBoundaryContract?.currentJudgement ||
+      businessEvidenceBlockSentence(
+        adGroupProductBlock,
+        "同组投放商品表现待补：需要回看同广告组广告 ASIN 的花费、点击、订单、销售额、ACOS 和 CVR。",
+      ),
     "同组投放商品表现只说明广告组内承接差异，不能把搜索词自动归因到单个广告 ASIN。",
     ["广告 ASIN", "不能"],
   );
