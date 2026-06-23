@@ -51,6 +51,7 @@ import {
   buildSignalDiagnosisEvidenceSummary,
   buildSignalMetricDecisionItems,
   buildSearchTermOpportunityReviewChain,
+  buildSearchTermAdContextRows,
   buildManualConfirmationEvidenceItems,
   recommendedManualStatusText,
   recommendedEvidenceDrilldownText,
@@ -3374,6 +3375,87 @@ assertIncludes(searchTermOpportunityReviewChain?.evidenceGap ?? "", "不能自�
 assertIncludes(searchTermOpportunityReviewChain?.requiredEvidence ?? "", "广告商品");
 assertIncludes(searchTermOpportunityReviewChain?.nextManualStep ?? "", "加入 7/14 天复盘");
 assertIncludes(searchTermOpportunityReviewChain?.actionBoundary ?? "", "不得自动加词");
+
+const searchTermAdContextRows = buildSearchTermAdContextRows({
+  id: "sig-opportunity-search-term-beach-essentials",
+  signal_type: "opportunity",
+  signal_category: "search_term_opportunity",
+  object_type: "search_term",
+  severity: 4,
+  status: "pending",
+  freshness_status: "api_snapshot",
+  evidence: {
+    primary_object: { label: "beach essentials", search_term: "beach essentials" },
+    source_rows: [
+      {
+        source_table: "ad_search_term_daily_metrics",
+        row_id: "row-keyword",
+        source_report_type: "keyword",
+        campaign_name: "RBK004-beach essentials-精准",
+        ad_group_name: "RBK004-beach essentials-精准",
+        keyword_text: "beach essentials",
+        search_term: "beach essentials",
+        normalized_query: "beach essentials",
+        start_date: "2026-05-18",
+        end_date: "2026-06-16",
+        clicks: 19,
+        cost: 18.08,
+        orders: 13,
+        sales: 116.88,
+      },
+      {
+        source_table: "aba_search_term_snapshots",
+        search_term: "beach essentials",
+        search_frequency_rank: 208,
+      },
+      {
+        source_table: "ad_search_term_daily_metrics",
+        row_id: "row-broad",
+        source_report_type: "keyword",
+        campaign_name: "RBK004-扩展-beach essentials",
+        ad_group_name: "RBK004-扩展-beach essentials",
+        keyword_text: "beach essentials",
+        search_term: "beach essentials",
+        normalized_query: "beach essentials",
+        start_date: "2026-05-18",
+        end_date: "2026-06-16",
+        clicks: 19,
+        spend: 16.03,
+        orders: 8,
+        sales: 76.32,
+      },
+      {
+        source_table: "ad_search_term_daily_metrics",
+        row_id: "row-other-term",
+        source_report_type: "keyword",
+        campaign_name: "Other",
+        ad_group_name: "Other",
+        keyword_text: "kids sunglasses",
+        search_term: "kids sunglasses",
+        normalized_query: "kids sunglasses",
+        clicks: 10,
+        spend: 9,
+        orders: 1,
+        sales: 20,
+      },
+    ],
+  },
+});
+
+assertEqual(searchTermAdContextRows.length, 2);
+assertEqual(searchTermAdContextRows[0].key, "row-keyword");
+assertEqual(searchTermAdContextRows[0].adGroupName, "RBK004-beach essentials-精准");
+assertIncludes(searchTermAdContextRows[0].targetingLabel, "关键词投放：beach essentials");
+assertIncludes(searchTermAdContextRows[0].metricsText, "点击 19 / 花费 18.08 / 订单 13 / 销售额 116.88");
+assertIncludes(searchTermAdContextRows[0].efficiencyText, "ACOS 15.5%");
+assertIncludes(searchTermAdContextRows[0].periodText, "2026-05-18 至 2026-06-16");
+assertIncludes(searchTermAdContextRows[0].judgement, "有订单承接");
+assertIncludes(searchTermAdContextRows[0].boundary, "不能自动归因到单个 ASIN");
+assertEqual(searchTermAdContextRows[1].adGroupName, "RBK004-扩展-beach essentials");
+assertEqual(
+  buildSearchTermAdContextRows({ ...opportunitySignal, signal_category: "ad_group_structure", object_type: "ad_group" }).length,
+  0,
+);
 
 const thinSearchTermOpportunityReviewChain = buildSearchTermOpportunityReviewChain(diagnosisContractItems, [
   {

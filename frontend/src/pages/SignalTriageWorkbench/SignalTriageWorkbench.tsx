@@ -171,6 +171,7 @@ import {
   buildSignalDiagnosisEvidenceSummary,
   buildSignalMetricDecisionItems,
   buildSearchTermOpportunityReviewChain,
+  buildSearchTermAdContextRows,
   recommendedManualStatusText,
   recommendedManualActionCardCopy,
   recommendedEvidenceDrilldownText,
@@ -201,6 +202,7 @@ import {
   DiagnosisContextSummary,
   DiagnosisPathSummary,
   SearchTermOpportunityReviewChain,
+  SearchTermAdContextRow,
   SignalDiagnosisEvidenceSummary,
   SignalTriageBusinessEvidenceItem,
   SignalTriageDiagnosisContractItem,
@@ -3053,7 +3055,13 @@ function DiagnosisContractPanel({
   );
 }
 
-function SearchTermOpportunityReviewChainPanel({ chain }: { chain: SearchTermOpportunityReviewChain }) {
+function SearchTermOpportunityReviewChainPanel({
+  chain,
+  adContextRows,
+}: {
+  chain: SearchTermOpportunityReviewChain;
+  adContextRows: SearchTermAdContextRow[];
+}) {
   return (
     <section className="searchTermOpportunityReviewChain diagnosisStep stepEvidence" aria-label="广告搜索词表现复核链">
       <div className="detailSectionHeader">
@@ -3123,6 +3131,36 @@ function SearchTermOpportunityReviewChainPanel({ chain }: { chain: SearchTermOpp
           <span>{chain.actionBoundary}</span>
         </li>
       </ul>
+      {adContextRows.length > 0 && (
+        <div className="searchTermAdContextRows" aria-label="逐投放上下文复核">
+          <div className="detailSectionHeader">
+            <h3>逐投放上下文复核</h3>
+            <span>{adContextRows.length} 条广告搜索词表现行</span>
+          </div>
+          <p>同一个 SearchTerm 可能跨广告活动、广告组和投放词出现；先逐行看承接，再决定是否记录观察或加入复盘。</p>
+          <div className="searchTermAdContextGrid">
+            {adContextRows.map((row) => (
+              <div className="searchTermAdContextRow" key={row.key}>
+                <div>
+                  <span>{row.periodText}</span>
+                  <strong>{row.searchTerm}</strong>
+                  <p>{row.campaignName}</p>
+                </div>
+                <div>
+                  <b>{row.adGroupName}</b>
+                  <span>{row.targetingLabel}</span>
+                </div>
+                <div>
+                  <b>{row.metricsText}</b>
+                  <span>{row.efficiencyText}</span>
+                </div>
+                <p>{row.judgement}</p>
+                <small>{row.boundary}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -3723,6 +3761,7 @@ function SignalDiagnosis({
     () => buildSearchTermOpportunityReviewChain(diagnosisContractItems, triageBusinessEvidenceItems),
     [diagnosisContractItems, triageBusinessEvidenceItems],
   );
+  const searchTermAdContextRows = useMemo(() => buildSearchTermAdContextRows(signal), [signal]);
 
   useEffect(() => {
     setEvidenceSourceFilter("all");
@@ -3810,7 +3849,9 @@ function SignalDiagnosis({
         <DiagnosisContractPanel items={diagnosisContractItems} summary={diagnosisEvidenceSummary} />
       )}
 
-      {searchTermOpportunityReviewChain && <SearchTermOpportunityReviewChainPanel chain={searchTermOpportunityReviewChain} />}
+      {searchTermOpportunityReviewChain && (
+        <SearchTermOpportunityReviewChainPanel chain={searchTermOpportunityReviewChain} adContextRows={searchTermAdContextRows} />
+      )}
 
       {reviewEvidenceSnapshot.length > 0 && (
         <section className="reviewEvidenceSnapshotPanel diagnosisStep stepEvidence" aria-label="复盘点击时证据快照">

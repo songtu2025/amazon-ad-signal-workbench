@@ -3596,6 +3596,26 @@ export interface SearchTermOpportunityReviewChain {
   actionBoundary: string;
 }
 
+export interface SearchTermAdContextRow {
+  key: string;
+  searchTerm: string;
+  campaignName: string;
+  adGroupName: string;
+  targetingLabel: string;
+  metricsText: string;
+  efficiencyText: string;
+  periodText: string;
+  judgement: string;
+  boundary: string;
+}
+
+export interface SearchTermAdContextSignalForUi extends SignalForUi {
+  evidence?: {
+    primary_object?: PrimaryObjectForUi | null;
+    source_rows?: Record<string, unknown>[] | null;
+  } | null;
+}
+
 export interface SignalDiagnosisEvidenceSummary {
   title: string;
   businessQuestion: string;
@@ -4084,6 +4104,71 @@ export function buildSearchTermOpportunityReviewChain(
       "先核对投放词、广告组结构和 ABA 周期，再选择记录观察、加入复盘或忽略本次。",
     actionBoundary: "只允许人工记录观察、标记已处理、加入复盘或忽略本次；不得自动加词、否词、调价或暂停广告。",
   };
+}
+
+export function buildSearchTermAdContextRows(signal: SearchTermAdContextSignalForUi, limit = 6): SearchTermAdContextRow[] {
+  if (signal.signal_category !== "search_term_opportunity" || signal.object_type !== "search_term") return [];
+
+  const primarySearchTerm = normalizeSearchIntentSearchTerm(
+    signal.evidence?.primary_object?.search_term ?? signal.evidence?.primary_object?.label,
+  );
+  return (signal.evidence?.source_rows ?? [])
+    .filter((row) => sourceText(row, "source_table") === "ad_search_term_daily_metrics")
+    .filter((row) => {
+      if (!primarySearchTerm) return true;
+      return (
+        normalizeSearchIntentSearchTerm(sourceText(row, "search_term")) === primarySearchTerm ||
+        normalizeSearchIntentSearchTerm(sourceText(row, "normalized_query")) === primarySearchTerm
+      );
+    })
+    .map((row, index) => {
+      const spend = sourceNumber(row, "cost") || sourceNumber(row, "spend");
+      const clicks = sourceNumber(row, "clicks");
+      const orders = sourceNumber(row, "orders");
+      const sales = sourceNumber(row, "sales");
+      const acos = sales > 0 ? roundRate(spend / sales) : null;
+      const cvr = clicks > 0 ? roundRate(orders / clicks) : null;
+      const sourceReportType = sourceText(row, "source_report_type");
+      const targetingText =
+        sourceText(row, "targeting_text") || sourceText(row, "keyword_text") || sourceText(row, "target_id") || sourceText(row, "keyword_id");
+      const targetingType =
+        sourceReportType === "keyword"
+          ? "关键词投放"
+          : sourceReportType === "targeting"
+            ? "商品/自动投放"
+            : sourceReportType || "投放来源待补";
+
+      return {
+        key: sourceText(row, "row_id") || sourceText(row, "source_record_id") || `${sourceText(row, "ad_group_id")}-${index}`,
+        searchTerm: sourceText(row, "search_term") || sourceText(row, "normalized_query") || signal.evidence?.primary_object?.label || "搜索词待补",
+        campaignName: sourceText(row, "campaign_name") || "广告活动待补",
+        adGroupName: sourceText(row, "ad_group_name") || "广告组待补",
+        targetingLabel: targetingText ? `${targetingType}：${targetingText}` : `${targetingType}：投放词待补`,
+        metricsText: `点击 ${Math.round(clicks)} / 花费 ${formatEvidenceNumber(spend)} / 订单 ${Math.round(orders)} / 销售额 ${formatEvidenceNumber(sales)}`,
+        efficiencyText: `ACOS ${formatEvidencePercent(acos)} / CVR ${formatEvidencePercent(cvr)}`,
+        periodText: sourceText(row, "start_date") && sourceText(row, "end_date") ? `${sourceText(row, "start_date")} 至 ${sourceText(row, "end_date")}` : "周期待补",
+        judgement: searchTermAdContextJudgement(spend, clicks, orders, acos),
+        boundary: "这一行只证明该搜索词在当前广告活动、广告组和投放词上下文中的广告表现；不能自动归因到单个 ASIN，也不能自动加词、否词、调价或暂停广告。",
+      };
+    })
+    .filter((row) => row.searchTerm.trim())
+    .sort((left, right) => searchTermAdContextSortScore(right) - searchTermAdContextSortScore(left) || left.adGroupName.localeCompare(right.adGroupName))
+    .slice(0, limit);
+}
+
+function searchTermAdContextSortScore(row: SearchTermAdContextRow): number {
+  const orderMatch = row.metricsText.match(/订单 (\d+)/);
+  const spendMatch = row.metricsText.match(/花费 ([0-9.]+)/);
+  const orders = orderMatch ? Number(orderMatch[1]) : 0;
+  const spend = spendMatch ? Number(spendMatch[1]) : 0;
+  return orders * 100000 + spend;
+}
+
+function searchTermAdContextJudgement(spend: number, clicks: number, orders: number, acos: number | null): string {
+  if (orders > 0 && acos !== null) return "有订单承接，优先核对该广告组和投放词是否符合当前 Parent ASIN 的投放策略。";
+  if (orders > 0) return "已有订单但销售额或 ACOS 证据不足，先核对订单口径和销售承接。";
+  if (spend > 0 && clicks > 0) return "有点击和花费但暂无订单，只能作为人工观察或浪费复核候选。";
+  return "样本较弱，只能作为搜索词上下文，不足以单独生成广告动作。";
 }
 
 function businessEvidenceBlockSentence(block: SignalTriageBusinessEvidenceItem | undefined, fallback: string): string {

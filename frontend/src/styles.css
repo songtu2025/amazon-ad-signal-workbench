@@ -4089,6 +4089,67 @@ button.reviewTodoQueueNext:focus-visible {
   color: #40536a;
 }
 
+.searchTermAdContextRows {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.searchTermAdContextRows > p {
+  margin: 0;
+  color: #50647a;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.searchTermAdContextGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.searchTermAdContextRow {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.1fr) minmax(150px, 1fr) minmax(160px, 1fr);
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #d7e6f0;
+  border-radius: 8px;
+  background: #f8fbff;
+  color: #40536a;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.searchTermAdContextRow div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.searchTermAdContextRow strong,
+.searchTermAdContextRow b {
+  min-width: 0;
+  color: #183b5b;
+  overflow-wrap: anywhere;
+}
+
+.searchTermAdContextRow p,
+.searchTermAdContextRow span,
+.searchTermAdContextRow small {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.searchTermAdContextRow > p,
+.searchTermAdContextRow small {
+  grid-column: 1 / -1;
+}
+
+.searchTermAdContextRow small {
+  color: #5f7287;
+}
+
 .evidenceRoute {
   display: grid;
   gap: 12px;
@@ -6638,6 +6699,10 @@ button.reviewTodoQueueNext:focus-visible {
 
   .evidenceWorkbench .evidenceRoute {
     padding: 0;
+  }
+
+  .searchTermAdContextRow {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .stepConclusion::before {
