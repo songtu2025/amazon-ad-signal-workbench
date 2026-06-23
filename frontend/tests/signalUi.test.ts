@@ -3484,12 +3484,17 @@ assertEqual(searchTermAdContextRows.length, 2);
 assertEqual(searchTermAdContextRows[0].key, "row-keyword");
 assertEqual(searchTermAdContextRows[0].adGroupName, "RBK004-beach essentials-精准");
 assertIncludes(searchTermAdContextRows[0].targetingLabel, "关键词投放：beach essentials");
+assertEqual(searchTermAdContextRows[0].reviewPriority, "优先复核广告组");
+assertIncludes(searchTermAdContextRows[0].reviewReason, "订单和花费排序最高");
+assertIncludes(searchTermAdContextRows[0].reviewReason, "投放词、广告 ASIN 承接和主推策略");
 assertIncludes(searchTermAdContextRows[0].metricsText, "点击 19 / 花费 18.08 / 订单 13 / 销售额 116.88");
 assertIncludes(searchTermAdContextRows[0].efficiencyText, "ACOS 15.5%");
 assertIncludes(searchTermAdContextRows[0].periodText, "2026-05-18 至 2026-06-16");
 assertIncludes(searchTermAdContextRows[0].judgement, "有订单承接");
 assertIncludes(searchTermAdContextRows[0].boundary, "不能自动归因到单个 ASIN");
 assertEqual(searchTermAdContextRows[1].adGroupName, "RBK004-扩展-beach essentials");
+assertEqual(searchTermAdContextRows[1].reviewPriority, "对照复核广告组");
+assertIncludes(searchTermAdContextRows[1].reviewReason, "不同广告组的承接差异");
 assertEqual(
   buildSearchTermAdContextRows({ ...opportunitySignal, signal_category: "ad_group_structure", object_type: "ad_group" }).length,
   0,

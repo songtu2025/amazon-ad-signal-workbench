@@ -130,6 +130,8 @@ assertIncludes(workbenchSource, "handleOpenProductScopeEvidenceDrilldown");
 assertIncludes(workbenchSource, "function handleSelectSearchIntent");
 assertIncludes(workbenchSource, "function handleSelectQueueFilter");
 assertIncludes(workbenchSource, "buildSearchTermAdContextRows(signal)");
+assertIncludes(workbenchSource, "row.reviewPriority");
+assertIncludes(workbenchSource, "row.reviewReason");
 assertIncludes(workbenchSource, "selectedSearchIntentScopeId");
 assertIncludes(workbenchSource, "activeSearchIntentLabel");
 assertIncludes(workbenchSource, "function clearSearchIntentFocus");

@@ -3169,6 +3169,10 @@ function SearchTermOpportunityReviewChainPanel({
                   <span>{row.targetingLabel}</span>
                 </div>
                 <div>
+                  <b>{row.reviewPriority}</b>
+                  <span>{row.reviewReason}</span>
+                </div>
+                <div>
                   <b>{row.metricsText}</b>
                   <span>{row.efficiencyText}</span>
                 </div>

@@ -3637,12 +3637,16 @@ export interface SearchTermAdContextRow {
   campaignName: string;
   adGroupName: string;
   targetingLabel: string;
+  reviewPriority: string;
+  reviewReason: string;
   metricsText: string;
   efficiencyText: string;
   periodText: string;
   judgement: string;
   boundary: string;
 }
+
+type SearchTermAdContextBaseRow = Omit<SearchTermAdContextRow, "reviewPriority" | "reviewReason">;
 
 export interface SearchTermAdContextSignalForUi extends SignalForUi {
   evidence?: {
@@ -4195,10 +4199,18 @@ export function buildSearchTermAdContextRows(signal: SearchTermAdContextSignalFo
     })
     .filter((row) => row.searchTerm.trim())
     .sort((left, right) => searchTermAdContextSortScore(right) - searchTermAdContextSortScore(left) || left.adGroupName.localeCompare(right.adGroupName))
-    .slice(0, limit);
+    .slice(0, limit)
+    .map((row, index) => {
+      const priority = searchTermAdContextReviewPriority(row, index);
+      return {
+        ...row,
+        reviewPriority: priority.label,
+        reviewReason: priority.reason,
+      };
+    });
 }
 
-function searchTermAdContextSortScore(row: SearchTermAdContextRow): number {
+function searchTermAdContextSortScore(row: SearchTermAdContextBaseRow): number {
   const orderMatch = row.metricsText.match(/订单 (\d+)/);
   const spendMatch = row.metricsText.match(/花费 ([0-9.]+)/);
   const orders = orderMatch ? Number(orderMatch[1]) : 0;
@@ -4211,6 +4223,41 @@ function searchTermAdContextJudgement(spend: number, clicks: number, orders: num
   if (orders > 0) return "已有订单但销售额或 ACOS 证据不足，先核对订单口径和销售承接。";
   if (spend > 0 && clicks > 0) return "有点击和花费但暂无订单，只能作为人工观察或浪费复核候选。";
   return "样本较弱，只能作为搜索词上下文，不足以单独生成广告动作。";
+}
+
+function searchTermAdContextReviewPriority(row: SearchTermAdContextBaseRow, index: number): { label: string; reason: string } {
+  const metrics = searchTermAdContextMetricValues(row);
+  if (index === 0 && metrics.orders > 0) {
+    return {
+      label: "优先复核广告组",
+      reason: "当前同词表现行中订单和花费排序最高，先核对该广告组的投放词、广告 ASIN 承接和主推策略。",
+    };
+  }
+  if (metrics.orders === 0 && metrics.spend > 0) {
+    return {
+      label: "止损复核候选",
+      reason: "该行已有花费或点击但暂未形成订单，只能进入人工浪费排查，不能自动否词或调价。",
+    };
+  }
+  if (metrics.orders > 0) {
+    return {
+      label: "对照复核广告组",
+      reason: "该行也有订单承接，用来和优先广告组对照，判断同一 SearchTerm 在不同广告组的承接差异。",
+    };
+  }
+  return {
+    label: "观察补证",
+    reason: "当前样本不足以判断扩量或止损，先补齐投放词、广告组和复盘窗口证据。",
+  };
+}
+
+function searchTermAdContextMetricValues(row: SearchTermAdContextBaseRow): { orders: number; spend: number } {
+  const orderMatch = row.metricsText.match(/订单 (\d+)/);
+  const spendMatch = row.metricsText.match(/花费 ([0-9.]+)/);
+  return {
+    orders: orderMatch ? Number(orderMatch[1]) : 0,
+    spend: spendMatch ? Number(spendMatch[1]) : 0,
+  };
 }
 
 function businessEvidenceBlockSentence(block: SignalTriageBusinessEvidenceItem | undefined, fallback: string): string {
