@@ -594,16 +594,6 @@ const baseRequiredReviewRecordPreflightCheckIds: ReviewRecordPreflightCheck["id"
   "todo_object_reference",
 ];
 
-const searchTermRequiredReviewRecordPreflightCheckIds: ReviewRecordPreflightCheck["id"][] = [
-  "targeting_evidence",
-  "ad_group_synthesis",
-  "ad_group_product_performance",
-  "aba_context",
-  "evidence_gap",
-  "required_evidence",
-  "manual_action_boundary",
-];
-
 const advertisedProductRequiredReviewRecordPreflightCheckIds: ReviewRecordPreflightCheck["id"][] = [
   "ad_product_coverage",
   "ad_group_synthesis",
@@ -1339,9 +1329,11 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
           reviewTodoReadbackRow(
             "搜索词复核链",
             [
-              reviewRecordTargetingEvidenceLabels,
               reviewRecordAdGroupSynthesisLabels,
               reviewRecordAdGroupProductPerformanceLabels,
+              reviewRecordTargetingEvidenceLabels,
+              reviewRecordSearchTermBoundaryLabels,
+              reviewRecordPlacementBoundaryLabels,
               reviewRecordAbaContextLabels,
               reviewRecordEvidenceGapLabels,
               reviewRecordRequiredEvidenceLabels,
@@ -1349,7 +1341,7 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
             ],
             labels,
             hasSnapshot,
-            "搜索词待办必须保留投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标误判为自动加词或否词依据。",
+            "搜索词待办必须保留广告组合流判断、同组投放商品表现、投放词证据、搜索词边界、广告位边界、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标或广告搜索词聚合上下文误判为自动加词或否词依据。",
           ),
           {
             label: "广告组合流判断",
@@ -1426,7 +1418,27 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
 function requiredReviewRecordPreflightCheckIdsForEffect(effect: ReviewEffectForUi | null): ReviewRecordPreflightCheck["id"][] {
   const objectType = normalizedPreflightTargetValue(effect?.object_type);
   if (objectType === "search_term") {
-    return [...baseRequiredReviewRecordPreflightCheckIds, ...searchTermRequiredReviewRecordPreflightCheckIds];
+    return [
+      "target_identity",
+      "action_evidence_snapshot",
+      "diagnosis_path",
+      "ai_admission",
+      "ad_group_synthesis",
+      "ad_group_product_performance",
+      "targeting_evidence",
+      "search_term_boundary",
+      "placement_boundary",
+      "aba_context",
+      "evidence_gap",
+      "required_evidence",
+      "manual_action_boundary",
+      "window_integrity",
+      "metric_basis",
+      "review_result_boundary",
+      "rule_feedback_boundary",
+      "todo_evidence_signature",
+      "todo_object_reference",
+    ];
   }
   if (objectType === "advertised_product") {
     return [...baseRequiredReviewRecordPreflightCheckIds, ...advertisedProductRequiredReviewRecordPreflightCheckIds];
@@ -1526,7 +1538,7 @@ function reviewRecordSearchTermReviewChainPreflightText(
   const item = snapshot.find((evidenceItem) => labels.includes(String(evidenceItem.label ?? "").trim()));
   const itemText = item ? reviewRecordEvidenceItemText(item) : null;
   if (!itemText) {
-    return `${missingText}；保存前只能核对处理前后指标，不能证明当时人工判断已经看过搜索词机会的投放词、广告组合流、ABA、证据缺口或动作边界。`;
+    return `${missingText}；保存前只能核对处理前后指标，不能证明当时人工判断已经看过搜索词机会的广告组合流、同组投放商品、投放词、搜索词边界、广告位边界、ABA、证据缺口或动作边界。`;
   }
   return `${readyPrefix}：${itemText}。保存复盘前必须确认它只作为人工复盘依据，不自动加词、否词、调价或暂停广告。`;
 }
@@ -1905,25 +1917,25 @@ export function buildReviewRecordPreflightChecklist(
       title: "回看 AI 准入理由",
       description: reviewRecordAiAdmissionPreflightText(todo),
     },
-    {
-      id: hasSearchTermBoundary ? "search_term_boundary" : "search_term_boundary_missing",
-      title: "回看搜索词边界",
-      description: reviewRecordSearchTermBoundaryPreflightText(todo),
-    },
-    {
-      id: hasPlacementBoundary ? "placement_boundary" : "placement_boundary_missing",
-      title: "回看广告位边界",
-      description: reviewRecordPlacementBoundaryPreflightText(todo),
-    },
   ];
+
+  if (!requiresSearchTermReviewChain) {
+    checks.push(
+      {
+        id: hasSearchTermBoundary ? "search_term_boundary" : "search_term_boundary_missing",
+        title: "回看搜索词边界",
+        description: reviewRecordSearchTermBoundaryPreflightText(todo),
+      },
+      {
+        id: hasPlacementBoundary ? "placement_boundary" : "placement_boundary_missing",
+        title: "回看广告位边界",
+        description: reviewRecordPlacementBoundaryPreflightText(todo),
+      },
+    );
+  }
 
   if (requiresSearchTermReviewChain) {
     checks.push(
-      {
-        id: hasTargetingEvidence ? "targeting_evidence" : "targeting_evidence_missing",
-        title: "回看投放词证据",
-        description: reviewRecordTargetingEvidencePreflightText(todo),
-      },
       {
         id: hasAdGroupSynthesis ? "ad_group_synthesis" : "ad_group_synthesis_missing",
         title: "回看广告组合流判断",
@@ -1933,6 +1945,21 @@ export function buildReviewRecordPreflightChecklist(
         id: hasAdGroupProductPerformance ? "ad_group_product_performance" : "ad_group_product_performance_missing",
         title: "回看同组投放商品表现",
         description: reviewRecordAdGroupProductPerformancePreflightText(todo),
+      },
+      {
+        id: hasTargetingEvidence ? "targeting_evidence" : "targeting_evidence_missing",
+        title: "回看投放词证据",
+        description: reviewRecordTargetingEvidencePreflightText(todo),
+      },
+      {
+        id: hasSearchTermBoundary ? "search_term_boundary" : "search_term_boundary_missing",
+        title: "回看搜索词边界",
+        description: reviewRecordSearchTermBoundaryPreflightText(todo),
+      },
+      {
+        id: hasPlacementBoundary ? "placement_boundary" : "placement_boundary_missing",
+        title: "回看广告位边界",
+        description: reviewRecordPlacementBoundaryPreflightText(todo),
       },
       {
         id: hasAbaContext ? "aba_context" : "aba_context_missing",
