@@ -3298,12 +3298,23 @@ def search_intent_next_manual_step(metrics: MetricSnapshot) -> str:
     return "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组、广告位和证据缺口后再记录观察或加入复盘。"
 
 
+def search_intent_proves(data_grain: str) -> str:
+    scope = "当前 Parent ASIN 关联广告上下文" if "Parent ASIN" in data_grain else "当前诊断入口关联广告上下文"
+    return f"能证明{scope}内同类广告搜索词的花费、点击、订单和 ABA 背景。"
+
+
+def search_intent_does_not_prove(data_grain: str) -> str:
+    if "Parent ASIN" in data_grain:
+        return "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能把搜索词表现分组当作人工动作对象。"
+    return "不能证明诊断入口外的自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能把搜索词表现分组当作人工动作对象。"
+
+
 def search_intent_summaries(
     rows: list[dict] | None = None,
     *,
     aba_rows: list[dict] | None = None,
     context_rows: list[dict] | None = None,
-    data_grain: str = "当前广告中实际产生表现的用户搜索词行按搜索词表现分组聚合",
+    data_grain: str = "当前诊断入口关联广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索词表现分组聚合",
 ) -> list[SearchIntentSummary]:
     groups: dict[str, list[dict]] = defaultdict(list)
     for row in rows if rows is not None else []:
@@ -3340,6 +3351,8 @@ def search_intent_summaries(
                 metric_purpose=search_intent_metric_purpose(metrics),
                 ad_context=search_intent_ad_context(group_rows, context_rows),
                 evidence_gap=search_intent_evidence_gap(group_rows, aba_match_count, context_rows),
+                proves=search_intent_proves(data_grain),
+                does_not_prove=search_intent_does_not_prove(data_grain),
                 next_manual_step=search_intent_next_manual_step(metrics),
             )
         )

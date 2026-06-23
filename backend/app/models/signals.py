@@ -167,12 +167,12 @@ class SearchIntentSummary(BaseModel):
     semantic_source: str = "未知"
     aba_match_count: int = 0
     top_search_terms: list[SearchIntentTopTerm] = Field(default_factory=list)
-    data_grain: str = "当前广告中实际产生表现的用户搜索词行按搜索词表现分组聚合"
+    data_grain: str = "当前诊断入口关联广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索词表现分组聚合"
     business_question: str = "这组同类广告用户搜索词在当前 Parent ASIN 广告上下文下，是应该扩量、止损，还是只观察？"
     current_judgement: str = "需要结合花费、点击、订单、ACOS、广告组和投放词继续人工复核。"
     metric_purpose: str = "花费和点击用于判断消耗规模，订单、CVR 和 ACOS 用于判断广告搜索词承接质量。"
     ad_context: str = "广告上下文待补充。"
     evidence_gap: str = "需要继续核对投放词、广告组商品清单和广告位表现，才能转成具体人工动作。"
-    proves: str = "能证明同类广告搜索词在当前广告上下文内的花费、点击、订单和 ABA 背景。"
+    proves: str = "能证明当前诊断入口关联广告上下文内同类广告搜索词的花费、点击、订单和 ABA 背景。"
     does_not_prove: str = "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能把搜索词表现分组当作人工动作对象。"
     next_manual_step: str = "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组、广告位和证据缺口后再记录观察或加入复盘。"

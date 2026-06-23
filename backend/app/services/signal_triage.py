@@ -3281,12 +3281,12 @@ def _search_term_row_matches_product_scope(
 
 def _search_intent_data_grain_for_product_scope(product_scope_id: str) -> str:
     if product_scope_id.startswith("parent_asin:"):
-        return "当前 Parent ASIN 相关广告上下文中实际产生表现的用户搜索词行"
+        return "当前 Parent ASIN 关联广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索词表现分组聚合"
     if product_scope_id.startswith("ad_asin:"):
-        return "当前广告 ASIN 相关广告上下文中实际产生表现的用户搜索词行"
+        return "当前广告 ASIN 关联广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索词表现分组聚合"
     if product_scope_id.startswith("sales_asin:"):
-        return "当前经营 ASIN 相关广告上下文中实际产生表现的用户搜索词行"
-    return "当前诊断入口相关广告上下文中实际产生表现的用户搜索词行"
+        return "当前经营 ASIN 关联广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索词表现分组聚合"
+    return "当前诊断入口关联广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索词表现分组聚合"
 
 
 def _row_identity_key(row: dict[str, Any]) -> tuple[tuple[str, str], ...]:
