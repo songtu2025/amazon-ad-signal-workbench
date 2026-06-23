@@ -187,6 +187,7 @@ export interface SearchIntentReviewCard {
 export interface SearchIntentPanelContext {
   purpose: string;
   dataGrain: string;
+  interactionBoundary: string;
   proves: string;
   doesNotProve: string;
   nextManualStep: string;
@@ -5632,6 +5633,8 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
       firstCard?.purpose ??
       "用途：作为当前诊断入口内的 SearchTerm 机会筛选，帮助运营缩小同类广告搜索词复核范围；它不是经营商品入口、广告组入口或人工动作对象。",
     dataGrain: firstCard?.dataGrain ?? "当前诊断入口内已进入 SearchTerm 机会队列的广告搜索词表现行，按搜索意图聚合。",
+    interactionBoundary:
+      "点击后只改变左侧信号队列筛选和中间选中 SearchTerm，不改变顶部诊断入口筛选器，也不切换 Parent ASIN / 广告 ASIN / 广告组。",
     proves: firstCard?.proves ?? "能证明当前诊断入口内同类广告搜索词的花费、点击、订单、ACOS 和 ABA 站点级背景。",
     doesNotProve:
       firstCard?.doesNotProve ??

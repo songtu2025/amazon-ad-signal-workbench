@@ -147,10 +147,12 @@ assertIncludes(workbenchSource, "当前诊断入口内的广告搜索词机会�
 assertIncludes(workbenchSource, 'aria-label="SearchTerm 机会筛选数据口径"');
 assertIncludes(workbenchSource, "searchIntentPanelContext.purpose");
 assertIncludes(workbenchSource, "searchIntentPanelContext.dataGrain");
+assertIncludes(workbenchSource, "searchIntentPanelContext.interactionBoundary");
 assertIncludes(workbenchSource, "searchIntentPanelContext.proves");
 assertIncludes(workbenchSource, "searchIntentPanelContext.doesNotProve");
 assertIncludes(workbenchSource, "searchIntentPanelContext.nextManualStep");
 assertIncludes(workbenchSource, "searchIntentPanelContext.boundary");
+assertIncludes(workbenchSource, "<b>点击后</b>");
 assertIncludes(workbenchSource, 'aria-label="SearchTerm 机会筛选空态"');
 assertIncludes(workbenchSource, "暂无 SearchTerm 机会聚合");
 assertIncludes(workbenchSource, "诊断入口保持不变，仅显示同类 SearchTerm 机会；不做商品归因");

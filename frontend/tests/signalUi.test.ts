@@ -5233,6 +5233,8 @@ assertEqual(searchIntentReviewCards[0].intentLabel, "规则语义：儿童太阳
 const searchIntentPanelContext = buildSearchIntentPanelContext(searchIntentReviewCards);
 assertIncludes(searchIntentPanelContext.purpose, "SearchTerm 机会筛选");
 assertIncludes(searchIntentPanelContext.dataGrain, "当前诊断入口内已进入 SearchTerm 机会队列");
+assertIncludes(searchIntentPanelContext.interactionBoundary, "只改变左侧信号队列筛选");
+assertIncludes(searchIntentPanelContext.interactionBoundary, "不改变顶部诊断入口筛选器");
 assertIncludes(searchIntentPanelContext.proves, "同类广告搜索词");
 assertIncludes(searchIntentPanelContext.doesNotProve, "不能证明 Parent ASIN 下全部搜索词表现");
 assertIncludes(searchIntentPanelContext.nextManualStep, "具体 SearchTerm 信号");
@@ -5242,6 +5244,7 @@ assertIncludes(searchIntentPanelContext.emptyText, "当前展示 1 组 SearchTer
 const emptySearchIntentPanelContext = buildSearchIntentPanelContext([]);
 assertIncludes(emptySearchIntentPanelContext.purpose, "不是经营商品入口、广告组入口或人工动作对象");
 assertIncludes(emptySearchIntentPanelContext.dataGrain, "广告搜索词表现行");
+assertIncludes(emptySearchIntentPanelContext.interactionBoundary, "不切换 Parent ASIN / 广告 ASIN / 广告组");
 assertIncludes(emptySearchIntentPanelContext.doesNotProve, "不能证明 Parent ASIN 下全部搜索词表现");
 assertIncludes(emptySearchIntentPanelContext.nextManualStep, "不扩展浅层语义分析");
 assertIncludes(emptySearchIntentPanelContext.boundary, "不改变诊断入口");

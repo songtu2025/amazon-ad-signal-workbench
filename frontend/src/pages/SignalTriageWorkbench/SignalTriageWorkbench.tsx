@@ -1902,6 +1902,10 @@ export function SignalTriageWorkbench() {
                 <small>{searchIntentPanelContext.dataGrain}</small>
               </span>
               <span>
+                <b>点击后</b>
+                <small>{searchIntentPanelContext.interactionBoundary}</small>
+              </span>
+              <span>
                 <b>能证明</b>
                 <small>{searchIntentPanelContext.proves}</small>
               </span>
