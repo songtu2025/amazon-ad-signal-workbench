@@ -6204,7 +6204,12 @@ export function buildProductScopeFirstScreenSummary(
   const reviewRecordCount = triageSummary?.review_status?.review_record_count ?? 0;
   const readyReviewCount = triageSummary?.review_status?.ready_count ?? 0;
   const earliestDueDate = triageSummary?.review_status?.review_wait_summary?.earliest_due_date?.trim();
-  const candidateText = candidateCount === undefined ? "AI 候选等待扫描" : `${candidateCount} 个可写人工候选`;
+  const candidateText =
+    candidateCount === undefined
+      ? "AI 候选等待扫描"
+      : canWriteManualAction && candidateCount > 0
+        ? `${candidateCount} 个可写人工候选`
+        : `${candidateCount} 个候选未通过人工写入门禁`;
   const mvpStatus: ProductScopeMvpStatus =
     readyReviewCount > 0 && reviewRecordCount > 0
       ? {
@@ -6268,7 +6273,12 @@ export function buildProductScopeFirstScreenSummary(
     },
     {
       label: "AI 准入",
-      value: candidateCount === undefined ? "等待 AI 准入扫描" : candidateCount > 0 ? `${candidateCount} 个候选需人工复核` : "0 个候选，只能诊断不能写动作",
+      value:
+        candidateCount === undefined
+          ? "等待 AI 准入扫描"
+          : candidateCount > 0 && canWriteManualAction
+            ? `${candidateCount} 个候选可人工复核`
+            : `${candidateCount ?? 0} 个候选，只能诊断不能写动作`,
       detail: actionabilityMessage,
       tone: candidateCount && candidateCount > 0 && canWriteManualAction ? "ready" : "waiting",
     },

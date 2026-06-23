@@ -4495,7 +4495,7 @@ assertIncludes(productScopeFirstScreenSummary.landingGates[1].value, "3 个广�
 assertIncludes(productScopeFirstScreenSummary.landingGates[1].detail, "广告覆盖率 25.0%");
 assertIncludes(productScopeFirstScreenSummary.landingGates[1].detail, "未投放子 ASIN只作为经营背景");
 assertEqual(productScopeFirstScreenSummary.landingGates[2].label, "AI 准入");
-assertIncludes(productScopeFirstScreenSummary.landingGates[2].value, "3 个候选需人工复核");
+assertIncludes(productScopeFirstScreenSummary.landingGates[2].value, "3 个候选可人工复核");
 assertIncludes(productScopeFirstScreenSummary.landingGates[2].detail, "人工复核");
 assertEqual(productScopeFirstScreenSummary.landingGates[3].label, "复盘门槛");
 assertIncludes(productScopeFirstScreenSummary.landingGates[3].value, "最早 2026-06-22");
@@ -4519,11 +4519,31 @@ const noCandidateMvpSummary = buildProductScopeFirstScreenSummary(productScopeGr
   },
 });
 assertEqual(noCandidateMvpSummary?.mvpStatus.statusLabel, "诊断 MVP");
-assertIncludes(noCandidateMvpSummary?.mvpStatus.summary ?? "", "当前有真实广告证据，但 0 个可写人工候选");
+assertIncludes(noCandidateMvpSummary?.mvpStatus.summary ?? "", "当前有真实广告证据，但 0 个候选未通过人工写入门禁");
 assertIncludes(noCandidateMvpSummary?.mvpStatus.summary ?? "", "不是完整业务闭环");
 assertIncludes(noCandidateMvpSummary?.mvpStatus.detail ?? "", "继续下钻广告 ASIN、广告组、搜索词和广告位");
 assertIncludes(noCandidateMvpSummary?.mvpStatus.boundary ?? "", "不能保存 review_records");
 assertIncludes(noCandidateMvpSummary?.mvpStatus.boundary ?? "", "不能说处理有效或无效");
+
+const blockedCandidateMvpSummary = buildProductScopeFirstScreenSummary(productScopeGroupOverview, {
+  signal_status: { candidate_count: 3 },
+  actionability_status: {
+    status: "needs_manual_preview",
+    can_write_manual_action: false,
+    message: "当前有 3 个候选，但缺少人工动作只读预检，不能写人工动作。",
+  },
+  review_status: {
+    manual_action_count: 0,
+    review_record_count: 0,
+    ready_count: 0,
+    not_ready_count: 0,
+  },
+});
+assertEqual(blockedCandidateMvpSummary?.mvpStatus.statusLabel, "诊断 MVP");
+assertIncludes(blockedCandidateMvpSummary?.mvpStatus.summary ?? "", "3 个候选未通过人工写入门禁");
+assertNotIncludes(blockedCandidateMvpSummary?.mvpStatus.summary ?? "", "3 个可写人工候选");
+assertIncludes(blockedCandidateMvpSummary?.landingGates[2].value ?? "", "3 个候选，只能诊断不能写动作");
+assertNotIncludes(blockedCandidateMvpSummary?.landingGates[2].value ?? "", "候选可人工复核");
 
 const parentScopeWithoutAdMetrics = buildProductScopeGroupOverview(
   {
