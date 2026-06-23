@@ -2428,6 +2428,7 @@ export function buildSignalManualActionEvidenceSnapshot(
   const factValue = (label: string) => signalFactValue(facts, label);
   const intentLabel =
     String(selectedSearchIntentLabel ?? "").trim() ||
+    factValue("搜索意图分组") ||
     factValue("Parent ASIN 广告搜索词表现复核") ||
     factValue("Parent ASIN 搜索词表现聚合") ||
     factValue("广告搜索词聚合上下文") ||
@@ -2568,6 +2569,7 @@ const manualActionEvidenceReasonPriority = [
   "上下文边界",
   "人工动作路径",
   "复盘指标",
+  "搜索意图分组",
   "Parent ASIN 广告搜索词表现复核",
   "Parent ASIN 搜索词表现聚合",
   "广告搜索词聚合上下文",
@@ -3303,6 +3305,7 @@ function reviewRecordHasSnapshotLabel(record: ReviewRecordForUi | null | undefin
 function reviewRecordHasSearchIntentContext(record: ReviewRecordForUi | null | undefined) {
   return Boolean(
     record?.review_context?.search_intent_label ||
+      reviewRecordHasSnapshotLabel(record, "搜索意图分组") ||
       reviewRecordHasSnapshotLabel(record, "语义组") ||
       reviewRecordHasSnapshotLabel(record, "Parent ASIN 广告搜索词表现复核") ||
       reviewRecordHasSnapshotLabel(record, "Parent ASIN 搜索词表现聚合") ||

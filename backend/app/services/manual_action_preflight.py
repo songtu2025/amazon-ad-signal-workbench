@@ -17,7 +17,7 @@ REVIEW_WINDOW_ORDER = ("7d", "14d")
 REQUIRED_REVIEW_EVIDENCE_LABELS = ("排查路径", "AI 准入", "搜索词边界", "广告位边界")
 SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS = (
     *REQUIRED_REVIEW_EVIDENCE_LABELS,
-    "语义组",
+    "搜索意图分组",
     "Parent ASIN入口",
     "广告 ASIN承接",
     "广告组合流判断",
@@ -28,6 +28,15 @@ SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS = (
     "需要补证",
     "动作边界",
 )
+SEARCH_INTENT_CONTEXT_LABEL_ALIASES = {
+    "搜索意图分组": (
+        "搜索意图分组",
+        "语义组",
+        "Parent ASIN 广告搜索词表现复核",
+        "Parent ASIN 搜索词表现聚合",
+        "广告搜索词聚合上下文",
+    )
+}
 ADVERTISED_PRODUCT_REQUIRED_REVIEW_EVIDENCE_LABELS = (
     *REQUIRED_REVIEW_EVIDENCE_LABELS,
     "广告商品覆盖",
@@ -987,16 +996,16 @@ def _search_term_intent_snapshot_blocks(target: dict[str, Any], drilldown: dict[
     if not labels:
         return []
 
-    suffix = f"；另有 {len(labels) - 3} 个搜索词表现聚合未展开" if len(labels) > 3 else ""
-    source = "规则语义" if any(label.startswith("规则语义：") for label in labels) else "Parent ASIN 搜索词表现聚合"
+    suffix = f"；另有 {len(labels) - 3} 个广告搜索词表现分组未展开" if len(labels) > 3 else ""
+    source = "规则语义" if any(label.startswith("规则语义：") for label in labels) else "Parent ASIN 广告搜索词表现复核"
     return [
         {
             "block_id": "search_term_intent_context",
-            "label": "语义组",
+            "label": "搜索意图分组",
             "value": "、".join(labels[:3]) + suffix,
             "detail": (
                 "该聚合来自当前 Parent ASIN 广告上下文中的用户搜索词表现行，"
-                "用于复盘同类搜索词表现和重复上下文；不能替代顶部诊断入口，"
+                "用于按搜索意图复盘同类广告搜索词表现和重复上下文；不能替代顶部诊断入口，"
                 "也不能作为自动加词、否词、调价或暂停广告的依据。"
             ),
             "source": source,
@@ -1887,9 +1896,14 @@ def _has_required_review_evidence_snapshot(record: Any) -> bool:
         for item in _list(_record_value(record, "evidence_snapshot"))
         if str(_record_value(item, "value") or "").strip()
     }
-    return all(label in labels for label in _required_review_evidence_labels(record)) and (
+    return all(_has_required_review_label(labels, label) for label in _required_review_evidence_labels(record)) and (
         _has_object_reference(_list(_record_value(record, "evidence_snapshot")), record) is not False
     )
+
+
+def _has_required_review_label(labels: set[str], required_label: str) -> bool:
+    aliases = SEARCH_INTENT_CONTEXT_LABEL_ALIASES.get(required_label, (required_label,))
+    return any(label in labels for label in aliases)
 
 
 def _required_review_evidence_labels(record: Any) -> tuple[str, ...]:

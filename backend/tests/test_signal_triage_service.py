@@ -646,7 +646,7 @@ def test_search_intent_summaries_respect_parent_asin_product_scope(monkeypatch) 
     assert "广告位影响需要继续打开广告位证据核对" in summaries[0].evidence_gap
     assert "同类广告搜索词" in summaries[0].proves
     assert "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现" in summaries[0].does_not_prove
-    assert "不能把 Parent ASIN 搜索词表现聚合当作人工动作对象" in summaries[0].does_not_prove
+    assert "不能把搜索意图分组当作人工动作对象" in summaries[0].does_not_prove
     assert "语义组人工动作" not in summaries[0].does_not_prove
     assert "出单最多的具体 SearchTerm 信号" in summaries[0].next_manual_step
 
@@ -3648,7 +3648,7 @@ def test_review_readiness_shows_manual_action_context_coverage_without_saved_rev
     assert checklist["manual_action_context"]["status"] == "partial"
     assert "人工动作 2 条" in checklist["manual_action_context"]["evidence"]
     assert "证据快照 1 条" in checklist["manual_action_context"]["evidence"]
-    assert "广告搜索词聚合上下文 1 条" in checklist["manual_action_context"]["evidence"]
+    assert "Parent ASIN 广告搜索词表现复核 1 条" in checklist["manual_action_context"]["evidence"]
     assert "ABA 站点级参考 1 条" in checklist["manual_action_context"]["evidence"]
 
 

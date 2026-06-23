@@ -43,6 +43,13 @@ PRIORITY_SCORE = {"P0": 3, "P1": 2, "P2": 1}
 REVIEW_WAIT_FORBIDDEN_ACTIONS = ["不拉取快照", "不保存复盘结论", "不自动改规则", "不自动执行广告动作"]
 REVIEW_GAP_FORBIDDEN_ACTIONS = ["不保存复盘结论", "不自动改规则", "不自动执行广告动作"]
 ACTIONABLE_PRODUCT_SCOPE_PREFIXES = ("parent_asin:", "ad_asin:")
+SEARCH_INTENT_CONTEXT_LABELS = (
+    "搜索意图分组",
+    "Parent ASIN 广告搜索词表现复核",
+    "语义组",
+    "Parent ASIN 搜索词表现聚合",
+    "广告搜索词聚合上下文",
+)
 MANUAL_TRIAGE_MIN_EVIDENCE_COUNT = 3
 MANUAL_TRIAGE_BLOCKED_SIGNAL_CATEGORIES = {
     "advertised_product_opportunity",
@@ -5374,7 +5381,7 @@ def _manual_action_context_coverage(manual_actions: list[Any]) -> dict[str, int]
         )
         if has_evidence:
             with_evidence_snapshot += 1
-        if _manual_action_evidence_value(action, "语义组"):
+        if any(_manual_action_evidence_value(action, label) for label in SEARCH_INTENT_CONTEXT_LABELS):
             with_search_intent += 1
         if _manual_action_evidence_value(action, "ABA语义参考词"):
             with_aba_reference += 1
@@ -5395,7 +5402,10 @@ def _review_feedback_candidate_groups(
     for record in review_records:
         action_id = str(_value(getattr(record, "action_id", "")) or "").strip()
         evidence_source = manual_action_by_id.get(action_id) or record
-        search_intent_label = _evidence_snapshot_value(evidence_source, "语义组")
+        search_intent_label = next(
+            (value for label in SEARCH_INTENT_CONTEXT_LABELS if (value := _evidence_snapshot_value(evidence_source, label))),
+            None,
+        )
         aba_reference_term = _evidence_snapshot_value(evidence_source, "ABA语义参考词")
         if search_intent_label:
             group_type = "search_intent"
@@ -5576,7 +5586,7 @@ def _review_closure_checklist(
             "check_id": "manual_action_context",
             "label": "复盘输入证据",
             "status": context_status,
-            "evidence": f"人工动作 {context_total} 条，证据快照 {context_evidence} 条，Parent ASIN 搜索词表现聚合 {context_intent} 条，ABA 站点级参考 {context_aba} 条",
+            "evidence": f"人工动作 {context_total} 条，证据快照 {context_evidence} 条，Parent ASIN 广告搜索词表现复核 {context_intent} 条，ABA 站点级参考 {context_aba} 条",
         },
         {
             "check_id": "evidence_trace",

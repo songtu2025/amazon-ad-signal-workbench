@@ -1399,9 +1399,9 @@ def test_grouped_search_term_opportunity_exposes_semantic_group() -> None:
     )
     facts = {fact.label: fact.value for fact in signal.evidence.facts}
 
-    assert facts["语义组"] == "规则语义：儿童太阳镜"
+    assert facts["搜索意图分组"] == "规则语义：儿童太阳镜"
     assert "儿童太阳镜" in signal.summary
-    assert "广告搜索词聚合上下文" in signal.suggested_action.description
+    assert "Parent ASIN 广告搜索词表现复核" in signal.suggested_action.description
     assert "自动" not in signal.suggested_action.description
 
 

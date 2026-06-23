@@ -29,6 +29,13 @@ REVIEW_TODO_DECISION_FILE_NAME = "review_todo_decisions.jsonl"
 REVIEW_WINDOWS: tuple[tuple[ReviewWindow, int], ...] = (("7d", 7), ("14d", 14))
 REVIEWABLE_ACTION_TYPES: set[ManualActionType] = {"observe", "handled", "add_to_review"}
 VOID_REVIEW_TODO_DECISION_TYPES: set[ReviewTodoDecisionType] = {"void_legacy_missing_evidence"}
+SEARCH_INTENT_CONTEXT_LABELS = (
+    "搜索意图分组",
+    "Parent ASIN 广告搜索词表现复核",
+    "语义组",
+    "Parent ASIN 搜索词表现聚合",
+    "广告搜索词聚合上下文",
+)
 
 
 def manual_action_object_id_for_values(
@@ -472,10 +479,9 @@ def _search_term_for_review_context(record: Any) -> str | None:
 
 
 def _search_intent_label_for_review_context(record: Any) -> str | None:
-    label = (
-        _evidence_value(record, "语义组")
-        or _evidence_value(record, "Parent ASIN 搜索词表现聚合")
-        or _evidence_value(record, "广告搜索词聚合上下文")
+    label = next(
+        (value for item_label in SEARCH_INTENT_CONTEXT_LABELS if (value := _evidence_value(record, item_label))),
+        None,
     )
     if label:
         return label
@@ -541,7 +547,7 @@ def _review_context_repeat_summary(
 ) -> str | None:
     parts: list[str] = []
     if search_intent_label and repeat_search_intent_count >= 2:
-        parts.append(f"同一 Parent ASIN 搜索词表现聚合已有 {repeat_search_intent_count} 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。")
+        parts.append(f"同一 Parent ASIN 广告搜索词表现复核已有 {repeat_search_intent_count} 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。")
     if aba_reference_term and repeat_aba_reference_count >= 2:
         parts.append(f"同一 ABA 站点级参考上下文已有 {repeat_aba_reference_count} 次人工留痕，复盘时应合并查看市场热词承接。")
     return " ".join(parts) or None

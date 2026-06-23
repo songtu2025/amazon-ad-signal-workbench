@@ -6121,7 +6121,7 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
 export function filterSignalsBySearchIntent<T extends SearchIntentFilterSignalForUi>(signals: T[], intentLabel: string | null | undefined): T[] {
   const selectedIntentLabel = intentLabel?.trim();
   if (!selectedIntentLabel) return signals;
-  const contextLabels = new Set(["广告搜索词聚合上下文", "语义组"]);
+  const contextLabels = new Set(["搜索意图分组", "Parent ASIN 广告搜索词表现复核", "广告搜索词聚合上下文", "语义组"]);
   return signals.filter((signal) => {
     if (signal.signal_category !== "search_term_opportunity" || signal.object_type !== "search_term") return false;
     const primaryIntentLabel = signal.evidence?.primary_object?.intent_label?.trim();
@@ -7778,7 +7778,7 @@ function keyEvidencePriorityRulesForSignal(signal?: KeyEvidenceSignalContext): s
 
   if (signal.signal_category === "search_term_opportunity") {
     return [
-      ["广告搜索词聚合上下文", "语义组"],
+      ["搜索意图分组", "Parent ASIN 广告搜索词表现复核", "广告搜索词聚合上下文", "语义组"],
       ["投放上下文数"],
       ["搜索词"],
       ["合计订单", "订单"],
