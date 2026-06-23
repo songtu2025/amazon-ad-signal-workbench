@@ -7056,11 +7056,11 @@ export function buildSearchIntentFocusContext(
   const signalObject = `SearchTerm：${searchTerm}`;
 
   return {
-    title: "广告搜索词表现承接",
+    title: "Parent ASIN 广告搜索词聚合承接",
     focusLabel,
     signalObject,
-    relation: `左侧表现聚合筛选只缩小当前 Parent ASIN 下的广告 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。`,
-    boundary: `广告搜索词聚合上下文「${focusLabel}」不是人工动作对象；ABA 只作站点级背景，实际写入以后端 preflight evidence_snapshot_preview 为准。`,
+    relation: `这个聚合标签来自当前 Parent ASIN 关联广告中实际产生表现的用户搜索词行；左侧只用它按搜索意图缩小广告 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。`,
+    boundary: `广告搜索词聚合上下文「${focusLabel}」只是分析分组，不是经营商品、广告组或人工动作对象；ABA 只作站点级背景，实际写入以后端 preflight evidence_snapshot_preview 为准。`,
     tone: "container",
   };
 }
