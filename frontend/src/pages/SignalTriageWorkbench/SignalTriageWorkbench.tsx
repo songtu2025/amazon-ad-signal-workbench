@@ -1394,8 +1394,9 @@ export function SignalTriageWorkbench() {
           </select>
         </label>
         <label>
-          <span>诊断入口</span>
+          <span>经营诊断入口</span>
           <select
+            aria-label="经营诊断入口筛选器"
             value={activeProductScopeId}
             disabled={productScope === null || loading}
             onChange={(event) => setSelectedProductScopeId(event.target.value)}
