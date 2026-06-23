@@ -4932,7 +4932,7 @@ assertEqual(selectedSearchIntentFocusContext.focusLabel, "规则语义：海滩�
 assertIncludes(selectedSearchIntentFocusContext.signalObject, "SearchTerm：beach essentials");
 assertEqual(selectedSearchIntentFocusContext.pathItems[0]?.label, "经营诊断入口");
 assertEqual(selectedSearchIntentFocusContext.pathItems[0]?.value, "Parent ASIN B0PARENT");
-assertEqual(selectedSearchIntentFocusContext.pathItems[1]?.label, "语义聚合口径");
+assertEqual(selectedSearchIntentFocusContext.pathItems[1]?.label, "搜索词聚合口径");
 assertIncludes(selectedSearchIntentFocusContext.pathItems[1]?.value ?? "", "当前 Parent ASIN 关联广告中的用户搜索词表现行");
 assertEqual(selectedSearchIntentFocusContext.pathItems[2]?.label, "当前诊断对象");
 assertIncludes(selectedSearchIntentFocusContext.relation, "搜索意图分组");

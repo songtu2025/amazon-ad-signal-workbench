@@ -936,7 +936,12 @@ export function SignalTriageWorkbench() {
     ],
   );
   const selectedManualActionPreflightText =
-    selectedManualActionPreviewPreflightError ?? manualActionPreflightStatusText(selectedManualActionPreviewPreflight);
+    selectedManualActionPreviewPreflightError ??
+    (selectedBackendManualActionPreview
+      ? manualActionPreflightStatusText(selectedManualActionPreviewPreflight)
+      : latestManualAction
+        ? "当前 SearchTerm 已有人工留痕；后端预检不再生成重复写入对象，请查看人工留痕和 7/14 天复盘待办。"
+        : "当前信号没有后端可写预检对象；不会自动写入人工动作。");
   const selectedManualActionPreflightEvidenceText = manualActionPreflightEvidenceSnapshotText(
     selectedManualActionPreviewPreflight,
   );
@@ -1095,37 +1100,50 @@ export function SignalTriageWorkbench() {
     setManualActionPreflightsByAction({});
     setManualActionPreflightErrorsByAction({});
     setManualActionPreviewActionType(recommendedActionType);
-    void Promise.all(
-      manualActionOrder.map(async (actionType) => {
-        try {
-          const preflight = await fetchManualActionPreflight({
-            marketId: selectedSignal.market_id ?? selectedMarketId,
-            top: 5,
-            productScopeId: activeProductScopeId,
-            expectedObjectId: selectedBackendManualActionPreview.objectId,
-            expectedObjectType: selectedBackendManualActionPreview.objectType,
-            actionType,
-            expectWritten: false,
-          });
-          return { actionType, preflight, error: null };
-        } catch {
-          return { actionType, preflight: null, error: preflightErrorText };
-        }
-      }),
-    ).then((results) => {
+    const fetchPreflightForAction = async (actionType: ManualActionType) => {
+      try {
+        const preflight = await fetchManualActionPreflight({
+          marketId: selectedSignal.market_id ?? selectedMarketId,
+          top: 5,
+          productScopeId: activeProductScopeId,
+          expectedObjectId: selectedBackendManualActionPreview.objectId,
+          expectedObjectType: selectedBackendManualActionPreview.objectType,
+          actionType,
+          expectWritten: false,
+        });
+        return { actionType, preflight, error: null };
+      } catch {
+        return { actionType, preflight: null, error: preflightErrorText };
+      }
+    };
+    void (async () => {
+      const recommendedResult = await fetchPreflightForAction(recommendedActionType);
       if (cancelled) return;
-      const nextPreflightsByAction: Partial<Record<ManualActionType, ManualActionPreflight | null>> = {};
-      const nextPreflightErrorsByAction: Partial<Record<ManualActionType, string | null>> = {};
-      results.forEach((result) => {
+      setManualActionPreflightsByAction({ [recommendedActionType]: recommendedResult.preflight });
+      setManualActionPreflightErrorsByAction({ [recommendedActionType]: recommendedResult.error });
+      setManualActionPreflight(recommendedResult.preflight);
+      setManualActionPreflightError(recommendedResult.error);
+      setManualActionPreviewActionType(recommendedActionType);
+
+      const otherResults = await Promise.all(
+        manualActionOrder.filter((actionType) => actionType !== recommendedActionType).map(async (actionType) => {
+          return fetchPreflightForAction(actionType);
+        }),
+      );
+      if (cancelled) return;
+      const nextPreflightsByAction: Partial<Record<ManualActionType, ManualActionPreflight | null>> = {
+        [recommendedActionType]: recommendedResult.preflight,
+      };
+      const nextPreflightErrorsByAction: Partial<Record<ManualActionType, string | null>> = {
+        [recommendedActionType]: recommendedResult.error,
+      };
+      otherResults.forEach((result) => {
         nextPreflightsByAction[result.actionType] = result.preflight;
         nextPreflightErrorsByAction[result.actionType] = result.error;
       });
       setManualActionPreflightsByAction(nextPreflightsByAction);
       setManualActionPreflightErrorsByAction(nextPreflightErrorsByAction);
-      setManualActionPreflight(nextPreflightsByAction[recommendedActionType] ?? null);
-      setManualActionPreflightError(nextPreflightErrorsByAction[recommendedActionType] ?? null);
-      setManualActionPreviewActionType(recommendedActionType);
-    });
+    })();
     return () => {
       cancelled = true;
     };

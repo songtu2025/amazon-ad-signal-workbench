@@ -7165,7 +7165,7 @@ export function buildSearchIntentFocusContext(
     signalObject,
     pathItems: [
       { label: "经营诊断入口", value: scopeLabel },
-      { label: "语义聚合口径", value: `${focusLabel}：当前 Parent ASIN 关联广告中的用户搜索词表现行` },
+      { label: "搜索词聚合口径", value: `${focusLabel}：当前 Parent ASIN 关联广告中的用户搜索词表现行` },
       { label: "当前诊断对象", value: signalObject },
     ],
     relation: `这个搜索意图分组用于从 ${scopeLabel} 视角聚合广告中实际产生表现的用户搜索词行；左侧只用它按搜索意图缩小广告 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。`,
