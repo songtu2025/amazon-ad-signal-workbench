@@ -351,7 +351,7 @@ def _diagnosis_contract(
             business_question="搜索词或广告商品表现是否能安全落到广告组结构判断？",
             object_grain="AdGroup 投放容器",
             metrics=_ad_group_contract_metrics(scope, ad_groups, search_term_count, layers),
-            current_judgement=_ad_group_contract_judgement(scope, ad_groups, search_term_count),
+            current_judgement=_ad_group_contract_judgement(scope, ad_groups, search_term_count, layers),
             proves="能证明搜索词出现在哪些广告组上下文里。",
             does_not_prove="不能证明某个搜索词消耗一定由单个广告 ASIN 承接，也不能把广告组当产品。",
             evidence_gap=_ad_group_contract_evidence_gap(scope, ad_groups),
@@ -549,18 +549,27 @@ def _ad_group_contract_metrics(
         _contract_metric("最大同组 ASIN", str(max_asin_count), "判断广告组层诊断能否安全下钻到商品层。"),
         _contract_metric("搜索词上下文", str(search_term_count), "判断广告组下是否有可复核的流量证据。"),
         _contract_metric("有效/无订单词", f"{effective_count}/{zero_order_count}", "对比同广告组内有效搜索词和无订单消耗词，判断是否只是合并结果好看。"),
+        _contract_metric("同组投放商品表现", _ad_group_contract_product_performance_summary(diagnoses), "对比同一广告组内广告 ASIN 的花费和订单，避免把广告组汇总表现误读为单个商品表现。"),
+        _contract_metric("主推策略边界", _ad_group_contract_strategy_boundary_summary(layers, diagnoses), "确认消耗集中是否可能来自主推款策略；缺策略资料时只能人工复核，不能自动拆广告组。"),
         _contract_metric("广告位层级", _ad_group_contract_placement_summary(diagnoses), "说明广告位证据能否支持广告组层解释。"),
         _contract_metric("广告组结构候选层", str(_int(_dict(layers.get("ad_group_structure_boundary")).get("count")) or 0), "识别是否需要优先处理多商品广告组边界。"),
     ]
 
 
-def _ad_group_contract_judgement(scope: dict[str, Any], ad_groups: list[str], search_term_count: int) -> str:
+def _ad_group_contract_judgement(
+    scope: dict[str, Any],
+    ad_groups: list[str],
+    search_term_count: int,
+    layers: dict[str, dict[str, Any]],
+) -> str:
     diagnoses = _ad_group_contract_diagnoses(scope, ad_groups)
     if diagnoses:
         matched_text = f"已匹配 {len(diagnoses)}/{len(ad_groups)} 个广告组结构"
         unmatched_count = max(len(ad_groups) - len(diagnoses), 0)
         unmatched_text = f"，另有 {unmatched_count} 个广告组缺投放商品结构证据" if unmatched_count else ""
         names_text = "、".join(ad_groups[:3])
+        product_text = _ad_group_contract_product_performance_summary(diagnoses)
+        strategy_text = _ad_group_contract_strategy_boundary_summary(layers, diagnoses)
         multi_groups = [diagnosis for diagnosis in diagnoses if (_int(diagnosis.get("ad_group_advertised_asin_count")) or 0) > 1]
         if multi_groups:
             top_group = max(
@@ -576,10 +585,12 @@ def _ad_group_contract_judgement(scope: dict[str, Any], ad_groups: list[str], se
             return (
                 f"搜索词出现在 {len(ad_groups)} 个广告组上下文：{names_text}；{matched_text}{unmatched_text}。"
                 f"{group_name} 同组投放 {asin_count} 个 ASIN（{asins}），只能先判断广告组承接，不能拆到单个广告 ASIN。"
+                f"同组商品表现：{product_text}；主推策略边界：{strategy_text}。"
             )
         return (
             f"搜索词出现在 {len(ad_groups)} 个广告组上下文：{names_text}；{matched_text}{unmatched_text}。"
             "当前匹配广告组只识别到单 ASIN 投放，但仍需要核对投放词、广告位和主推策略后再人工处理。"
+            f"同组商品表现：{product_text}；主推策略边界：{strategy_text}。"
         )
     if ad_groups:
         return f"搜索词出现在 {len(ad_groups)} 个广告组上下文：{'、'.join(ad_groups[:3])}；广告组仍只是投放容器。"
@@ -656,6 +667,49 @@ def _ad_group_contract_placement_summary(diagnoses: list[dict[str, Any]]) -> str
         "missing": "缺广告位",
     }
     return " / ".join(f"{labels.get(key, key)} {count}" for key, count in counter.items())
+
+
+def _ad_group_contract_product_performance_summary(diagnoses: list[dict[str, Any]]) -> str:
+    parts: list[str] = []
+    seen: set[tuple[str, str]] = set()
+    ordered = sorted(
+        diagnoses,
+        key=lambda diagnosis: (
+            _int(diagnosis.get("ad_group_advertised_asin_count")) or 0,
+            _number(diagnosis.get("spend")) or 0,
+        ),
+        reverse=True,
+    )
+    for diagnosis in ordered:
+        group_name = _string(diagnosis.get("ad_group_name")) or "当前广告组"
+        for product in _dict_list(diagnosis.get("advertised_product_performance"))[:2]:
+            asin = _string(product.get("asin") or product.get("label")) or "未知 ASIN"
+            key = (group_name, asin)
+            if key in seen:
+                continue
+            seen.add(key)
+            text = f"{group_name}：{asin} 花费 {_format_amount(product.get('spend'))} / 订单 {_int(product.get('orders')) or 0}"
+            sample_boundary = _string(product.get("sample_boundary"))
+            if sample_boundary:
+                text = f"{text} / {sample_boundary}"
+            parts.append(text)
+            if len(parts) >= 4:
+                return "；".join(parts)
+    return "；".join(parts) if parts else "待补齐同组投放商品表现"
+
+
+def _ad_group_contract_strategy_boundary_summary(
+    layers: dict[str, dict[str, Any]],
+    diagnoses: list[dict[str, Any]],
+) -> str:
+    strategy_count = _int(_dict(layers.get("strategy_boundary")).get("count")) or 0
+    structure_count = _int(_dict(layers.get("ad_group_structure_boundary")).get("count")) or 0
+    multi_count = sum(1 for diagnosis in diagnoses if (_int(diagnosis.get("ad_group_advertised_asin_count")) or 0) > 1)
+    if strategy_count > 0:
+        return f"策略备注候选 {strategy_count} / 广告组结构候选 {structure_count}；需人工核对主推款策略是否解释消耗集中"
+    if multi_count > 0:
+        return f"策略备注 0 / 多商品广告组 {multi_count}；主推款待人工确认，不能自动拆广告组"
+    return f"策略备注 {strategy_count} / 多商品广告组 {multi_count}；仍需人工确认主推策略，不自动执行广告动作"
 
 
 def _ad_group_contract_asins_text(diagnosis: dict[str, Any]) -> str:

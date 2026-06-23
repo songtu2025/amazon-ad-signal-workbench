@@ -1450,11 +1450,17 @@ def test_signal_triage_payload_adds_diagnosis_contract_for_search_term_path(monk
     assert ad_group_metrics["多商品广告组"] == "0/2"
     assert ad_group_metrics["最大同组 ASIN"] == "1"
     assert ad_group_metrics["有效/无订单词"] == "2/0"
+    assert "B016EXMW02 花费 18.08 / 订单 13" in ad_group_metrics["同组投放商品表现"]
+    assert "B016EXMVZS 花费 16.03 / 订单 8" in ad_group_metrics["同组投放商品表现"]
+    assert "策略备注 0 / 多商品广告组 0" in ad_group_metrics["主推策略边界"]
+    assert "不自动执行广告动作" in ad_group_metrics["主推策略边界"]
     assert ad_group_metrics["广告位层级"] == "广告活动级 2"
     assert "RBK004-beach essentials-精准（测试）" in ad_group_section["current_judgement"]
     assert "RBK004-扩展-beach essentials" in ad_group_section["current_judgement"]
     assert "已匹配 2/2 个广告组结构" in ad_group_section["current_judgement"]
     assert "单 ASIN 投放" in ad_group_section["current_judgement"]
+    assert "同组商品表现" in ad_group_section["current_judgement"]
+    assert "主推策略边界" in ad_group_section["current_judgement"]
     assert "广告组是投放容器" in sections["ad_group_boundary"]["evidence_gap"]
     assert "同广告活动广告位证据" in sections["ad_group_boundary"]["evidence_gap"]
     assert "投放商品清单" in sections["ad_group_boundary"]["required_evidence"]
