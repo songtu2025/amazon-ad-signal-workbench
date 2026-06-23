@@ -345,6 +345,7 @@ export function SignalTriageWorkbench() {
   const [selectedMarketId, setSelectedMarketId] = useState<number>(defaultMarketId);
   const [selectedProductScopeId, setSelectedProductScopeId] = useState<string | null>(null);
   const [selectedSearchIntentLabel, setSelectedSearchIntentLabel] = useState<string | null>(null);
+  const [selectedSearchIntentScopeId, setSelectedSearchIntentScopeId] = useState<string | null>(null);
   const [isEvidenceDrilldownFocused, setIsEvidenceDrilldownFocused] = useState(false);
   const workbenchGridRef = useRef<HTMLElement | null>(null);
 
@@ -490,6 +491,7 @@ export function SignalTriageWorkbench() {
     () => mergeBackendTriageSignals(productScopedSignals, normalizedSignals, signalTriageSummary),
     [normalizedSignals, productScopedSignals, signalTriageSummary],
   );
+  const activeSearchIntentLabel = selectedSearchIntentScopeId === activeProductScopeId ? selectedSearchIntentLabel : null;
 
   useEffect(() => {
     if (loading) return;
@@ -511,6 +513,12 @@ export function SignalTriageWorkbench() {
       })
       .catch(() => setError("后端服务未连接"));
   }, [activeProductScopeId, loading, normalizedSignals, productScopedSignals, selectedMarketId]);
+  useEffect(() => {
+    if (!selectedSearchIntentLabel) return;
+    if (selectedSearchIntentScopeId === activeProductScopeId) return;
+    setSelectedSearchIntentLabel(null);
+    setSelectedSearchIntentScopeId(null);
+  }, [activeProductScopeId, selectedSearchIntentLabel, selectedSearchIntentScopeId]);
   const backendRecommendedManualActionCandidate = useMemo(
     () => buildBackendRecommendedManualActionCandidate(displayProductScopedSignals, signalTriageSummary),
     [displayProductScopedSignals, signalTriageSummary],
@@ -616,10 +624,10 @@ export function SignalTriageWorkbench() {
   }, [displayProductScopedSignals, filter]);
   const filteredSignals = useMemo(
     () =>
-      selectedSearchIntentLabel
-        ? filterSignalsBySearchIntent(displayProductScopedSignals, selectedSearchIntentLabel)
+      activeSearchIntentLabel
+        ? filterSignalsBySearchIntent(displayProductScopedSignals, activeSearchIntentLabel)
         : queueFilteredSignals,
-    [displayProductScopedSignals, queueFilteredSignals, selectedSearchIntentLabel],
+    [activeSearchIntentLabel, displayProductScopedSignals, queueFilteredSignals],
   );
   const productScopeQueueHeader = useMemo(
     () => buildProductScopeQueueHeader(selectedProductScopeOption, filteredSignals.length),
@@ -674,8 +682,8 @@ export function SignalTriageWorkbench() {
     [selectedProductScopeOption, selectedSignal],
   );
   const selectedSearchIntentFocusContext = useMemo(
-    () => buildSearchIntentFocusContext(selectedSearchIntentLabel, selectedSignal),
-    [selectedSearchIntentLabel, selectedSignal],
+    () => buildSearchIntentFocusContext(activeSearchIntentLabel, selectedSignal),
+    [activeSearchIntentLabel, selectedSignal],
   );
   const selectedTriageBusinessEvidenceItems =
     selectedSignal?.id && selectedSignal.id === signalTriageSummary?.recommended_candidate?.signal_id
@@ -730,12 +738,19 @@ export function SignalTriageWorkbench() {
   const nextReviewTodo = selectNextReviewTodo(selectedReviewTodos);
 
   function handleSelectQueueFilter(nextFilter: QueueFilter) {
-    setSelectedSearchIntentLabel(null);
+    clearSearchIntentFocus();
     setFilter(nextFilter);
   }
 
+  function clearSearchIntentFocus() {
+    setSelectedSearchIntentLabel(null);
+    setSelectedSearchIntentScopeId(null);
+  }
+
   function handleSelectSearchIntent(intentLabel: string) {
-    setSelectedSearchIntentLabel((current) => (current === intentLabel ? null : intentLabel));
+    const isSameScopedFocus = activeSearchIntentLabel === intentLabel;
+    setSelectedSearchIntentLabel(isSameScopedFocus ? null : intentLabel);
+    setSelectedSearchIntentScopeId(isSameScopedFocus ? null : activeProductScopeId);
     const nextSignals = filterSignalsBySearchIntent(displayProductScopedSignals, intentLabel);
     if (nextSignals.length > 0) {
       setSelectedId(nextSignals[0].id);
@@ -743,7 +758,7 @@ export function SignalTriageWorkbench() {
   }
 
   function handleOpenProductScopeEvidenceDrilldown() {
-    setSelectedSearchIntentLabel(null);
+    clearSearchIntentFocus();
     setFilter("all");
     setIsEvidenceDrilldownFocused(true);
     window.requestAnimationFrame(() => {
@@ -763,7 +778,7 @@ export function SignalTriageWorkbench() {
       return;
     }
     setMessage(null);
-    setSelectedSearchIntentLabel(null);
+    clearSearchIntentFocus();
     setFilter("all");
     setSelectedId(signalId);
     window.requestAnimationFrame(() => {
@@ -1000,11 +1015,11 @@ export function SignalTriageWorkbench() {
   const selectedSearchIntentManualActionEvidenceSnapshot = useMemo(() => {
     if (!selectedSignal) return [];
     const scopedIntentLabel =
-      selectedSearchIntentLabel && filterSignalsBySearchIntent([selectedSignal], selectedSearchIntentLabel).length > 0
-        ? selectedSearchIntentLabel
+      activeSearchIntentLabel && filterSignalsBySearchIntent([selectedSignal], activeSearchIntentLabel).length > 0
+        ? activeSearchIntentLabel
         : null;
     return buildSignalManualActionEvidenceSnapshot(selectedSignal, scopedIntentLabel);
-  }, [selectedSearchIntentLabel, selectedSignal]);
+  }, [activeSearchIntentLabel, selectedSignal]);
   const selectedManualActionEvidenceSnapshot = useMemo(
     () => mergeManualActionEvidenceSnapshots(selectedSearchIntentManualActionEvidenceSnapshot, selectedBaseManualActionEvidenceSnapshot),
     [selectedBaseManualActionEvidenceSnapshot, selectedSearchIntentManualActionEvidenceSnapshot],
@@ -1843,23 +1858,23 @@ export function SignalTriageWorkbench() {
           </div>
 
           <div className="queueTabs" aria-label="队列筛选">
-            <button className={!selectedSearchIntentLabel && filter === "all" ? "active" : ""} onClick={() => handleSelectQueueFilter("all")}>
+            <button className={!activeSearchIntentLabel && filter === "all" ? "active" : ""} onClick={() => handleSelectQueueFilter("all")}>
               全部
             </button>
-            <button className={!selectedSearchIntentLabel && filter === "high" ? "active" : ""} onClick={() => handleSelectQueueFilter("high")}>
+            <button className={!activeSearchIntentLabel && filter === "high" ? "active" : ""} onClick={() => handleSelectQueueFilter("high")}>
               高优先级
             </button>
             {queueBusinessFilters.map((item) => (
               <button
                 key={item.value}
-                className={!selectedSearchIntentLabel && filter === item.value ? "active" : ""}
+                className={!activeSearchIntentLabel && filter === item.value ? "active" : ""}
                 onClick={() => handleSelectQueueFilter(item.value)}
               >
                 {item.label}
               </button>
             ))}
             <button
-              className={!selectedSearchIntentLabel && filter === "observing" ? "active" : ""}
+              className={!activeSearchIntentLabel && filter === "observing" ? "active" : ""}
               onClick={() => handleSelectQueueFilter("observing")}
             >
               观察中
@@ -1872,13 +1887,14 @@ export function SignalTriageWorkbench() {
                 <strong>搜索词机会二级筛选</strong>
                 <span>只缩小当前诊断入口内的 SearchTerm 机会队列</span>
               </div>
-              {selectedSearchIntentLabel && (
+              {activeSearchIntentLabel && (
                 <div className="searchIntentActiveFilter" aria-label="当前搜索词语义筛选">
                   <span>
-                    已聚焦：{selectedSearchIntentLabel}
+                    已聚焦：{activeSearchIntentLabel}
                     <small>诊断入口保持不变，仅显示同组 SearchTerm 机会；不做商品归因；ABA 只作站点级背景。</small>
+                    <small>绑定诊断入口：{selectedProductScopeOption?.label ?? activeProductScopeId}</small>
                   </span>
-                  <button type="button" onClick={() => setSelectedSearchIntentLabel(null)}>
+                  <button type="button" onClick={clearSearchIntentFocus}>
                     清除
                   </button>
                 </div>
@@ -1887,10 +1903,10 @@ export function SignalTriageWorkbench() {
                 {searchIntentReviewCards.map((card) => (
                   <button
                     type="button"
-                    className={`searchIntentReviewCard ${selectedSearchIntentLabel === card.intentLabel ? "active" : ""}`}
+                    className={`searchIntentReviewCard ${activeSearchIntentLabel === card.intentLabel ? "active" : ""}`}
                     key={card.title}
                     onClick={() => handleSelectSearchIntent(card.intentLabel)}
-                    aria-pressed={selectedSearchIntentLabel === card.intentLabel}
+                    aria-pressed={activeSearchIntentLabel === card.intentLabel}
                     aria-label={`二级筛选语义组 ${card.title} 的 SearchTerm 机会`}
                   >
                     <div>
@@ -1923,9 +1939,9 @@ export function SignalTriageWorkbench() {
           {!loading && !error && filteredSignals.length === 0 && (
             <EmptyState
               icon="empty"
-              title={selectedSearchIntentLabel ? "当前搜索词语义筛选暂无对应机会" : productScopeSignalExplanation?.title ?? "暂无真实快照信号"}
+              title={activeSearchIntentLabel ? "当前搜索词语义筛选暂无对应机会" : productScopeSignalExplanation?.title ?? "暂无真实快照信号"}
               description={
-                selectedSearchIntentLabel
+                activeSearchIntentLabel
                   ? "搜索词语义筛选不切换经营商品或广告组，只在当前诊断入口内显示同组 SearchTerm 机会；如果需要看全部信号，请清除二级筛选。"
                   : productScopeSignalExplanation?.description
                     ? productScopeSignalExplanation.description
@@ -1933,7 +1949,7 @@ export function SignalTriageWorkbench() {
               }
             />
           )}
-          {!loading && !error && filteredSignals.length === 0 && !selectedSearchIntentLabel && productScopeSignalExplanation && (
+          {!loading && !error && filteredSignals.length === 0 && !activeSearchIntentLabel && productScopeSignalExplanation && (
             <div className={`sparseSignalExplanation ${productScopeSignalExplanation.tone}`} aria-label="空队列口径解释">
               {productScopeSignalExplanation.reasons.map((reason) => (
                 <p key={reason}>{reason}</p>
