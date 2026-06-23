@@ -4923,14 +4923,15 @@ if (!selectedSearchIntentFocusContext) {
   throw new Error("当前语义聚焦命中搜索词信号时应生成承接提示");
 }
 
-assertEqual(selectedSearchIntentFocusContext.title, "Parent ASIN 搜索词表现聚合");
+assertEqual(selectedSearchIntentFocusContext.title, "Parent ASIN 广告搜索词表现复核承接");
 assertEqual(selectedSearchIntentFocusContext.focusLabel, "规则语义：海滩出行用品");
 assertIncludes(selectedSearchIntentFocusContext.signalObject, "SearchTerm：beach essentials");
+assertIncludes(selectedSearchIntentFocusContext.relation, "搜索意图分组");
 assertIncludes(selectedSearchIntentFocusContext.relation, "来自当前 Parent ASIN 关联广告中实际产生表现的用户搜索词行");
 assertIncludes(selectedSearchIntentFocusContext.relation, "按搜索意图缩小广告 SearchTerm 信号队列");
 assertIncludes(selectedSearchIntentFocusContext.relation, "若进入人工动作");
 assertIncludes(selectedSearchIntentFocusContext.relation, "以后端预检确认的 SearchTerm 稳定对象为准");
-assertIncludes(selectedSearchIntentFocusContext.boundary, "Parent ASIN 搜索词表现聚合「规则语义：海滩出行用品」只是分析分组");
+assertIncludes(selectedSearchIntentFocusContext.boundary, "Parent ASIN 广告搜索词表现复核「规则语义：海滩出行用品」只是分析分组");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "不是经营商品、广告组或人工动作对象");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "实际写入以后端 preflight evidence_snapshot_preview 为准");
 assertEqual(buildSearchIntentFocusContext("规则语义：太阳镜", searchTermSignalWithoutAsin), null);

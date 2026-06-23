@@ -3257,11 +3257,11 @@ function SearchIntentFocusContextStrip({ context }: { context: SearchIntentFocus
     <div className={`selectedSignalScopeContext searchIntentFocusContext ${context.tone}`} aria-label="广告搜索词表现复核与当前信号关系">
       <div className="selectedSignalScopeContextHeader">
         <strong>{context.title}</strong>
-        <span>Parent ASIN 视角聚合</span>
+        <span>Parent ASIN 广告搜索词表现复核</span>
       </div>
       <div className="selectedSignalScopeContextGrid">
         <span>
-          <b>聚合标签</b>
+          <b>搜索意图分组</b>
           <strong>{context.focusLabel}</strong>
         </span>
         <span>
