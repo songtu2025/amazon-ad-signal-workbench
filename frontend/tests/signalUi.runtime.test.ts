@@ -225,7 +225,9 @@ async function main() {
   assertIncludes(searchIntentPanelContext.purpose, "从当前 Parent ASIN 视角");
   assertIncludes(searchIntentPanelContext.purpose, "聚合广告中实际产生表现的用户搜索词");
   assertIncludes(searchIntentPanelContext.dataGrain, "当前 Parent ASIN");
+  assertIncludes(searchIntentPanelContext.dataGrain, "ad_search_term_daily_metrics");
   assertIncludes(searchIntentPanelContext.interactionBoundary, "不改变顶部诊断入口筛选器");
+  assertIncludes(searchIntentRuntimeText, "广告用户搜索词表现");
   assertIncludes(searchIntentRuntimeText, "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现");
   assertIncludes(searchIntentRuntimeText, "不能把搜索词表现分组当作人工动作对象");
   assertNotIncludes(searchIntentRuntimeText, "语义组人工动作");
