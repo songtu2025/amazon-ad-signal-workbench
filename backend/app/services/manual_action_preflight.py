@@ -75,6 +75,41 @@ ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
     "downstream_context_gap",
     "context_boundary",
 )
+SEARCH_TERM_ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
+    "diagnosis_path",
+    "ai_admission_gate",
+    "diagnosis_judgement",
+    "ad_group_problem_location",
+    "ad_group_evidence_synthesis",
+    "ad_group_advertised_product_performance",
+    "search_term_review_targeting_evidence",
+    "manual_search_term_boundary",
+    "manual_placement_boundary",
+    "search_term_review_aba_context",
+    "targeting_context",
+    "search_term_market_context",
+    "diagnosis_contract_judgement",
+    "diagnosis_contract_proves",
+    "diagnosis_contract_counter_evidence",
+    "diagnosis_contract_next_manual_step",
+    "diagnosis_contract_gap",
+    "diagnosis_contract_required_evidence",
+    "search_term_review_evidence_gap",
+    "search_term_review_action_boundary",
+    "advertised_product_review_ad_group_synthesis",
+    "advertised_product_review_evidence_gap",
+    "advertised_product_review_required_evidence",
+    "advertised_product_review_action_boundary",
+    "placement_review_performance",
+    "placement_review_evidence_gap",
+    "placement_review_required_evidence",
+    "placement_review_action_boundary",
+    "manual_action_path",
+    "review_metrics",
+    "placement_context_gap",
+    "downstream_context_gap",
+    "context_boundary",
+)
 
 
 def build_manual_action_preflight_payload(
@@ -466,7 +501,7 @@ def _evidence_snapshot_preview(triage: dict[str, Any], target: dict[str, Any]) -
     blocks.extend(_search_term_review_chain_snapshot_blocks(blocks, triage, target))
     blocks.extend(_advertised_product_review_chain_snapshot_blocks(blocks, triage, target))
     blocks.extend(_placement_review_chain_snapshot_blocks(blocks, triage, target))
-    blocks = _ordered_evidence_snapshot_blocks(blocks)
+    blocks = _ordered_evidence_snapshot_blocks(blocks, object_type=str(target.get("object_type") or ""))
     items = [_evidence_snapshot_item(block) for block in blocks]
     items = [item for item in items if item["label"] and item["value"]]
     sources = sorted({item["source"] for item in items if item["source"]})
@@ -1273,8 +1308,13 @@ def _diagnosis_contract_line(title: str, value: str) -> str:
     return f"{title}：{value}" if title else value
 
 
-def _ordered_evidence_snapshot_blocks(blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    order = {block_id: index for index, block_id in enumerate(ACTIONABLE_EVIDENCE_BLOCK_ORDER)}
+def _ordered_evidence_snapshot_blocks(blocks: list[dict[str, Any]], object_type: str | None = None) -> list[dict[str, Any]]:
+    block_order = (
+        SEARCH_TERM_ACTIONABLE_EVIDENCE_BLOCK_ORDER
+        if str(object_type or "").strip() == "search_term"
+        else ACTIONABLE_EVIDENCE_BLOCK_ORDER
+    )
+    order = {block_id: index for index, block_id in enumerate(block_order)}
     if not any(str(block.get("block_id") or "").strip() in order for block in blocks):
         return blocks
     indexed_blocks = list(enumerate(blocks))

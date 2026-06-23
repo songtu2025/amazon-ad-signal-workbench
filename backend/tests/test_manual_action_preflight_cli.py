@@ -428,7 +428,12 @@ def test_manual_action_preflight_snapshots_diagnosis_contract_gaps(monkeypatch) 
     aba_item = next(item for item in items if item["label"] == "ABA 背景")
     review_gap_item = next(item for item in items if item["label"] == "证据缺口")
     action_boundary_item = next(item for item in items if item["label"] == "动作边界")
-    assert labels[:5] == ["广告组合流判断", "搜索词市场背景", "搜索词边界", "广告位边界", "人工确认判断依据"]
+    assert labels.index("广告组合流判断") < labels.index("投放词证据")
+    assert labels.index("投放词证据") < labels.index("搜索词边界")
+    assert labels.index("搜索词边界") < labels.index("广告位边界")
+    assert labels.index("广告位边界") < labels.index("ABA 背景")
+    assert labels.index("ABA 背景") < labels.index("人工确认判断依据")
+    assert labels.index("搜索词市场背景") < labels.index("人工确认判断依据")
     assert "可以进入人工扩量复核" in judgement_item["value"]
     assert "真实广告转化" in proves_item["value"]
     assert "不能证明应该自动加词" in counter_item["value"]

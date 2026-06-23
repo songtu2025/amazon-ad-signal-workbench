@@ -1022,8 +1022,10 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
     assert [todo["evidence_snapshot"][1]["label"] for todo in todos] == ["AI 准入", "AI 准入"]
     assert {todo["evidence_snapshot"][2]["label"] for todo in todos} == {"广告组合流判断"}
     assert {todo["evidence_snapshot"][3]["label"] for todo in todos} == {"同组投放商品表现"}
+    assert {todo["evidence_snapshot"][4]["label"] for todo in todos} == {"投放词证据"}
     assert {todo["evidence_snapshot"][5]["label"] for todo in todos} == {"搜索词边界"}
     assert {todo["evidence_snapshot"][6]["label"] for todo in todos} == {"广告位边界"}
+    assert {todo["evidence_snapshot"][7]["label"] for todo in todos} == {"ABA 背景"}
     assert {
         "自动归因到单个广告 ASIN" in todo["evidence_snapshot"][2]["detail"] for todo in todos
     } == {True}
@@ -1155,6 +1157,10 @@ def test_beach_essentials_manual_action_post_write_readback_distinguishes_action
             assert [len(todo["evidence_snapshot"]) for todo in todos] == [23, 23]
             assert {todo["evidence_snapshot"][2]["label"] for todo in todos} == {"广告组合流判断"}
             assert {todo["evidence_snapshot"][3]["label"] for todo in todos} == {"同组投放商品表现"}
+            assert {todo["evidence_snapshot"][4]["label"] for todo in todos} == {"投放词证据"}
+            assert {todo["evidence_snapshot"][5]["label"] for todo in todos} == {"搜索词边界"}
+            assert {todo["evidence_snapshot"][6]["label"] for todo in todos} == {"广告位边界"}
+            assert {todo["evidence_snapshot"][7]["label"] for todo in todos} == {"ABA 背景"}
 
         post_write_response = client.get(
             "/api/manual-action/preflight",

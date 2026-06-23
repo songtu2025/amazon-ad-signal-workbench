@@ -5737,11 +5737,14 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
 export function filterSignalsBySearchIntent<T extends SearchIntentFilterSignalForUi>(signals: T[], intentLabel: string | null | undefined): T[] {
   const selectedIntentLabel = intentLabel?.trim();
   if (!selectedIntentLabel) return signals;
+  const contextLabels = new Set(["广告搜索词聚合上下文", "语义组"]);
   return signals.filter((signal) => {
     if (signal.signal_category !== "search_term_opportunity" || signal.object_type !== "search_term") return false;
     const primaryIntentLabel = signal.evidence?.primary_object?.intent_label?.trim();
     if (primaryIntentLabel === selectedIntentLabel) return true;
-    return (signal.evidence?.facts ?? []).some((fact) => fact.label === "语义组" && fact.value.trim() === selectedIntentLabel);
+    return (signal.evidence?.facts ?? []).some(
+      (fact) => contextLabels.has(fact.label) && fact.value.trim() === selectedIntentLabel,
+    );
   });
 }
 
@@ -7339,7 +7342,16 @@ function keyEvidencePriorityRulesForSignal(signal?: KeyEvidenceSignalContext): s
   }
 
   if (signal.signal_category === "search_term_opportunity") {
-    return [["语义组"], ["投放上下文数"], ["搜索词"], ["合计订单", "订单"], ["合计ACOS", "ACOS"], ["花费"], ["转化率"], ...keyEvidencePriorityRules];
+    return [
+      ["广告搜索词聚合上下文", "语义组"],
+      ["投放上下文数"],
+      ["搜索词"],
+      ["合计订单", "订单"],
+      ["合计ACOS", "ACOS"],
+      ["花费"],
+      ["转化率"],
+      ...keyEvidencePriorityRules,
+    ];
   }
 
   if (signal.signal_category === "advertised_product_opportunity") {

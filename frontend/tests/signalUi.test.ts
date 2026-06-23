@@ -5316,6 +5316,19 @@ const searchIntentFilteredSignals = filterSignalsBySearchIntent(
       },
     },
     {
+      id: "sig-search-intent-visible-context",
+      signal_type: "opportunity",
+      signal_category: "search_term_opportunity",
+      object_type: "search_term",
+      severity: 4,
+      status: "pending",
+      freshness_status: "api_snapshot",
+      evidence: {
+        primary_object: { label: "kids sunglasses" },
+        facts: [{ label: "广告搜索词聚合上下文", value: "规则语义：儿童太阳镜" }],
+      },
+    },
+    {
       id: "sig-ad-group",
       signal_type: "opportunity",
       signal_category: "ad_group_structure",
@@ -5332,8 +5345,9 @@ const searchIntentFilteredSignals = filterSignalsBySearchIntent(
   "规则语义：儿童太阳镜",
 );
 
-assertEqual(searchIntentFilteredSignals.length, 1);
+assertEqual(searchIntentFilteredSignals.length, 2);
 assertEqual(searchIntentFilteredSignals[0].id, "sig-search-intent-primary");
+assertEqual(searchIntentFilteredSignals[1].id, "sig-search-intent-visible-context");
 
 const adProductOpportunityKeyEvidence = buildKeyEvidenceFacts(
   [
