@@ -136,7 +136,7 @@ assertIncludes(workbenchSource, "return;");
 assertIncludes(workbenchSource, "setSelectedSearchIntentScopeId(activeProductScopeId)");
 assertIncludes(workbenchSource, "if (selectedSearchIntentScopeId === activeProductScopeId) return;");
 assertIncludes(workbenchSource, "filterSignalsBySearchIntent(displayProductScopedSignals, activeSearchIntentLabel)");
-assertIncludes(workbenchSource, "filterSignalsBySearchIntent(displayProductScopedSignals, intentLabel)");
+assertIncludes(workbenchSource, "selectSearchIntentSignalId(displayProductScopedSignals, intentLabel, preferredSearchTerm)");
 assertIncludes(workbenchSource, "绑定诊断入口：{selectedProductScopeOption?.label ?? activeProductScopeId}");
 assertNotIncludes(workbenchSource, "filterSignalsBySearchIntent(normalizedSignals, intentLabel)");
 assertNotIncludes(workbenchSource, 'setFilter("opportunity_expansion");');
@@ -160,6 +160,7 @@ assertIncludes(workbenchSource, 'aria-label="广告搜索词表现复核空态"'
 assertIncludes(workbenchSource, "暂无搜索词表现聚合");
 assertIncludes(workbenchSource, "诊断入口保持不变，仅显示同类 SearchTerm 信号；不做商品归因");
 assertIncludes(workbenchSource, "card.purpose");
+assertIncludes(workbenchSource, "card.primarySearchTerm");
 assertIncludes(workbenchSource, "业务问题：{card.businessQuestion}");
 assertIncludes(workbenchSource, "card.currentJudgement");
 assertIncludes(workbenchSource, "card.metricPurpose");

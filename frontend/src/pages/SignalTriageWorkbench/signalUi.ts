@@ -193,6 +193,7 @@ export interface SearchIntentReviewCard {
   proves: string;
   doesNotProve: string;
   nextManualStep: string;
+  primarySearchTerm: string | null;
   topTerms: string[];
 }
 
@@ -211,6 +212,7 @@ export interface SearchIntentFilterSignalForUi extends SignalForUi {
   evidence?: {
     primary_object?: PrimaryObjectForUi | null;
     facts?: EvidenceForUi[] | null;
+    source_rows?: Record<string, unknown>[] | null;
   } | null;
 }
 
@@ -5664,6 +5666,9 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
   return summaries.slice(0, limit).map((summary) => {
     const metrics = summary.metrics;
     const abaMatchCount = summary.aba_match_count ?? 0;
+    const primaryTopTerm = (summary.top_search_terms ?? [])[0];
+    const primarySearchTerm =
+      stringValue(primaryTopTerm?.search_term) || stringValue(primaryTopTerm?.normalized_query) || stringValue(summary.search_terms[0]) || null;
     const topTerms = (summary.top_search_terms ?? []).slice(0, 3).map((term) => {
       const abaText = term.aba_rank ? ` / ABA ${term.aba_rank}` : "";
       const adGroupText = (term.ad_group_names ?? []).filter(Boolean).slice(0, 2).join("、") || "广告组待补齐";
@@ -5696,6 +5701,7 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       doesNotProve:
         searchIntentDisplayText(summary.does_not_prove) || "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能生成广告搜索词聚合上下文人工动作。",
       nextManualStep: searchIntentDisplayText(summary.next_manual_step) || "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组、广告位和证据缺口后再记录观察或加入复盘。",
+      primarySearchTerm,
       topTerms,
     };
   });
@@ -5748,6 +5754,57 @@ export function filterSignalsBySearchIntent<T extends SearchIntentFilterSignalFo
       (fact) => contextLabels.has(fact.label) && fact.value.trim() === selectedIntentLabel,
     );
   });
+}
+
+function normalizeSearchIntentSearchTerm(value: unknown): string {
+  return stringValue(value).toLowerCase().replace(/\s+/g, " ");
+}
+
+function isSearchTermFactLabel(label: string): boolean {
+  const normalizedLabel = label.toLowerCase();
+  return normalizedLabel.includes("searchterm") || normalizedLabel.includes("search_term") || normalizedLabel.includes("搜索词");
+}
+
+function searchIntentCandidateMatchesSearchTerm(candidate: unknown, normalizedSearchTerm: string): boolean {
+  const normalizedCandidate = normalizeSearchIntentSearchTerm(candidate);
+  if (!normalizedCandidate) return false;
+  const asciiColonTail = normalizedCandidate.split(":").pop()?.trim();
+  const chineseColonTail = normalizedCandidate.split("：").pop()?.trim();
+  return normalizedCandidate === normalizedSearchTerm || asciiColonTail === normalizedSearchTerm || chineseColonTail === normalizedSearchTerm;
+}
+
+function searchIntentSignalMatchesSearchTerm(signal: SearchIntentFilterSignalForUi, normalizedSearchTerm: string): boolean {
+  const primaryObject = signal.evidence?.primary_object;
+  const candidates: unknown[] = [
+    primaryObject?.search_term,
+    primaryObject?.label,
+    primaryObject?.object_id,
+    (signal as { object_id?: unknown }).object_id,
+  ];
+
+  signal.evidence?.facts?.forEach((fact) => {
+    if (isSearchTermFactLabel(fact.label)) candidates.push(fact.value);
+  });
+
+  signal.evidence?.source_rows?.forEach((row) => {
+    candidates.push(row.search_term, row.normalized_query, row.query);
+  });
+
+  return candidates.some((candidate) => searchIntentCandidateMatchesSearchTerm(candidate, normalizedSearchTerm));
+}
+
+export function selectSearchIntentSignalId<T extends SearchIntentFilterSignalForUi>(
+  signals: T[],
+  intentLabel: string | null | undefined,
+  preferredSearchTerm?: string | null,
+): string | null {
+  const nextSignals = filterSignalsBySearchIntent(signals, intentLabel);
+  const normalizedSearchTerm = normalizeSearchIntentSearchTerm(preferredSearchTerm);
+  if (normalizedSearchTerm) {
+    const matchedSignal = nextSignals.find((signal) => searchIntentSignalMatchesSearchTerm(signal, normalizedSearchTerm));
+    if (matchedSignal) return matchedSignal.id;
+  }
+  return nextSignals[0]?.id ?? null;
 }
 
 export function recommendedManualActionCardCopy(summary: SignalTriageSummaryForUi | null | undefined): {

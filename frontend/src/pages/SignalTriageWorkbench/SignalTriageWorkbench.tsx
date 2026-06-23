@@ -212,6 +212,7 @@ import {
   triggerEvidenceCountText,
   filterEvidenceBySource,
   filterSignalsBySearchIntent,
+  selectSearchIntentSignalId,
   filterSignalsByProductScope,
   mergeBackendTriageSignals,
   isActionableProductScope,
@@ -753,7 +754,7 @@ export function SignalTriageWorkbench() {
     setSelectedSearchIntentScopeId(null);
   }
 
-  function handleSelectSearchIntent(intentLabel: string) {
+  function handleSelectSearchIntent(intentLabel: string, preferredSearchTerm?: string | null) {
     const isSameScopedFocus = activeSearchIntentLabel === intentLabel;
     if (isSameScopedFocus) {
       clearSearchIntentFocus();
@@ -761,9 +762,9 @@ export function SignalTriageWorkbench() {
     }
     setSelectedSearchIntentLabel(intentLabel);
     setSelectedSearchIntentScopeId(activeProductScopeId);
-    const nextSignals = filterSignalsBySearchIntent(displayProductScopedSignals, intentLabel);
-    if (nextSignals.length > 0) {
-      setSelectedId(nextSignals[0].id);
+    const nextSignalId = selectSearchIntentSignalId(displayProductScopedSignals, intentLabel, preferredSearchTerm);
+    if (nextSignalId) {
+      setSelectedId(nextSignalId);
     }
   }
 
@@ -1942,9 +1943,9 @@ export function SignalTriageWorkbench() {
                     type="button"
                     className={`searchIntentReviewCard ${activeSearchIntentLabel === card.intentLabel ? "active" : ""}`}
                     key={card.title}
-                    onClick={() => handleSelectSearchIntent(card.intentLabel)}
+                    onClick={() => handleSelectSearchIntent(card.intentLabel, card.primarySearchTerm)}
                     aria-pressed={activeSearchIntentLabel === card.intentLabel}
-                    aria-label={`筛选 ${card.title} 的 SearchTerm 信号`}
+                    aria-label={`打开 ${card.title} 的优先 SearchTerm 诊断`}
                   >
                     <div>
                       <strong>{card.title}</strong>

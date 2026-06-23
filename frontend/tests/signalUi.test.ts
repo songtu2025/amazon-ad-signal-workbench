@@ -74,6 +74,7 @@ import {
   buildEvidenceRouteNodes,
   filterEvidenceBySource,
   filterSignalsBySearchIntent,
+  selectSearchIntentSignalId,
   filterSignalsByProductScope,
   mergeBackendTriageSignals,
   preferredProductScopeId,
@@ -5284,6 +5285,7 @@ assertIncludes(searchIntentReviewCards[0].boundary, "只复核广告用户搜索
 assertIncludes(searchIntentReviewCards[0].boundary, "不生成广告搜索词聚合上下文人工动作");
 assertIncludes(searchIntentReviewCards[0].boundary, "不证明单个 ASIN 归因");
 assertIncludes(searchIntentReviewCards[0].boundary, "ABA 仅作站点级背景");
+assertEqual(searchIntentReviewCards[0].primarySearchTerm, "baby sunglasses");
 assertEqual(searchIntentReviewCards[0].topTerms[0], "baby sunglasses：3 单 / 花费 7 / ACOS 14.00% / 广告组 儿童太阳镜精准 / 投放词 baby sunglasses exact / ABA 120");
 assertEqual(searchIntentReviewCards[0].intentLabel, "规则语义：儿童太阳镜");
 
@@ -5371,6 +5373,63 @@ const searchIntentFilteredSignals = filterSignalsBySearchIntent(
 assertEqual(searchIntentFilteredSignals.length, 2);
 assertEqual(searchIntentFilteredSignals[0].id, "sig-search-intent-primary");
 assertEqual(searchIntentFilteredSignals[1].id, "sig-search-intent-visible-context");
+
+const preferredSearchIntentSignalId = selectSearchIntentSignalId(
+  [
+    {
+      id: "sig-first-search-term",
+      signal_type: "opportunity",
+      signal_category: "search_term_opportunity",
+      object_type: "search_term",
+      severity: 4,
+      status: "pending",
+      freshness_status: "api_snapshot",
+      evidence: {
+        primary_object: { label: "kids sunglasses", intent_label: "same-intent" },
+        facts: [],
+      },
+    },
+    {
+      id: "sig-preferred-search-term",
+      signal_type: "opportunity",
+      signal_category: "search_term_opportunity",
+      object_type: "search_term",
+      severity: 4,
+      status: "pending",
+      freshness_status: "api_snapshot",
+      evidence: {
+        primary_object: { label: "SearchTerm: baby sunglasses", intent_label: "same-intent" },
+        facts: [],
+      },
+    },
+  ],
+  "same-intent",
+  "baby sunglasses",
+);
+
+assertEqual(preferredSearchIntentSignalId, "sig-preferred-search-term");
+
+const fallbackSearchIntentSignalId = selectSearchIntentSignalId(
+  [
+    {
+      id: "sig-first-search-term",
+      signal_type: "opportunity",
+      signal_category: "search_term_opportunity",
+      object_type: "search_term",
+      severity: 4,
+      status: "pending",
+      freshness_status: "api_snapshot",
+      evidence: {
+        primary_object: { label: "kids sunglasses", intent_label: "same-intent" },
+        facts: [],
+      },
+    },
+  ],
+  "same-intent",
+  "missing term",
+);
+
+assertEqual(fallbackSearchIntentSignalId, "sig-first-search-term");
 
 const adProductOpportunityKeyEvidence = buildKeyEvidenceFacts(
   [
