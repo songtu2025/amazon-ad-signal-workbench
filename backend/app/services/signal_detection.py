@@ -3124,7 +3124,12 @@ def search_intent_top_terms(
     return sorted(top_terms, key=lambda item: (-item.orders, -item.cost, -item.clicks, item.search_term))[:limit]
 
 
-def search_intent_summaries(rows: list[dict] | None = None, *, aba_rows: list[dict] | None = None) -> list[SearchIntentSummary]:
+def search_intent_summaries(
+    rows: list[dict] | None = None,
+    *,
+    aba_rows: list[dict] | None = None,
+    data_grain: str = "当前广告搜索词表现行按搜索意图聚合",
+) -> list[SearchIntentSummary]:
     groups: dict[str, list[dict]] = defaultdict(list)
     for row in rows if rows is not None else []:
         if row.get("source_table") != "ad_search_term_daily_metrics":
@@ -3141,9 +3146,9 @@ def search_intent_summaries(rows: list[dict] | None = None, *, aba_rows: list[di
         top_terms = all_terms[:5]
         insight = "需要观察"
         if metrics.orders == 0 and metrics.cost >= 30:
-            insight = "该语义类目消耗较高但没有订单，属于止损候选"
+            insight = "这组广告搜索词消耗较高但没有订单，属于止损候选"
         elif metrics.orders >= 3 and metrics.acos is not None and metrics.acos <= 0.3:
-            insight = "该语义类目转化稳定，属于放量候选"
+            insight = "这组广告搜索词转化稳定，属于放量候选"
         summaries.append(
             SearchIntentSummary(
                 intent_label=label,
@@ -3153,6 +3158,7 @@ def search_intent_summaries(rows: list[dict] | None = None, *, aba_rows: list[di
                 semantic_source=semantic_source_for_intent_label(label),
                 aba_match_count=sum(1 for term in all_terms if term.aba_rank is not None),
                 top_search_terms=top_terms,
+                data_grain=data_grain,
             )
         )
     return sorted(summaries, key=lambda item: item.metrics.cost, reverse=True)

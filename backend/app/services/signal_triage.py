@@ -261,13 +261,21 @@ def build_search_intent_summaries(
     aba_rows = _market_scoped_rows(load_aba_rows_from_latest_snapshot(), selected_market_id)
     normalized_scope_id = _normalized_product_scope_id(product_scope_id)
     if not normalized_scope_id:
-        return search_intent_summaries(signal_rows, aba_rows=aba_rows)
+        return search_intent_summaries(
+            signal_rows,
+            aba_rows=aba_rows,
+            data_grain="当前站点广告搜索词表现行按搜索意图聚合",
+        )
 
     product_scope = build_product_scope_summary()
     signals = _current_signals(signal_rows, selected_market_id=selected_market_id)
     scoped_signals = _filter_signals_by_product_scope(signals, normalized_scope_id, product_scope, signal_rows=signal_rows)
     scoped_search_term_rows = _search_term_rows_from_scoped_signals(scoped_signals)
-    return search_intent_summaries(scoped_search_term_rows, aba_rows=aba_rows)
+    return search_intent_summaries(
+        scoped_search_term_rows,
+        aba_rows=aba_rows,
+        data_grain="当前诊断入口内已进入 SearchTerm 机会队列的广告搜索词表现行",
+    )
 
 
 def _diagnosis_contract(

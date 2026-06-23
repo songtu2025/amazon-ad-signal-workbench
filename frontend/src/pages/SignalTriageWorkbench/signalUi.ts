@@ -163,6 +163,10 @@ export interface SearchIntentSummaryForUi {
   semantic_source?: string | null;
   aba_match_count?: number | null;
   top_search_terms?: SearchIntentTopTermForUi[];
+  data_grain?: string | null;
+  proves?: string | null;
+  does_not_prove?: string | null;
+  next_manual_step?: string | null;
 }
 
 export interface SearchIntentReviewCard {
@@ -173,6 +177,10 @@ export interface SearchIntentReviewCard {
   insight: string;
   purpose: string;
   boundary: string;
+  dataGrain: string;
+  proves: string;
+  doesNotProve: string;
+  nextManualStep: string;
   topTerms: string[];
 }
 
@@ -5471,6 +5479,11 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       insight: summary.insight,
       purpose: "用途：作为机会队列内的二级筛选，聚焦当前诊断入口内同类广告搜索词，再逐条进入人工复核。",
       boundary: "边界：只筛 SearchTerm 机会；不改变诊断入口，不生成语义组人工动作，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
+      dataGrain: summary.data_grain || "当前诊断入口内 SearchTerm 机会队列的广告搜索词表现行",
+      proves: summary.proves || "能证明同类广告搜索词在当前广告上下文内的花费、点击、订单和 ABA 背景。",
+      doesNotProve:
+        summary.does_not_prove || "不能证明 Parent ASIN 下全部搜索词表现，不能证明单个 ASIN 归因，也不能生成语义组人工动作。",
+      nextManualStep: summary.next_manual_step || "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组、广告位和证据缺口后再记录观察或加入复盘。",
       topTerms,
     };
   });

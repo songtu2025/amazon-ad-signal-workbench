@@ -1908,6 +1908,10 @@ export function SignalTriageWorkbench() {
                     </div>
                     <p>{card.summary}</p>
                     <small>{card.purpose}</small>
+                    <small>数据口径：{card.dataGrain}</small>
+                    <small>能证明：{card.proves}</small>
+                    <small>不能证明：{card.doesNotProve}</small>
+                    <small>人工下一步：{card.nextManualStep}</small>
                     <small>{card.insight}</small>
                     <small>{card.boundary}</small>
                     {card.topTerms.length > 0 && (

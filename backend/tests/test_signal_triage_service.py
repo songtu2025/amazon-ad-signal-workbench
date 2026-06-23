@@ -527,6 +527,10 @@ def test_search_intent_summaries_respect_parent_asin_product_scope(monkeypatch) 
     assert "beach essentials" in summaries[0].search_terms
     assert "kids sunglasses" not in summaries[0].search_terms
     assert summaries[0].metrics.cost == 16.03
+    assert summaries[0].data_grain == "当前诊断入口内已进入 SearchTerm 机会队列的广告搜索词表现行"
+    assert "同类广告搜索词" in summaries[0].proves
+    assert "不能证明 Parent ASIN 下全部搜索词表现" in summaries[0].does_not_prove
+    assert "具体 SearchTerm 信号" in summaries[0].next_manual_step
 
 
 def test_review_candidates_require_actionable_manual_triage_gate(monkeypatch) -> None:

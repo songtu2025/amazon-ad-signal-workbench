@@ -128,6 +128,10 @@ export interface SearchIntentSummary {
   semantic_source: string;
   aba_match_count: number;
   top_search_terms: SearchIntentTopTerm[];
+  data_grain?: string;
+  proves?: string;
+  does_not_prove?: string;
+  next_manual_step?: string;
 }
 
 export interface SearchIntentTopTerm {

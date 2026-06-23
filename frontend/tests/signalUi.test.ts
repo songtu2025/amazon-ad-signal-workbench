@@ -5098,6 +5098,10 @@ const searchIntentReviewCards = buildSearchIntentReviewCards([
     insight: "该语义类目转化稳定，属于放量候选",
     semantic_source: "规则语义",
     aba_match_count: 1,
+    data_grain: "当前诊断入口内已进入 SearchTerm 机会队列的广告搜索词表现行",
+    proves: "能证明同类广告搜索词在当前广告上下文内有订单和 ABA 背景。",
+    does_not_prove: "不能证明 Parent ASIN 下全部搜索词表现，也不能证明单个 ASIN 归因。",
+    next_manual_step: "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组和广告位。",
     top_search_terms: [
       {
         search_term: "baby sunglasses",
@@ -5120,6 +5124,10 @@ assertEqual(searchIntentReviewCards[0].title, "规则语义：儿童太阳镜");
 assertEqual(searchIntentReviewCards[0].summary, "4 单 / 花费 9 / ACOS 12.86% / ABA 命中 1");
 assertEqual(searchIntentReviewCards[0].sourceLabel, "规则语义");
 assertIncludes(searchIntentReviewCards[0].purpose, "机会队列内的二级筛选");
+assertIncludes(searchIntentReviewCards[0].dataGrain, "当前诊断入口内已进入 SearchTerm 机会队列");
+assertIncludes(searchIntentReviewCards[0].proves, "同类广告搜索词");
+assertIncludes(searchIntentReviewCards[0].doesNotProve, "不能证明 Parent ASIN 下全部搜索词表现");
+assertIncludes(searchIntentReviewCards[0].nextManualStep, "具体 SearchTerm 信号");
 assertIncludes(searchIntentReviewCards[0].boundary, "只筛 SearchTerm 机会");
 assertIncludes(searchIntentReviewCards[0].boundary, "不生成语义组人工动作");
 assertIncludes(searchIntentReviewCards[0].boundary, "不证明单个 ASIN 归因");
