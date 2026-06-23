@@ -3584,6 +3584,7 @@ const thinManualConfirmationSearchTermItems = buildManualConfirmationEvidenceIte
   diagnosisContractItems,
   thinSearchTermOpportunityReviewChain,
 );
+assertIncludes(thinManualConfirmationSearchTermItems.find((item) => item.label === "复核路径")?.value ?? "", "Parent ASIN 销售盘");
 assertIncludes(thinManualConfirmationSearchTermItems.find((item) => item.label === "Parent ASIN 入口")?.value ?? "", "Parent ASIN");
 assertIncludes(thinManualConfirmationSearchTermItems.find((item) => item.label === "广告 ASIN 承接")?.value ?? "", "广告 ASIN");
 assertIncludes(thinManualConfirmationSearchTermItems.find((item) => item.label === "广告组合流判断")?.value ?? "", "不能判断广告位影响");
@@ -3707,18 +3708,22 @@ const manualConfirmationSearchTermEvidenceItems = buildManualConfirmationEvidenc
 );
 assertEqual(
   manualConfirmationSearchTermEvidenceItems.map((item) => item.label).join(" / "),
-  "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / Parent ASIN 入口 / 广告 ASIN 承接 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 广告位边界 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
+  "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 复核路径 / Parent ASIN 入口 / 广告 ASIN 承接 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 广告位边界 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
 );
-assertIncludes(manualConfirmationSearchTermEvidenceItems[5].value, "Parent ASIN");
-assertIncludes(manualConfirmationSearchTermEvidenceItems[6].value, "广告 ASIN");
-assertIncludes(manualConfirmationSearchTermEvidenceItems[7].value, "搜索词不能自动归因到单个广告 ASIN");
-assertIncludes(manualConfirmationSearchTermEvidenceItems[7].detail ?? "", "同广告组上下文");
-assertIncludes(manualConfirmationSearchTermEvidenceItems[9].value, "投放词结构");
-assertIncludes(manualConfirmationSearchTermEvidenceItems[9].detail ?? "", "当前广告组投放上下文");
-assertIncludes(manualConfirmationSearchTermEvidenceItems[9].detail ?? "", "不代表完整关键词库");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[5].value, "Parent ASIN 销售盘");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[5].value, "具体 SearchTerm");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[5].detail ?? "", "人工点击前");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[6].value, "Parent ASIN");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[7].value, "广告 ASIN");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[8].value, "搜索词不能自动归因到单个广告 ASIN");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[8].detail ?? "", "同广告组上下文");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[10].value, "投放词结构");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[10].detail ?? "", "当前广告组投放上下文");
+assertIncludes(manualConfirmationSearchTermEvidenceItems[10].detail ?? "", "不代表完整关键词库");
 const manualConfirmationEvidenceByLabel = Object.fromEntries(
   manualConfirmationSearchTermEvidenceItems.map((item) => [item.label, item]),
 );
+assertIncludes(manualConfirmationEvidenceByLabel["复核路径"].value, "7/14 天复盘");
 assertIncludes(manualConfirmationEvidenceByLabel["同组投放商品表现"].value, "同组投放商品");
 assertIncludes(manualConfirmationEvidenceByLabel["同组投放商品表现"].detail ?? "", "不能把搜索词或广告位自动归因到单个广告 ASIN");
 assertIncludes(manualConfirmationEvidenceByLabel["广告位边界"].value, "不能把表现差异解释为广告位问题");

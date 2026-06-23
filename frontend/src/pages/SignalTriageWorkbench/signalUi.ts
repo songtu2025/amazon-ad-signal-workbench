@@ -4350,6 +4350,12 @@ export function buildManualConfirmationEvidenceItems(
   const searchTermReviewItems: ManualConfirmationEvidenceItem[] = searchTermOpportunityReviewChain
     ? [
         {
+          label: "复核路径",
+          value: searchTermOpportunityReviewChain.reviewPath,
+          detail:
+            "人工点击前按同一条路径核对 Parent ASIN、广告 ASIN、广告组、同组投放商品、投放词、广告位和具体 SearchTerm；写入后用于 7/14 天复盘回看。",
+        },
+        {
           label: "Parent ASIN 入口",
           value: searchTermOpportunityReviewChain.parentScopeContext,
           detail: "用于确认这条搜索词复核仍从当前 Parent ASIN 经营盘进入，不把未投放子 ASIN 当广告问题。",
