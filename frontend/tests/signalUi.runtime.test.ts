@@ -5,6 +5,8 @@ declare const process: {
 
 import {
   buildManualConfirmationEvidenceItems,
+  buildSearchIntentPanelContext,
+  buildSearchIntentReviewCards,
   buildNextUnhandledManualActionCandidate,
   buildReviewEvidenceRepairSummary,
   buildReviewReadinessGateSummary,
@@ -124,6 +126,7 @@ async function main() {
   const triage = await fetchJson(`/api/signal-triage?market_id=${marketId}&top=5&product_scope_id=${scope}`);
   const rawSignals = await fetchJson(`/api/signals?market_id=${marketId}`);
   const repair = await fetchJson(`/api/review-evidence-repair?market_id=${marketId}&top=5&product_scope_id=${scope}`);
+  const searchIntents = await fetchJson(`/api/search-intents?market_id=${marketId}&product_scope_id=${scope}`);
 
   const recommendedLabel =
     triage.recommended_manual_status?.object_label ||
@@ -206,6 +209,27 @@ async function main() {
   assertIncludes(productScopeText, "广告位");
   assertIncludes(productScopeText, "不能自动归因");
   assertIncludes(productScopeText, "不能自动执行广告动作");
+
+  assert(Array.isArray(searchIntents) && searchIntents.length > 0, "Parent ASIN 入口应返回广告搜索词表现聚合。");
+  assert(
+    searchIntents.some((item: any) => String(item?.data_grain ?? "").includes("当前 Parent ASIN")),
+    "广告搜索词表现聚合必须绑定当前 Parent ASIN 诊断入口。",
+  );
+  assert(
+    searchIntents.some((item: any) => Array.isArray(item?.search_terms) && item.search_terms.includes(recommendedLabel)),
+    "广告搜索词表现聚合必须包含推荐 SearchTerm 所属的 Parent ASIN 广告搜索词行。",
+  );
+  const searchIntentReviewCards = buildSearchIntentReviewCards(searchIntents);
+  const searchIntentPanelContext = buildSearchIntentPanelContext(searchIntentReviewCards);
+  const searchIntentRuntimeText = asText([searchIntentReviewCards, searchIntentPanelContext]);
+  assertIncludes(searchIntentPanelContext.purpose, "从当前 Parent ASIN 视角");
+  assertIncludes(searchIntentPanelContext.purpose, "聚合广告中实际产生表现的用户搜索词");
+  assertIncludes(searchIntentPanelContext.dataGrain, "当前 Parent ASIN");
+  assertIncludes(searchIntentPanelContext.interactionBoundary, "不改变顶部诊断入口筛选器");
+  assertIncludes(searchIntentRuntimeText, "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现");
+  assertIncludes(searchIntentRuntimeText, "不能把 Parent ASIN 搜索词表现聚合当作人工动作对象");
+  assertNotIncludes(searchIntentRuntimeText, "语义组人工动作");
+  assertNotIncludes(searchIntentRuntimeText, "当前站点广告中实际产生表现的用户搜索词行按搜索意图聚合");
 
   const evidenceBlocks = indexById(
     triage.next_unhandled_evidence_drilldown?.business_evidence_blocks,
@@ -437,7 +461,7 @@ async function main() {
   const preflightEvidenceText = manualActionPreflightEvidenceSnapshotText(preflight) ?? "";
   assertIncludes(preflightEvidenceText, "人工点击后才保存");
   assertIncludes(preflightEvidenceText, "不执行广告动作");
-  const preflightEvidenceRows = manualActionPreflightEvidenceRows(preflight);
+  const preflightEvidenceRows = manualActionPreflightEvidenceRows(preflight, 30);
   const priorityEvidenceRows = manualActionPreflightPriorityEvidenceRows(preflight);
   const priorityEvidenceText = JSON.stringify(priorityEvidenceRows);
   assert(preflightEvidenceRows.some((item) => item.label === "搜索词边界" && item.source), "完整证据快照预览应展示搜索词边界及来源。");
@@ -496,6 +520,12 @@ async function main() {
         value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看",
         detail: "只说明同广告组内广告商品承接差异，不能把搜索词自动归因到单个广告 ASIN。",
         source: "advertised_products + ad_product_daily_metrics",
+      },
+      {
+        label: "逐投放上下文",
+        value: "beach essentials：优先复核 RBK004-beach essentials-精准（测试）及其投放词 beach essentials",
+        detail: "复盘时必须按当时的广告组、投放词和广告 ASIN 承接顺序回看，不能把聚合指标解释成自动加词、否词或调价。",
+        source: "ad_search_term_daily_metrics",
       },
       {
         label: "投放词证据",
