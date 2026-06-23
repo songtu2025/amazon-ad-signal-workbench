@@ -3065,6 +3065,14 @@ function SearchTermOpportunityReviewChainPanel({ chain }: { chain: SearchTermOpp
           <span>{chain.adGroupSynthesis}</span>
         </li>
         <li>
+          <b>同组投放商品表现</b>
+          <span>{chain.adGroupProductPerformance}</span>
+        </li>
+        <li>
+          <b>广告位边界</b>
+          <span>{chain.placementBoundary}</span>
+        </li>
+        <li>
           <b>ABA 背景</b>
           <span>{chain.marketContext}</span>
         </li>

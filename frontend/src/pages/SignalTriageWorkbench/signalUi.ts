@@ -3569,6 +3569,7 @@ export interface SearchTermOpportunityReviewChain {
   targetingEvidence: string;
   adGroupSynthesis: string;
   adGroupProductPerformance: string;
+  placementBoundary: string;
   marketContext: string;
   currentJudgement: string;
   proves: string;
@@ -3944,6 +3945,7 @@ export function buildSearchTermOpportunityReviewChain(
     return text.includes("search_term") || text.includes("搜索词") || text.includes("aba");
   });
   const searchTermContract = directSearchTermContract ?? searchTermContextContract;
+  const placementContract = diagnosisContractItems.find((item) => item.sectionId === "placement_gap");
   const targetingBlock = businessEvidenceItems.find(
     (item) => item.blockId === "targeting_context" || item.label.includes("投放词"),
   );
@@ -4004,6 +4006,15 @@ export function buildSearchTermOpportunityReviewChain(
     "同组投放商品表现只说明广告组内承接差异，不能把搜索词自动归因到单个广告 ASIN。",
     ["广告 ASIN", "不能"],
   );
+  const placementBoundary = appendBoundaryIfMissing(
+    uniqueNonEmpty([
+      placementContract?.currentJudgement,
+      placementContract?.evidenceGap,
+      placementContract?.doesNotProve,
+    ]).join("；") || "广告位边界待补：需要核对搜索词直连广告位、广告组级广告位或同广告活动广告位背景。",
+    "广告位证据只能说明流量位置层级；缺少搜索词直连或广告组级广告位时，不能把表现差异解释为广告位问题。",
+    ["广告位", "不能"],
+  );
   const marketContext = appendBoundaryIfMissing(
     businessEvidenceBlockSentence(
       marketBlock,
@@ -4022,6 +4033,7 @@ export function buildSearchTermOpportunityReviewChain(
     targetingEvidence,
     adGroupSynthesis,
     adGroupProductPerformance,
+    placementBoundary,
     marketContext,
     currentJudgement: searchTermContract?.currentJudgement ?? marketBlock?.value ?? targetingBlock?.value ?? "等待补充搜索词机会判断。",
     proves:
@@ -4111,6 +4123,11 @@ export function buildManualConfirmationEvidenceItems(
           label: "同组投放商品表现",
           value: searchTermOpportunityReviewChain.adGroupProductPerformance,
           detail: "用于确认同广告组广告 ASIN 的承接差异；不能把搜索词或广告位自动归因到单个广告 ASIN。",
+        },
+        {
+          label: "广告位边界",
+          value: searchTermOpportunityReviewChain.placementBoundary,
+          detail: "用于确认广告位证据停留在搜索词直连、广告组级、广告活动级还是缺失；缺广告组级证据时不能下广告位结论。",
         },
         {
           label: "ABA 背景",

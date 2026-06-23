@@ -254,13 +254,19 @@ assertIncludes(workbenchSource, 'aria-label="搜索词机会复核链"');
 assertIncludes(workbenchSource, "buildSearchTermOpportunityReviewChain");
 assertIncludes(workbenchSource, "SearchTermOpportunityReviewChainPanel");
 assertIncludes(workbenchSource, "<b>广告组合流判断</b>");
+assertIncludes(workbenchSource, "<b>同组投放商品表现</b>");
+assertIncludes(workbenchSource, "<b>广告位边界</b>");
 assertIncludes(workbenchSource, "chain.adGroupSynthesis");
+assertIncludes(workbenchSource, "chain.adGroupProductPerformance");
+assertIncludes(workbenchSource, "chain.placementBoundary");
 assertIncludes(workbenchSource, "chain.marketContext");
 assertIncludes(workbenchSource, "chain.actionBoundary");
 assert(
   workbenchSource.indexOf("chain.targetingEvidence") < workbenchSource.indexOf("chain.adGroupSynthesis") &&
-    workbenchSource.indexOf("chain.adGroupSynthesis") < workbenchSource.indexOf("chain.marketContext"),
-  "搜索词机会复核链必须按 投放词证据 -> 广告组合流判断 -> ABA 背景 的顺序展示。",
+    workbenchSource.indexOf("chain.adGroupSynthesis") < workbenchSource.indexOf("chain.adGroupProductPerformance") &&
+    workbenchSource.indexOf("chain.adGroupProductPerformance") < workbenchSource.indexOf("chain.placementBoundary") &&
+    workbenchSource.indexOf("chain.placementBoundary") < workbenchSource.indexOf("chain.marketContext"),
+  "搜索词机会复核链必须按 投放词证据 -> 广告组合流判断 -> 同组投放商品表现 -> 广告位边界 -> ABA 背景 的顺序展示。",
 );
 assertIncludes(workbenchSource, "diagnosis.decision.businessQuestion");
 assertIncludes(workbenchSource, "diagnosis.decision.targetingEvidence");

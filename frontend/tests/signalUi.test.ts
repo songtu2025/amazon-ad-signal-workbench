@@ -3337,6 +3337,9 @@ assertIncludes(searchTermOpportunityReviewChain?.objectGrain ?? "", "SearchTerm"
 assertIncludes(searchTermOpportunityReviewChain?.targetingEvidence ?? "", "投放词结构");
 assertIncludes(searchTermOpportunityReviewChain?.targetingEvidence ?? "", "beach essentials");
 assertIncludes(searchTermOpportunityReviewChain?.adGroupSynthesis ?? "", "搜索词不能自动归因到单个广告 ASIN");
+assertIncludes(searchTermOpportunityReviewChain?.adGroupProductPerformance ?? "", "同组投放商品表现");
+assertIncludes(searchTermOpportunityReviewChain?.placementBoundary ?? "", "广告位边界待补");
+assertIncludes(searchTermOpportunityReviewChain?.placementBoundary ?? "", "不能把表现差异解释为广告位问题");
 assertIncludes(searchTermOpportunityReviewChain?.marketContext ?? "", "搜索词市场背景");
 assertIncludes(searchTermOpportunityReviewChain?.marketContext ?? "", "ABA排名 208");
 assertIncludes(searchTermOpportunityReviewChain?.doesNotProve ?? "", "不能把 ABA 当作店铺数据");
@@ -3373,6 +3376,8 @@ const thinSearchTermOpportunityReviewChain = buildSearchTermOpportunityReviewCha
 assertIncludes(thinSearchTermOpportunityReviewChain?.targetingEvidence ?? "", "不代表完整关键词库覆盖");
 assertIncludes(thinSearchTermOpportunityReviewChain?.adGroupSynthesis ?? "", "搜索词只说明同广告组上下文");
 assertIncludes(thinSearchTermOpportunityReviewChain?.adGroupSynthesis ?? "", "不能判断广告位影响");
+assertIncludes(thinSearchTermOpportunityReviewChain?.adGroupProductPerformance ?? "", "同组投放商品表现");
+assertIncludes(thinSearchTermOpportunityReviewChain?.placementBoundary ?? "", "广告位边界待补");
 assertIncludes(thinSearchTermOpportunityReviewChain?.marketContext ?? "", "站点级市场背景");
 assertIncludes(thinSearchTermOpportunityReviewChain?.marketContext ?? "", "不能当作店铺");
 const thinManualConfirmationSearchTermItems = buildManualConfirmationEvidenceItems(
@@ -3380,6 +3385,8 @@ const thinManualConfirmationSearchTermItems = buildManualConfirmationEvidenceIte
   thinSearchTermOpportunityReviewChain,
 );
 assertIncludes(thinManualConfirmationSearchTermItems.find((item) => item.label === "广告组合流判断")?.value ?? "", "不能判断广告位影响");
+assertIncludes(thinManualConfirmationSearchTermItems.find((item) => item.label === "同组投放商品表现")?.value ?? "", "同组投放商品表现");
+assertIncludes(thinManualConfirmationSearchTermItems.find((item) => item.label === "广告位边界")?.value ?? "", "广告位边界待补");
 assertIncludes(thinManualConfirmationSearchTermItems.find((item) => item.label === "ABA 背景")?.value ?? "", "站点级市场背景");
 
 const searchTermFallbackReviewChain = buildSearchTermOpportunityReviewChain(
@@ -3498,7 +3505,7 @@ const manualConfirmationSearchTermEvidenceItems = buildManualConfirmationEvidenc
 );
 assertEqual(
   manualConfirmationSearchTermEvidenceItems.map((item) => item.label).join(" / "),
-  "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 投放词证据 / 广告组合流判断 / 同组投放商品表现 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
+  "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 投放词证据 / 广告组合流判断 / 同组投放商品表现 / 广告位边界 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
 );
 assertIncludes(manualConfirmationSearchTermEvidenceItems[5].value, "投放词结构");
 assertIncludes(manualConfirmationSearchTermEvidenceItems[5].detail ?? "", "不代表完整关键词库");
@@ -3509,6 +3516,8 @@ const manualConfirmationEvidenceByLabel = Object.fromEntries(
 );
 assertIncludes(manualConfirmationEvidenceByLabel["同组投放商品表现"].value, "同组投放商品");
 assertIncludes(manualConfirmationEvidenceByLabel["同组投放商品表现"].detail ?? "", "不能把搜索词或广告位自动归因到单个广告 ASIN");
+assertIncludes(manualConfirmationEvidenceByLabel["广告位边界"].value, "不能把表现差异解释为广告位问题");
+assertIncludes(manualConfirmationEvidenceByLabel["广告位边界"].detail ?? "", "缺广告组级证据时不能下广告位结论");
 assertIncludes(manualConfirmationEvidenceByLabel["ABA 背景"].value, "ABA排名 208");
 assertIncludes(manualConfirmationEvidenceByLabel["ABA 背景"].detail ?? "", "站点 + 周期 + 标准化搜索词");
 assertIncludes(manualConfirmationEvidenceByLabel["需要补证"].value, "广告商品、投放词、广告组策略");
