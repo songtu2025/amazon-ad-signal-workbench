@@ -610,6 +610,8 @@ def test_manual_action_apply_rewrites_after_voided_legacy_todo_with_isolated_roo
     assert "当前商品范围" in snapshot_by_label["Parent ASIN入口"]["value"]
     assert "广告 ASIN" in snapshot_by_label["广告 ASIN承接"]["value"]
     assert "RBK004-beach essentials-精准" in snapshot_by_label["逐投放上下文"]["value"]
+    assert "优先复核广告组" in snapshot_by_label["逐投放上下文"]["value"]
+    assert "对照复核广告组" in snapshot_by_label["逐投放上下文"]["value"]
     assert "不能自动归因到单个广告 ASIN" in snapshot_by_label["逐投放上下文"]["detail"]
     assert "Top of Search on-Amazon" in snapshot_by_label["广告位活动级背景"]["value"]
     assert "不能替代广告组级广告位归因" in snapshot_by_label["广告位活动级背景"]["detail"]

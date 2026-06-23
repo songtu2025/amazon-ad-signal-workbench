@@ -392,6 +392,26 @@ def test_manual_action_preflight_snapshots_diagnosis_contract_gaps(monkeypatch) 
                 },
             },
             "recommended_evidence_drilldown": {
+                "search_term_rows": [
+                    {
+                        "campaign_name": "RBK004-扩展",
+                        "ad_group_name": "RBK004-扩展-beach essentials",
+                        "targeting_text": "beach essentials broad",
+                        "clicks": 18,
+                        "spend": 25.5,
+                        "orders": 1,
+                        "sales": 35,
+                    },
+                    {
+                        "campaign_name": "RBK004-beach essentials-精准",
+                        "ad_group_name": "RBK004-beach essentials-精准",
+                        "targeting_text": "beach essentials exact",
+                        "clicks": 42,
+                        "spend": 48.25,
+                        "orders": 3,
+                        "sales": 126,
+                    },
+                ],
                 "business_evidence_blocks": [
                     {
                         "block_id": "search_term_market_context",
@@ -425,6 +445,7 @@ def test_manual_action_preflight_snapshots_diagnosis_contract_gaps(monkeypatch) 
     next_step_item = next(item for item in items if item["label"] == "人工下一步")
     gap_item = next(item for item in items if item["label"] == "诊断证据缺口")
     required_item = next(item for item in items if item["label"] == "需要补证")
+    ad_context_item = next(item for item in items if item["label"] == "逐投放上下文")
     targeting_item = next(item for item in items if item["label"] == "投放词证据")
     aba_item = next(item for item in items if item["label"] == "ABA 背景")
     review_gap_item = next(item for item in items if item["label"] == "证据缺口")
@@ -448,6 +469,11 @@ def test_manual_action_preflight_snapshots_diagnosis_contract_gaps(monkeypatch) 
     assert "缺少同周期广告位数据" in gap_item["value"]
     assert "广告组策略" in required_item["value"]
     assert "ad_placement_daily_metrics" in required_item["value"]
+    assert "优先复核广告组" in ad_context_item["value"]
+    assert "RBK004-beach essentials-精准" in ad_context_item["value"]
+    assert "对照复核广告组" in ad_context_item["value"]
+    assert ad_context_item["value"].index("优先复核广告组") < ad_context_item["value"].index("对照复核广告组")
+    assert "不能自动归因到单个广告 ASIN" in ad_context_item["detail"]
     assert judgement_item["source"] == "diagnosis_contract"
     assert counter_item["source"] == "diagnosis_contract"
     assert gap_item["source"] == "diagnosis_contract"

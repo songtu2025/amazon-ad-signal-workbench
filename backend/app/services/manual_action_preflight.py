@@ -952,7 +952,11 @@ def _search_term_ad_context_snapshot_blocks(target: dict[str, Any], drilldown: d
         return []
 
     object_label = str(target.get("object_label") or target.get("object_id") or "当前搜索词").strip()
-    row_texts = [text for text in (_search_term_ad_context_row_text(row) for row in rows[:4]) if text]
+    sorted_rows = sorted(
+        rows,
+        key=lambda row: (-_search_term_ad_context_sort_score(row), str(row.get("ad_group_name") or "")),
+    )
+    row_texts = [text for text in (_search_term_ad_context_row_text(row, index) for index, row in enumerate(sorted_rows[:4])) if text]
     if not row_texts:
         return []
 
@@ -1000,11 +1004,35 @@ def _search_term_intent_snapshot_blocks(target: dict[str, Any], drilldown: dict[
     ]
 
 
-def _search_term_ad_context_row_text(row: dict[str, Any]) -> str:
+def _search_term_ad_context_sort_score(row: dict[str, Any]) -> float:
+    orders = _float(row.get("orders")) or 0
+    spend = _search_term_ad_context_spend(row)
+    return orders * 100000 + (spend or 0)
+
+
+def _search_term_ad_context_review_priority(row: dict[str, Any], index: int) -> str:
+    orders = _float(row.get("orders")) or 0
+    spend = _search_term_ad_context_spend(row)
+    if index == 0 and orders > 0:
+        return "优先复核广告组：当前同词表现行中订单和花费排序最高，先核对该广告组的投放词、广告 ASIN 承接和主推策略"
+    if orders == 0 and (spend or 0) > 0:
+        return "止损复核候选：已有花费或点击但暂未形成订单，只能人工浪费排查，不能自动否词或调价"
+    if orders > 0:
+        return "对照复核广告组：也有订单承接，用来对照同一 SearchTerm 在不同广告组的承接差异"
+    return "观察补证：当前样本不足以判断扩量或止损，先补齐投放词、广告组和复盘窗口证据"
+
+
+def _search_term_ad_context_spend(row: dict[str, Any]) -> float | None:
+    spend = _float(row.get("spend"))
+    return spend if spend is not None else _float(row.get("cost"))
+
+
+def _search_term_ad_context_row_text(row: dict[str, Any], index: int) -> str:
     campaign = str(row.get("campaign_name") or "未知广告活动").strip()
     ad_group = str(row.get("ad_group_name") or "未知广告组").strip()
     targeting = str(row.get("targeting_text") or "未带投放词").strip()
     parts = [
+        _search_term_ad_context_review_priority(row, index),
         f"{campaign} / {ad_group}",
         f"投放词 {targeting}",
         f"点击 {_format_integer(row.get('clicks'))}",
