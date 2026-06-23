@@ -6252,6 +6252,29 @@ export function selectSearchIntentSignalId<T extends SearchIntentFilterSignalFor
   return nextSignals[0]?.id ?? null;
 }
 
+export interface SearchIntentFocusSelection<TSignalId = string> {
+  intentLabel: string | null;
+  scopeId: string | null;
+  signalId: TSignalId | null;
+}
+
+export function resolveSearchIntentFocusSelection<T extends SearchIntentFilterSignalForUi>(
+  signals: T[],
+  activeSearchIntentLabel: string | null,
+  activeProductScopeId: string,
+  intentLabel: string,
+  preferredSearchTerm?: string | null,
+): SearchIntentFocusSelection {
+  if (activeSearchIntentLabel === intentLabel) {
+    return { intentLabel: null, scopeId: null, signalId: null };
+  }
+  return {
+    intentLabel,
+    scopeId: activeProductScopeId,
+    signalId: selectSearchIntentSignalId(signals, intentLabel, preferredSearchTerm),
+  };
+}
+
 export function recommendedManualActionCardCopy(summary: SignalTriageSummaryForUi | null | undefined): {
   ariaLabel: string;
   title: string;

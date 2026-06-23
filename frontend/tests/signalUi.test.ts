@@ -76,6 +76,7 @@ import {
   filterEvidenceBySource,
   filterSignalsBySearchIntent,
   selectSearchIntentSignalId,
+  resolveSearchIntentFocusSelection,
   filterSignalsByProductScope,
   mergeBackendTriageSignals,
   preferredProductScopeId,
@@ -5828,6 +5829,56 @@ const fallbackSearchIntentSignalId = selectSearchIntentSignalId(
 );
 
 assertEqual(fallbackSearchIntentSignalId, "sig-first-search-term");
+
+const searchIntentFocusSelection = resolveSearchIntentFocusSelection(
+  [
+    {
+      id: "sig-first-search-term",
+      signal_type: "opportunity",
+      signal_category: "search_term_opportunity",
+      object_type: "search_term",
+      severity: 4,
+      status: "pending",
+      freshness_status: "api_snapshot",
+      evidence: {
+        primary_object: { label: "kids sunglasses", intent_label: "same-intent" },
+        facts: [],
+      },
+    },
+    {
+      id: "sig-preferred-search-term",
+      signal_type: "opportunity",
+      signal_category: "search_term_opportunity",
+      object_type: "search_term",
+      severity: 4,
+      status: "pending",
+      freshness_status: "api_snapshot",
+      evidence: {
+        primary_object: { label: "SearchTerm: baby sunglasses", intent_label: "same-intent" },
+        facts: [],
+      },
+    },
+  ],
+  null,
+  "parent_asin:B00K4W4AAA",
+  "same-intent",
+  "baby sunglasses",
+);
+
+assertEqual(searchIntentFocusSelection.intentLabel, "same-intent");
+assertEqual(searchIntentFocusSelection.scopeId, "parent_asin:B00K4W4AAA");
+assertEqual(searchIntentFocusSelection.signalId, "sig-preferred-search-term");
+
+const clearedSearchIntentFocusSelection = resolveSearchIntentFocusSelection(
+  [],
+  "same-intent",
+  "parent_asin:B00K4W4AAA",
+  "same-intent",
+);
+
+assertEqual(clearedSearchIntentFocusSelection.intentLabel, null);
+assertEqual(clearedSearchIntentFocusSelection.scopeId, null);
+assertEqual(clearedSearchIntentFocusSelection.signalId, null);
 
 const adProductOpportunityKeyEvidence = buildKeyEvidenceFacts(
   [

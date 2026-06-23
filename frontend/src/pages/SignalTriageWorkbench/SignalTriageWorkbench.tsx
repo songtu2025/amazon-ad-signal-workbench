@@ -184,6 +184,7 @@ import {
   buildReviewEvidenceRepairSummary,
   buildReviewReadinessGateSummary,
   resolveSignalSelectionId,
+  resolveSearchIntentFocusSelection,
   signalTriageCompactItems,
   signalTriageBlockerTexts,
   signalTriageBusinessEvidenceItems,
@@ -214,7 +215,6 @@ import {
   triggerEvidenceCountText,
   filterEvidenceBySource,
   filterSignalsBySearchIntent,
-  selectSearchIntentSignalId,
   filterSignalsByProductScope,
   mergeBackendTriageSignals,
   isActionableProductScope,
@@ -757,16 +757,17 @@ export function SignalTriageWorkbench() {
   }
 
   function handleSelectSearchIntent(intentLabel: string, preferredSearchTerm?: string | null) {
-    const isSameScopedFocus = activeSearchIntentLabel === intentLabel;
-    if (isSameScopedFocus) {
-      clearSearchIntentFocus();
-      return;
-    }
-    setSelectedSearchIntentLabel(intentLabel);
-    setSelectedSearchIntentScopeId(activeProductScopeId);
-    const nextSignalId = selectSearchIntentSignalId(displayProductScopedSignals, intentLabel, preferredSearchTerm);
-    if (nextSignalId) {
-      setSelectedId(nextSignalId);
+    const nextFocus = resolveSearchIntentFocusSelection(
+      displayProductScopedSignals,
+      activeSearchIntentLabel,
+      activeProductScopeId,
+      intentLabel,
+      preferredSearchTerm,
+    );
+    setSelectedSearchIntentLabel(nextFocus.intentLabel);
+    setSelectedSearchIntentScopeId(nextFocus.scopeId);
+    if (nextFocus.signalId) {
+      setSelectedId(nextFocus.signalId);
     }
   }
 
