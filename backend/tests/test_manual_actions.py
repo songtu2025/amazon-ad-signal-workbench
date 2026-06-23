@@ -50,6 +50,18 @@ def diagnosis_evidence_snapshot() -> list[dict[str, str]]:
             "source": "actionability_status",
         },
         {
+            "label": "Parent ASIN入口",
+            "value": "Parent ASIN B00K4W4AAA 下只复核有广告数据的搜索词表现。",
+            "detail": "Parent ASIN 是经营入口，不能把搜索词聚合当成独立经营对象。",
+            "source": "diagnosis_contract + sales_performance",
+        },
+        {
+            "label": "广告 ASIN承接",
+            "value": "广告 ASIN B016EXMVZS / B016EXMW02 承接 kids sunglasses 搜索词上下文。",
+            "detail": "广告 ASIN 只说明投放承接范围，不能把搜索词自动归因到单个 ASIN。",
+            "source": "diagnosis_contract + advertised_products",
+        },
+        {
             "label": "搜索词边界",
             "value": "搜索词只说明同广告组上下文，不能自动归因到单个广告 ASIN。",
             "detail": "保存复盘前必须确认未自动加词、否词或调价。",
@@ -1519,20 +1531,7 @@ def test_review_record_persists_ready_effect_and_can_read_latest(tmp_path: Path)
     assert save_review_record is not None
     assert load_review_records is not None
     assert latest_review_record is not None
-    search_term_review_snapshot = [
-        *diagnosis_evidence_snapshot()[:2],
-        {
-            "label": "Parent ASIN入口",
-            "value": "Parent ASIN B00K4W4AAA 下只复核有广告数据的搜索词表现。",
-            "source": "diagnosis_contract + sales_performance",
-        },
-        {
-            "label": "广告 ASIN承接",
-            "value": "广告 ASIN B016EXMVZS / B016EXMW02 承接 kids sunglasses 搜索词上下文。",
-            "source": "diagnosis_contract + advertised_products",
-        },
-        *diagnosis_evidence_snapshot()[2:],
-    ]
+    search_term_review_snapshot = diagnosis_evidence_snapshot()
     action_payload = {
         "id": "manual-action-fixed",
         "signal_id": "sig-test-manual-action",
