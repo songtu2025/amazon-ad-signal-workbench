@@ -5327,6 +5327,20 @@ const searchIntentReviewCards = buildSearchIntentReviewCards([
     next_manual_step: "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组和广告位。",
     top_search_terms: [
       {
+        search_term: "kids sunglasses",
+        normalized_query: "kids sunglasses",
+        ad_group_names: ["儿童太阳镜广泛"],
+        targeting_texts: ["kids sunglasses broad"],
+        clicks: 6,
+        cost: 2,
+        orders: 1,
+        sales: 20,
+        acos: 0.4,
+        aba_rank: null,
+        aba_period: null,
+        source_row_count: 1,
+      },
+      {
         search_term: "baby sunglasses",
         normalized_query: "baby sunglasses",
         ad_group_names: ["儿童太阳镜精准"],
@@ -5373,7 +5387,10 @@ assertIncludes(searchIntentReviewCards[0].boundary, "不生成广告搜索词聚
 assertIncludes(searchIntentReviewCards[0].boundary, "不证明单个 ASIN 归因");
 assertIncludes(searchIntentReviewCards[0].boundary, "ABA 仅作站点级背景");
 assertEqual(searchIntentReviewCards[0].primarySearchTerm, "baby sunglasses");
-assertEqual(searchIntentReviewCards[0].topTerms[0], "baby sunglasses：3 单 / 花费 7 / ACOS 14.00% / 广告组 儿童太阳镜精准 / 投放词 baby sunglasses exact / ABA 120");
+assertIncludes(searchIntentReviewCards[0].primarySearchTermReason, "扩量复核");
+assertIncludes(searchIntentReviewCards[0].primarySearchTermReason, "有订单");
+assertEqual(searchIntentReviewCards[0].topTerms[0], "kids sunglasses：1 单 / 花费 2 / ACOS 40.00% / 广告组 儿童太阳镜广泛 / 投放词 kids sunglasses broad");
+assertEqual(searchIntentReviewCards[0].topTerms[1], "baby sunglasses：3 单 / 花费 7 / ACOS 14.00% / 广告组 儿童太阳镜精准 / 投放词 baby sunglasses exact / ABA 120");
 assertEqual(searchIntentReviewCards[0].intentLabel, "规则语义：儿童太阳镜");
 
 const searchIntentPanelContext = buildSearchIntentPanelContext(searchIntentReviewCards);
@@ -5414,12 +5431,34 @@ const wasteSearchIntentReviewCards = buildSearchIntentReviewCards([
       cpc: 0.8,
     },
     insight: "这组广告搜索词消耗较高但没有订单，属于止损候选",
+    top_search_terms: [
+      {
+        search_term: "kids beach bag",
+        clicks: 12,
+        cost: 8,
+        orders: 0,
+        sales: 0,
+        acos: null,
+        source_row_count: 1,
+      },
+      {
+        search_term: "kids beach gear",
+        clicks: 45,
+        cost: 36,
+        orders: 0,
+        sales: 0,
+        acos: null,
+        source_row_count: 2,
+      },
+    ],
   },
 ]);
 assertEqual(wasteSearchIntentReviewCards[0].operationDecisionLabel, "止损复核");
 assertEqual(wasteSearchIntentReviewCards[0].operationDecisionTone, "waste");
 assertIncludes(wasteSearchIntentReviewCards[0].operationDecisionReason, "花费 36");
 assertIncludes(wasteSearchIntentReviewCards[0].operationDecisionReason, "订单 0");
+assertEqual(wasteSearchIntentReviewCards[0].primarySearchTerm, "kids beach gear");
+assertIncludes(wasteSearchIntentReviewCards[0].primarySearchTermReason, "无订单且花费最高");
 
 const observeSearchIntentReviewCards = buildSearchIntentReviewCards([
   {
@@ -5436,11 +5475,33 @@ const observeSearchIntentReviewCards = buildSearchIntentReviewCards([
       cpc: 0.6,
     },
     insight: "需要观察",
+    top_search_terms: [
+      {
+        search_term: "toddler shade hat",
+        clicks: 10,
+        cost: 6,
+        orders: 0,
+        sales: 0,
+        acos: null,
+        source_row_count: 1,
+      },
+      {
+        search_term: "toddler shade",
+        clicks: 2,
+        cost: 1.2,
+        orders: 0,
+        sales: 0,
+        acos: null,
+        source_row_count: 3,
+      },
+    ],
   },
 ]);
 assertEqual(observeSearchIntentReviewCards[0].operationDecisionLabel, "观察复核");
 assertEqual(observeSearchIntentReviewCards[0].operationDecisionTone, "observe");
 assertIncludes(observeSearchIntentReviewCards[0].operationDecisionReason, "证据还不足");
+assertEqual(observeSearchIntentReviewCards[0].primarySearchTerm, "toddler shade");
+assertIncludes(observeSearchIntentReviewCards[0].primarySearchTermReason, "样本行数");
 
 const searchIntentFilteredSignals = filterSignalsBySearchIntent(
   [

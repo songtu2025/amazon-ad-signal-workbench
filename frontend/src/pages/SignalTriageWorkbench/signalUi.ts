@@ -197,6 +197,7 @@ export interface SearchIntentReviewCard {
   doesNotProve: string;
   nextManualStep: string;
   primarySearchTerm: string | null;
+  primarySearchTermReason: string;
   topTerms: string[];
 }
 
@@ -5775,14 +5776,92 @@ function searchIntentOperationDecision(metrics: SearchIntentSummaryForUi["metric
   };
 }
 
+function searchIntentTopTermText(term: SearchIntentTopTermForUi | undefined): string | null {
+  return stringValue(term?.search_term) || stringValue(term?.normalized_query) || null;
+}
+
+function compareSearchIntentNumbers(left: number | null | undefined, right: number | null | undefined): number {
+  const leftValue = typeof left === "number" && Number.isFinite(left) ? left : Number.NEGATIVE_INFINITY;
+  const rightValue = typeof right === "number" && Number.isFinite(right) ? right : Number.NEGATIVE_INFINITY;
+  return rightValue - leftValue;
+}
+
+function compareSearchIntentAcos(left: number | null | undefined, right: number | null | undefined): number {
+  const leftValue = typeof left === "number" && Number.isFinite(left) ? left : Number.POSITIVE_INFINITY;
+  const rightValue = typeof right === "number" && Number.isFinite(right) ? right : Number.POSITIVE_INFINITY;
+  return leftValue - rightValue;
+}
+
+function representativeSearchIntentTopTerm(topTerms: SearchIntentTopTermForUi[]): SearchIntentTopTermForUi | undefined {
+  return [...topTerms].sort(
+    (left, right) =>
+      compareSearchIntentNumbers(left.source_row_count, right.source_row_count) ||
+      compareSearchIntentNumbers(left.cost, right.cost) ||
+      compareSearchIntentNumbers(left.clicks, right.clicks),
+  )[0];
+}
+
+function selectPrimarySearchTermForOperationDecision(
+  summary: SearchIntentSummaryForUi,
+  operationDecisionTone: SearchIntentReviewCard["operationDecisionTone"],
+): Pick<SearchIntentReviewCard, "primarySearchTerm" | "primarySearchTermReason"> {
+  const topTerms = (summary.top_search_terms ?? []).filter((term) => searchIntentTopTermText(term));
+  const fallbackSearchTerm = stringValue(summary.search_terms[0]) || null;
+  if (topTerms.length === 0) {
+    return {
+      primarySearchTerm: fallbackSearchTerm,
+      primarySearchTermReason: fallbackSearchTerm
+        ? "当前缺少逐词广告指标，先打开聚合组内第一个 SearchTerm 补齐广告组和投放词证据。"
+        : "当前没有可落到具体 SearchTerm 的广告搜索词表现行，先补齐搜索词快照。",
+    };
+  }
+
+  if (operationDecisionTone === "scale") {
+    const scaleCandidate = [...topTerms]
+      .filter((term) => term.orders > 0)
+      .sort(
+        (left, right) =>
+          compareSearchIntentNumbers(left.orders, right.orders) ||
+          compareSearchIntentAcos(left.acos, right.acos) ||
+          compareSearchIntentNumbers(left.sales, right.sales) ||
+          compareSearchIntentNumbers(left.cost, right.cost),
+      )[0];
+    if (scaleCandidate) {
+      return {
+        primarySearchTerm: searchIntentTopTermText(scaleCandidate),
+        primarySearchTermReason: "扩量复核先看有订单、订单更多且 ACOS 更低的具体 SearchTerm。",
+      };
+    }
+  }
+
+  if (operationDecisionTone === "waste") {
+    const wasteCandidate = [...topTerms]
+      .filter((term) => term.orders === 0)
+      .sort(
+        (left, right) =>
+          compareSearchIntentNumbers(left.cost, right.cost) || compareSearchIntentNumbers(left.clicks, right.clicks),
+      )[0];
+    if (wasteCandidate) {
+      return {
+        primarySearchTerm: searchIntentTopTermText(wasteCandidate),
+        primarySearchTermReason: "止损复核先看无订单且花费最高的具体 SearchTerm。",
+      };
+    }
+  }
+
+  const representativeCandidate = representativeSearchIntentTopTerm(topTerms);
+  return {
+    primarySearchTerm: searchIntentTopTermText(representativeCandidate) || fallbackSearchTerm,
+    primarySearchTermReason: "观察复核先看当前聚合组内样本行数和消耗更有代表性的具体 SearchTerm。",
+  };
+}
+
 export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi[], limit = 4): SearchIntentReviewCard[] {
   return summaries.slice(0, limit).map((summary) => {
     const metrics = summary.metrics;
     const abaMatchCount = summary.aba_match_count ?? 0;
-    const primaryTopTerm = (summary.top_search_terms ?? [])[0];
     const operationDecision = searchIntentOperationDecision(metrics);
-    const primarySearchTerm =
-      stringValue(primaryTopTerm?.search_term) || stringValue(primaryTopTerm?.normalized_query) || stringValue(summary.search_terms[0]) || null;
+    const primarySelection = selectPrimarySearchTermForOperationDecision(summary, operationDecision.operationDecisionTone);
     const topTerms = (summary.top_search_terms ?? []).slice(0, 3).map((term) => {
       const abaText = term.aba_rank ? ` / ABA ${term.aba_rank}` : "";
       const adGroupText = (term.ad_group_names ?? []).filter(Boolean).slice(0, 2).join("、") || "广告组待补齐";
@@ -5816,7 +5895,7 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       doesNotProve:
         searchIntentDisplayText(summary.does_not_prove) || "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能生成广告搜索词聚合上下文人工动作。",
       nextManualStep: searchIntentDisplayText(summary.next_manual_step) || "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组、广告位和证据缺口后再记录观察或加入复盘。",
-      primarySearchTerm,
+      ...primarySelection,
       topTerms,
     };
   });

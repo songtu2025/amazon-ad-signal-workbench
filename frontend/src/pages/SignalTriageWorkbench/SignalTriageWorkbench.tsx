@@ -1969,6 +1969,7 @@ export function SignalTriageWorkbench() {
                     <small>不能证明：{card.doesNotProve}</small>
                     <small>人工下一步：{card.nextManualStep}</small>
                     <small>{card.insight}</small>
+                    <small>优先打开：{card.primarySearchTerm ?? "待补齐"}；{card.primarySearchTermReason}</small>
                     <small>{card.boundary}</small>
                     {card.topTerms.length > 0 && (
                       <ul>
