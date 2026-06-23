@@ -3279,6 +3279,7 @@ function ProductScopeAdGroupDiagnosisPanel({ rows }: { rows: ProductScopeAdGroup
               <span>{row.metrics}</span>
               <span>{row.trafficContext}</span>
             </div>
+            <small>{row.trafficContextBoundary}</small>
             {row.advertisedProductPerformance.length > 0 && (
               <div className="productScopeAdGroupAdvertisedProducts" aria-label="广告组内投放商品表现">
                 <strong>广告组内投放商品表现</strong>

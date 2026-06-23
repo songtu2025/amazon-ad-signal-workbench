@@ -171,7 +171,7 @@ assertIncludes(workbenchSource, "row.decision.nextFocus");
 assertIncludes(signalUiSource, "ProductGroupAdAsinDecision");
 assertIncludes(signalUiSource, "ProductScopeAdCoverageDecision");
 assertIncludes(signalUiSource, "buildProductScopeAdCoverageDecision");
-assertIncludes(signalUiSource, "未投放子 ASIN只作为经营背景或覆盖缺口");
+assertIncludes(signalUiSource, "未投放子 ASIN 只作为经营背景或覆盖缺口");
 assertIncludes(signalUiSource, "不能把搜索词、广告位或 ABA 自动归因到该 ASIN");
 assertIncludes(workbenchSource, 'aria-label="首屏诊断路径"');
 assertIncludes(workbenchSource, 'aria-label="MVP 落地门禁"');

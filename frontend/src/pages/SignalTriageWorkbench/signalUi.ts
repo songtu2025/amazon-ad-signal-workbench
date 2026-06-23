@@ -3704,6 +3704,7 @@ export interface ProductScopeAdGroupDiagnosisRow {
   problemType: string;
   metrics: string;
   trafficContext: string;
+  trafficContextBoundary: string;
   reason: string;
   advertisedAsins: string[];
   advertisedProductPerformance: ProductScopeAdGroupAdvertisedProductPerformance[];
@@ -4386,6 +4387,8 @@ export function productScopeAdGroupDiagnosisRows(summary: SignalTriageSummaryFor
       trafficContext: `广告 ASIN ${row.ad_group_advertised_asin_count ?? 0} 个 / 搜索词 ${row.search_term_count ?? 0} 条 / 广告位 ${
         row.placement_count ?? 0
       } 条 / 活动广告位 ${row.campaign_placement_count ?? 0} 条`,
+      trafficContextBoundary:
+        "这些数量只说明当前广告组或广告活动上下文覆盖；不能证明搜索词、广告位或广告组表现已归因到单个广告 ASIN，也不能替代人工动作门禁。",
       reason: row.reason?.trim() || "等待后端补充广告组诊断原因。",
       advertisedAsins: row.ad_group_advertised_asins?.map((asin) => asin.trim()).filter(Boolean) ?? [],
       advertisedProductPerformance: productScopeAdGroupAdvertisedProductPerformance(row),
@@ -6080,10 +6083,10 @@ function buildProductScopeAdCoverageDecision(
   }
 
   return {
-    statusLabel: `${adCount}/${childCount} 个子 ASIN 有广告投放行`,
+    statusLabel: `${adCount}/${childCount} 个子 ASIN 有当前 SP 广告投放行`,
     summary:
-      `广告覆盖率 ${coverageText}；${adCount} 个广告 ASIN 可进入广告诊断，` +
-      `${uncoveredCount} 个未投放子 ASIN只作为经营背景或覆盖缺口。`,
+      `当前 SP 广告覆盖率 ${coverageText}；${adCount} 个广告 ASIN 可进入广告诊断，` +
+      `${uncoveredCount} 个未投放子 ASIN 只作为经营背景或覆盖缺口。`,
     proves:
       adCount > 0
         ? "advertised_products 已覆盖这些 ASIN 的广告商品表现，可继续下钻广告组、投放词、搜索词和广告位。"
