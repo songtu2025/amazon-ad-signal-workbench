@@ -30,6 +30,13 @@ def write_json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
 
 
+def test_health_route_identifies_current_project() -> None:
+    response = TestClient(app).get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "service": "ai-ads-signal-workbench"}
+
+
 def test_snapshot_readiness_route_returns_model(monkeypatch) -> None:
     monkeypatch.setattr(
         routes,
