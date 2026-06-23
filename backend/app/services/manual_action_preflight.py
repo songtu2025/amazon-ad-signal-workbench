@@ -17,6 +17,7 @@ REVIEW_WINDOW_ORDER = ("7d", "14d")
 REQUIRED_REVIEW_EVIDENCE_LABELS = ("排查路径", "AI 准入", "搜索词边界", "广告位边界")
 SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS = (
     *REQUIRED_REVIEW_EVIDENCE_LABELS,
+    "语义组",
     "Parent ASIN入口",
     "广告 ASIN承接",
     "广告组合流判断",
@@ -84,6 +85,7 @@ SEARCH_TERM_ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
     "diagnosis_path",
     "ai_admission_gate",
     "search_term_target_identity",
+    "search_term_intent_context",
     "search_term_parent_scope_context",
     "search_term_ad_asin_coverage",
     "diagnosis_judgement",
@@ -506,6 +508,7 @@ def _evidence_snapshot_preview(triage: dict[str, Any], target: dict[str, Any]) -
     blocks = _dict_list(drilldown.get("business_evidence_blocks"))
     blocks.extend(_actionability_snapshot_blocks(triage))
     blocks.extend(_search_term_target_identity_snapshot_blocks(target))
+    blocks.extend(_search_term_intent_snapshot_blocks(target, drilldown))
     blocks.extend(_product_scope_boundary_snapshot_blocks(triage, blocks, target))
     blocks.extend(_ad_group_product_performance_snapshot_blocks(triage, target, drilldown))
     blocks.extend(_search_term_ad_context_snapshot_blocks(target, drilldown))
@@ -964,6 +967,35 @@ def _search_term_ad_context_snapshot_blocks(target: dict[str, Any], drilldown: d
                 "不能自动归因到单个广告 ASIN，也不能触发自动加词、否词或调价。"
             ),
             "source": "ad_search_term_daily_metrics",
+        }
+    ]
+
+
+def _search_term_intent_snapshot_blocks(target: dict[str, Any], drilldown: dict[str, Any]) -> list[dict[str, str]]:
+    if str(target.get("object_type") or "").strip() != "search_term":
+        return []
+
+    labels: list[str] = []
+    for row in _dict_list(drilldown.get("search_term_rows")):
+        label = str(row.get("intent_label") or "").strip()
+        if label and label not in labels:
+            labels.append(label)
+    if not labels:
+        return []
+
+    suffix = f"；另有 {len(labels) - 3} 个语义组未展开" if len(labels) > 3 else ""
+    source = "规则语义" if any(label.startswith("规则语义：") for label in labels) else "广告搜索词聚合上下文"
+    return [
+        {
+            "block_id": "search_term_intent_context",
+            "label": "语义组",
+            "value": "、".join(labels[:3]) + suffix,
+            "detail": (
+                "该语义组来自当前 Parent ASIN 广告上下文中的用户搜索词表现行，"
+                "用于复盘同类搜索词表现和重复上下文；不能替代顶部诊断入口，"
+                "也不能作为自动加词、否词、调价或暂停广告的依据。"
+            ),
+            "source": source,
         }
     ]
 

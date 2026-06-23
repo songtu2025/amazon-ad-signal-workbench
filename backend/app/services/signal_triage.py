@@ -26,6 +26,7 @@ from app.services.signal_detection import (
     AD_PRODUCT_MIN_STABLE_ORDERS,
     detect_data_quality_signals,
     detect_signals,
+    resolved_search_intent_label,
     search_intent_summaries,
 )
 from app.services.snapshot_readiness import load_snapshot_readiness
@@ -2452,6 +2453,7 @@ def _search_term_row_summary(row: dict[str, Any]) -> dict[str, Any]:
         "campaign_name": _string(row.get("campaign_name") or row.get("campaign_id")),
         "ad_group_name": _string(row.get("ad_group_name") or row.get("ad_group_id") or row.get("group_id")),
         "search_term": _string(row.get("search_term") or row.get("normalized_query")),
+        "intent_label": resolved_search_intent_label(row),
         "targeting_text": _string(row.get("targeting_text") or row.get("keyword_text") or row.get("target_value") or row.get("target_id") or row.get("keyword_id")),
         "spend": _number(row.get("spend") if row.get("spend") is not None else row.get("cost")),
         "clicks": _int(row.get("clicks")) or 0,
