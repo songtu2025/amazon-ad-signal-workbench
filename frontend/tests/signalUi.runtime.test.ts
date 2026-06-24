@@ -764,6 +764,43 @@ async function main() {
   assertIncludes(reviewTodoEvidenceReadbackText, "需要补证");
   assertNotIncludes(reviewTodoEvidenceReadbackText, "缺：投放词证据");
   assertIncludes(reviewTodoEvidenceReadbackText, "不执行广告动作");
+  const realReviewEffect7d = await fetchJson(
+    `/api/signals/${encodedRecommendedSignalId}/review-effect?market_id=${marketId}&review_window=7d`,
+  );
+  const realReviewEffect14d = await fetchJson(
+    `/api/signals/${encodedRecommendedSignalId}/review-effect?market_id=${marketId}&review_window=14d`,
+  );
+  const reviewRecordsForBenchmark = await fetchJson(
+    `/api/signals/${encodedRecommendedSignalId}/review-records?market_id=${marketId}&object_type=search_term&object_id=${encodeURIComponent(
+      benchmarkExpectedObjectId,
+    )}`,
+  );
+  assert(realReviewEffect7d.status === "not_ready", "真实 7 天复盘窗口未到期时必须保持 not_ready。");
+  assert(realReviewEffect14d.status === "not_ready", "真实 14 天复盘窗口未到期时必须保持 not_ready。");
+  assert(realReviewEffect7d.review_window === "7d", "真实 7 天复盘效果必须绑定 7d 窗口。");
+  assert(realReviewEffect14d.review_window === "14d", "真实 14 天复盘效果必须绑定 14d 窗口。");
+  assert(realReviewEffect7d.object_id === benchmarkExpectedObjectId, "真实 7 天复盘效果必须绑定 beach essentials。");
+  assert(realReviewEffect14d.object_id === benchmarkExpectedObjectId, "真实 14 天复盘效果必须绑定 beach essentials。");
+  assertIncludes(JSON.stringify(realReviewEffect7d), "2026-06-30");
+  assertIncludes(JSON.stringify(realReviewEffect14d), "2026-07-07");
+  assert(Array.isArray(reviewRecordsForBenchmark), "ReviewRecord 读回应返回数组。");
+  assert(reviewRecordsForBenchmark.length === 0, "未到期前不应读到已保存 ReviewRecord。");
+  const realNotReadyLedger = buildReviewEffectWindowLedger(reviewTodoForObjectGate, realReviewEffect7d);
+  assert(realNotReadyLedger.tone === "blocked", "真实未到期 review-effect 必须阻断 ReviewRecord 保存。");
+  assertIncludes(realNotReadyLedger.metricCoverage, "不能保存 ReviewRecord");
+  assertIncludes(realNotReadyLedger.nextStep, "2026-06-30");
+  assertIncludes(realNotReadyLedger.boundary, "未到 ready 前不判断改善");
+  const realNotReadyPreflight = buildReviewRecordPreflightChecklist(reviewTodoForObjectGate, realReviewEffect7d, {
+    requestSignalId: reviewTodoForObjectGate.signal_id,
+    stateSignalId: reviewTodoForObjectGate.signal_id,
+    objectType: reviewTodoForObjectGate.object_type,
+    objectId: reviewTodoForObjectGate.object_id,
+  });
+  assert(realNotReadyPreflight.length === 0, "真实未到期 review-effect 不应生成 ReviewRecord 保存前检查清单。");
+  assert(
+    !canSaveReviewRecordWithPreflight(realReviewEffect7d, realNotReadyPreflight),
+    "真实未到期 review-effect 不允许保存 ReviewRecord。",
+  );
   const simulatedReadyEffect = {
     signal_id: reviewTodoForObjectGate.signal_id,
     action_id: reviewTodoForObjectGate.action_id,
