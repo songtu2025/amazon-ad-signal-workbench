@@ -1412,6 +1412,7 @@ export interface ProductScopePriorityQueueItem {
   mainQuestion: string;
   evidenceSummary: string;
   rankReason: string;
+  decisionBadge: string;
   nextManualStep: string;
   boundary: string;
   signalCount: number;
@@ -6783,6 +6784,13 @@ export function buildProductScopePriorityQueueItems(
           adSpend,
           hasAdEvidence,
         }),
+        decisionBadge: productScopePriorityDecisionBadge({
+          dueReviewTodoCount,
+          reviewTodoCount: scopeReviewTodos.length,
+          highSignalCount,
+          openSignalCount,
+          hasAdEvidence,
+        }),
         nextManualStep: productScopePriorityNextStep({
           dueReviewTodoCount,
           reviewTodoCount: scopeReviewTodos.length,
@@ -6852,6 +6860,21 @@ function productScopePriorityNextStep(input: {
   if (input.openSignalCount > 0) return "打开后只复核当前广告证据是否足够，证据不足时记录观察或保持待确认。";
   if (input.hasAdEvidence) return "保留观察即可；没有明确异常或机会时，不需要逐层阅读全部广告数据。";
   return "不进入广告诊断；需要先补齐 advertised_products、搜索词或广告位证据。";
+}
+
+function productScopePriorityDecisionBadge(input: {
+  dueReviewTodoCount: number;
+  reviewTodoCount: number;
+  highSignalCount: number;
+  openSignalCount: number;
+  hasAdEvidence: boolean;
+}): string {
+  if (input.dueReviewTodoCount > 0) return `人工动作：先复盘 / 复盘状态：到期 ${input.dueReviewTodoCount} 项`;
+  if (input.reviewTodoCount > 0) return `人工动作：等待复盘 / 复盘状态：待复盘 ${input.reviewTodoCount} 项`;
+  if (input.highSignalCount > 0) return "人工动作：右侧人工确认 / 复盘状态：未排程";
+  if (input.openSignalCount > 0) return "人工动作：记录观察 / 复盘状态：可加入复盘";
+  if (input.hasAdEvidence) return "人工动作：保持观察 / 复盘状态：按需加入复盘";
+  return "人工动作：暂不展开 / 复盘状态：无待办";
 }
 
 function productScopePriorityRankReason(input: {

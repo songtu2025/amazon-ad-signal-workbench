@@ -658,11 +658,19 @@ assertEqual(productScopePriorityQueueItems.map((item) => item.scopeId).join(",")
 assertEqual(productScopePriorityQueueItems[0].priorityLabel, "先复盘");
 assertEqual(productScopePriorityQueueItems[0].tone, "review");
 assertIncludes(productScopePriorityQueueItems[0].mainQuestion, "已到期复盘");
+assertIncludes(productScopePriorityQueueItems[0].decisionBadge, "人工动作：先复盘");
+assertIncludes(productScopePriorityQueueItems[0].decisionBadge, "复盘状态：到期 1 项");
 assertIncludes(productScopePriorityQueueItems[1].mainQuestion, "高优先级广告信号");
+assertIncludes(productScopePriorityQueueItems[1].decisionBadge, "人工动作：右侧人工确认");
+assertIncludes(productScopePriorityQueueItems[1].decisionBadge, "复盘状态：未排程");
 assertIncludes(productScopePriorityQueueItems[1].nextManualStep, "右侧选择记录观察、标记已处理、加入复盘或忽略本次");
 assertIncludes(productScopePriorityQueueItems[1].boundary, "未投放子 ASIN 不进入广告动作对象");
 assertEqual(productScopePriorityQueueItems[2].priorityLabel, "观察");
+assertIncludes(productScopePriorityQueueItems[2].decisionBadge, "人工动作：保持观察");
+assertIncludes(productScopePriorityQueueItems[2].decisionBadge, "按需加入复盘");
 assertEqual(productScopePriorityQueueItems[3].priorityLabel, "暂不展开");
+assertIncludes(productScopePriorityQueueItems[3].decisionBadge, "人工动作：暂不展开");
+assertIncludes(productScopePriorityQueueItems[3].decisionBadge, "复盘状态：无待办");
 assertIncludes(productScopePriorityQueueItems[3].evidenceSummary, "当前无投放广告证据");
 
 const parentAsinOptions = [

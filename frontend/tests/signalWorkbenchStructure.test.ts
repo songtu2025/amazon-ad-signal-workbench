@@ -514,6 +514,7 @@ assertIncludes(workbenchSource, "今日 Parent ASIN 优先处理清单");
 assertIncludes(workbenchSource, "先排序，再下钻");
 assertIncludes(workbenchSource, "避免 10 个 Parent ASIN 像看 10 张报纸");
 assertIncludes(workbenchSource, "排序依据：{item.rankReason}");
+assertIncludes(workbenchSource, "{item.decisionBadge}");
 assertIncludes(workbenchSource, "handleSelectProductScopePriority(item.scopeId)");
 const productScopePriorityDecisionSummaryRenderIndex = workbenchSource.indexOf(
   "<ProductScopePriorityDecisionSummaryPanel",
@@ -528,6 +529,8 @@ assert(productScopePriorityQueueIndex > 0, "左侧必须有 Parent ASIN 今日�
 assert(productScopePriorityQueueIndex < signalRowsIndex, "Parent ASIN 优先处理清单必须在信号行之前，先帮用户排序再展开信号");
 assertIncludes(signalUiSource, "buildProductScopePriorityQueueItems");
 assertIncludes(signalUiSource, "rankReason: productScopePriorityRankReason");
+assertIncludes(signalUiSource, "decisionBadge: productScopePriorityDecisionBadge");
+assertIncludes(signalUiSource, "人工动作：右侧人工确认 / 复盘状态：未排程");
 assertIncludes(signalUiSource, "复盘到期优先于普通信号");
 assertIncludes(signalUiSource, "高优先级信号优先");
 assertIncludes(signalUiSource, "无广告证据排在后面");
