@@ -4242,7 +4242,7 @@ function ProductScopeAdGroupActionBridgeCard({
         <strong>当前广告组人工动作承接</strong>
         <span>{row.statusLabel}</span>
       </div>
-      <p>先按中间检查清单复核，再选择右侧人工动作；这里只保存人工留痕或复盘待办。</p>
+      <p>先按中间检查清单复核，再选择右侧人工动作；复盘待办会按同一组证据回读，这里只保存人工留痕或复盘待办。</p>
       <div className="adGroupActionBridgeScope" aria-label="人工动作前核对">
         <span>动作对象：{row.title} / {row.problemType}</span>
         <span>来源读回：{scopeReadback}</span>
@@ -4261,6 +4261,20 @@ function ProductScopeAdGroupActionBridgeCard({
           </li>
         ))}
       </ul>
+      <div className="adGroupActionBridgeReviewEvidence" aria-label="复盘回读证据链">
+        <strong>复盘回读证据链</strong>
+        <p>人工动作保存后，7/14 天复盘必须沿这四层证据回看，不能只看最终指标涨跌。</p>
+        <ul>
+          {items.map((item) => (
+            <li key={`${item.key}-review-evidence`}>
+              <span>{item.title}</span>
+              <b>{item.purpose}</b>
+              <small>能证明：{item.proves}</small>
+              <small>不能证明：{item.doesNotProve}</small>
+            </li>
+          ))}
+        </ul>
+      </div>
       <small>若证据不足，优先记录观察或加入复盘；不能自动调价、暂停、否词或加词。</small>
     </section>
   );
