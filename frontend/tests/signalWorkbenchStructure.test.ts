@@ -28,6 +28,7 @@ const workbenchSource = readFileSync(
 );
 const signalUiSource = readFileSync(join(process.cwd(), "src", "pages", "SignalTriageWorkbench", "signalUi.ts"), "utf8");
 const reviewUiSource = readFileSync(join(process.cwd(), "src", "pages", "SignalTriageWorkbench", "reviewUi.ts"), "utf8");
+const stylesSource = readFileSync(join(process.cwd(), "src", "styles.css"), "utf8");
 
 assertIncludes(workbenchSource, "buildProductScopeEvidenceMatrix");
 assertIncludes(workbenchSource, "productScopeAdGroupDiagnosisRows");
@@ -293,6 +294,9 @@ assertNotIncludes(workbenchSource, 'setSelectedProductScopeId("all")');
 assertIncludes(workbenchSource, "setSelectedProductScopeId(reviewTodoScopeHint.actionScopeId)");
 assertIncludes(workbenchSource, "productScopeBusinessPreviewActions");
 assertIncludes(workbenchSource, "workbenchGrid focusedFromFirstScreen");
+assertIncludes(stylesSource, "grid-template-columns: minmax(300px, 0.78fr) minmax(500px, 1.44fr) minmax(300px, 0.78fr);");
+assertIncludes(stylesSource, "@media (max-width: 1180px)");
+assertNotIncludes(stylesSource, "@media (max-width: 1320px)");
 assertIncludes(workbenchSource, 'aria-label="广告证据下钻状态"');
 assertIncludes(workbenchSource, "已进入广告诊断工作台");
 assertIncludes(workbenchSource, "按广告组、搜索词和广告位证据继续排查");

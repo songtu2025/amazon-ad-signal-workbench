@@ -1216,7 +1216,7 @@ h3 {
 
 .workbenchGrid {
   display: grid;
-  grid-template-columns: minmax(330px, 0.82fr) minmax(580px, 1.45fr) minmax(320px, 0.76fr);
+  grid-template-columns: minmax(300px, 0.78fr) minmax(500px, 1.44fr) minmax(300px, 0.78fr);
   gap: 12px;
   align-items: start;
 }
@@ -7029,7 +7029,7 @@ button.reviewTodoQueueNext:focus-visible {
   background: #fff7f5;
 }
 
-@media (max-width: 1320px) {
+@media (max-width: 1180px) {
   .workbenchGrid {
     grid-template-columns: minmax(290px, 340px) minmax(0, 1fr);
     grid-template-areas:
