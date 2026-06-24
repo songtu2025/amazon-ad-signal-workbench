@@ -1495,6 +1495,14 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
     : null;
   const adContextRowsItem = snapshot.find((item) => reviewRecordAdContextRowsLabels.includes(String(item.label ?? "").trim()));
   const adContextRowsText = adContextRowsItem ? reviewRecordEvidenceItemText(adContextRowsItem) : null;
+  const adGroupProductPerformanceItem = snapshot.find((item) =>
+    reviewRecordAdGroupProductPerformanceLabels.includes(String(item.label ?? "").trim()),
+  );
+  const adGroupProductPerformanceText = adGroupProductPerformanceItem ? reviewRecordEvidenceItemText(adGroupProductPerformanceItem) : null;
+  const targetingEvidenceItem = snapshot.find((item) => reviewRecordTargetingEvidenceLabels.includes(String(item.label ?? "").trim()));
+  const targetingEvidenceText = targetingEvidenceItem ? reviewRecordEvidenceItemText(targetingEvidenceItem) : null;
+  const placementBoundaryItem = snapshot.find((item) => reviewRecordPlacementBoundaryLabels.includes(String(item.label ?? "").trim()));
+  const placementBoundaryText = placementBoundaryItem ? reviewRecordEvidenceItemText(placementBoundaryItem) : null;
   const objectDisplayText = reviewObjectIdentityDisplayText(objectType, objectId, objectLabel);
 
   const rows: ReviewTodoEvidenceReadbackRow[] = [
@@ -1563,6 +1571,27 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
               ? `${adGroupSynthesisText}。复盘时必须先回到广告组和同组广告 ASIN，再判断是否需要人工调整投放结构。`
               : "当前待办没有广告组合流判断；不能只看搜索词裸指标就判断单个广告 ASIN、广告组或广告位出了问题。",
             tone: (adGroupSynthesisText ? "ready" : hasSnapshot ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
+          },
+          {
+            label: "同组投放商品表现",
+            value: adGroupProductPerformanceText ? "已回读" : hasSnapshot ? "缺少同组商品" : "等待证据快照",
+            detail: adGroupProductPerformanceText
+              ? `${adGroupProductPerformanceText}。复盘时必须回看同一广告组内实际投放商品的花费、订单和承接差异，不能把广告组或搜索词表现直接归因到单个 ASIN。`
+              : "当前待办没有同组投放商品表现；不能判断广告组内哪些投放商品承接了该 SearchTerm，也不能把未投放子 ASIN 拉入复盘。",
+            tone: (adGroupProductPerformanceText ? "ready" : hasSnapshot ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
+          },
+          {
+            label: "投放词与广告位边界",
+            value: targetingEvidenceText && placementBoundaryText ? "已回读" : hasSnapshot ? "缺少上下文" : "等待证据快照",
+            detail:
+              targetingEvidenceText && placementBoundaryText
+                ? `${targetingEvidenceText}；${placementBoundaryText}。复盘时投放词用于判断匹配承接，广告位只说明流量位置边界，不能自动加词、否词、调价或归因到单个 ASIN。`
+                : "当前待办缺少投放词证据或广告位边界；到期后只能先补证，不能只凭 SearchTerm 指标保存复盘结论。",
+            tone: (targetingEvidenceText && placementBoundaryText
+              ? "ready"
+              : hasSnapshot
+                ? "blocked"
+                : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
           },
           {
             label: "逐投放复核顺序",

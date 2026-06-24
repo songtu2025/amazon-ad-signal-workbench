@@ -1175,6 +1175,9 @@ assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "Parent ASIN 入
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "扩量复核：订单 23");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "广告组合流判断");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "同组投放商品表现");
+assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "不能把广告组或搜索词表现直接归因到单个 ASIN");
+assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "投放词与广告位边界");
+assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "投放词用于判断匹配承接");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "逐投放复核顺序");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "优先复核广告组");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "对照复核广告组");
@@ -1189,6 +1192,13 @@ const blockedReviewTodoEvidenceReadbackWithoutAdGroupSynthesis = buildReviewTodo
 });
 assertEqual(blockedReviewTodoEvidenceReadbackWithoutAdGroupSynthesis?.tone, "blocked");
 assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadbackWithoutAdGroupSynthesis), "缺：广告组合流判断");
+const blockedReviewTodoEvidenceReadbackWithoutAdGroupProductPerformance = buildReviewTodoEvidenceReadbackSummary({
+  ...searchTermReviewTodoWithFullChain,
+  evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot?.filter((item) => item.label !== "同组投放商品表现"),
+});
+assertEqual(blockedReviewTodoEvidenceReadbackWithoutAdGroupProductPerformance?.tone, "blocked");
+assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadbackWithoutAdGroupProductPerformance), "缺少同组商品");
+assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadbackWithoutAdGroupProductPerformance), "不能把未投放子 ASIN 拉入复盘");
 const blockedReviewTodoEvidenceReadbackWithoutAdContextRows = buildReviewTodoEvidenceReadbackSummary({
   ...searchTermReviewTodoWithFullChain,
   evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot?.filter((item) => item.label !== "逐投放上下文"),
@@ -1196,6 +1206,12 @@ const blockedReviewTodoEvidenceReadbackWithoutAdContextRows = buildReviewTodoEvi
 assertEqual(blockedReviewTodoEvidenceReadbackWithoutAdContextRows?.tone, "blocked");
 assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadbackWithoutAdContextRows), "缺：逐投放上下文");
 assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadbackWithoutAdContextRows), "不能回看当时先复核哪个广告组");
+const blockedReviewTodoEvidenceReadbackWithoutPlacementBoundary = buildReviewTodoEvidenceReadbackSummary({
+  ...searchTermReviewTodoWithFullChain,
+  evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot?.filter((item) => item.label !== "广告位边界"),
+});
+assertEqual(blockedReviewTodoEvidenceReadbackWithoutPlacementBoundary?.tone, "blocked");
+assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadbackWithoutPlacementBoundary), "缺少投放词证据或广告位边界");
 const blockedReviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary({
   ...searchTermReviewTodoWithFullChain,
   evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot?.filter(
