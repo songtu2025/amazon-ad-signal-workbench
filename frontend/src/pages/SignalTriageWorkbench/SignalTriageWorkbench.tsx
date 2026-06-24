@@ -4256,6 +4256,31 @@ function ProductScopeAdGroupOperationalChecklistPanel({ row }: { row: ProductSco
   );
 }
 
+function ProductScopeAdGroupReviewOrderPanel({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
+  const items = buildProductScopeAdGroupChecklistItems(row);
+  const reviewPath = items.map((item) => item.title).join(" → ");
+
+  return (
+    <div className="productScopeAdGroupReviewOrder" aria-label="当前广告组复核顺序">
+      <div>
+        <span>先按顺序复核</span>
+        <strong>{reviewPath}</strong>
+      </div>
+      <p>{row.problemLocator.problemLocation}</p>
+      <ol>
+        {items.map((item) => (
+          <li key={`${item.key}-review-order`}>
+            <span>{item.label}</span>
+            <b>{item.title}</b>
+            <small>{item.nextStep}</small>
+          </li>
+        ))}
+      </ol>
+      <small>这只是人工复核路径，不证明搜索词或广告位已归因到单个广告 ASIN，也不执行任何广告动作。</small>
+    </div>
+  );
+}
+
 function ProductScopeAdGroupActionBridgeCard({
   row,
   priorityItem,
@@ -4435,6 +4460,7 @@ function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagno
         </div>
         <b>{row.statusLabel}</b>
       </div>
+      <ProductScopeAdGroupReviewOrderPanel row={row} />
       <div className="productScopeAdGroupDiagnosisMetrics">
         <span>{row.metrics}</span>
         <span>{row.trafficContext}</span>

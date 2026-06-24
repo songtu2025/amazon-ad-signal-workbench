@@ -2642,6 +2642,88 @@ h3 {
   background: #f7fbff;
 }
 
+.productScopeAdGroupReviewOrder {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #cbdff1;
+  border-radius: 8px;
+  background: #f6fbff;
+  color: #4f637a;
+  overflow-wrap: anywhere;
+}
+
+.productScopeAdGroupReviewOrder > div {
+  display: grid;
+  gap: 3px;
+}
+
+.productScopeAdGroupReviewOrder > div span {
+  color: #60758c;
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.productScopeAdGroupReviewOrder > div strong {
+  color: #132942;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.productScopeAdGroupReviewOrder p,
+.productScopeAdGroupReviewOrder small {
+  margin: 0;
+  color: #5d7287;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.productScopeAdGroupReviewOrder p {
+  color: #2d455f;
+}
+
+.productScopeAdGroupReviewOrder ol {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.productScopeAdGroupReviewOrder li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 4px 6px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #d7e6f4;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.productScopeAdGroupReviewOrder li span {
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #eaf3ff;
+  color: #1f5d9d;
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.productScopeAdGroupReviewOrder li b {
+  color: #294b6a;
+  font-size: 12px;
+}
+
+.productScopeAdGroupReviewOrder li small {
+  font-size: 11px;
+}
+
 .productScopeAdGroupChecklistHeader,
 .productScopeAdGroupReasoningDetails summary {
   display: flex;
@@ -8271,6 +8353,10 @@ button.reviewTodoQueueNext:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .productScopeAdGroupReviewOrder ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .productScopeSearchTermColumns {
     grid-template-columns: 1fr;
   }
@@ -8373,6 +8459,10 @@ button.reviewTodoQueueNext:focus-visible {
   }
 
   .productScopeAdGroupPriorityGate ul {
+    grid-template-columns: 1fr;
+  }
+
+  .productScopeAdGroupReviewOrder ol {
     grid-template-columns: 1fr;
   }
 

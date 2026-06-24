@@ -61,12 +61,14 @@ assertIncludes(workbenchSource, "function ProductScopeAdGroupDiagnosisPanel");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupFocusPanel");
 assertIncludes(workbenchSource, "function ProductScopeTargetingEvidencePanel");
 assertIncludes(workbenchSource, "function buildProductScopeTargetingEvidenceRows");
+assertIncludes(workbenchSource, "function ProductScopeAdGroupReviewOrderPanel");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupOperationalChecklistPanel");
 assertIncludes(workbenchSource, "function buildProductScopeAdGroupChecklistItems");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupActionBridgeCard");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupReasoningDetails");
 assertIncludes(workbenchSource, 'aria-label="广告组内投放商品表现"');
 assertIncludes(workbenchSource, 'aria-label="投放词证据独立复核"');
+assertIncludes(workbenchSource, 'aria-label="当前广告组复核顺序"');
 assertIncludes(workbenchSource, 'aria-label="当前广告组运营检查清单"');
 assertIncludes(workbenchSource, 'aria-label="当前广告组人工动作承接"');
 assertIncludes(workbenchSource, 'aria-label="广告组推理细节"');
@@ -87,6 +89,7 @@ assertIncludes(workbenchSource, "暂无可聚焦广告组；先补齐广告组�
 assertIncludes(workbenchSource, "下方“广告组问题定位”可切换当前广告组焦点");
 assertIncludes(workbenchSource, "本区只解释进入理由，不写入人工动作，也不执行任何广告操作");
 assertIncludes(workbenchSource, "ProductScopeTargetingEvidencePanel row={row}");
+assertIncludes(workbenchSource, "ProductScopeAdGroupReviewOrderPanel row={row}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupOperationalChecklistPanel row={row}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupActionBridgeCard row={selectedAdGroupDiagnosis} priorityItem={activeProductScopePriorityItem}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupReasoningDetails row={row}");
@@ -104,6 +107,9 @@ assertIncludes(workbenchSource, "确认当前广告组实际投放哪些广告 A
 assertIncludes(workbenchSource, "确认搜索词表现来自哪些 keyword_text / target_id");
 assertIncludes(workbenchSource, "判断用户真实搜索词在当前广告组里是扩量机会、花费浪费还是继续观察");
 assertIncludes(workbenchSource, "确认当前问题是否可能和 Top of Search");
+assertIncludes(workbenchSource, 'const reviewPath = items.map((item) => item.title).join(" → ")');
+assertIncludes(workbenchSource, "先按顺序复核");
+assertIncludes(workbenchSource, "这只是人工复核路径，不证明搜索词或广告位已归因到单个广告 ASIN");
 assertIncludes(workbenchSource, "先按中间检查清单复核，再选择右侧人工动作");
 assertIncludes(workbenchSource, "复盘待办会按同一组证据回读");
 assertIncludes(workbenchSource, "这里只保存人工留痕或复盘待办");
@@ -185,6 +191,7 @@ const selectedAdGroupFocusRenderIndex = workbenchSource.indexOf(
   "{selectedAdGroupDiagnosis && <ProductScopeAdGroupFocusPanel row={selectedAdGroupDiagnosis} />}",
 );
 const adGroupChecklistIndex = workbenchSource.indexOf("<ProductScopeAdGroupOperationalChecklistPanel row={row} />");
+const adGroupReviewOrderIndex = workbenchSource.indexOf("<ProductScopeAdGroupReviewOrderPanel row={row} />");
 const advertisedProductsInFocusIndex = workbenchSource.indexOf('aria-label="广告组内投放商品表现"');
 const targetingEvidenceInFocusIndex = workbenchSource.indexOf("<ProductScopeTargetingEvidencePanel row={row} />");
 const searchTermDiagnosisPanelIndex = workbenchSource.indexOf(
@@ -192,6 +199,10 @@ const searchTermDiagnosisPanelIndex = workbenchSource.indexOf(
 );
 const placementDecisionIndex = workbenchSource.indexOf('aria-label="广告位证据判断"');
 const adGroupReasoningDetailsIndex = workbenchSource.indexOf("<ProductScopeAdGroupReasoningDetails row={row} />");
+const focusMetricsIndex = workbenchSource.indexOf(
+  'className="productScopeAdGroupDiagnosisMetrics"',
+  workbenchSource.indexOf("function ProductScopeAdGroupFocusPanel"),
+);
 const selectedSignalBranchIndex = workbenchSource.indexOf("{selectedSignal ? (");
 const actionPanelIndex = workbenchSource.indexOf('<aside className="actionPanel">');
 const adGroupActionBridgeRenderIndex = workbenchSource.indexOf(
@@ -243,6 +254,8 @@ assert(adGroupDiagnosisRenderIndex > diagnosisPanelIndex, "广告组问题定位
 assert(adGroupDiagnosisRenderIndex < selectedAdGroupFocusRenderIndex, "广告组问题定位必须先于当前广告组具体数据");
 assert(selectedAdGroupFocusRenderIndex > diagnosisPanelIndex, "当前广告组具体数据必须渲染在诊断区内");
 assert(selectedAdGroupFocusRenderIndex < routeGuideRenderIndex, "当前广告组具体数据必须先于广告证据链导览");
+assert(adGroupReviewOrderIndex < focusMetricsIndex, "当前广告组具体数据必须先给复核顺序，再展示广告组指标");
+assert(adGroupReviewOrderIndex < adGroupChecklistIndex, "当前广告组具体数据必须先给复核顺序，再展开运营检查清单");
 assert(adGroupChecklistIndex < advertisedProductsInFocusIndex, "运营检查清单必须先于广告组证据明细");
 assert(advertisedProductsInFocusIndex < targetingEvidenceInFocusIndex, "投放词证据必须放在广告组内投放商品之后");
 assert(targetingEvidenceInFocusIndex < searchTermDiagnosisPanelIndex, "投放词证据必须先于搜索词问题定位");
