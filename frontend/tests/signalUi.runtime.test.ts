@@ -18,6 +18,8 @@ import {
   manualActionPreviewForSelectedSignal,
   mergeBackendTriageSignals,
   recommendedManualStatusText,
+  filterSignalsBySearchIntent,
+  resolveSearchIntentFocusSelection,
   resolveSignalSelectionId,
   signalTriageBusinessEvidenceItems,
   signalTriageDiagnosisContractItems,
@@ -247,6 +249,32 @@ async function main() {
   assertNotIncludes(searchIntentRuntimeText, "语义组人工动作");
   assertNotIncludes(searchIntentRuntimeText, "当前站点广告中实际产生表现的用户搜索词行按搜索意图聚合");
   assertIncludes(searchIntentRuntimeText, "搜索词表现分组");
+  assert(recommendedLabel === "beach essentials", "当前标杆链路必须保持为 B00K4W4AAA -> beach essentials。");
+  const benchmarkSearchIntentCard = searchIntentReviewCards.find((card: any) => card.primarySearchTerm === recommendedLabel);
+  assert(benchmarkSearchIntentCard !== undefined, "Parent ASIN 广告搜索词表现复核必须把 beach essentials 作为可点击的优先 SearchTerm。");
+  const benchmarkFocusSelection = resolveSearchIntentFocusSelection(
+    mergedRuntimeSignals,
+    null,
+    productScopeId,
+    benchmarkSearchIntentCard.intentLabel,
+    benchmarkSearchIntentCard.primarySearchTerm,
+  );
+  assert(benchmarkFocusSelection.intentLabel === benchmarkSearchIntentCard.intentLabel, "点击聚合卡片后必须保留当前搜索词表现分组。");
+  assert(benchmarkFocusSelection.scopeId === productScopeId, "点击聚合卡片不能改变 Parent ASIN 诊断入口。");
+  assert(benchmarkFocusSelection.signalId === recommendedSignalId, "点击 beach essentials 聚合卡片必须选中同一条 SearchTerm 信号。");
+  const benchmarkFocusedSignals = filterSignalsBySearchIntent(mergedRuntimeSignals, benchmarkSearchIntentCard.intentLabel);
+  assert(
+    benchmarkFocusedSignals.some((signal: any) => signal.id === benchmarkFocusSelection.signalId),
+    "选中的 SearchTerm 信号必须来自当前 Parent ASIN 广告搜索词表现分组。",
+  );
+  const benchmarkFocusedSignal = mergedRuntimeSignals.find((signal: any) => signal.id === benchmarkFocusSelection.signalId);
+  assertIncludes(asText(benchmarkFocusedSignal?.evidence?.primary_object ?? {}).toLowerCase(), "beach essentials");
+  const benchmarkManualPreview = manualActionPreviewForSelectedSignal(benchmarkFocusSelection.signalId, triage, benchmarkFocusedSignal);
+  assert(benchmarkManualPreview === null, "beach essentials 已留痕时，右侧人工预检不能静默切到下一未处理候选。");
+  const benchmarkQueueSwitch = manualActionQueueTargetSwitchSummary(triage, benchmarkFocusSelection.signalId);
+  assert(benchmarkQueueSwitch?.tone === "blocked", "beach essentials 已留痕时，右侧必须阻断重复写入而不是换对象保存。");
+  assertIncludes(asText(benchmarkQueueSwitch), "beach essentials");
+  assertIncludes(asText(benchmarkQueueSwitch), "已经有人工留痕");
 
   const evidenceBlocks = indexById(
     triage.next_unhandled_evidence_drilldown?.business_evidence_blocks,
