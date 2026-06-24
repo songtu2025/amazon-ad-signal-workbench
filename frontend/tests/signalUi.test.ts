@@ -22,6 +22,7 @@ import {
   buildProductScopeEntryGuidance,
   buildProductScopeOptionGroups,
   buildProductScopePriorityQueueItems,
+  buildProductScopeManualActionTargetAlignment,
   buildProductScopeSignalExplanation,
   buildProductScopeAdmissionCard,
   buildNoActionableManualGate,
@@ -717,6 +718,80 @@ assertEqual(
   ]),
   "parent_asin:B0DUE",
 );
+
+const readyTargetAlignment = buildProductScopeManualActionTargetAlignment({
+  priorityItem: productScopePriorityQueueItems[0],
+  selectedSignal: {
+    ...searchTermSignal,
+    id: "sig-search-term-beach-essentials",
+    evidence: {
+      primary_object: {
+        object_type: "search_term",
+        object_id: "search_term:1:beach essentials",
+        label: "beach essentials",
+      },
+    },
+  },
+  manualActionPreview: {
+    willWrite: false,
+    actionType: "add_to_review",
+    objectType: "search_term",
+    objectId: "search_term:1:beach essentials",
+    objectLabel: "beach essentials",
+    reviewWindows: ["7d", "14d"],
+    preflightChecks: [],
+  },
+  preflight: {
+    status: "ready_for_explicit_manual_write",
+    target: {
+      signal_id: "sig-search-term-beach-essentials",
+      object_type: "search_term",
+      object_id: "search_term:1:beach essentials",
+      object_label: "beach essentials",
+    },
+  },
+});
+assertEqual(readyTargetAlignment.tone, "ready");
+assertIncludes(readyTargetAlignment.title, "链路一致");
+assertIncludes(readyTargetAlignment.items.map((item) => item.label).join(" / "), "今日优先入口");
+assertIncludes(readyTargetAlignment.items.map((item) => item.label).join(" / "), "后端预检对象");
+assertIncludes(readyTargetAlignment.boundary, "不代表自动加词");
+
+const blockedTargetAlignment = buildProductScopeManualActionTargetAlignment({
+  priorityItem: productScopePriorityQueueItems[0],
+  selectedSignal: {
+    ...searchTermSignal,
+    id: "sig-search-term-beach-essentials",
+    evidence: {
+      primary_object: {
+        object_type: "search_term",
+        object_id: "search_term:1:beach essentials",
+        label: "beach essentials",
+      },
+    },
+  },
+  manualActionPreview: {
+    willWrite: false,
+    actionType: "add_to_review",
+    objectType: "search_term",
+    objectId: "search_term:1:beach essentials",
+    objectLabel: "beach essentials",
+    reviewWindows: ["7d", "14d"],
+    preflightChecks: [],
+  },
+  preflight: {
+    status: "ready_for_explicit_manual_write",
+    target: {
+      signal_id: "sig-other-search-term",
+      object_type: "search_term",
+      object_id: "search_term:1:other",
+      object_label: "other",
+    },
+  },
+});
+assertEqual(blockedTargetAlignment.tone, "blocked");
+assertIncludes(blockedTargetAlignment.primary, "不一致");
+assertIncludes(blockedTargetAlignment.boundary, "不能把一个 Parent ASIN 下看到的证据保存到另一条 SearchTerm");
 
 const parentAsinOptions = [
   {

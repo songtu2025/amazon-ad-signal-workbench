@@ -146,6 +146,7 @@ import {
   buildProductScopeEntryGuidance,
   buildProductScopeOptionGroups,
   buildProductScopePriorityQueueItems,
+  buildProductScopeManualActionTargetAlignment,
   buildProductScopeAdmissionCard,
   buildProductScopeEvidenceMatrix,
   buildNoActionableManualGate,
@@ -222,6 +223,7 @@ import {
   SignalMetricDecisionItem,
   SignalTriageDiagnosisPathItem,
   ProductScopePriorityQueueItem,
+  ProductScopeManualActionTargetAlignment,
   SelectedSignalScopeContext,
   SearchIntentPanelContext,
   SearchIntentFocusContext,
@@ -886,6 +888,23 @@ export function SignalTriageWorkbench() {
     selectedManualActionPreviewActionType,
     manualActionPreflightErrorsByAction,
     manualActionPreflightError,
+  );
+  const selectedManualActionTargetAlignment = useMemo(
+    () =>
+      buildProductScopeManualActionTargetAlignment({
+        priorityItem: activeProductScopePriorityItem,
+        selectedSignal,
+        manualActionPreview: selectedBackendManualActionPreview,
+        preflight: selectedManualActionPreviewPreflight,
+        preflightError: selectedManualActionPreviewPreflightError,
+      }),
+    [
+      activeProductScopePriorityItem,
+      selectedBackendManualActionPreview,
+      selectedManualActionPreviewPreflight,
+      selectedManualActionPreviewPreflightError,
+      selectedSignal,
+    ],
   );
   const selectedManualActionPathSteps = useMemo(
     () =>
@@ -2606,6 +2625,7 @@ export function SignalTriageWorkbench() {
                 {selectedSearchIntentManualActionPreflightConsistency && (
                   <SearchIntentManualActionPreflightConsistencyCard summary={selectedSearchIntentManualActionPreflightConsistency} />
                 )}
+                <ProductScopeManualActionTargetAlignmentCard summary={selectedManualActionTargetAlignment} />
                 {selectedSearchIntentManualActionEvidenceSnapshot.length > 0 && (
                   <div className="manualActionContextSnapshot" aria-label="Parent ASIN 广告搜索词表现复核背景核对">
                     <strong>Parent ASIN 广告搜索词表现复核背景核对</strong>
@@ -3603,6 +3623,28 @@ function SearchIntentSelectedTermReasonPanel({ summary }: { summary: SearchInten
           </span>
         ))}
       </div>
+      <small>{summary.boundary}</small>
+    </div>
+  );
+}
+
+function ProductScopeManualActionTargetAlignmentCard({ summary }: { summary: ProductScopeManualActionTargetAlignment }) {
+  return (
+    <div className={`manualActionTargetAlignment ${summary.tone}`} aria-label="人工动作对象链路读回">
+      <div className="manualActionTargetAlignmentHeader">
+        <strong>{summary.title}</strong>
+        <span>{summary.tone === "ready" ? "一致" : summary.tone === "blocked" ? "阻断" : "等待"}</span>
+      </div>
+      <p>{summary.primary}</p>
+      <ul>
+        {summary.items.map((item) => (
+          <li key={item.label}>
+            <span>{item.label}</span>
+            <b>{item.value}</b>
+            <small>{item.detail}</small>
+          </li>
+        ))}
+      </ul>
       <small>{summary.boundary}</small>
     </div>
   );

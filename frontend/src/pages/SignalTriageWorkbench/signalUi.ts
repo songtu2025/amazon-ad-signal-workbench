@@ -1421,6 +1421,36 @@ export interface ProductScopePriorityQueueItem {
   score: number;
 }
 
+export interface ProductScopeManualActionTargetAlignmentItem {
+  label: string;
+  value: string;
+  detail: string;
+}
+
+export interface ProductScopeManualActionTargetAlignment {
+  tone: "ready" | "waiting" | "blocked";
+  title: string;
+  primary: string;
+  items: ProductScopeManualActionTargetAlignmentItem[];
+  boundary: string;
+}
+
+export interface ProductScopeManualActionTargetAlignmentInput {
+  priorityItem?: ProductScopePriorityQueueItem | null;
+  selectedSignal?: ProductScopedSignalForUi | null;
+  manualActionPreview?: RecommendedManualActionPreview | null;
+  preflight?: {
+    status?: string | null;
+    target?: {
+      signal_id?: string | null;
+      object_type?: string | null;
+      object_id?: string | null;
+      object_label?: string | null;
+    } | null;
+  } | null;
+  preflightError?: string | null;
+}
+
 export interface ProductScopeSignalExplanationInput {
   scopeSignalCount: number;
   allSignalCount: number;
@@ -6696,6 +6726,114 @@ export function resolveProductScopePrioritySelectionId(
 
   const topPriorityScopeId = buildProductScopePriorityQueueItems(options, signals, reviewTodos, 1)[0]?.scopeId;
   return resolveProductScopeSelectionId(topPriorityScopeId, options);
+}
+
+function productScopeManualActionSignalReadback(signal?: ProductScopedSignalForUi | null) {
+  if (!signal) return "未选中信号";
+  const primary = signal.evidence?.primary_object;
+  const label = primary?.label || primary?.asin || primary?.object_id || signal.id;
+  const type = primary?.object_type || signal.object_type || "signal";
+  return `${type} / ${label}`;
+}
+
+function manualActionPreviewTargetReadback(preview?: RecommendedManualActionPreview | null) {
+  if (!preview) return "当前选中信号没有后端可写预检对象";
+  return `${preview.objectType} / ${preview.objectLabel} / ${preview.objectId}`;
+}
+
+function manualActionPreflightTargetReadback(input: ProductScopeManualActionTargetAlignmentInput["preflight"]) {
+  const target = input?.target;
+  if (!target) return "后端预检目标读取中";
+  const label = target.object_label || target.object_id || "对象待补充";
+  return `${target.object_type ?? "unknown"} / ${label} / ${target.object_id ?? "object_id 待补充"}`;
+}
+
+export function buildProductScopeManualActionTargetAlignment(
+  input: ProductScopeManualActionTargetAlignmentInput,
+): ProductScopeManualActionTargetAlignment {
+  const priorityReadback = input.priorityItem
+    ? `${input.priorityItem.label} / ${input.priorityItem.priorityLabel}`
+    : "未绑定今日优先 Parent ASIN";
+  const signalReadback = productScopeManualActionSignalReadback(input.selectedSignal);
+  const previewReadback = manualActionPreviewTargetReadback(input.manualActionPreview);
+  const preflightReadback = manualActionPreflightTargetReadback(input.preflight);
+  const previewObjectId = input.manualActionPreview?.objectId;
+  const preflightTarget = input.preflight?.target;
+  const preflightObjectId = preflightTarget?.object_id;
+  const signalId = input.selectedSignal?.id;
+  const preflightSignalId = preflightTarget?.signal_id;
+  const objectMatches = Boolean(previewObjectId && preflightObjectId && previewObjectId === preflightObjectId);
+  const signalMatches = Boolean(!preflightSignalId || !signalId || preflightSignalId === signalId);
+  const items: ProductScopeManualActionTargetAlignmentItem[] = [
+    {
+      label: "今日优先入口",
+      value: priorityReadback,
+      detail: "只决定用户先看哪条 Parent ASIN，不改变人工动作对象。",
+    },
+    {
+      label: "选中信号",
+      value: signalReadback,
+      detail: "中间诊断当前展示的 AI 信号或证据对象。",
+    },
+    {
+      label: "前端预览对象",
+      value: previewReadback,
+      detail: "右侧准备读取后端 preflight 的目标对象。",
+    },
+    {
+      label: "后端预检对象",
+      value: preflightReadback,
+      detail: "人工点击后真正允许保存的对象以后端 preflight 为准。",
+    },
+  ];
+
+  if (input.preflightError) {
+    return {
+      tone: "blocked",
+      title: "人工动作对象链路未通过",
+      primary: input.preflightError,
+      items,
+      boundary: "后端预检失败前不能写入 ManualAction，也不能生成 7/14 天复盘待办。",
+    };
+  }
+
+  if (!input.manualActionPreview) {
+    return {
+      tone: "waiting",
+      title: "人工动作对象链路待确认",
+      primary: "当前信号没有后端可写预检对象，只能阅读证据或切换到可处理候选。",
+      items,
+      boundary: "没有稳定对象 ID 时，不能把 Parent ASIN、广告组或搜索词上下文包装成人工动作。",
+    };
+  }
+
+  if (!input.preflight) {
+    return {
+      tone: "waiting",
+      title: "人工动作对象链路读取中",
+      primary: "正在读取后端 preflight，未返回前不允许写入人工动作。",
+      items,
+      boundary: "前端预览只做读回提示，不能替代后端 evidence_snapshot_preview。",
+    };
+  }
+
+  if (!objectMatches || !signalMatches) {
+    return {
+      tone: "blocked",
+      title: "人工动作对象链路不一致",
+      primary: "当前优先入口、选中信号或后端预检对象不一致；右侧按钮必须由门禁阻断。",
+      items,
+      boundary: "不能把一个 Parent ASIN 下看到的证据保存到另一条 SearchTerm、广告 ASIN 或广告组对象。",
+    };
+  }
+
+  return {
+    tone: "ready",
+    title: "人工动作对象链路一致",
+    primary: "当前优先入口、选中信号和后端预检对象已对齐；仍需人工点击后才保存留痕和复盘待办。",
+    items,
+    boundary: "本读回只证明保存目标一致，不代表自动加词、否词、调价、暂停广告或生成复盘效果结论。",
+  };
 }
 
 function hasProductScopeAdEvidence(option: ProductScopeFilterOption): boolean {

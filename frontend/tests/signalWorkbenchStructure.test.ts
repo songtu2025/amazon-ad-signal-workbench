@@ -234,6 +234,9 @@ const searchIntentManualActionReadbackIndex = workbenchSource.indexOf(
 const searchIntentManualActionPreflightConsistencyIndex = workbenchSource.indexOf(
   "<SearchIntentManualActionPreflightConsistencyCard summary={selectedSearchIntentManualActionPreflightConsistency} />",
 );
+const productScopeManualActionTargetAlignmentIndex = workbenchSource.indexOf(
+  "<ProductScopeManualActionTargetAlignmentCard summary={selectedManualActionTargetAlignment} />",
+);
 const manualActionChoiceGuideIndex = workbenchSource.indexOf('className="manualActionChoiceGuide"');
 const manualActionGridIndex = workbenchSource.indexOf('<div className="manualActionGrid" aria-label="人工动作按钮">');
 const reviewFlowTodoIndex = workbenchSource.indexOf('className="sideSection reviewFlowItem reviewFlowTodo"');
@@ -367,6 +370,8 @@ assert(
   searchIntentManualActionPreflightConsistencyIndex < manualActionGridIndex,
   "搜索词后端预检一致性核对必须先于人工动作按钮",
 );
+assert(productScopeManualActionTargetAlignmentIndex > manualActionSectionIndex, "人工动作对象链路读回必须渲染在人工确认区内");
+assert(productScopeManualActionTargetAlignmentIndex < manualActionGridIndex, "人工动作对象链路读回必须先于人工动作按钮");
 assert(manualActionChoiceGuideIndex > manualActionSectionIndex, "人工动作选择依据必须渲染在人工确认区内");
 assert(manualActionChoiceGuideIndex < manualActionGridIndex, "人工动作选择依据必须先于人工动作按钮展示");
 assert(reviewFlowTodoIndex >= 0, "复盘待办区必须存在");
@@ -483,6 +488,16 @@ assertNotIncludes(workbenchSource, "聚焦语义组");
 assertNotIncludes(workbenchSource, "搜索词机会二级筛选");
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 广告搜索词表现复核背景核对"');
 assertIncludes(workbenchSource, 'aria-label="搜索词人工留痕对象读回"');
+assertIncludes(workbenchSource, "buildProductScopeManualActionTargetAlignment");
+assertIncludes(workbenchSource, "selectedManualActionTargetAlignment");
+assertIncludes(workbenchSource, "ProductScopeManualActionTargetAlignmentCard");
+assertIncludes(workbenchSource, 'aria-label="人工动作对象链路读回"');
+assertIncludes(signalUiSource, "buildProductScopeManualActionTargetAlignment");
+assertIncludes(signalUiSource, "人工动作对象链路一致");
+assertIncludes(signalUiSource, "当前优先入口、选中信号和后端预检对象");
+assertIncludes(signalUiSource, "不能把一个 Parent ASIN 下看到的证据保存到另一条 SearchTerm");
+assertIncludes(stylesSource, ".manualActionTargetAlignment");
+assertIncludes(stylesSource, ".manualActionTargetAlignment.blocked");
 assertIncludes(workbenchSource, "buildSearchIntentManualActionReadbackSummary");
 assertIncludes(workbenchSource, "buildSearchIntentManualActionPreflightConsistencySummary");
 assertIncludes(workbenchSource, "selectedSearchIntentManualActionReadback");
