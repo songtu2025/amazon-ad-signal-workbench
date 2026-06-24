@@ -7411,7 +7411,7 @@ export function buildSearchIntentFocusContext(
   const decisionCard = searchIntentReviewCard?.intentLabel === focusLabel ? searchIntentReviewCard : null;
   const pathItems = [
     { label: "经营诊断入口", value: scopeLabel },
-    { label: "搜索词表现分组", value: `${focusLabel}：当前 Parent ASIN 关联广告中的用户搜索词表现行` },
+    { label: "广告搜索词表现聚合", value: `${focusLabel}：当前 Parent ASIN 关联广告中的用户搜索词表现行` },
     { label: "当前诊断对象", value: signalObject },
   ];
   if (decisionCard) {
@@ -7435,8 +7435,8 @@ export function buildSearchIntentFocusContext(
     focusLabel,
     signalObject,
     pathItems,
-    relation: `这个搜索词表现分组用于从 ${scopeLabel} 视角按标准化搜索词/语义标签聚合广告中实际产生表现的用户搜索词行；左侧只用它按表现分组缩小广告 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。${decisionText}`,
-    boundary: `Parent ASIN 广告搜索词表现复核「${focusLabel}」只是分析分组，不是经营商品、广告组或人工动作对象；扩量 / 止损 / 观察判断只服务人工复核优先级；ABA 只作站点级背景，实际写入以后端 preflight evidence_snapshot_preview 为准。`,
+    relation: `这个广告搜索词表现聚合用于从 ${scopeLabel} 视角按标准化搜索词/语义标签聚合广告中实际产生表现的用户搜索词行；左侧只用它缩小同类 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。${decisionText}`,
+    boundary: `Parent ASIN 广告搜索词表现复核「${focusLabel}」只是从 Parent ASIN 视角聚合广告搜索词表现的分析视角，不是经营商品、广告组或人工动作对象；扩量 / 止损 / 观察判断只服务人工复核优先级；ABA 只作站点级背景，实际写入以后端 preflight evidence_snapshot_preview 为准。`,
     tone: "container",
   };
 }

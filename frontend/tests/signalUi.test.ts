@@ -5110,7 +5110,7 @@ assertEqual(selectedSearchIntentFocusContext.focusLabel, "规则语义：海滩�
 assertIncludes(selectedSearchIntentFocusContext.signalObject, "SearchTerm：beach essentials");
 assertEqual(selectedSearchIntentFocusContext.pathItems[0]?.label, "经营诊断入口");
 assertEqual(selectedSearchIntentFocusContext.pathItems[0]?.value, "Parent ASIN B0PARENT");
-assertEqual(selectedSearchIntentFocusContext.pathItems[1]?.label, "搜索词表现分组");
+assertEqual(selectedSearchIntentFocusContext.pathItems[1]?.label, "广告搜索词表现聚合");
 assertIncludes(selectedSearchIntentFocusContext.pathItems[1]?.value ?? "", "当前 Parent ASIN 关联广告中的用户搜索词表现行");
 assertEqual(selectedSearchIntentFocusContext.pathItems[2]?.label, "当前诊断对象");
 assertEqual(selectedSearchIntentFocusContext.pathItems[3]?.label, "运营判断");
@@ -5118,13 +5118,13 @@ assertIncludes(selectedSearchIntentFocusContext.pathItems[3]?.value ?? "", "扩�
 assertIncludes(selectedSearchIntentFocusContext.pathItems[3]?.value ?? "", "可扩量机会");
 assertEqual(selectedSearchIntentFocusContext.pathItems[4]?.label, "优先 SearchTerm");
 assertIncludes(selectedSearchIntentFocusContext.pathItems[4]?.value ?? "", "beach essentials");
-assertIncludes(selectedSearchIntentFocusContext.relation, "搜索词表现分组");
+assertIncludes(selectedSearchIntentFocusContext.relation, "广告搜索词表现聚合");
 assertIncludes(selectedSearchIntentFocusContext.relation, "从 Parent ASIN B0PARENT 视角按标准化搜索词/语义标签聚合广告中实际产生表现的用户搜索词行");
-assertIncludes(selectedSearchIntentFocusContext.relation, "按表现分组缩小广告 SearchTerm 信号队列");
+assertIncludes(selectedSearchIntentFocusContext.relation, "缩小同类 SearchTerm 信号队列");
 assertIncludes(selectedSearchIntentFocusContext.relation, "若进入人工动作");
 assertIncludes(selectedSearchIntentFocusContext.relation, "以后端预检确认的 SearchTerm 稳定对象为准");
 assertIncludes(selectedSearchIntentFocusContext.relation, "当前聚合卡片判断为“扩量复核”");
-assertIncludes(selectedSearchIntentFocusContext.boundary, "Parent ASIN 广告搜索词表现复核「规则语义：海滩出行用品」只是分析分组");
+assertIncludes(selectedSearchIntentFocusContext.boundary, "Parent ASIN 广告搜索词表现复核「规则语义：海滩出行用品」只是从 Parent ASIN 视角聚合广告搜索词表现的分析视角");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "不是经营商品、广告组或人工动作对象");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "扩量 / 止损 / 观察判断只服务人工复核优先级");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "实际写入以后端 preflight evidence_snapshot_preview 为准");

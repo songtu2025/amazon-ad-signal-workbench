@@ -528,6 +528,8 @@ export interface ReviewRecordPreflightCheck {
     | "diagnosis_path_missing"
     | "ai_admission"
     | "ai_admission_missing"
+    | "search_term_performance_decision"
+    | "search_term_performance_decision_missing"
     | "search_term_boundary"
     | "search_term_boundary_missing"
     | "placement_boundary"
@@ -620,6 +622,8 @@ const requiredReviewRecordPreflightCheckLabels: Record<ReviewRecordPreflightChec
   diagnosis_path_missing: "原始诊断路径缺失",
   ai_admission: "AI 准入理由",
   ai_admission_missing: "AI 准入理由缺失",
+  search_term_performance_decision: "搜索词表现判断",
+  search_term_performance_decision_missing: "搜索词表现判断缺失",
   search_term_boundary: "搜索词边界",
   search_term_boundary_missing: "搜索词边界缺失",
   placement_boundary: "广告位边界",
@@ -1245,6 +1249,7 @@ const reviewRecordAiAdmissionLabels = ["AI 准入"];
 const reviewRecordSearchTermBoundaryLabels = ["搜索词边界"];
 const reviewRecordPlacementBoundaryLabels = ["广告位边界"];
 const reviewRecordPlacementPerformanceLabels = ["广告位表现"];
+const reviewRecordSearchTermPerformanceDecisionLabels = ["搜索词表现判断"];
 const reviewRecordParentScopeLabels = ["Parent ASIN入口"];
 const reviewRecordAdAsinCoverageLabels = ["广告 ASIN承接"];
 const reviewRecordAdProductCoverageLabels = ["广告商品覆盖"];
@@ -1262,6 +1267,7 @@ const reviewRecordDiagnosisSupportLabels = [
   "投放词结构",
   "搜索词市场背景",
   "投放词证据",
+  "搜索词表现判断",
   "广告组合流判断",
   "同组投放商品表现",
   "逐投放上下文",
@@ -1328,6 +1334,12 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
   const dueDate = todo.due_at ? String(todo.due_at).slice(0, 10) : "到期日待补充";
   const adGroupSynthesisItem = snapshot.find((item) => reviewRecordAdGroupSynthesisLabels.includes(String(item.label ?? "").trim()));
   const adGroupSynthesisText = adGroupSynthesisItem ? reviewRecordEvidenceItemText(adGroupSynthesisItem) : null;
+  const searchTermPerformanceDecisionItem = snapshot.find((item) =>
+    reviewRecordSearchTermPerformanceDecisionLabels.includes(String(item.label ?? "").trim()),
+  );
+  const searchTermPerformanceDecisionText = searchTermPerformanceDecisionItem
+    ? reviewRecordEvidenceItemText(searchTermPerformanceDecisionItem)
+    : null;
   const adContextRowsItem = snapshot.find((item) => reviewRecordAdContextRowsLabels.includes(String(item.label ?? "").trim()));
   const adContextRowsText = adContextRowsItem ? reviewRecordEvidenceItemText(adContextRowsItem) : null;
   const objectDisplayText = reviewObjectIdentityDisplayText(objectType, objectId, objectLabel);
@@ -1367,6 +1379,7 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
             [
               reviewRecordParentScopeLabels,
               reviewRecordAdAsinCoverageLabels,
+              reviewRecordSearchTermPerformanceDecisionLabels,
               reviewRecordAdGroupSynthesisLabels,
               reviewRecordAdGroupProductPerformanceLabels,
               reviewRecordAdContextRowsLabels,
@@ -1380,8 +1393,16 @@ export function buildReviewTodoEvidenceReadbackSummary(todo: ReviewTodoForUi | n
             ],
             labels,
             hasSnapshot,
-            "广告搜索词表现复核待办必须保留 Parent ASIN 入口、广告 ASIN 承接、广告组合流判断、同组投放商品表现、逐投放上下文、投放词证据、搜索词边界、广告位边界、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标或搜索词表现分组误判为自动加词或否词依据。",
+            "广告搜索词表现复核待办必须保留 Parent ASIN 入口、广告 ASIN 承接、搜索词表现判断、广告组合流判断、同组投放商品表现、逐投放上下文、投放词证据、搜索词边界、广告位边界、ABA 背景、证据缺口、需要补证和动作边界，避免复盘时把搜索词裸指标或搜索词表现分组误判为自动加词或否词依据。",
           ),
+          {
+            label: "搜索词表现判断",
+            value: searchTermPerformanceDecisionText ? "已回读" : hasSnapshot ? "缺少判断" : "等待证据快照",
+            detail: searchTermPerformanceDecisionText
+              ? `${searchTermPerformanceDecisionText}。复盘时必须先回看当时为什么把该 SearchTerm 判为扩量、止损或观察候选，再核对处理后指标。`
+              : "当前待办没有搜索词表现判断；复盘时只能看到搜索词表现分组，无法回看当时为什么选择这条 SearchTerm。",
+            tone: (searchTermPerformanceDecisionText ? "ready" : hasSnapshot ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
+          },
           {
             label: "广告组合流判断",
             value: adGroupSynthesisText ? "已回读" : hasSnapshot ? "缺少判断" : "等待证据快照",
@@ -1470,6 +1491,7 @@ function requiredReviewRecordPreflightCheckIdsForEffect(effect: ReviewEffectForU
       "action_evidence_snapshot",
       "diagnosis_path",
       "ai_admission",
+      "search_term_performance_decision",
       "ad_group_synthesis",
       "ad_group_product_performance",
       "ad_context_rows",
@@ -1541,6 +1563,22 @@ function reviewRecordAiAdmissionPreflightText(todo: ReviewTodoForUi | null) {
 
 function reviewTodoHasAiAdmission(todo: ReviewTodoForUi | null) {
   return (todo?.evidence_snapshot ?? []).some((item) => String(item.label ?? "").trim() === "AI 准入" && String(item.value ?? "").trim());
+}
+
+function reviewRecordSearchTermPerformanceDecisionPreflightText(todo: ReviewTodoForUi | null) {
+  const snapshot = todo?.evidence_snapshot ?? [];
+  const decisionItem = snapshot.find((item) =>
+    reviewRecordSearchTermPerformanceDecisionLabels.includes(String(item.label ?? "").trim()),
+  );
+  const decisionText = decisionItem ? reviewRecordEvidenceItemText(decisionItem) : null;
+  if (!decisionText) {
+    return "当前待办缺少搜索词表现判断；保存前只能核对处理前后指标，不能回看当时为什么选择这条 SearchTerm，也不能把搜索词表现分组包装成动作对象。";
+  }
+  return `搜索词表现判断回看：${decisionText}。保存复盘前必须确认该判断只用于人工复核优先级，不自动加词、否词、调价或暂停广告。`;
+}
+
+function reviewTodoHasSearchTermPerformanceDecision(todo: ReviewTodoForUi | null) {
+  return (todo?.evidence_snapshot ?? []).some((item) => String(item.label ?? "").trim() === "搜索词表现判断" && String(item.value ?? "").trim());
 }
 
 function reviewRecordBoundaryPreflightText(
@@ -1953,6 +1991,7 @@ export function buildReviewRecordPreflightChecklist(
   const requiresPlacementReviewChain = effectObjectType === "placement";
   const hasAdProductCoverage = reviewTodoHasSnapshotLabel(todo, "广告商品覆盖");
   const hasPlacementPerformance = reviewTodoHasSnapshotLabel(todo, "广告位表现");
+  const hasSearchTermPerformanceDecision = reviewTodoHasSearchTermPerformanceDecision(todo);
   const hasTargetingEvidence = reviewTodoHasSnapshotLabel(todo, "投放词证据");
   const hasAdGroupSynthesis = reviewTodoHasSnapshotLabel(todo, "广告组合流判断");
   const hasAdGroupProductPerformance = reviewTodoHasSnapshotLabel(todo, "同组投放商品表现");
@@ -2006,6 +2045,11 @@ export function buildReviewRecordPreflightChecklist(
 
   if (requiresSearchTermReviewChain) {
     checks.push(
+      {
+        id: hasSearchTermPerformanceDecision ? "search_term_performance_decision" : "search_term_performance_decision_missing",
+        title: "回看搜索词表现判断",
+        description: reviewRecordSearchTermPerformanceDecisionPreflightText(todo),
+      },
       {
         id: hasAdGroupSynthesis ? "ad_group_synthesis" : "ad_group_synthesis_missing",
         title: "回看广告组合流判断",
@@ -3405,6 +3449,7 @@ function reviewRecordEvidenceSnapshotReadbackText(records: ReviewRecordForUi[]) 
             "排查路径",
             "AI 准入",
             "Parent ASIN 广告搜索词表现复核",
+            "搜索词表现判断",
             "广告组合流判断",
             "同组投放商品表现",
             "逐投放上下文",
@@ -3435,7 +3480,7 @@ function reviewRecordEvidenceSnapshotReadbackText(records: ReviewRecordForUi[]) 
   }
   const readbackLabels =
     records.length === 1 && normalizedPreflightTargetValue(records[0]?.object_type) === "search_term"
-      ? "对象引用 / 排查路径 / AI 准入 / Parent ASIN 广告搜索词表现复核 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
+      ? "对象引用 / 排查路径 / AI 准入 / Parent ASIN 广告搜索词表现复核 / 搜索词表现判断 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
       : "对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界";
   const contextText = records.length === 1 ? reviewContextText(records[0]) : null;
   const contextSuffix = contextText ? `；复盘上下文：${contextText}` : "";
@@ -3463,6 +3508,7 @@ function reviewTodoEvidenceSnapshotReadbackText(todos: ReviewTodoForUi[]) {
       objectType === "search_term"
         ? [
             "Parent ASIN 广告搜索词表现复核",
+            "搜索词表现判断",
             "广告组合流判断",
             "同组投放商品表现",
             "逐投放上下文",
@@ -3500,7 +3546,7 @@ function reviewTodoEvidenceSnapshotReadbackText(todos: ReviewTodoForUi[]) {
   const objectSuffix = objectText ? `；复盘对象：${objectText}` : "";
   const readbackLabels =
     windowTodos.some((todo) => normalizedPreflightTargetValue(todo.object_type) === "search_term")
-      ? "对象引用 / 排查路径 / AI 准入 / Parent ASIN 广告搜索词表现复核 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
+      ? "对象引用 / 排查路径 / AI 准入 / Parent ASIN 广告搜索词表现复核 / 搜索词表现判断 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
       : "对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界";
   return `待办证据快照：${countText}${objectSuffix}；可回看${readbackLabels}`;
 }

@@ -1959,8 +1959,8 @@ export function SignalTriageWorkbench() {
             {activeSearchIntentLabel && (
               <div className="searchIntentActiveFilter" aria-label="当前广告搜索词表现复核筛选">
                 <span>
-                  已筛选：{activeSearchIntentLabel}
-                  <small>诊断入口保持不变，仅显示同类 SearchTerm 信号；不做商品归因；ABA 只作站点级背景。</small>
+                  已聚合复核：{activeSearchIntentLabel}
+                  <small>诊断入口保持不变，这里只是从 Parent ASIN 视角聚合广告用户搜索词表现，并筛出同类 SearchTerm 信号；不做商品归因；ABA 只作站点级背景。</small>
                   <small>绑定诊断入口：{selectedProductScopeOption?.label ?? activeProductScopeId}</small>
                 </span>
                 <button type="button" onClick={clearSearchIntentFocus}>
@@ -1977,11 +1977,11 @@ export function SignalTriageWorkbench() {
                     key={card.title}
                     onClick={() => handleSelectSearchIntent(card.intentLabel, card.primarySearchTerm)}
                     aria-pressed={activeSearchIntentLabel === card.intentLabel}
-                    aria-label={`打开 ${card.title} 的优先 SearchTerm 诊断`}
+                    aria-label={`打开 ${card.title} 聚合下的优先 SearchTerm 诊断`}
                   >
                     <div>
                       <strong>{card.title}</strong>
-                      <span>{card.sourceLabel}</span>
+                      <span>广告搜索词表现聚合 / {card.sourceLabel}</span>
                     </div>
                     <div className={`searchIntentDecision ${card.operationDecisionTone}`} aria-label="广告搜索词表现运营判断">
                       <b>{card.operationDecisionLabel}</b>

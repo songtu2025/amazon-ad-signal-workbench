@@ -576,6 +576,12 @@ async function main() {
         source: "diagnosis_contract + advertised_products",
       },
       {
+        label: "搜索词表现判断",
+        value: "扩量复核：订单 23 / ACOS 20.27%；只用于人工复核优先级",
+        detail: "不自动加词、否词、调价或暂停广告。",
+        source: "ad_search_term_daily_metrics",
+      },
+      {
         label: "同组投放商品表现",
         value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看",
         detail: "只说明同广告组内广告商品承接差异，不能把搜索词自动归因到单个广告 ASIN。",
@@ -602,6 +608,7 @@ async function main() {
   assertIncludes(reviewTodoEvidenceReadbackText, "业务判断");
   assertIncludes(reviewTodoEvidenceReadbackText, "诊断路径");
   assertIncludes(reviewTodoEvidenceReadbackText, "广告搜索词表现复核链");
+  assertIncludes(reviewTodoEvidenceReadbackText, "搜索词表现判断");
   assertIncludes(reviewTodoEvidenceReadbackText, "投放词证据");
   assertIncludes(reviewTodoEvidenceReadbackText, "需要补证");
   assertNotIncludes(reviewTodoEvidenceReadbackText, "缺：投放词证据");
