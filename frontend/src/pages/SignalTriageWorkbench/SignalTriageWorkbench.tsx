@@ -2683,8 +2683,8 @@ export function SignalTriageWorkbench() {
                     </ul>
                   </div>
                 ) : null}
-                <div className={`manualActionBackendPreflight ${selectedManualActionPreflightTone}`} aria-label="后端人工动作只读预检">
-                  <strong>后端只读预检</strong>
+                <div className={`manualActionBackendPreflight ${selectedManualActionPreflightTone}`} aria-label="人工留痕准入核对">
+                  <strong>人工留痕准入</strong>
                   <span>当前预览动作：{manualActionLabel[selectedManualActionPreviewActionType]}</span>
                   <p>{selectedManualActionPreflightText}</p>
                   {selectedManualActionPreflightEvidenceText ? (

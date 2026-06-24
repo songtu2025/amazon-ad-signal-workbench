@@ -1492,7 +1492,7 @@ assertEqual(
 );
 const emptyManualActionPreflightText = manualActionEmptyStateText(null);
 assertIncludes(emptyManualActionPreflightText, "当前未产生证据快照留痕");
-assertIncludes(emptyManualActionPreflightText, "先读取后端预检");
+assertIncludes(emptyManualActionPreflightText, "先完成对象和证据准入核对");
 assertIncludes(emptyManualActionPreflightText, "记录观察、标记已处理、加入复盘或忽略本次");
 const readyManualActionPreflightText = manualActionEmptyStateText({
   status: "ready",
@@ -1509,9 +1509,9 @@ const readyManualActionPreflightText = manualActionEmptyStateText({
   },
   forbidden_effects: ["不执行广告动作", "不保存 review_records"],
 });
-assertIncludes(readyManualActionPreflightText, "后端预检已给出 7 条将保存的证据快照");
-assertIncludes(readyManualActionPreflightText, "will_write=false");
-assertIncludes(readyManualActionPreflightText, "人工点击后才保存留痕和复盘待办");
+assertIncludes(readyManualActionPreflightText, "人工留痕准入已给出 7 条点击后可保存的证据快照");
+assertNotIncludes(readyManualActionPreflightText, "will_write=false");
+assertIncludes(readyManualActionPreflightText, "人工点击后才保存留痕和复盘排程");
 assertIncludes(readyManualActionPreflightText, "不执行广告动作");
 assertNotIncludes(readyManualActionPreflightText, "已执行广告动作");
 const readyAuthorizationSummary = manualActionAuthorizationReadinessSummary({
@@ -1577,9 +1577,9 @@ const manualActionPathStepsBeforeWrite = buildManualActionPathSteps({
   hasReviewTodo: false,
 });
 assertEqual(manualActionPathStepsBeforeWrite.length, 4);
-assertEqual(manualActionPathStepsBeforeWrite[0].label, "后端预检");
+assertEqual(manualActionPathStepsBeforeWrite[0].label, "人工留痕准入");
 assertEqual(manualActionPathStepsBeforeWrite[0].value, "已通过");
-assertIncludes(manualActionPathStepsBeforeWrite[0].detail, "will_write=false");
+assertIncludes(manualActionPathStepsBeforeWrite[0].detail, "对象和证据已通过核对");
 assertEqual(manualActionPathStepsBeforeWrite[1].label, "证据快照");
 assertEqual(manualActionPathStepsBeforeWrite[1].value, "7 条");
 assertIncludes(manualActionPathStepsBeforeWrite[1].detail, "人工点击后保存");
@@ -1933,7 +1933,7 @@ assertEqual(
 );
 assertEqual(
   manualActionPostWriteExpectationSummaryText(),
-  "写后预期：复盘类只生成 7d/14d 待办（排程）；忽略 0 条；未到 ready 不保存结论，不执行广告动作。",
+  "写后预期：复盘类只生成 7 天 / 14 天复盘排程；忽略 0 条；未到 ready 不保存结论，不执行广告动作。",
 );
 assertIncludes(
   manualActionPreflightStatusText({
@@ -1958,7 +1958,7 @@ assertIncludes(
     blockers: [],
     forbidden_effects: ["不执行广告动作", "不保存 review_records"],
   }),
-  "后端预检通过，待人工授权：sales_product / B06VW5SQ97 当前 0 条留痕、0 条待办；授权点击后预计 1 条留痕、2 条待办；本接口 will_write=false，不执行广告动作，不保存复盘结论。",
+  "人工留痕准入通过，待人工点击：B06VW5SQ97 当前已有 0 条人工留痕、0 条复盘排程；点击后预计 1 条人工留痕、2 条复盘排程；不执行广告动作，不保存复盘结论。",
 );
 const postWriteVerifiedPreflight = {
   status: "post_write_verified",
@@ -2010,11 +2010,11 @@ const postWriteVerifiedPreflight = {
 };
 assertIncludes(
   manualActionPreflightStatusText(postWriteVerifiedPreflight),
-  "写后验收通过：sales_product / B06VW5SQ97 当前 1 条留痕、2 条待办；复盘待办只表示进入排程，未到期不判断效果；证据读回：留痕 8 条，复盘待办 7d 8 条 / 14d 8 条；不执行广告动作，不保存复盘结论。",
+  "写后读回通过：B06VW5SQ97 已有 1 条人工留痕、2 条复盘排程；复盘待办只表示进入排程，未到期不判断效果；证据读回：留痕 8 条，复盘排程 7 天 8 条 / 14 天 8 条；不执行广告动作，不保存复盘结论。",
 );
 assertIncludes(
   manualActionPreflightStatusText(postWriteVerifiedPreflight),
-  "证据读回：留痕 8 条，复盘待办 7d 8 条 / 14d 8 条",
+  "证据读回：留痕 8 条，复盘排程 7 天 8 条 / 14 天 8 条",
 );
 const readyManualActionPreflight = {
   status: "ready_for_explicit_manual_write",
@@ -2154,9 +2154,9 @@ const mismatchedCurrentSignalTargetGate = manualActionButtonGate(
   ),
 );
 assertEqual(mismatchedCurrentSignalTargetGate.disabled, true);
-assertIncludes(mismatchedCurrentSignalTargetGate.reason ?? "", "后端预检目标与当前候选不一致");
+assertIncludes(mismatchedCurrentSignalTargetGate.reason ?? "", "人工留痕目标与当前候选不一致");
 assertEqual(manualActionButtonGate("add_to_review", null, null, false).disabled, true);
-assertIncludes(manualActionButtonGate("add_to_review", null, null, false).reason ?? "", "正在读取后端只读预检");
+assertIncludes(manualActionButtonGate("add_to_review", null, null, false).reason ?? "", "正在核对人工留痕对象和证据");
 assertEqual(
   manualActionButtonGate(
     "add_to_review",
@@ -2189,7 +2189,7 @@ const mismatchedManualActionTypeGate = manualActionButtonGate("observe", readyMa
   actionType: "observe",
 });
 assertEqual(mismatchedManualActionTypeGate.disabled, true);
-assertIncludes(mismatchedManualActionTypeGate.reason ?? "", "后端预检动作与当前按钮不一致");
+assertIncludes(mismatchedManualActionTypeGate.reason ?? "", "准入动作与当前按钮不一致");
 const missingEvidencePreviewGate = manualActionButtonGate(
   "add_to_review",
   {
@@ -2215,12 +2215,12 @@ assertEqual(
   false,
 );
 assertEqual(manualActionButtonGate("add_to_review", readyManualActionPreflight, null, true).disabled, true);
-assertIncludes(manualActionButtonGate("add_to_review", readyManualActionPreflight, null, true).reason ?? "", "已有 7/14 天复盘待办");
+assertIncludes(manualActionButtonGate("add_to_review", readyManualActionPreflight, null, true).reason ?? "", "已有 7 天 / 14 天复盘排程");
 assertEqual(
   manualActionWriteGuardMessage("加入复盘", manualActionButtonGate("add_to_review", null, null, false)),
-  "未保存：加入复盘；正在读取后端只读预检；读取完成前不写入人工动作。",
+  "未保存：加入复盘；正在核对人工留痕对象和证据；读取完成前不写入人工动作。",
 );
-assertIncludes(manualActionWriteGuardMessage("记录观察", mismatchedManualActionTypeGate) ?? "", "后端预检动作与当前按钮不一致");
+assertIncludes(manualActionWriteGuardMessage("记录观察", mismatchedManualActionTypeGate) ?? "", "准入动作与当前按钮不一致");
 const observeManualActionPreflight = {
   ...readyManualActionPreflight,
   target: {
@@ -2306,7 +2306,7 @@ assertEqual(
     [],
     postWriteVerifiedPreflight,
   ),
-  "已记录：标记已处理；点击后读回一致：标记已处理已读回留痕 + 7d / 14d，待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘待办只表示进入排程，未到期不判断效果，尚未保存复盘结论；sales_product / B06VW5SQ97 写后读回：证据快照 1 条，复盘待办 7d / 14d（只表示进入排程，未到期不判断效果），待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，review_records 0 条，不执行广告动作；写后验收通过：sales_product / B06VW5SQ97 当前 1 条留痕、2 条待办；复盘待办只表示进入排程，未到期不判断效果；证据读回：留痕 8 条，复盘待办 7d 8 条 / 14d 8 条；不执行广告动作，不保存复盘结论。",
+  "已记录：标记已处理；点击后读回一致：标记已处理已读回留痕 + 7d / 14d，待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘待办只表示进入排程，未到期不判断效果，尚未保存复盘结论；B06VW5SQ97 写后读回：证据快照 1 条，复盘排程 7 天 / 14 天（只表示进入排程，未到期不判断效果），待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘结论 0 条，不执行广告动作；写后读回通过：B06VW5SQ97 已有 1 条人工留痕、2 条复盘排程；复盘待办只表示进入排程，未到期不判断效果；证据读回：留痕 8 条，复盘排程 7 天 8 条 / 14 天 8 条；不执行广告动作，不保存复盘结论。",
 );
 assertEqual(
   manualActionPostWriteReadbackMessage(
@@ -2316,7 +2316,7 @@ assertEqual(
     null,
     manualActionPostWritePreflightReadErrorText,
   ),
-  "已记录：标记已处理；点击后读回一致：标记已处理已读回留痕 + 7d / 14d，待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘待办只表示进入排程，未到期不判断效果，尚未保存复盘结论；写后验收读取失败，已保留人工留痕，请稍后刷新核对复盘待办。",
+  "已记录：标记已处理；点击后读回一致：标记已处理已读回留痕 + 7d / 14d，待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘待办只表示进入排程，未到期不判断效果，尚未保存复盘结论；写后读回失败，已保留人工留痕，请稍后刷新核对复盘排程。",
 );
 const postWritePreflightRequest = buildManualActionPostWritePreflightRequest({
   action: handledActionForReadback,

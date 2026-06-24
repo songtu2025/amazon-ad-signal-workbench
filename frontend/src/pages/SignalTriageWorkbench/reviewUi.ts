@@ -741,6 +741,26 @@ const reviewWindowLabel: Record<ReviewTodoForUi["review_window"], string> = {
   "14d": "14 天",
 };
 
+function reviewWindowsDisplayText(windows?: Array<string | null | undefined> | null) {
+  const visibleWindows = windows?.filter((window): window is string => Boolean(window)) ?? [];
+  const labels = visibleWindows.map((window) => reviewWindowLabel[window as ReviewTodoForUi["review_window"]] ?? window);
+  return labels.length > 0 ? labels.join(" / ") : "7 天 / 14 天";
+}
+
+type ManualActionReviewTargetLike = {
+  object_type?: string | null;
+  object_id?: string | null;
+  object_label?: string | null;
+};
+
+function manualActionReviewTargetDisplayText(target?: ManualActionReviewTargetLike | null) {
+  if (!target?.object_type || !target?.object_id) return "目标对象待确认";
+  if (target.object_type === "search_term") {
+    return reviewObjectIdentityDisplayText(target.object_type, target.object_id, target.object_label) || "目标对象待确认";
+  }
+  return normalizedPreflightTargetValue(target.object_label) || normalizedPreflightTargetValue(target.object_id) || "目标对象待确认";
+}
+
 export function reviewTodoStatusText(todo: ReviewTodoForUi) {
   return `${reviewWindowLabel[todo.review_window]}复盘${todo.is_due ? "已到期" : "未到期"}`;
 }
@@ -763,9 +783,9 @@ export function reviewCheckpointText(todo: ReviewTodoForUi | null, effect: Revie
 export function manualActionEmptyStateText(preflight: ManualActionPreflightForUi | null) {
   const evidenceCount = numberOrZero(preflight?.evidence_snapshot_preview?.item_count);
   if (evidenceCount > 0) {
-    return `暂无人工处理记录：当前未产生证据快照留痕；后端预检已给出 ${evidenceCount} 条将保存的证据快照，本接口 will_write=${String(preflight?.will_write)}；人工点击后才保存留痕和复盘待办，不执行广告动作。`;
+    return `暂无人工处理记录：当前未产生证据快照留痕；人工留痕准入已给出 ${evidenceCount} 条点击后可保存的证据快照；只有人工点击后才保存留痕和复盘排程，不执行广告动作。`;
   }
-  return "暂无人工处理记录：当前未产生证据快照留痕；先读取后端预检，确认目标对象、证据快照和 will_write=false，再由人工选择记录观察、标记已处理、加入复盘或忽略本次。";
+  return "暂无人工处理记录：当前未产生证据快照留痕；先完成对象和证据准入核对，再由人工选择记录观察、标记已处理、加入复盘或忽略本次。";
 }
 
 export function reviewTodoEmptyStateText(latestManualAction: Pick<ManualActionForUi, "action_type" | "evidence_snapshot"> | null) {
@@ -787,12 +807,12 @@ export function buildManualActionPathSteps(input: ManualActionPathStepInput): Ma
 
   return [
     {
-      label: "后端预检",
+      label: "人工留痕准入",
       value: preflightBlocked ? "已阻塞" : preflightReady ? "已通过" : "读取中",
       detail: preflightBlocked
-        ? "预检未通过时不会写入人工动作。"
+        ? "对象或证据未通过核对时不会写入人工动作。"
         : preflightReady
-          ? "已确认 will_write=false，只能由人工点击后写入留痕。"
+          ? "对象和证据已通过核对，只能由人工点击后写入留痕。"
           : "读取完成前按钮保持受控，不写入人工动作。",
       tone: preflightBlocked ? "blocked" : preflightReady ? "ready" : "waiting",
     },
@@ -3212,7 +3232,7 @@ export function manualActionPostWriteExpectationText(actionType: ManualActionFor
 }
 
 export function manualActionPostWriteExpectationSummaryText() {
-  return "写后预期：复盘类只生成 7d/14d 待办（排程）；忽略 0 条；未到 ready 不保存结论，不执行广告动作。";
+  return "写后预期：复盘类只生成 7 天 / 14 天复盘排程；忽略 0 条；未到 ready 不保存结论，不执行广告动作。";
 }
 
 export function manualActionPostWriteContractItems(preflight: ManualActionPreflightForUi | null): ManualActionPostWriteContractItem[] {
@@ -3353,19 +3373,19 @@ export function buildManualReviewClosureLedger(input: ManualReviewClosureLedgerI
 }
 
 export const manualActionPostWritePreflightReadErrorText =
-  "写后验收读取失败，已保留人工留痕，请稍后刷新核对复盘待办。";
+  "写后读回失败，已保留人工留痕，请稍后刷新核对复盘排程。";
 
 export function manualActionPreflightStatusText(preflight: ManualActionPreflightForUi | null) {
-  if (!preflight) return "后端预检：正在读取；未读取前不会自动写入人工动作。";
+  if (!preflight) return "人工留痕准入：正在核对对象和证据；完成前不会写入人工动作。";
   const target = preflight.target;
-  const objectText = target?.object_type && target?.object_id ? `${target.object_type} / ${target.object_id}` : "目标对象待确认";
+  const objectText = manualActionReviewTargetDisplayText(target);
   const blockers = preflight.blockers ?? [];
   const isPostWrite = preflight.mode === "post_write";
   if (preflight.status === "blocked" || blockers.length > 0) {
     const blockerText = blockers.map((blocker) => blocker.message || blocker.code).filter(Boolean).join("；") || "存在阻塞项";
     return isPostWrite
-      ? `写后验收阻塞：${objectText}；${blockerText}；请核对人工留痕和复盘待办。`
-      : `后端预检阻塞：${objectText}；${blockerText}；不会写入人工动作。`;
+      ? `写后读回阻塞：${objectText}；${blockerText}；请核对人工留痕和复盘排程。`
+      : `人工留痕准入阻塞：${objectText}；${blockerText}；不会写入人工动作。`;
   }
 
   const currentManualActionCount = numberOrZero(preflight.current_counts?.target_manual_action_count);
@@ -3386,11 +3406,11 @@ export function manualActionPreflightStatusText(preflight: ManualActionPreflight
       currentReviewTodoCount > 0 && numberOrZero(preflight.current_counts?.target_review_record_count) === 0
         ? `；${reviewTodoPendingEffectBoundaryText}`
         : "";
-    return `写后验收通过：${objectText} 当前 ${currentManualActionCount} 条留痕、${currentReviewTodoCount} 条待办${reviewTodoBoundarySegment}${evidenceReadbackSegment}；${forbiddenText}，${reviewRecordText}。`;
+    return `写后读回通过：${objectText} 已有 ${currentManualActionCount} 条人工留痕、${currentReviewTodoCount} 条复盘排程${reviewTodoBoundarySegment}${evidenceReadbackSegment}；${forbiddenText}，${reviewRecordText}。`;
   }
-  const preWriteTitle = preflight.requires_explicit_authorization ? "后端预检通过，待人工授权" : "后端预检通过";
-  const writeExpectation = preflight.requires_explicit_authorization ? "授权点击后预计" : "人工确认后预计";
-  return `${preWriteTitle}：${objectText} 当前 ${currentManualActionCount} 条留痕、${currentReviewTodoCount} 条待办；${writeExpectation} ${expectedManualActionCount} 条留痕、${expectedReviewTodoCount} 条待办；本接口 will_write=${String(preflight.will_write)}，${forbiddenText}，${reviewRecordText}。`;
+  const preWriteTitle = preflight.requires_explicit_authorization ? "人工留痕准入通过，待人工点击" : "人工留痕准入通过";
+  const writeExpectation = preflight.requires_explicit_authorization ? "点击后预计" : "人工确认后预计";
+  return `${preWriteTitle}：${objectText} 当前已有 ${currentManualActionCount} 条人工留痕、${currentReviewTodoCount} 条复盘排程；${writeExpectation} ${expectedManualActionCount} 条人工留痕、${expectedReviewTodoCount} 条复盘排程；${forbiddenText}，${reviewRecordText}。`;
 }
 
 function manualActionPostWriteEvidenceReadbackText(preflight: ManualActionPreflightForUi) {
@@ -3406,10 +3426,10 @@ function manualActionPostWriteEvidenceReadbackText(preflight: ManualActionPrefli
   const reviewTodoText = reviewTodoEvidenceCounts
     .slice()
     .sort(compareReviewWindowEvidenceCounts)
-    .map((item) => `${item.review_window || "待确认"} ${numberOrZero(item.evidence_snapshot_count)} 条`)
+    .map((item) => `${reviewWindowsDisplayText([item.review_window])} ${numberOrZero(item.evidence_snapshot_count)} 条`)
     .join(" / ");
 
-  return `证据读回：留痕 ${manualEvidenceCount} 条，复盘待办 ${reviewTodoText || "未读回证据"}`;
+  return `证据读回：留痕 ${manualEvidenceCount} 条，复盘排程 ${reviewTodoText || "未读回证据"}`;
 }
 
 export function manualActionPreflightEvidenceSnapshotText(preflight: ManualActionPreflightForUi | null) {
@@ -3671,8 +3691,8 @@ export function manualActionButtonGate(
   if (actionType === "add_to_review" && hasReviewTodoForSelectedObject) {
     return {
       disabled: true,
-      reason: "已有 7/14 天复盘待办；等待完整窗口后再判断效果。",
-      compactReason: "等待 7/14 窗口",
+      reason: "已有 7 天 / 14 天复盘排程；等待完整窗口后再判断效果。",
+      compactReason: "等待复盘窗口",
     };
   }
   if (preflightError) {
@@ -3681,37 +3701,37 @@ export function manualActionButtonGate(
   if (!preflight) {
     return {
       disabled: true,
-      reason: "正在读取后端只读预检；读取完成前不写入人工动作。",
-      compactReason: "读取预检",
+      reason: "正在核对人工留痕对象和证据；读取完成前不写入人工动作。",
+      compactReason: "核对准入",
     };
   }
   const blockers = preflight.blockers ?? [];
   if (preflight.status === "blocked" || blockers.length > 0) {
     return {
       disabled: true,
-      reason: `后端预检阻塞：${preflightBlockerText(blockers)}；不会写入人工动作。`,
-      compactReason: "预检阻塞",
+      reason: `人工留痕准入阻塞：${preflightBlockerText(blockers)}；不会写入人工动作。`,
+      compactReason: "准入阻塞",
     };
   }
   if (preflight.will_write !== false) {
     return {
       disabled: true,
-      reason: "后端预检未确认 will_write=false；不会写入人工动作。",
+      reason: "人工留痕安全边界未确认；不会写入人工动作。",
       compactReason: "只读边界待核对",
     };
   }
   if (!normalizedPreflightTargetValue(expectedTarget?.objectType) || !normalizedPreflightTargetValue(expectedTarget?.objectId)) {
     return {
       disabled: true,
-      reason: "当前信号对象身份待补充；缺少 object_type 或 object_id 时不写入人工动作。",
+      reason: "当前信号对象身份待补充；缺少复盘对象类型或稳定对象时不写入人工动作。",
       compactReason: "对象身份待补充",
     };
   }
   if (manualActionPreflightTargetMismatch(preflight, expectedTarget)) {
     return {
       disabled: true,
-      reason: "后端预检目标与当前候选不一致；请等待预检刷新后再写入人工动作。",
-      compactReason: "预检目标待刷新",
+      reason: "人工留痕目标与当前候选不一致；请等待准入核对刷新后再写入人工动作。",
+      compactReason: "准入目标待刷新",
     };
   }
   const expectedActionType = normalizedPreflightTargetValue(expectedTarget?.actionType ?? actionType);
@@ -3719,14 +3739,14 @@ export function manualActionButtonGate(
   if (expectedActionType && actualActionType && expectedActionType !== actualActionType) {
     return {
       disabled: true,
-      reason: `后端预检动作与当前按钮不一致：预检为 ${actualActionType}，当前为 ${expectedActionType}；不会写入人工动作。`,
-      compactReason: "预检动作待刷新",
+      reason: `准入动作与当前按钮不一致：准入为 ${manualActionReadbackLabel[actualActionType as ManualActionForUi["action_type"]] ?? actualActionType}，当前为 ${manualActionReadbackLabel[expectedActionType as ManualActionForUi["action_type"]] ?? expectedActionType}；不会写入人工动作。`,
+      compactReason: "准入动作待刷新",
     };
   }
   if (!manualActionPreflightHasSavableEvidenceSnapshotPreview(preflight)) {
     return {
       disabled: true,
-      reason: "后端预检未返回可保存的 evidence_snapshot_preview；不能用前端临时证据写入人工留痕。",
+      reason: "准入核对未返回可保存的证据快照；不能用前端临时证据写入人工留痕。",
       compactReason: "证据快照待核对",
     };
   }
@@ -4263,11 +4283,14 @@ function manualActionPostWriteReadbackSummary(
   reviewRecordsForSelectedObject: ReviewRecordForUi[],
   postWritePreflight: ManualActionPreflightForUi | null,
 ) {
-  const objectType = postWritePreflight?.target?.object_type || action.object_type || "对象";
-  const objectId = postWritePreflight?.target?.object_id || action.object_id || action.object_label || "待确认";
+  const objectText = manualActionReviewTargetDisplayText({
+    object_type: postWritePreflight?.target?.object_type || action.object_type,
+    object_id: postWritePreflight?.target?.object_id || action.object_id || action.object_label,
+    object_label: postWritePreflight?.target?.object_label || action.object_label,
+  });
   const snapshotCount = action.evidence_snapshot?.length ?? 0;
   const windows = readbackReviewWindows(reviewTodosForSelectedObject);
-  const windowText = windows.length > 0 ? windows.join(" / ") : "0 条";
+  const windowText = windows.length > 0 ? reviewWindowsDisplayText(windows) : "0 条";
   const todoEvidenceReadback = reviewTodoEvidenceSnapshotReadbackText(reviewTodosForSelectedObject);
   const reviewRecordCount =
     postWritePreflight?.current_counts?.target_review_record_count ?? reviewRecordsForSelectedObject.length;
@@ -4277,7 +4300,7 @@ function manualActionPostWriteReadbackSummary(
     ? "不执行广告动作"
     : "禁止副作用需继续核对";
   const todoEvidenceSegment = todoEvidenceReadback ? `，${todoEvidenceReadback}` : "";
-  return `${objectType} / ${objectId} 写后读回：证据快照 ${snapshotCount} 条，复盘待办 ${windowText}${reviewTodoBoundaryText}${todoEvidenceSegment}，review_records ${reviewRecordCount} 条，${forbiddenText}`;
+  return `${objectText} 写后读回：证据快照 ${snapshotCount} 条，复盘排程 ${windowText}${reviewTodoBoundaryText}${todoEvidenceSegment}，复盘结论 ${reviewRecordCount} 条，${forbiddenText}`;
 }
 
 export function manualActionReadbackCompactText(

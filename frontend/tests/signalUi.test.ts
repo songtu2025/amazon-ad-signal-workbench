@@ -244,7 +244,7 @@ const mismatchedManualActionGate = manualActionButtonGate(
   },
 );
 assertEqual(mismatchedManualActionGate.disabled, true);
-assertIncludes(mismatchedManualActionGate.reason ?? "", "预检目标");
+assertIncludes(mismatchedManualActionGate.reason ?? "", "人工留痕目标");
 
 const matchedManualActionGate = manualActionButtonGate(
   "add_to_review",
@@ -330,8 +330,9 @@ const postWriteReadbackMessage = manualActionPostWriteReadbackMessage(
 );
 assertIncludes(postWriteReadbackMessage, "search_term:1:beach essentials");
 assertIncludes(postWriteReadbackMessage, "证据快照 8 条");
-assertIncludes(postWriteReadbackMessage, "复盘待办 7d / 14d");
-assertIncludes(postWriteReadbackMessage, "review_records 0 条");
+assertIncludes(postWriteReadbackMessage, "复盘排程");
+assertIncludes(postWriteReadbackMessage, "7 天 / 14 天");
+assertIncludes(postWriteReadbackMessage, "复盘结论 0 条");
 assertIncludes(postWriteReadbackMessage, "不执行广告动作");
 
 const opportunitySignal: SignalForUi = {
