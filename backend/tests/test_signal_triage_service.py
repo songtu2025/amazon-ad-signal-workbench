@@ -634,7 +634,7 @@ def test_search_intent_summaries_respect_parent_asin_product_scope(monkeypatch) 
     assert "beach essentials tent" in summaries[0].search_terms
     assert "kids sunglasses" not in summaries[0].search_terms
     assert summaries[0].metrics.cost == 20.03
-    assert summaries[0].data_grain == "当前 Parent ASIN 关联广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按标准化搜索词/语义标签聚合；不包含未投放子 ASIN 或自然搜索词"
+    assert summaries[0].data_grain == "当前 Parent ASIN 关联广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按标准化用户搜索词及规则归类聚合；不包含未投放子 ASIN、自然搜索词或 ABA 站点数据"
     assert "扩量、止损，还是只观察" in summaries[0].business_question
     assert "可人工确认的扩量机会" in summaries[0].current_judgement
     assert "花费 20.03" in summaries[0].metric_purpose
@@ -645,7 +645,7 @@ def test_search_intent_summaries_respect_parent_asin_product_scope(monkeypatch) 
     assert "缺投放词或关键词承接字段" in summaries[0].evidence_gap
     assert "广告位影响需要继续打开广告位证据核对" in summaries[0].evidence_gap
     assert "当前 Parent ASIN 关联广告上下文" in summaries[0].proves
-    assert "按标准化搜索词/语义标签聚合" in summaries[0].proves
+    assert "按标准化用户搜索词及规则归类聚合" in summaries[0].proves
     assert "同类广告搜索词" in summaries[0].proves
     assert "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现" in summaries[0].does_not_prove
     assert "不能把搜索词表现分组当作人工动作对象" in summaries[0].does_not_prove

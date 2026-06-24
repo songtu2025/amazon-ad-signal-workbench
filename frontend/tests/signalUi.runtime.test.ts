@@ -236,11 +236,10 @@ async function main() {
   const searchIntentRuntimeText = asText([searchIntentReviewCards, searchIntentPanelContext]);
   assertIncludes(searchIntentPanelContext.purpose, "从当前 Parent ASIN 视角");
   assertIncludes(searchIntentPanelContext.purpose, "聚合广告中实际产生表现的用户搜索词");
-  assertIncludes(searchIntentPanelContext.purpose, "按标准化搜索词/语义标签");
   assertIncludes(searchIntentPanelContext.dataGrain, "当前 Parent ASIN");
   assertIncludes(searchIntentPanelContext.dataGrain, "ad_search_term_daily_metrics");
-  assertIncludes(searchIntentPanelContext.dataGrain, "按标准化搜索词/语义标签聚合");
-  assertIncludes(searchIntentPanelContext.dataGrain, "不包含未投放子 ASIN 或自然搜索词");
+  assertIncludes(searchIntentPanelContext.dataGrain, "按标准化用户搜索词及规则归类聚合");
+  assertIncludes(searchIntentPanelContext.dataGrain, "不包含未投放子 ASIN、自然搜索词或 ABA 站点数据");
   assertIncludes(searchIntentPanelContext.interactionBoundary, "不改变顶部诊断入口筛选器");
   assertIncludes(searchIntentRuntimeText, "广告用户搜索词表现");
   assertIncludes(searchIntentRuntimeText, "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现");

@@ -1027,7 +1027,7 @@ def _search_term_intent_snapshot_blocks(target: dict[str, Any], drilldown: dict[
             "value": "、".join(labels[:3]) + suffix,
             "detail": (
                 "该聚合来自当前 Parent ASIN 广告上下文中的用户搜索词表现行，"
-                "用于按标准化搜索词/语义标签复盘同类广告搜索词表现和重复上下文；不能替代顶部诊断入口，"
+                "用于按标准化用户搜索词及规则归类复盘同类广告搜索词表现和重复上下文；不能替代顶部诊断入口，"
                 "也不能作为自动加词、否词、调价或暂停广告的依据。"
             ),
             "source": source,
