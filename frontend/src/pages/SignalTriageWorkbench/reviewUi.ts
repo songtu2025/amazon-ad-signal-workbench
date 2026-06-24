@@ -581,6 +581,13 @@ export interface ReviewRecordSaveGateSummary {
   canSave: boolean;
 }
 
+export interface ReviewRecordSavePathSummary {
+  title: string;
+  tone: "ready" | "waiting" | "blocked";
+  rows: ReviewTodoEvidenceReadbackRow[];
+  boundary: string;
+}
+
 export interface ReviewEffectWindowLedger {
   tone: "waiting" | "blocked" | "ready" | "saved";
   title: string;
@@ -1249,6 +1256,48 @@ export function buildReviewRecordSaveGateSummary(
     title: "可人工保存复盘记录",
     detail: `已满足 ready 复盘效果和 ${checklist?.length ?? 0} 项保存前检查；点击只保存 ReviewRecord，不自动改规则或执行广告动作。`,
     canSave: true,
+  };
+}
+
+export function buildReviewRecordSavePathSummary(
+  decisionReadback: ReviewTodoDecisionReadbackSummary | null,
+  windowLedger: ReviewEffectWindowLedger,
+  saveGate: ReviewRecordSaveGateSummary,
+): ReviewRecordSavePathSummary | null {
+  if (!decisionReadback && windowLedger.tone === "waiting" && saveGate.tone === "blocked") return null;
+
+  const decisionReady = decisionReadback?.tone === "ready";
+  const windowReady = windowLedger.tone === "ready" || windowLedger.tone === "saved";
+  const saveReady = saveGate.canSave || saveGate.tone === "saved";
+  const hasBlocked = decisionReadback?.tone === "blocked" || windowLedger.tone === "blocked" || saveGate.tone === "blocked";
+  const tone: ReviewRecordSavePathSummary["tone"] =
+    decisionReady && windowReady && saveReady ? "ready" : hasBlocked ? "blocked" : "waiting";
+
+  return {
+    title: "复盘保存顺序核对",
+    tone,
+    rows: [
+      {
+        label: "1. 当时判断",
+        value: decisionReady ? "已读回" : decisionReadback ? "待补齐" : "无待办判断",
+        detail: decisionReadback?.summary ?? "没有 ReviewTodo 业务判断读回，不能从处理后指标反推当时为什么进入复盘。",
+        tone: (decisionReady ? "ready" : decisionReadback?.tone === "blocked" ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
+      },
+      {
+        label: "2. 指标窗口",
+        value: windowReady ? "已 ready" : windowLedger.tone === "blocked" ? "未完整" : "等待到期",
+        detail: `${windowLedger.status}；${windowLedger.metricCoverage}`,
+        tone: (windowReady ? "ready" : windowLedger.tone === "blocked" ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
+      },
+      {
+        label: "3. 保存结论",
+        value: saveGate.canSave ? "可人工保存" : saveGate.tone === "saved" ? "已保存" : "不可保存",
+        detail: saveGate.detail,
+        tone: (saveReady ? "ready" : saveGate.tone === "blocked" ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
+      },
+    ],
+    boundary:
+      "保存 ReviewRecord 前必须按顺序先读回当时判断，再核对处理前后指标窗口，最后只保存人工复盘结论；不自动改规则或执行广告动作。",
   };
 }
 

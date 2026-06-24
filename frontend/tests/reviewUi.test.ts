@@ -6,6 +6,7 @@ import {
   buildRuleImprovementReadiness,
   buildReviewRecordPreflightChecklist,
   buildReviewRecordSaveGateSummary,
+  buildReviewRecordSavePathSummary,
   buildReviewTodoDecisionReadbackSummary,
   buildReviewTodoEvidenceReadbackSummary,
   buildReviewEffectWindowLedger,
@@ -949,6 +950,26 @@ assertEqual(readyReviewRecordSaveGate.title, "可人工保存复盘记录");
 assertEqual(readyReviewRecordSaveGate.canSave, true);
 assertIncludes(readyReviewRecordSaveGate.detail, "点击只保存 ReviewRecord");
 assertIncludes(readyReviewRecordSaveGate.detail, "不自动改规则或执行广告动作");
+const readyReviewRecordSavePath = buildReviewRecordSavePathSummary(
+  buildReviewTodoDecisionReadbackSummary(reviewTodoWithDiagnosisPath),
+  buildReviewEffectWindowLedger(dueTodo, improvedEffect),
+  readyReviewRecordSaveGate,
+);
+assertEqual(readyReviewRecordSavePath?.tone, "ready");
+assertIncludes(JSON.stringify(readyReviewRecordSavePath), "复盘保存顺序核对");
+assertIncludes(JSON.stringify(readyReviewRecordSavePath), "1. 当时判断");
+assertIncludes(JSON.stringify(readyReviewRecordSavePath), "2. 指标窗口");
+assertIncludes(JSON.stringify(readyReviewRecordSavePath), "3. 保存结论");
+assertIncludes(JSON.stringify(readyReviewRecordSavePath), "保存 ReviewRecord 前必须按顺序");
+assertIncludes(JSON.stringify(readyReviewRecordSavePath), "不自动改规则或执行广告动作");
+const blockedReviewRecordSavePath = buildReviewRecordSavePathSummary(
+  buildReviewTodoDecisionReadbackSummary(reviewTodoWithDiagnosisPath),
+  blockedReviewEffectWindowLedger,
+  buildReviewRecordSaveGateSummary(dueTodo, notReadyEffect, reviewRecordPreflightChecklist),
+);
+assertEqual(blockedReviewRecordSavePath?.tone, "blocked");
+assertIncludes(JSON.stringify(blockedReviewRecordSavePath), "未完整");
+assertIncludes(JSON.stringify(blockedReviewRecordSavePath), "不可保存");
 const matchedReviewRecordExpectation = {
   actionId: "manual-action-ad-product",
   objectType: "advertised_product",
