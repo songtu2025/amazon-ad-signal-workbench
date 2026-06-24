@@ -3900,7 +3900,7 @@ export interface ProductScopeEvidenceRouteGuide {
 }
 
 export interface ProductScopeDiagnosisBriefSection {
-  id: "sales_summary" | "ad_group_priority" | "ad_group_detail" | "ai_summary";
+  id: "sales_summary" | "ai_summary" | "ad_group_priority" | "ad_group_detail";
   label: string;
   title: string;
   purpose: string;
@@ -5008,7 +5008,7 @@ export function buildProductScopeDiagnosisBrief(
   return {
     title: "Parent ASIN 诊断详情摘要",
     summary:
-      "选中 Parent ASIN 后先读这一段：它把经营销售盘、广告组排序、广告组下具体证据和 AI 人工动作合成一条决策漏斗，避免逐块读成长报表。",
+      "选中 Parent ASIN 后先读这一段：先用经营销售盘确认入口，再由 AI 缩小人工复核范围，最后进入广告组排序和广告组下具体证据，形成一条决策漏斗，避免逐块读成长报表。",
     statusLabel: firstScreenSummary.mvpStatus.statusLabel,
     statusTone: firstScreenSummary.mvpStatus.tone,
     sections: [
@@ -5024,10 +5024,21 @@ export function buildProductScopeDiagnosisBrief(
         tone: "scope",
       },
       {
-        id: "ad_group_priority",
+        id: "ai_summary",
         label: "2",
+        title: "AI 优先诊断摘要",
+        purpose: "先判断当前 Parent ASIN 能否进入人工留痕、等待复盘或继续诊断，不让运营先读完整广告报表。",
+        currentJudgement: firstScreenSummary.mvpStatus.summary,
+        proves: firstScreenSummary.mvpStatus.detail,
+        doesNotProve: "不代表系统可以自动加词、否词、调价或暂停广告；也不代表没有 ready 复盘时已经证明建议有效。",
+        nextManualStep: firstScreenSummary.pathSteps.find((step) => step.label === "人工确认")?.detail ?? "右侧只允许人工确认动作。",
+        tone: firstScreenSummary.mvpStatus.tone === "blocked" ? "blocked" : "manual",
+      },
+      {
+        id: "ad_group_priority",
+        label: "3",
         title: "广告组问题排序",
-        purpose: "先找最值得人工处理的广告组，避免运营逐个广告组读报表。",
+        purpose: "在 AI 缩小范围后，找最值得人工复核的广告组，避免运营逐个广告组读报表。",
         currentJudgement: adGroupJudgement,
         proves: adGroupProves,
         doesNotProve: adGroupDoesNotProve,
@@ -5036,7 +5047,7 @@ export function buildProductScopeDiagnosisBrief(
       },
       {
         id: "ad_group_detail",
-        label: "3",
+        label: "4",
         title: "广告组下具体数据",
         purpose: "把广告组拆成投放商品、投放词、搜索词和广告位四类证据，再判断问题落点。",
         currentJudgement: routeStepText,
@@ -5045,17 +5056,6 @@ export function buildProductScopeDiagnosisBrief(
           routeDecision?.doesNotProve ?? "不能证明搜索词、广告位或广告组表现已经归因到单个广告 ASIN。",
         nextManualStep: routeDecision?.nextManualStep ?? "按证据链逐层核对后，再进入右侧人工确认。",
         tone: routeGuide ? "context" : "blocked",
-      },
-      {
-        id: "ai_summary",
-        label: "4",
-        title: "AI 诊断摘要",
-        purpose: "把证据翻译成人工可执行的记录、处理、复盘或忽略，而不是让 AI 自动改广告。",
-        currentJudgement: firstScreenSummary.mvpStatus.summary,
-        proves: firstScreenSummary.mvpStatus.detail,
-        doesNotProve: "不代表系统可以自动加词、否词、调价或暂停广告；也不代表没有 ready 复盘时已经证明建议有效。",
-        nextManualStep: firstScreenSummary.pathSteps.find((step) => step.label === "人工确认")?.detail ?? "右侧只允许人工确认动作。",
-        tone: firstScreenSummary.mvpStatus.tone === "blocked" ? "blocked" : "manual",
       },
     ],
     manualActions: ["记录观察", "标记已处理", "加入复盘", "忽略本次"],

@@ -124,9 +124,11 @@ assertIncludes(signalUiSource, "buildProductScopeEvidenceRouteDecision");
 assertIncludes(signalUiSource, "buildProductScopeDiagnosisBrief");
 assertIncludes(signalUiSource, "Parent ASIN 诊断详情摘要");
 assertIncludes(signalUiSource, "销售表现摘要");
+assertIncludes(signalUiSource, "AI 优先诊断摘要");
+assertIncludes(signalUiSource, "不让运营先读完整广告报表");
 assertIncludes(signalUiSource, "广告组问题排序");
 assertIncludes(signalUiSource, "广告组下具体数据");
-assertIncludes(signalUiSource, "AI 诊断摘要");
+assertNotIncludes(signalUiSource, 'title: "AI 诊断摘要"');
 assertIncludes(signalUiSource, "避免逐块读成长报表");
 assertIncludes(signalUiSource, "哪些广告对象真的有广告数据");
 assertIncludes(signalUiSource, "先看经营入口，再看广告 ASIN、广告组、投放词/搜索词/广告位");
@@ -137,6 +139,14 @@ assertIncludes(signalUiSource, 'layerId: "ai_signal"');
 assertIncludes(signalUiSource, 'layerId: "manual_confirmation"');
 assertIncludes(signalUiSource, 'layerId: "review"');
 assertIncludes(signalUiSource, "复盘门槛：先有人工留痕和 7d / 14d ReviewTodo");
+
+const diagnosisBriefSalesIndex = signalUiSource.indexOf('title: "销售表现摘要"');
+const diagnosisBriefAiIndex = signalUiSource.indexOf('title: "AI 优先诊断摘要"');
+const diagnosisBriefAdGroupIndex = signalUiSource.indexOf('title: "广告组问题排序"');
+assert(
+  diagnosisBriefSalesIndex < diagnosisBriefAiIndex && diagnosisBriefAiIndex < diagnosisBriefAdGroupIndex,
+  "Parent ASIN 诊断摘要必须先看销售入口，再由 AI 缩小范围，最后进入广告组排序",
+);
 
 const diagnosisPanelIndex = workbenchSource.indexOf('<section className="diagnosisPanel">');
 const productScopePriorityEntryBridgeRenderIndex = workbenchSource.indexOf(
