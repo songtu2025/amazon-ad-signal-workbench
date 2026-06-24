@@ -251,6 +251,8 @@ assertIncludes(signalUiSource, "SearchIntentMetricPurposeItem");
 assertIncludes(signalUiSource, "扩量判断");
 assertIncludes(signalUiSource, "止损判断");
 assertIncludes(signalUiSource, "观察门槛");
+assertIncludes(signalUiSource, "searchIntentDecisionPriority");
+assertIncludes(signalUiSource, "compareSearchIntentReviewPriority");
 assertIncludes(signalUiSource, "ProductScopeAdCoverageDecision");
 assertIncludes(signalUiSource, "buildProductScopeAdCoverageDecision");
 assertIncludes(signalUiSource, "未投放子 ASIN 只作为经营背景或覆盖缺口");

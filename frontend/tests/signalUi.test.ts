@@ -5757,6 +5757,67 @@ assertIncludes(observeSearchIntentReviewCards[0].metricPurposeItems[2].value, "�
 assertEqual(observeSearchIntentReviewCards[0].primarySearchTerm, "toddler shade");
 assertIncludes(observeSearchIntentReviewCards[0].primarySearchTermReason, "样本行数");
 
+const prioritizedSearchIntentReviewCards = buildSearchIntentReviewCards(
+  [
+    {
+      intent_label: "规则语义：低样本观察",
+      search_terms: ["low sample term"],
+      insight: "低样本观察组",
+      metrics: {
+        impressions: 0,
+        clicks: 4,
+        cost: 2,
+        orders: 0,
+        sales: 0,
+        acos: null,
+        cvr: 0,
+        cpc: 0.5,
+      },
+      top_search_terms: [{ search_term: "low sample term", clicks: 4, cost: 2, orders: 0, sales: 0, acos: null, source_row_count: 2 }],
+    },
+    {
+      intent_label: "规则语义：稳定扩量",
+      search_terms: ["stable scale term"],
+      insight: "稳定扩量组",
+      metrics: {
+        impressions: 0,
+        clicks: 20,
+        cost: 8,
+        orders: 4,
+        sales: 80,
+        acos: 0.1,
+        cvr: 0.2,
+        cpc: 0.4,
+      },
+      top_search_terms: [{ search_term: "stable scale term", clicks: 20, cost: 8, orders: 4, sales: 80, acos: 0.1, source_row_count: 3 }],
+    },
+    {
+      intent_label: "规则语义：高花费无订单",
+      search_terms: ["waste term"],
+      insight: "高花费无订单组",
+      metrics: {
+        impressions: 0,
+        clicks: 60,
+        cost: 45,
+        orders: 0,
+        sales: 0,
+        acos: null,
+        cvr: 0,
+        cpc: 0.75,
+      },
+      top_search_terms: [{ search_term: "waste term", clicks: 60, cost: 45, orders: 0, sales: 0, acos: null, source_row_count: 4 }],
+    },
+  ],
+  2,
+);
+assertEqual(prioritizedSearchIntentReviewCards.length, 2);
+assertEqual(prioritizedSearchIntentReviewCards[0].title, "规则语义：高花费无订单");
+assertEqual(prioritizedSearchIntentReviewCards[0].operationDecisionTone, "waste");
+assertIncludes(prioritizedSearchIntentReviewCards[0].operationDecisionReason, "优先打开具体 SearchTerm");
+assertEqual(prioritizedSearchIntentReviewCards[1].title, "规则语义：稳定扩量");
+assertEqual(prioritizedSearchIntentReviewCards[1].operationDecisionTone, "scale");
+assertEqual(prioritizedSearchIntentReviewCards.some((card) => card.title === "规则语义：低样本观察"), false);
+
 const searchIntentFilteredSignals = filterSignalsBySearchIntent(
   [
     {

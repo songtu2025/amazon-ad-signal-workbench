@@ -224,6 +224,14 @@ async function main() {
     searchIntents.length <= 8 && searchIntentReviewCards.length === searchIntents.length,
     "Parent ASIN 广告搜索词表现复核不应默认隐藏当前真实分组；小于等于 8 组时必须完整展示。",
   );
+  let hasSeenScale = false;
+  let hasSeenObserve = false;
+  for (const card of searchIntentReviewCards) {
+    if (card.operationDecisionTone === "scale") hasSeenScale = true;
+    if (card.operationDecisionTone === "observe") hasSeenObserve = true;
+    assert(!(card.operationDecisionTone === "waste" && hasSeenScale), "止损复核分组必须排在扩量复核分组前面。");
+    assert(!(card.operationDecisionTone !== "observe" && hasSeenObserve), "观察复核分组不能排在止损或扩量分组前面。");
+  }
   const searchIntentPanelContext = buildSearchIntentPanelContext(searchIntentReviewCards);
   const searchIntentRuntimeText = asText([searchIntentReviewCards, searchIntentPanelContext]);
   assertIncludes(searchIntentPanelContext.purpose, "从当前 Parent ASIN 视角");

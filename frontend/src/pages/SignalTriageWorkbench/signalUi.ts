@@ -6043,6 +6043,55 @@ function representativeSearchIntentTopTerm(topTerms: SearchIntentTopTermForUi[])
   )[0];
 }
 
+function searchIntentSourceRowCount(summary: SearchIntentSummaryForUi): number {
+  return (summary.top_search_terms ?? []).reduce((total, term) => {
+    const count = typeof term.source_row_count === "number" && Number.isFinite(term.source_row_count) ? term.source_row_count : 0;
+    return total + count;
+  }, 0);
+}
+
+function searchIntentDecisionPriority(tone: SearchIntentReviewCard["operationDecisionTone"]): number {
+  if (tone === "waste") return 3;
+  if (tone === "scale") return 2;
+  return 1;
+}
+
+function compareSearchIntentReviewPriority(
+  leftSummary: SearchIntentSummaryForUi,
+  leftTone: SearchIntentReviewCard["operationDecisionTone"],
+  rightSummary: SearchIntentSummaryForUi,
+  rightTone: SearchIntentReviewCard["operationDecisionTone"],
+): number {
+  const decisionOrder = searchIntentDecisionPriority(rightTone) - searchIntentDecisionPriority(leftTone);
+  if (decisionOrder !== 0) return decisionOrder;
+
+  if (leftTone === "waste") {
+    return (
+      compareSearchIntentNumbers(leftSummary.metrics.cost, rightSummary.metrics.cost) ||
+      compareSearchIntentNumbers(leftSummary.metrics.clicks, rightSummary.metrics.clicks) ||
+      compareSearchIntentNumbers(searchIntentSourceRowCount(leftSummary), searchIntentSourceRowCount(rightSummary)) ||
+      compareSearchIntentNumbers(leftSummary.aba_match_count ?? 0, rightSummary.aba_match_count ?? 0)
+    );
+  }
+
+  if (leftTone === "scale") {
+    return (
+      compareSearchIntentNumbers(leftSummary.metrics.orders, rightSummary.metrics.orders) ||
+      compareSearchIntentAcos(leftSummary.metrics.acos, rightSummary.metrics.acos) ||
+      compareSearchIntentNumbers(leftSummary.metrics.sales, rightSummary.metrics.sales) ||
+      compareSearchIntentNumbers(searchIntentSourceRowCount(leftSummary), searchIntentSourceRowCount(rightSummary)) ||
+      compareSearchIntentNumbers(leftSummary.aba_match_count ?? 0, rightSummary.aba_match_count ?? 0)
+    );
+  }
+
+  return (
+    compareSearchIntentNumbers(searchIntentSourceRowCount(leftSummary), searchIntentSourceRowCount(rightSummary)) ||
+    compareSearchIntentNumbers(leftSummary.metrics.cost, rightSummary.metrics.cost) ||
+    compareSearchIntentNumbers(leftSummary.metrics.clicks, rightSummary.metrics.clicks) ||
+    compareSearchIntentNumbers(leftSummary.aba_match_count ?? 0, rightSummary.aba_match_count ?? 0)
+  );
+}
+
 function selectPrimarySearchTermForOperationDecision(
   summary: SearchIntentSummaryForUi,
   operationDecisionTone: SearchIntentReviewCard["operationDecisionTone"],
@@ -6103,10 +6152,7 @@ function searchIntentMetricPurposeItems(
   operationDecisionTone: SearchIntentReviewCard["operationDecisionTone"],
 ): SearchIntentMetricPurposeItem[] {
   const metrics = summary.metrics;
-  const rowCount = (summary.top_search_terms ?? []).reduce((total, term) => {
-    const count = typeof term.source_row_count === "number" && Number.isFinite(term.source_row_count) ? term.source_row_count : 0;
-    return total + count;
-  }, 0);
+  const rowCount = searchIntentSourceRowCount(summary);
   const rowText = rowCount > 0 ? `表现行 ${rowCount} 条` : "表现行待补";
   const gapText = searchIntentDisplayText(summary.evidence_gap).replace(/^证据缺口[:：]\s*/, "");
   const operationText =
@@ -6135,54 +6181,69 @@ function searchIntentMetricPurposeItems(
 }
 
 export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi[], limit = 8): SearchIntentReviewCard[] {
-  return summaries.slice(0, limit).map((summary) => {
-    const metrics = summary.metrics;
-    const abaMatchCount = summary.aba_match_count ?? 0;
-    const operationDecision = searchIntentOperationDecision(metrics);
-    const primarySelection = selectPrimarySearchTermForOperationDecision(summary, operationDecision.operationDecisionTone);
-    const metricPurposeItems = searchIntentMetricPurposeItems(summary, operationDecision.operationDecisionTone);
-    const topTerms = (summary.top_search_terms ?? []).slice(0, 3).map((term) => {
-      const abaText = term.aba_rank ? ` / ABA ${term.aba_rank}` : "";
-      const adGroupText = (term.ad_group_names ?? []).filter(Boolean).slice(0, 2).join("、") || "广告组待补齐";
-      const targetingText = (term.targeting_texts ?? []).filter(Boolean).slice(0, 2).join("、") || "投放词待补齐";
-      return `${term.search_term}：${term.orders} 单 / 花费 ${formatReviewNumber(term.cost)} / ACOS ${formatReviewPercent(term.acos)} / 表现行 ${term.source_row_count} 条 / 广告组 ${adGroupText} / 投放词 ${targetingText}${abaText}`;
+  return summaries
+    .map((summary, index) => ({
+      summary,
+      index,
+      operationDecision: searchIntentOperationDecision(summary.metrics),
+    }))
+    .sort(
+      (left, right) =>
+        compareSearchIntentReviewPriority(
+          left.summary,
+          left.operationDecision.operationDecisionTone,
+          right.summary,
+          right.operationDecision.operationDecisionTone,
+        ) || left.index - right.index,
+    )
+    .slice(0, limit)
+    .map(({ summary, operationDecision }) => {
+      const metrics = summary.metrics;
+      const abaMatchCount = summary.aba_match_count ?? 0;
+      const primarySelection = selectPrimarySearchTermForOperationDecision(summary, operationDecision.operationDecisionTone);
+      const metricPurposeItems = searchIntentMetricPurposeItems(summary, operationDecision.operationDecisionTone);
+      const topTerms = (summary.top_search_terms ?? []).slice(0, 3).map((term) => {
+        const abaText = term.aba_rank ? ` / ABA ${term.aba_rank}` : "";
+        const adGroupText = (term.ad_group_names ?? []).filter(Boolean).slice(0, 2).join("、") || "广告组待补齐";
+        const targetingText = (term.targeting_texts ?? []).filter(Boolean).slice(0, 2).join("、") || "投放词待补齐";
+        return `${term.search_term}：${term.orders} 单 / 花费 ${formatReviewNumber(term.cost)} / ACOS ${formatReviewPercent(term.acos)} / 表现行 ${term.source_row_count} 条 / 广告组 ${adGroupText} / 投放词 ${targetingText}${abaText}`;
+      });
+      return {
+        intentLabel: summary.intent_label,
+        title: summary.intent_label,
+        summary: `${metrics.orders} 单 / 花费 ${formatReviewNumber(metrics.cost)} / ACOS ${formatReviewPercent(metrics.acos)} / ABA 命中 ${abaMatchCount}`,
+        sourceLabel: summary.semantic_source || "未知来源",
+        ...operationDecision,
+        insight: searchIntentDisplayText(summary.insight),
+        businessQuestion:
+          searchIntentDisplayText(summary.business_question) ||
+          "这组同类广告用户搜索词在当前 Parent ASIN 广告上下文下，是应该扩量、止损，还是只观察？",
+        currentJudgement:
+          searchIntentDisplayText(summary.current_judgement) ||
+          "当前判断：需要结合花费、点击、订单、ACOS、广告组和投放词继续人工复核。",
+        metricPurpose:
+          searchIntentDisplayText(summary.metric_purpose) ||
+          "指标目的：花费和点击用于判断消耗规模，订单、CVR 和 ACOS 用于判断广告搜索词承接质量。",
+        metricPurposeItems,
+        adContext: searchIntentDisplayText(summary.ad_context) || "广告上下文：等待广告活动、广告组和搜索词表现行补齐。",
+        evidenceGap:
+          searchIntentDisplayText(summary.evidence_gap) ||
+          "证据缺口：需要继续核对投放词、广告组商品清单和广告位表现，才能转成具体人工动作。",
+        signalMetricBoundary:
+          "与具体信号关系：本卡片指标覆盖当前 Parent ASIN 广告上下文中按标准化搜索词/语义标签聚合后的同类搜索词表现行；点开后的 AI 信号只展示通过规则准入或合并后的可行动证据子集，因此行数和合计指标可能小于卡片。",
+        purpose: "用途：从当前 Parent ASIN 视角，按标准化搜索词/语义标签聚合广告中实际产生表现的用户搜索词，帮助运营判断同类 SearchTerm 表现、机会和异常。",
+        boundary: "边界：只复核广告用户搜索词表现；不改变诊断入口，不把搜索词表现分组当作人工动作对象，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
+        dataGrain: searchIntentDisplayText(summary.data_grain) || "当前 Parent ASIN 关联广告上下文中实际产生表现的 ad_search_term_daily_metrics 用户搜索词表现行，按标准化搜索词/语义标签聚合。",
+        proves:
+          searchIntentDisplayText(summary.proves) ||
+          "能证明当前广告上下文内按标准化搜索词/语义标签聚合后的同类广告搜索词花费、点击、订单和 ABA 背景。",
+        doesNotProve:
+          searchIntentDisplayText(summary.does_not_prove) || "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能把搜索词表现分组当作人工动作对象。",
+        nextManualStep: searchIntentDisplayText(summary.next_manual_step) || "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组、广告位和证据缺口后再记录观察或加入复盘。",
+        ...primarySelection,
+        topTerms,
+      };
     });
-    return {
-      intentLabel: summary.intent_label,
-      title: summary.intent_label,
-      summary: `${metrics.orders} 单 / 花费 ${formatReviewNumber(metrics.cost)} / ACOS ${formatReviewPercent(metrics.acos)} / ABA 命中 ${abaMatchCount}`,
-      sourceLabel: summary.semantic_source || "未知来源",
-      ...operationDecision,
-      insight: searchIntentDisplayText(summary.insight),
-      businessQuestion:
-        searchIntentDisplayText(summary.business_question) ||
-        "这组同类广告用户搜索词在当前 Parent ASIN 广告上下文下，是应该扩量、止损，还是只观察？",
-      currentJudgement:
-        searchIntentDisplayText(summary.current_judgement) ||
-        "当前判断：需要结合花费、点击、订单、ACOS、广告组和投放词继续人工复核。",
-      metricPurpose:
-        searchIntentDisplayText(summary.metric_purpose) ||
-        "指标目的：花费和点击用于判断消耗规模，订单、CVR 和 ACOS 用于判断广告搜索词承接质量。",
-      metricPurposeItems,
-      adContext: searchIntentDisplayText(summary.ad_context) || "广告上下文：等待广告活动、广告组和搜索词表现行补齐。",
-      evidenceGap:
-        searchIntentDisplayText(summary.evidence_gap) ||
-        "证据缺口：需要继续核对投放词、广告组商品清单和广告位表现，才能转成具体人工动作。",
-      signalMetricBoundary:
-        "与具体信号关系：本卡片指标覆盖当前 Parent ASIN 广告上下文中按标准化搜索词/语义标签聚合后的同类搜索词表现行；点开后的 AI 信号只展示通过规则准入或合并后的可行动证据子集，因此行数和合计指标可能小于卡片。",
-      purpose: "用途：从当前 Parent ASIN 视角，按标准化搜索词/语义标签聚合广告中实际产生表现的用户搜索词，帮助运营判断同类 SearchTerm 表现、机会和异常。",
-      boundary: "边界：只复核广告用户搜索词表现；不改变诊断入口，不把搜索词表现分组当作人工动作对象，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
-      dataGrain: searchIntentDisplayText(summary.data_grain) || "当前 Parent ASIN 关联广告上下文中实际产生表现的 ad_search_term_daily_metrics 用户搜索词表现行，按标准化搜索词/语义标签聚合。",
-      proves:
-        searchIntentDisplayText(summary.proves) ||
-        "能证明当前广告上下文内按标准化搜索词/语义标签聚合后的同类广告搜索词花费、点击、订单和 ABA 背景。",
-      doesNotProve:
-        searchIntentDisplayText(summary.does_not_prove) || "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能把搜索词表现分组当作人工动作对象。",
-      nextManualStep: searchIntentDisplayText(summary.next_manual_step) || "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组、广告位和证据缺口后再记录观察或加入复盘。",
-      ...primarySelection,
-      topTerms,
-    };
-  });
 }
 
 function searchIntentDisplayText(text?: string | null): string {
