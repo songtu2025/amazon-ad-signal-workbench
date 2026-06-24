@@ -61,6 +61,16 @@ function assertNotIncludes(actual: string, expected: string) {
   }
 }
 
+function assertOrderedLabels(actualLabels: string[], expectedLabels: string[], message: string) {
+  let previousIndex = -1;
+  for (const label of expectedLabels) {
+    const index = actualLabels.indexOf(label);
+    assert(index >= 0, `${message} 缺少：${label}\n实际：${actualLabels.join(" / ")}`);
+    assert(index > previousIndex, `${message} 顺序错误：${label}\n实际：${actualLabels.join(" / ")}`);
+    previousIndex = index;
+  }
+}
+
 function indexById(items: any[] | null | undefined, key: string) {
   const indexed: Record<string, any> = {};
   for (const item of items ?? []) {
@@ -631,6 +641,31 @@ async function main() {
   assertIncludes(priorityEvidenceText, "广告位边界");
   assertIncludes(priorityEvidenceText, "广告位活动级背景");
   assertIncludes(priorityEvidenceText, "证据缺口");
+  assertIncludes(priorityEvidenceText, "需要补证");
+  assertIncludes(priorityEvidenceText, "动作边界");
+  assertOrderedLabels(
+    priorityEvidenceRows.map((item) => item.label),
+    [
+      "AI 准入",
+      "搜索词",
+      "搜索词表现分组",
+      "搜索词表现判断",
+      "Parent ASIN入口",
+      "广告 ASIN承接",
+      "广告组合流判断",
+      "同组投放商品表现",
+      "逐投放上下文",
+      "投放词证据",
+      "搜索词边界",
+      "广告位边界",
+      "广告位活动级背景",
+      "ABA 背景",
+      "证据缺口",
+      "需要补证",
+      "动作边界",
+    ],
+    "SearchTerm 右侧人工确认优先证据链",
+  );
 
   const encodedRecommendedSignalId = encodeURIComponent(recommendedSignalId);
   const manualActions = await fetchJson(`/api/signals/${encodedRecommendedSignalId}/manual-actions?market_id=${marketId}`);

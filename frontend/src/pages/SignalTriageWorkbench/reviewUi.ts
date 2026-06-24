@@ -3337,7 +3337,7 @@ const manualActionPreflightPriorityEvidenceLabels = [
   "人工下一步",
 ];
 
-export function manualActionPreflightPriorityEvidenceRows(preflight: ManualActionPreflightForUi | null, limit = 16) {
+export function manualActionPreflightPriorityEvidenceRows(preflight: ManualActionPreflightForUi | null, limit = 18) {
   if (!preflight?.evidence_snapshot_preview) return [];
   const priorityRank = new Map(manualActionPreflightPriorityEvidenceLabels.map((label, index) => [label, index]));
   const rows = buildManualActionDisplayEvidenceSnapshot({
