@@ -451,6 +451,7 @@ async function main() {
   assertIncludes(authorizationSummary?.authorizedResult ?? "", "ManualAction 1 条 / ReviewTodo 2 条");
   assertIncludes(authorizationSummary?.authorizedResult ?? "", "7d / 14d");
   const evidenceSnapshotCount = preflight.evidence_snapshot_preview?.item_count ?? 0;
+  assert(evidenceSnapshotCount === 30, "新 SearchTerm 预检应保存搜索词表现判断后的 30 条证据快照。");
   assert(evidenceSnapshotCount >= 27, "下一候选预检应包含 Parent ASIN、广告 ASIN、逐投放上下文和广告位活动级背景后的完整证据快照。");
   assertIncludes(authorizationSummary?.evidence ?? "", `${evidenceSnapshotCount} 条`);
   assertIncludes(authorizationSummary?.boundary ?? "", "未授权前不写 manual_actions");
@@ -499,6 +500,9 @@ async function main() {
   assertIncludes(preflightSnapshotText, nextLabel);
   assertIncludes(preflightSnapshotText, "排查路径");
   assertIncludes(preflightSnapshotText, "AI 准入");
+  assertIncludes(preflightSnapshotText, "搜索词表现判断");
+  assertIncludes(preflightSnapshotText, "扩量复核");
+  assertIncludes(preflightSnapshotText, "只用于人工复核优先级");
   assertIncludes(preflightSnapshotText, "搜索词边界");
   assertIncludes(preflightSnapshotText, "广告位边界");
   assertIncludes(preflightSnapshotText, "广告位证据缺口");
@@ -519,6 +523,7 @@ async function main() {
   assert(preflightEvidenceRows.some((item) => item.label === "广告位边界" && item.source), "完整证据快照预览应展示广告位边界及来源。");
   assertIncludes(priorityEvidenceText, "AI 准入");
   assertIncludes(priorityEvidenceText, "搜索词表现分组");
+  assertIncludes(priorityEvidenceText, "搜索词表现判断");
   assertIncludes(priorityEvidenceText, "同组投放商品表现");
   assertIncludes(priorityEvidenceText, "逐投放上下文");
   assertIncludes(priorityEvidenceText, "投放词证据");

@@ -2953,6 +2953,7 @@ const manualActionPreflightPriorityEvidenceLabels = [
   "AI 准入",
   "搜索词",
   "搜索词表现分组",
+  "搜索词表现判断",
   "Parent ASIN入口",
   "广告 ASIN承接",
   "广告商品覆盖",

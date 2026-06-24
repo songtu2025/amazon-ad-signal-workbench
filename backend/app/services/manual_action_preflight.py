@@ -96,6 +96,7 @@ SEARCH_TERM_ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
     "ai_admission_gate",
     "search_term_target_identity",
     "search_term_intent_context",
+    "search_term_intent_decision",
     "search_term_parent_scope_context",
     "search_term_ad_asin_coverage",
     "diagnosis_judgement",
@@ -1008,8 +1009,9 @@ def _search_term_intent_snapshot_blocks(target: dict[str, Any], drilldown: dict[
     if str(target.get("object_type") or "").strip() != "search_term":
         return []
 
+    rows = _dict_list(drilldown.get("search_term_rows"))
     labels: list[str] = []
-    for row in _dict_list(drilldown.get("search_term_rows")):
+    for row in rows:
         label = str(row.get("intent_label") or "").strip()
         if label and label not in labels:
             labels.append(label)
@@ -1018,7 +1020,7 @@ def _search_term_intent_snapshot_blocks(target: dict[str, Any], drilldown: dict[
 
     suffix = f"；另有 {len(labels) - 3} 个广告搜索词表现分组未展开" if len(labels) > 3 else ""
     source = "规则语义" if any(label.startswith("规则语义：") for label in labels) else "Parent ASIN 广告搜索词表现复核"
-    return [
+    blocks = [
         {
             "block_id": "search_term_intent_context",
             "label": "搜索词表现分组",
@@ -1031,6 +1033,35 @@ def _search_term_intent_snapshot_blocks(target: dict[str, Any], drilldown: dict[
             "source": source,
         }
     ]
+    decision_block = _search_term_intent_decision_snapshot_block(rows)
+    if decision_block:
+        blocks.append(decision_block)
+    return blocks
+
+
+def _search_term_intent_decision_snapshot_block(rows: list[dict[str, Any]]) -> dict[str, str] | None:
+    if not rows:
+        return None
+    orders = sum(_float(row.get("orders")) or 0 for row in rows)
+    cost = sum(_search_term_ad_context_spend(row) or 0 for row in rows)
+    sales = sum(_float(row.get("sales")) or 0 for row in rows)
+    acos = cost / sales if sales > 0 else None
+    if orders >= 3 and acos is not None and acos <= 0.3:
+        label = "扩量复核"
+        reason = f"订单 {_format_integer(orders)} 且 ACOS {_format_percent(acos)}，优先人工核对投放词、广告组和广告位后再决定是否加入扩量观察或复盘。"
+    elif orders == 0 and cost >= 30:
+        label = "止损复核"
+        reason = f"花费 {_format_amount(cost)} 但订单 0，优先人工核对投放词、广告组商品和广告位缺口后再判断是否记录观察或加入复盘。"
+    else:
+        label = "观察复核"
+        reason = f"当前订单 {_format_integer(orders)}、花费 {_format_amount(cost)}，样本或证据还不足以直接判断扩量或止损，先打开具体 SearchTerm 补证。"
+    return {
+        "block_id": "search_term_intent_decision",
+        "label": "搜索词表现判断",
+        "value": f"{label}：{reason}",
+        "detail": "该判断来自当前 preflight 目标 SearchTerm 的广告表现行和搜索词表现分组；只用于人工复核优先级，不自动加词、否词、调价或暂停广告。",
+        "source": "ad_search_term_daily_metrics",
+    }
 
 
 def _search_term_ad_context_sort_score(row: dict[str, Any]) -> float:
