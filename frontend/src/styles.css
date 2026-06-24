@@ -1447,6 +1447,64 @@ h3 {
   font-weight: 820;
 }
 
+.productScopePriorityDecisionBuckets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.productScopePriorityDecisionBucket {
+  min-width: 0;
+  border: 1px solid #d7e5f2;
+  border-radius: 8px;
+  padding: 7px;
+  background: #ffffff;
+}
+
+.productScopePriorityDecisionBucket div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.productScopePriorityDecisionBucket strong,
+.productScopePriorityDecisionBucket b {
+  color: #1f3047;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.productScopePriorityDecisionBucket p,
+.productScopePriorityDecisionBucket small {
+  display: block;
+  margin: 3px 0 0;
+  color: #5b6d80;
+  font-size: 10px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.productScopePriorityDecisionBucket.review {
+  border-color: #f4caa0;
+  background: #fff8ef;
+}
+
+.productScopePriorityDecisionBucket.urgent {
+  border-color: #fac5bf;
+  background: #fff5f4;
+}
+
+.productScopePriorityDecisionBucket.watch {
+  border-color: #cbe2f3;
+  background: #f6fbff;
+}
+
+.productScopePriorityDecisionBucket.quiet {
+  border-color: #e1e6ed;
+  background: #f8fafc;
+}
+
 .productScopePriorityQueueRows {
   display: grid;
   gap: 7px;

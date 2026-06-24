@@ -145,6 +145,7 @@ import {
   buildProductScopeAnalysisPath,
   buildProductScopeEntryGuidance,
   buildProductScopeOptionGroups,
+  buildProductScopePriorityDecisionBuckets,
   buildProductScopePriorityQueueItems,
   buildProductScopeManualActionTargetAlignment,
   buildProductScopeAdmissionCard,
@@ -223,6 +224,7 @@ import {
   SignalTriageDiagnosisContractItem,
   SignalMetricDecisionItem,
   SignalTriageDiagnosisPathItem,
+  ProductScopePriorityDecisionBucket,
   ProductScopePriorityQueueItem,
   ProductScopeManualActionTargetAlignment,
   SelectedSignalScopeContext,
@@ -3811,6 +3813,7 @@ interface ProductScopePriorityDecisionSummary {
   headline: string;
   rankReason: string;
   scaleText: string;
+  triageBuckets: ProductScopePriorityDecisionBucket[];
   nextManualStep: string;
   boundary: string;
 }
@@ -3832,6 +3835,7 @@ function buildProductScopePriorityDecisionSummary(items: ProductScopePriorityQue
     headline: `${topVerb} ${topItem.label}：${topItem.mainQuestion}`,
     rankReason: topItem.rankReason,
     scaleText: `待处理规模：${items.length} 个 Parent ASIN / 高优先 ${urgentCount} 个 / 待复盘 ${reviewCount} 个 / 到期复盘 ${dueReviewTodoCount} 条 / AI 信号 ${signalCount} 条`,
+    triageBuckets: buildProductScopePriorityDecisionBuckets(items),
     nextManualStep: topItem.nextManualStep,
     boundary:
       "本摘要只做首页分诊排序，不替代销售表现、广告 ASIN、广告组、投放词、搜索词和广告位证据；点击后进入单个 Parent ASIN 诊断链路。",
@@ -3853,6 +3857,18 @@ function ProductScopePriorityDecisionSummaryPanel({
       </div>
       <b>{summary.headline}</b>
       <p>{summary.scaleText}</p>
+      <div className="productScopePriorityDecisionBuckets" aria-label="Parent ASIN 分诊桶">
+        {summary.triageBuckets.map((bucket) => (
+          <article className={`productScopePriorityDecisionBucket ${bucket.tone}`} key={bucket.id}>
+            <div>
+              <strong>{bucket.label}</strong>
+              <b>{bucket.count} 个</b>
+            </div>
+            <p>{bucket.objectLabels.length > 0 ? bucket.objectLabels.join(" / ") : "暂无对象"}</p>
+            <small>{bucket.action}</small>
+          </article>
+        ))}
+      </div>
       <p>排序依据：{summary.rankReason}</p>
       <p>人工下一步：{summary.nextManualStep}</p>
       <small>{summary.boundary}</small>

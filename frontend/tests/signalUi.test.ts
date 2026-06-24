@@ -21,6 +21,7 @@ import {
   buildProductScopeDiagnosisBrief,
   buildProductScopeEntryGuidance,
   buildProductScopeOptionGroups,
+  buildProductScopePriorityDecisionBuckets,
   buildProductScopePriorityQueueItems,
   buildProductScopeManualActionTargetAlignment,
   buildProductScopeSignalExplanation,
@@ -675,6 +676,14 @@ assertEqual(productScopePriorityQueueItems[3].priorityLabel, "暂不展开");
 assertIncludes(productScopePriorityQueueItems[3].decisionBadge, "人工动作：暂不展开");
 assertIncludes(productScopePriorityQueueItems[3].decisionBadge, "复盘状态：无待办");
 assertIncludes(productScopePriorityQueueItems[3].evidenceSummary, "当前无投放广告证据");
+
+const productScopePriorityDecisionBuckets = buildProductScopePriorityDecisionBuckets(productScopePriorityQueueItems);
+assertEqual(productScopePriorityDecisionBuckets.map((bucket) => `${bucket.label}:${bucket.count}`).join(" / "), "复盘优先:1 / 人工确认:1 / 保持观察:1 / 暂不展开:1");
+assertIncludes(productScopePriorityDecisionBuckets[0].action, "先看 1 条到期复盘");
+assertIncludes(productScopePriorityDecisionBuckets[1].action, "记录观察、标记已处理、加入复盘或忽略本次");
+assertIncludes(productScopePriorityDecisionBuckets[1].boundary, "不自动调价、暂停、加词或否词");
+assertIncludes(productScopePriorityDecisionBuckets[2].action, "只在广告证据变化或新增信号时复核");
+assertIncludes(productScopePriorityDecisionBuckets[3].boundary, "没有广告证据的 Parent ASIN");
 
 const prioritySelectionOptions = [
   {

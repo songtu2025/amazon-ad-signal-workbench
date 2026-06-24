@@ -1439,6 +1439,16 @@ export interface ProductScopePriorityQueueItem {
   score: number;
 }
 
+export interface ProductScopePriorityDecisionBucket {
+  id: "review" | "manual" | "watch" | "quiet";
+  label: string;
+  count: number;
+  objectLabels: string[];
+  action: string;
+  boundary: string;
+  tone: ProductScopePriorityQueueTone;
+}
+
 export interface ProductScopeManualActionTargetAlignmentItem {
   label: string;
   value: string;
@@ -7031,6 +7041,57 @@ export function buildProductScopePriorityQueueItems(
     })
     .sort((left, right) => right.score - left.score || left.label.localeCompare(right.label))
     .slice(0, limit);
+}
+
+export function buildProductScopePriorityDecisionBuckets(items: ProductScopePriorityQueueItem[]): ProductScopePriorityDecisionBucket[] {
+  const reviewItems = items.filter((item) => item.tone === "review");
+  const manualItems = items.filter((item) => item.tone === "urgent");
+  const watchItems = items.filter((item) => item.tone === "watch");
+  const quietItems = items.filter((item) => item.tone === "quiet");
+  const dueReviewTodoCount = reviewItems.reduce((total, item) => total + item.dueReviewTodoCount, 0);
+  const labelPreview = (bucketItems: ProductScopePriorityQueueItem[]) => bucketItems.slice(0, 2).map((item) => item.label);
+
+  return [
+    {
+      id: "review",
+      label: "复盘优先",
+      count: reviewItems.length,
+      objectLabels: labelPreview(reviewItems),
+      action:
+        dueReviewTodoCount > 0
+          ? `先看 ${dueReviewTodoCount} 条到期复盘，再判断是否需要继续观察。`
+          : "等待 7/14 天复盘窗口，不重复点击人工动作。",
+      boundary: "只处理已进入复盘窗口的对象，不把复盘状态包装成新的广告优化建议。",
+      tone: "review",
+    },
+    {
+      id: "manual",
+      label: "人工确认",
+      count: manualItems.length,
+      objectLabels: labelPreview(manualItems),
+      action: "进入右侧记录观察、标记已处理、加入复盘或忽略本次。",
+      boundary: "只做人工留痕和复盘排程，不自动调价、暂停、加词或否词。",
+      tone: "urgent",
+    },
+    {
+      id: "watch",
+      label: "保持观察",
+      count: watchItems.length,
+      objectLabels: labelPreview(watchItems),
+      action: "先不展开全部明细，只在广告证据变化或新增信号时复核。",
+      boundary: "观察对象不能被当成已证明异常，也不能直接进入广告动作。",
+      tone: "watch",
+    },
+    {
+      id: "quiet",
+      label: "暂不展开",
+      count: quietItems.length,
+      objectLabels: labelPreview(quietItems),
+      action: "当前不占用诊断时间，等出现广告证据或 AI 信号后再进入详情。",
+      boundary: "没有广告证据的 Parent ASIN 只能作为经营背景，不能进入广告诊断动作。",
+      tone: "quiet",
+    },
+  ];
 }
 
 function productScopePriorityDominantKind(signals: ProductScopedSignalForUi[]): SignalQueueKind | null {
