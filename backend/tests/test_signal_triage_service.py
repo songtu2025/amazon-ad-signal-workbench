@@ -1790,6 +1790,11 @@ def test_search_term_candidate_drilldown_uses_search_term_evidence_not_ad_produc
     assert blocks["search_term_metric_summary"]["value"] == "花费 4.00 / 订单 3 / 销售额 60.00"
     assert blocks["search_term_context"]["label"] == "投放上下文"
     assert "广告活动 2 个" in blocks["search_term_context"]["value"]
+    assert blocks["ad_group_product_performance"]["label"] == "同组投放商品表现"
+    assert blocks["ad_group_product_performance"]["value"] == "缺少同广告组投放商品上下文"
+    assert "未投放子 ASIN" in blocks["ad_group_product_performance"]["detail"]
+    assert drilldown["ad_group_product_row_count"] == 0
+    assert drilldown["ad_product_rows"] == []
     assert blocks["targeting_context"]["label"] == "投放词结构"
     assert "2 个投放词" in blocks["targeting_context"]["value"]
     assert blocks["search_term_boundary"]["label"] == "对象边界"
@@ -1801,6 +1806,65 @@ def test_search_term_candidate_drilldown_uses_search_term_evidence_not_ad_produc
     assert "ad_product_coverage" not in blocks
     assert "ad_metric_summary" not in blocks
     assert "top_spend_source" not in blocks
+
+    full_signal_rows = [
+        *signal.evidence.source_rows,
+        {
+            "source_table": "advertised_products",
+            "campaign_name": "RBK004-AUTO",
+            "ad_group_name": "RBK004-Auto",
+            "asin": "B016EXMW02",
+            "msku": "RBK004-Blue",
+            "spend": 18.08,
+            "clicks": 19,
+            "orders": 13,
+            "sales": 116.88,
+        },
+        {
+            "source_table": "advertised_products",
+            "campaign_name": "RBK004-MANUAL",
+            "ad_group_name": "RBK004-Exact",
+            "asin": "B016EXMVZS",
+            "msku": "RBK004-Black",
+            "spend": 16.03,
+            "clicks": 19,
+            "orders": 8,
+            "sales": 76.32,
+        },
+        {
+            "source_table": "advertised_products",
+            "campaign_name": "Other campaign",
+            "ad_group_name": "Other group",
+            "asin": "B00NOTSAME",
+            "spend": 999,
+            "clicks": 999,
+            "orders": 999,
+            "sales": 999,
+        },
+    ]
+    summary_drilldown = signal_triage._candidate_summary_evidence_drilldown(
+        signal_triage._candidate_summary(candidate),
+        [candidate],
+        full_signal_rows,
+    )
+    recommended_drilldown = signal_triage._recommended_evidence_drilldown(
+        candidate,
+        [candidate],
+        full_signal_rows,
+    )
+    summary_blocks = {block["block_id"]: block for block in summary_drilldown["business_evidence_blocks"]}
+    recommended_blocks = {block["block_id"]: block for block in recommended_drilldown["business_evidence_blocks"]}
+    assert summary_drilldown["direct_ad_product_row_count"] == 0
+    assert summary_drilldown["ad_group_product_row_count"] == 2
+    assert len(summary_drilldown["ad_product_rows"]) == 2
+    assert recommended_drilldown["ad_group_product_row_count"] == 2
+    assert "B016EXMW02" in recommended_blocks["ad_group_product_performance"]["value"]
+    assert "B016EXMW02" in summary_blocks["ad_group_product_performance"]["value"]
+    assert "B016EXMVZS" in summary_blocks["ad_group_product_performance"]["value"]
+    assert "SearchTerm 自动归因到单个 ASIN" in summary_blocks["ad_group_product_performance"]["detail"]
+    assert "B00NOTSAME" not in summary_blocks["ad_group_product_performance"]["value"]
+    assert "同广告组投放商品 2 行" in summary_drilldown["summary"]
+    assert "缺少同广告组投放商品上下文" not in summary_drilldown["summary"]
 
 
 def test_search_term_candidate_keeps_uncertainty_for_action_boundary() -> None:

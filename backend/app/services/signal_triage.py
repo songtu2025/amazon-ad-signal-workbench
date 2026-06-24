@@ -1309,7 +1309,7 @@ def _recommended_evidence_drilldown(
     stable_object_id = _stable_object_id(candidate)
     if _string(candidate.get("object_type")) == "search_term":
         drilldown = candidate.get("evidence_drilldown")
-        return drilldown if isinstance(drilldown, dict) else None
+        return _search_term_ad_group_product_enriched_drilldown(drilldown, signal_rows or []) if isinstance(drilldown, dict) else None
     if not stable_object_id or not candidates:
         drilldown = candidate.get("evidence_drilldown")
         return drilldown if isinstance(drilldown, dict) else None
@@ -1348,7 +1348,7 @@ def _candidate_summary_evidence_drilldown(
     if _string(first_candidate.get("object_type")) == "sales_product":
         return _sales_product_sibling_enriched_drilldown(candidate_summary, drilldown, signal_rows or [])
     if _string(first_candidate.get("object_type")) == "search_term":
-        return drilldown
+        return _search_term_ad_group_product_enriched_drilldown(drilldown, signal_rows or [])
     return _merge_recommended_evidence_drilldown(first_candidate, matched_candidates, signal_rows or [])
 
 
@@ -2538,6 +2538,63 @@ def _unique_search_term_targeting_labels(rows: list[dict[str, Any]]) -> list[str
     return labels
 
 
+def _search_term_same_group_ad_product_rows(search_term_rows: list[dict[str, Any]], signal_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    context_keys = {
+        key
+        for key in (_ad_group_context_key(row) for row in search_term_rows)
+        if key
+    }
+    if not context_keys:
+        return []
+    return _unique_ad_product_rows(
+        [
+            row
+            for row in signal_rows
+            if _string(row.get("source_table")) == "advertised_products" and _ad_group_context_key(row) in context_keys
+        ]
+    )
+
+
+def _search_term_ad_group_product_performance_block(ad_group_product_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    performance = _scope_ad_group_advertised_product_performance(ad_group_product_rows)
+    if not performance:
+        return {
+            "block_id": "ad_group_product_performance",
+            "label": "同组投放商品表现",
+            "value": "缺少同广告组投放商品上下文",
+            "detail": "当前搜索词候选只能说明搜索词表现；不能判断哪些广告 ASIN 承接该词，也不能把 Parent ASIN 下未投放子 ASIN 拉入复盘。",
+            "source": "business_rule",
+        }
+    preview = "；".join(
+        f"{_string(item.get('asin') or item.get('label'))} 花费 {_format_amount(item.get('spend'))} / 订单 {_int(item.get('orders')) or 0}"
+        for item in performance[:4]
+    )
+    return {
+        "block_id": "ad_group_product_performance",
+        "label": "同组投放商品表现",
+        "value": f"同广告组广告 ASIN {len(performance)} 个：{preview}",
+        "detail": "只说明同广告组内实际投放 ASIN 的承接差异；不能把 SearchTerm 自动归因到单个 ASIN，也不能把未投放子 ASIN 拉入复盘。",
+        "source": "advertised_products",
+    }
+
+
+def _upsert_business_evidence_block(blocks: list[dict[str, Any]], block: dict[str, Any]) -> list[dict[str, Any]]:
+    block_id = _string(block.get("block_id"))
+    if not block_id:
+        return blocks
+    next_blocks: list[dict[str, Any]] = []
+    replaced = False
+    for item in blocks:
+        if _string(item.get("block_id")) == block_id:
+            next_blocks.append(block)
+            replaced = True
+        else:
+            next_blocks.append(item)
+    if not replaced:
+        next_blocks.append(block)
+    return next_blocks
+
+
 def _search_term_business_evidence_blocks(
     *,
     search_term_count: int,
@@ -2546,6 +2603,7 @@ def _search_term_business_evidence_blocks(
     ad_groups: list[str],
     metric_summary: dict[str, Any],
     targeting_labels: list[str],
+    ad_group_product_rows: list[dict[str, Any]] | None = None,
     boundary: str,
 ) -> list[dict[str, Any]]:
     targeting_preview = "；".join(targeting_labels[:3]) if targeting_labels else "暂无可识别投放词"
@@ -2577,6 +2635,7 @@ def _search_term_business_evidence_blocks(
             "detail": "用于人工定位该搜索词出现在哪些广告活动和广告组；不是单个广告 ASIN 的直接归因。",
             "source": "ad_search_term_daily_metrics",
         },
+        _search_term_ad_group_product_performance_block(ad_group_product_rows or []),
         {
             "block_id": "targeting_context",
             "label": "投放词结构",
@@ -2679,8 +2738,11 @@ def _search_term_evidence_drilldown(
     primary_object: Any,
     search_term_rows: list[dict[str, Any]],
     placement_rows: list[dict[str, Any]],
+    ad_group_product_rows: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     row_summaries = [_search_term_row_summary(row) for row in search_term_rows]
+    ad_group_product_rows = ad_group_product_rows or []
+    ad_product_row_summaries = [_ad_product_row_summary(row) for row in ad_group_product_rows]
     metric_summary = _ad_product_metric_summary(row_summaries, basis="search_term_daily_metrics")
     campaign_labels = _unique_row_labels(search_term_rows, "campaign_name", "campaign_id")
     ad_group_labels = _unique_row_labels(search_term_rows, "ad_group_name", "ad_group_id", "group_id")
@@ -2699,17 +2761,20 @@ def _search_term_evidence_drilldown(
         ad_groups=ad_group_labels,
         metric_summary=metric_summary,
         targeting_labels=targeting_labels,
+        ad_group_product_rows=ad_group_product_rows,
         boundary=boundary,
     )
     business_evidence_blocks.extend(_signal_actionability_evidence_blocks(signal))
+    product_context_text = f"同广告组投放商品 {len(ad_group_product_rows)} 行；" if ad_group_product_rows else "缺少同广告组投放商品上下文；"
     summary = (
         f"搜索词表现行 {len(search_term_rows)} 条，覆盖广告活动 {len(campaign_labels)} 个 / 广告组 {len(ad_group_labels)} 个；"
-        f"花费 {_format_amount(metric_summary.get('spend'))}，订单 {_int(metric_summary.get('orders')) or 0}；{boundary}"
+        f"花费 {_format_amount(metric_summary.get('spend'))}，订单 {_int(metric_summary.get('orders')) or 0}；{product_context_text}{boundary}"
     )
     return {
         "object_label": object_label,
         "object_type": _string(_get(signal, "object_type")),
         "direct_ad_product_row_count": 0,
+        "ad_group_product_row_count": len(ad_group_product_rows),
         "search_term_context_count": len(search_term_rows),
         "placement_context_count": len(placement_rows),
         "campaigns": campaign_labels,
@@ -2718,10 +2783,29 @@ def _search_term_evidence_drilldown(
         "top_spend_campaign": _top_spend_group(row_summaries, "campaign_name", metric_summary["spend"]),
         "business_evidence_blocks": business_evidence_blocks,
         "search_term_rows": row_summaries[:6],
-        "ad_product_rows": [],
+        "ad_product_rows": ad_product_row_summaries[:6],
         "boundary": boundary,
         "summary": summary,
     }
+
+
+def _search_term_ad_group_product_enriched_drilldown(drilldown: dict[str, Any], signal_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    search_term_rows = _dict_list(drilldown.get("search_term_rows"))
+    ad_group_product_rows = _search_term_same_group_ad_product_rows(search_term_rows, signal_rows)
+    block = _search_term_ad_group_product_performance_block(ad_group_product_rows)
+    enriched = dict(drilldown)
+    enriched["business_evidence_blocks"] = _upsert_business_evidence_block(_dict_list(enriched.get("business_evidence_blocks")), block)
+    enriched["ad_group_product_row_count"] = len(ad_group_product_rows)
+    enriched["ad_product_rows"] = [_ad_product_row_summary(row) for row in ad_group_product_rows][:6]
+    if ad_group_product_rows:
+        summary = _string(enriched.get("summary"))
+        product_context_text = f"同广告组投放商品 {len(ad_group_product_rows)} 行；"
+        if "缺少同广告组投放商品上下文；" in summary:
+            summary = summary.replace("缺少同广告组投放商品上下文；", product_context_text)
+        elif "同广告组投放商品" not in summary:
+            summary = f"{summary} 同广告组投放商品 {len(ad_group_product_rows)} 行。".strip()
+        enriched["summary"] = summary
+    return enriched
 
 
 def _candidate_evidence_drilldown(signal: Any) -> dict[str, Any] | None:
