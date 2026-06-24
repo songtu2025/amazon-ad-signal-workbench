@@ -390,6 +390,8 @@ assertIncludes(workbenchSource, "productScopeFirstScreenSummary.pathSummary");
 assertIncludes(workbenchSource, "productScopeFirstScreenSummary.pathSteps");
 assertIncludes(workbenchSource, "productScopeFirstScreenSummary.landingGates");
 assertIncludes(signalUiSource, "Parent ASIN 经营销售入口 -> 广告 ASIN -> 广告组");
+assertIncludes(signalUiSource, "投放商品 / 投放词 / 搜索词 / 广告位");
+assertIncludes(signalUiSource, "投放商品来自广告组内 advertised_products 证据");
 assertIncludes(signalUiSource, "AI 信号诊断 -> 人工确认 -> 7/14 天复盘");
 assertIncludes(signalUiSource, "广告组是投放容器，不是产品");
 assertIncludes(signalUiSource, "只允许记录观察、标记已处理、加入复盘、忽略本次");

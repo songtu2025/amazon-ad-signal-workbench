@@ -4912,9 +4912,10 @@ assertEqual(productScopeFirstScreenSummary.mvpStatus.title, "诊断 MVP 状态�
 assertEqual(productScopeFirstScreenSummary.mvpStatus.statusLabel, "人工留痕 MVP");
 assertIncludes(productScopeFirstScreenSummary.mvpStatus.summary, "当前有 3 个可写人工候选");
 assertIncludes(productScopeFirstScreenSummary.mvpStatus.summary, "不是完整复盘闭环");
-assertIncludes(productScopeFirstScreenSummary.mvpStatus.detail, "Parent ASIN -> 广告 ASIN -> 广告组 / 搜索词 / 广告位");
+assertIncludes(productScopeFirstScreenSummary.mvpStatus.detail, "Parent ASIN -> 广告 ASIN -> 广告组 / 投放商品 / 搜索词 / 广告位");
 assertIncludes(productScopeFirstScreenSummary.mvpStatus.boundary, "ready 复盘");
 assertIncludes(productScopeFirstScreenSummary.pathSummary, "Parent ASIN 经营销售入口 -> 广告 ASIN -> 广告组");
+assertIncludes(productScopeFirstScreenSummary.pathSummary, "投放商品 / 投放词 / 搜索词 / 广告位");
 assertIncludes(productScopeFirstScreenSummary.pathSummary, "AI 信号诊断 -> 人工确认 -> 7/14 天复盘");
 assertEqual(productScopeFirstScreenSummary.pathSteps.length, 7);
 assertEqual(productScopeFirstScreenSummary.pathSteps[0].label, "Parent ASIN 经营销售盘");
@@ -4924,7 +4925,10 @@ assertIncludes(productScopeFirstScreenSummary.pathSteps[1].detail, "只进入有
 assertIncludes(productScopeFirstScreenSummary.pathSteps[1].detail, "不是销售子 ASIN 全量");
 assertEqual(productScopeFirstScreenSummary.pathSteps[2].label, "广告组结构");
 assertIncludes(productScopeFirstScreenSummary.pathSteps[2].detail, "广告组是投放容器，不是产品");
-assertEqual(productScopeFirstScreenSummary.pathSteps[3].label, "投放词 / 搜索词 / 广告位");
+assertIncludes(productScopeFirstScreenSummary.pathSteps[2].detail, "同组投放商品");
+assertEqual(productScopeFirstScreenSummary.pathSteps[3].label, "投放商品 / 投放词 / 搜索词 / 广告位");
+assertIncludes(productScopeFirstScreenSummary.pathSteps[3].detail, "投放商品来自广告组内 advertised_products 证据");
+assertIncludes(productScopeFirstScreenSummary.pathSteps[3].detail, "实际参与广告投放的商品");
 assertIncludes(productScopeFirstScreenSummary.pathSteps[3].detail, "流量上下文证据");
 assertEqual(productScopeFirstScreenSummary.pathSteps[4].label, "AI 信号诊断");
 assertIncludes(productScopeFirstScreenSummary.pathSteps[4].detail, "3 个候选");

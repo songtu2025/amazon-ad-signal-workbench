@@ -235,12 +235,14 @@ async function main() {
   assertIncludes(firstScreenSummary.pathSummary, "Parent ASIN 经营销售入口");
   assertIncludes(firstScreenSummary.pathSummary, "广告 ASIN");
   assertIncludes(firstScreenSummary.pathSummary, "广告组");
-  assertIncludes(firstScreenSummary.pathSummary, "投放词 / 搜索词 / 广告位");
+  assertIncludes(firstScreenSummary.pathSummary, "投放商品 / 投放词 / 搜索词 / 广告位");
   assertIncludes(firstScreenSummary.pathSummary, "AI 信号诊断 -> 人工确认 -> 7/14 天复盘");
   const firstScreenPathText = asText(firstScreenSummary.pathSteps);
   assertIncludes(firstScreenPathText, "Parent ASIN 经营销售盘");
   assertIncludes(firstScreenPathText, "广告 ASIN 覆盖");
   assertIncludes(firstScreenPathText, "广告组是投放容器，不是产品");
+  assertIncludes(firstScreenPathText, "投放商品来自广告组内 advertised_products 证据");
+  assertIncludes(firstScreenPathText, "实际参与广告投放的商品");
   assertIncludes(firstScreenPathText, "流量上下文证据");
   assertIncludes(firstScreenPathText, "只允许记录观察、标记已处理、加入复盘、忽略本次");
   assertIncludes(firstScreenPathText, "ReviewRecord");

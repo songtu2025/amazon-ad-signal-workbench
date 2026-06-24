@@ -7243,7 +7243,7 @@ export function buildProductScopeFirstScreenSummary(
           title: "诊断 MVP 状态判定",
           statusLabel: "复盘闭环可验证",
           summary: `当前已有 ${readyReviewCount} 个 ready 复盘和 ${reviewRecordCount} 条 review_records，可以进入人工复盘样本验证；仍不自动改规则或执行广告动作。`,
-          detail: "沿 Parent ASIN -> 广告 ASIN -> 广告组 / 搜索词 / 广告位 -> AI 信号 -> 人工留痕 -> 复盘记录检查证据链。",
+          detail: "沿 Parent ASIN -> 广告 ASIN -> 广告组 / 投放商品 / 搜索词 / 广告位 -> AI 信号 -> 人工留痕 -> 复盘记录检查证据链。",
           boundary: "完整闭环也只代表人工保存过复盘样本，不代表系统可自动执行广告动作。",
           tone: "review",
         }
@@ -7252,7 +7252,7 @@ export function buildProductScopeFirstScreenSummary(
             title: "诊断 MVP 状态判定",
             statusLabel: "人工留痕 MVP",
             summary: `当前有 ${candidateCount} 个可写人工候选，可进入人工确认和留痕；但 ready 复盘 ${readyReviewCount} 个、review_records ${reviewRecordCount} 条，不是完整复盘闭环。`,
-            detail: "沿 Parent ASIN -> 广告 ASIN -> 广告组 / 搜索词 / 广告位 -> AI 信号 -> 人工留痕推进，复盘窗口完整后再评价效果。",
+            detail: "沿 Parent ASIN -> 广告 ASIN -> 广告组 / 投放商品 / 搜索词 / 广告位 -> AI 信号 -> 人工留痕推进，复盘窗口完整后再评价效果。",
             boundary: "ready 复盘出现前只能记录人工动作，不能保存复盘结论，不能说建议有效或无效。",
             tone: "manual",
           }
@@ -7280,7 +7280,7 @@ export function buildProductScopeFirstScreenSummary(
         ? `已有 ${manualActionCount} 条人工留痕，最早 ${earliestDueDate || "等待窗口"} 后复盘`
         : "暂无人工留痕，不能生成复盘结论";
   const pathSummary =
-    "Parent ASIN 经营销售入口 -> 广告 ASIN -> 广告组 -> 投放词 / 搜索词 / 广告位 -> AI 信号诊断 -> 人工确认 -> 7/14 天复盘";
+    "Parent ASIN 经营销售入口 -> 广告 ASIN -> 广告组 -> 投放商品 / 投放词 / 搜索词 / 广告位 -> AI 信号诊断 -> 人工确认 -> 7/14 天复盘";
   const aiSignalStepDetail =
     candidateCount === undefined
       ? `等待 AI 准入扫描；${actionabilityMessage}`
@@ -7328,10 +7328,11 @@ export function buildProductScopeFirstScreenSummary(
     pathSteps: [
       { label: "Parent ASIN 经营销售盘", detail: salesFact },
       { label: "广告 ASIN 覆盖", detail: adAsinText },
-      { label: "广告组结构", detail: "广告组是投放容器，不是产品；先看同组广告商品、花费和订单分化。" },
+      { label: "广告组结构", detail: "广告组是投放容器，不是产品；先看同组投放商品、花费和订单分化。" },
       {
-        label: "投放词 / 搜索词 / 广告位",
-        detail: "投放词、搜索词和广告位只作为流量上下文证据，不能直接归因到单个 ASIN。",
+        label: "投放商品 / 投放词 / 搜索词 / 广告位",
+        detail:
+          "投放商品来自广告组内 advertised_products 证据，只代表实际参与广告投放的商品；投放词、搜索词和广告位只作为流量上下文证据，不能直接归因到单个 ASIN。",
       },
       { label: "AI 信号诊断", detail: aiSignalStepDetail },
       {
