@@ -4011,6 +4011,20 @@ function ProductScopeAdGroupDiagnosisPanel({
             </div>
             <b>{priorityRow.statusLabel}</b>
           </div>
+          <div className="productScopeAdGroupPriorityTriage" aria-label="优先广告组三段判断">
+            <span>
+              <b>问题类型</b>
+              <small>{priorityRow.problemType}</small>
+            </span>
+            <span>
+              <b>证据强度</b>
+              <small>{priorityRow.evidenceSynthesis.statusLabel}</small>
+            </span>
+            <span>
+              <b>人工下一步</b>
+              <small>{priorityRow.problemLocator.nextManualStep}</small>
+            </span>
+          </div>
           <p>{priorityRow.problemLocator.problemLocation}</p>
           <ul>
             <li>
@@ -4026,8 +4040,8 @@ function ProductScopeAdGroupDiagnosisPanel({
               <span>{priorityRow.evidenceSynthesis.doesNotProve}</span>
             </li>
             <li>
-              <b>人工下一步</b>
-              <span>{priorityRow.problemLocator.nextManualStep}</span>
+              <b>证据缺口</b>
+              <span>{priorityRow.evidenceSynthesis.evidenceGap}</span>
             </li>
           </ul>
         </div>
@@ -4050,28 +4064,25 @@ function ProductScopeAdGroupDiagnosisPanel({
                 </div>
                 <b>{row.statusLabel}</b>
               </div>
-              <div className="productScopeAdGroupDiagnosisMetrics">
-                <span>{row.metrics}</span>
-                <span>{row.trafficContext}</span>
-              </div>
               <div className="productScopeAdGroupDiagnosisDecision" aria-label="广告组业务判断">
                 <span>
-                  <b>问题落点</b>
-                  <small>{row.problemLocator.problemLocation}</small>
+                  <b>问题类型</b>
+                  <small>{row.problemType}：{row.problemLocator.problemLocation}</small>
                 </span>
                 <span>
-                  <b>证据合流</b>
+                  <b>证据强度</b>
                   <small>{row.evidenceSynthesis.statusLabel}</small>
-                </span>
-                <span>
-                  <b>证据缺口</b>
-                  <small>{row.evidenceSynthesis.evidenceGap}</small>
                 </span>
                 <span>
                   <b>人工下一步</b>
                   <small>{row.problemLocator.nextManualStep}</small>
                 </span>
               </div>
+              <div className="productScopeAdGroupDiagnosisMetrics" aria-label="广告组证据摘要">
+                <span>{row.metrics}</span>
+                <span>{row.trafficContext}</span>
+              </div>
+              <small>证据缺口：{row.evidenceSynthesis.evidenceGap}</small>
               <small>{row.trafficContextBoundary}</small>
               <small>{row.nextReviewFocus}</small>
             </button>
