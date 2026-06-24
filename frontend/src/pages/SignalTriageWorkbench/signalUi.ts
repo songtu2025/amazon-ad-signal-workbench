@@ -2402,9 +2402,13 @@ export function manualActionTargetSummary(preview: RecommendedManualActionPrevie
   }
   const shopText = preview.shopName || preview.shopId ? `店铺：${[preview.shopName, preview.shopId].filter(Boolean).join(" / ")}` : "店铺：待补充";
   const marketText = preview.marketId != null ? `站点：market_id ${preview.marketId}` : "站点：待补充";
-  const objectText = `对象：${preview.objectType} / ${preview.objectId}`;
-  const windowText = `窗口：${preview.reviewWindows.join(" / ")}`;
-  return `${shopText}；${marketText}；${objectText}；${windowText}；只记录人工判断，不会自动执行广告动作。`;
+  const objectLabel = preview.objectLabel || preview.objectId || "待确认";
+  const objectTypeText = queueObjectTypeLabel[preview.objectType as NonNullable<SignalForUi["object_type"]>] ?? preview.objectType ?? "复盘对象";
+  const windowLabel = preview.reviewWindows.map(reviewWindowText).filter(Boolean).join(" / ") || "7 天 / 14 天";
+  const objectText = `复盘对象：${objectLabel}`;
+  const objectIdentityText = `对象身份：${objectTypeText}`;
+  const windowText = `复盘窗口：${windowLabel}`;
+  return `${shopText}；${marketText}；${objectText}；${objectIdentityText}；${windowText}；只记录人工判断，不会自动执行广告动作。`;
 }
 
 export function manualActionQueueTargetSwitchSummary(

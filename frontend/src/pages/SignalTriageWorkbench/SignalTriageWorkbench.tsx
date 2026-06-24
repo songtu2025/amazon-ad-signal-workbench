@@ -224,6 +224,7 @@ import {
   SignalTriageDiagnosisContractItem,
   SignalMetricDecisionItem,
   SignalTriageDiagnosisPathItem,
+  RecommendedManualActionPreview,
   ProductScopePriorityDecisionBucket,
   ProductScopePriorityQueueItem,
   ProductScopeManualActionTargetAlignment,
@@ -295,6 +296,30 @@ const manualActionLabel: Record<ManualActionType, string> = {
 
 function manualActionDisplayLabel(actionType?: string | null) {
   return manualActionLabel[actionType as ManualActionType] ?? actionType ?? "待确认";
+}
+
+function manualActionReviewWindowLabel(reviewWindows?: string[] | null) {
+  const windows = reviewWindows?.length ? reviewWindows : ["7d", "14d"];
+  return windows.map((window) => ({ "7d": "7 天", "14d": "14 天" })[window] ?? window).join(" / ");
+}
+
+function manualActionPreviewObjectLabel(preview: RecommendedManualActionPreview) {
+  return preview.objectLabel || preview.objectId || "待确认";
+}
+
+function manualActionPreviewObjectTypeLabel(preview: RecommendedManualActionPreview) {
+  return objectTypeLabel[preview.objectType] ?? preview.objectType ?? "复盘对象";
+}
+
+function ManualActionPreviewStrip({ preview, ariaLabel }: { preview: RecommendedManualActionPreview; ariaLabel: string }) {
+  return (
+    <div className="recommendedManualActionPreview" aria-label={ariaLabel}>
+      <span>人工动作：{manualActionDisplayLabel(preview.actionType)}</span>
+      <span>复盘对象：{manualActionPreviewObjectLabel(preview)}</span>
+      <span>对象身份：{manualActionPreviewObjectTypeLabel(preview)}</span>
+      <span>复盘窗口：{manualActionReviewWindowLabel(preview.reviewWindows)}</span>
+    </div>
+  );
 }
 
 const manualActionCompactIntent: Record<ManualActionType, string> = {
@@ -1962,12 +1987,10 @@ export function SignalTriageWorkbench() {
                 <details className="recommendedManualActionDetails">
                   <summary>理由与预检</summary>
                   <p>{recommendedManualActionCandidate.reason}</p>
-                  <div className="recommendedManualActionPreview" aria-label="推荐留痕只读预检">
-                    <span>只读预检</span>
-                    <span>{manualActionDisplayLabel(recommendedManualActionCandidate.manualActionPreview.actionType)}</span>
-                    <span>对象ID：{recommendedManualActionCandidate.manualActionPreview.objectId}</span>
-                    <span>窗口：{recommendedManualActionCandidate.manualActionPreview.reviewWindows.join(" / ")}</span>
-                  </div>
+                  <ManualActionPreviewStrip
+                    preview={recommendedManualActionCandidate.manualActionPreview}
+                    ariaLabel="推荐留痕只读预检"
+                  />
                   <span className="recommendedManualActionBoundary">只定位信号；记录观察或加入复盘仍需在右侧人工点击。</span>
                 </details>
                 <button
@@ -1996,12 +2019,10 @@ export function SignalTriageWorkbench() {
                   <summary>候选预检</summary>
                   <p>{nextUnhandledManualActionCandidate.reason}</p>
                   <p>{nextUnhandledEvidenceDrilldownText(signalTriageSummary)}</p>
-                  <div className="recommendedManualActionPreview" aria-label="下一个候选只读预检">
-                    <span>只读预检</span>
-                    <span>{manualActionDisplayLabel(nextUnhandledManualActionCandidate.manualActionPreview.actionType)}</span>
-                    <span>对象ID：{nextUnhandledManualActionCandidate.manualActionPreview.objectId}</span>
-                    <span>窗口：{nextUnhandledManualActionCandidate.manualActionPreview.reviewWindows.join(" / ")}</span>
-                  </div>
+                  <ManualActionPreviewStrip
+                    preview={nextUnhandledManualActionCandidate.manualActionPreview}
+                    ariaLabel="下一个候选只读预检"
+                  />
                   <span className="recommendedManualActionBoundary">不会自动写入人工动作，也不会执行广告操作。</span>
                 </details>
                 <button
@@ -2561,9 +2582,9 @@ export function SignalTriageWorkbench() {
                     <span>
                       <b>预检</b>
                       {manualActionDisplayLabel(selectedBackendManualActionPreview.actionType)} / 复盘对象：
-                      {objectTypeLabel[selectedBackendManualActionPreview.objectType] ?? selectedBackendManualActionPreview.objectType} / 对象ID：
-                      {selectedBackendManualActionPreview.objectId} / 窗口：
-                      {selectedBackendManualActionPreview.reviewWindows.join(" / ")} / 不执行广告动作
+                      {manualActionPreviewObjectLabel(selectedBackendManualActionPreview)} / 对象身份：
+                      {manualActionPreviewObjectTypeLabel(selectedBackendManualActionPreview)} / 复盘窗口：
+                      {manualActionReviewWindowLabel(selectedBackendManualActionPreview.reviewWindows)} / 不执行广告动作
                     </span>
                   ) : (
                     <span>

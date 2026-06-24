@@ -1047,8 +1047,11 @@ assertEqual(
 
 const backendManualActionTargetSummary = manualActionTargetSummary(backendRecommendedManualActionCandidate?.manualActionPreview ?? null);
 assertIncludes(backendManualActionTargetSummary, "店铺：rivbos / market:1");
-assertIncludes(backendManualActionTargetSummary, "对象：advertised_product / B016EXMW02");
-assertIncludes(backendManualActionTargetSummary, "窗口：7d / 14d");
+assertIncludes(backendManualActionTargetSummary, "复盘对象：B016EXMW02");
+assertIncludes(backendManualActionTargetSummary, "对象身份：广告商品");
+assertIncludes(backendManualActionTargetSummary, "复盘窗口：7 天 / 14 天");
+assertNotIncludes(backendManualActionTargetSummary, "对象：advertised_product / B016EXMW02");
+assertNotIncludes(backendManualActionTargetSummary, "窗口：7d / 14d");
 assertIncludes(backendManualActionTargetSummary, "不会自动执行广告动作");
 
 const nextUnhandledManualActionCandidate = buildNextUnhandledManualActionCandidate(
