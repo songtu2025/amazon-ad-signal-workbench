@@ -92,6 +92,9 @@ const manualActionSectionIndex = workbenchSource.indexOf('<section className="ma
 const searchIntentManualActionReadbackIndex = workbenchSource.indexOf(
   "<SearchIntentManualActionReadbackCard summary={selectedSearchIntentManualActionReadback} />",
 );
+const searchIntentManualActionPreflightConsistencyIndex = workbenchSource.indexOf(
+  "<SearchIntentManualActionPreflightConsistencyCard summary={selectedSearchIntentManualActionPreflightConsistency} />",
+);
 const manualActionGridIndex = workbenchSource.indexOf('<div className="manualActionGrid" aria-label="人工动作按钮">');
 assert(diagnosisPanelIndex >= 0, "诊断区必须存在");
 assert(routeGuideRenderIndex > diagnosisPanelIndex, "广告证据链导览必须渲染在诊断区内");
@@ -149,6 +152,14 @@ assert(searchIntentTermReasonRenderIndex > searchIntentFocusContextRenderIndex, 
 assert(searchIntentTermReasonRenderIndex < signalDiagnosisRenderIndex, "具体 SearchTerm 复核理由必须先于信号详情展示");
 assert(searchIntentManualActionReadbackIndex > manualActionSectionIndex, "搜索词人工留痕对象读回必须渲染在人工确认区内");
 assert(searchIntentManualActionReadbackIndex < manualActionGridIndex, "搜索词人工留痕对象读回必须先于人工动作按钮");
+assert(
+  searchIntentManualActionPreflightConsistencyIndex > searchIntentManualActionReadbackIndex,
+  "搜索词后端预检一致性核对必须跟在人工留痕对象读回之后",
+);
+assert(
+  searchIntentManualActionPreflightConsistencyIndex < manualActionGridIndex,
+  "搜索词后端预检一致性核对必须先于人工动作按钮",
+);
 
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 经营诊断路径"');
 assertIncludes(workbenchSource, 'aria-label="诊断入口路径说明"');
@@ -246,15 +257,22 @@ assertNotIncludes(workbenchSource, "搜索词机会二级筛选");
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 广告搜索词表现复核背景核对"');
 assertIncludes(workbenchSource, 'aria-label="搜索词人工留痕对象读回"');
 assertIncludes(workbenchSource, "buildSearchIntentManualActionReadbackSummary");
+assertIncludes(workbenchSource, "buildSearchIntentManualActionPreflightConsistencySummary");
 assertIncludes(workbenchSource, "selectedSearchIntentManualActionReadback");
+assertIncludes(workbenchSource, "selectedSearchIntentManualActionPreflightConsistency");
 assertIncludes(workbenchSource, "SearchIntentManualActionReadbackCard");
+assertIncludes(workbenchSource, "SearchIntentManualActionPreflightConsistencyCard");
 assertIncludes(workbenchSource, "searchIntentManualActionReadback");
+assertIncludes(workbenchSource, "searchIntentManualActionPreflightConsistency");
 assertIncludes(reviewUiSource, "buildSearchIntentManualActionReadbackSummary");
+assertIncludes(reviewUiSource, "buildSearchIntentManualActionPreflightConsistencySummary");
 assertIncludes(reviewUiSource, "人工留痕对象读回");
+assertIncludes(reviewUiSource, "后端预检一致性核对");
 assertIncludes(reviewUiSource, "入口上下文");
 assertIncludes(reviewUiSource, "复盘对象");
 assertIncludes(reviewUiSource, "当时判断");
 assertIncludes(reviewUiSource, "保存后用途");
+assertIncludes(reviewUiSource, "缺少搜索词、Parent ASIN 广告搜索词表现复核或搜索词表现判断");
 assertIncludes(reviewUiSource, "不能自动加词、否词、调价、暂停广告");
 assertIncludes(workbenchSource, 'aria-label="逐投放上下文复核"');
 assertIncludes(workbenchSource, "同一个 SearchTerm 可能跨广告活动、广告组和投放词出现");

@@ -20,6 +20,7 @@ import {
   buildManualActionRequestPayload,
   buildSignalManualActionEvidenceSnapshot,
   buildSearchIntentManualActionEvidenceSnapshot,
+  buildSearchIntentManualActionPreflightConsistencySummary,
   buildSearchIntentManualActionReadbackSummary,
   mergeManualActionEvidenceSnapshots,
   canSaveReviewEffect,
@@ -2728,6 +2729,51 @@ assertIncludes(searchIntentManualActionReadback?.rows[4]?.value ?? "", "打开�
 assertIncludes(searchIntentManualActionReadback?.rows[4]?.detail ?? "", "后端 preflight evidence_snapshot_preview");
 assertIncludes(searchIntentManualActionReadback?.boundary ?? "", "不能自动加词、否词、调价、暂停广告");
 assertIncludes(searchIntentManualActionReadback?.boundary ?? "", "不能把搜索词表现分组当作动作对象");
+const searchIntentReadyPreflight = {
+  will_write: false,
+  evidence_snapshot_preview: {
+    status: "ready",
+    will_save_on_authorized_write: true,
+    item_count: 4,
+    boundary: "授权写入后保存人工点击时证据快照。",
+    items: [
+      { label: "搜索词", value: "beach essentials", source: "ad_search_term_daily_metrics" },
+      { label: "Parent ASIN 广告搜索词表现复核", value: "规则语义：海滩出行用品", source: "规则语义" },
+      { label: "搜索词表现判断", value: "扩量复核：有订单且 ACOS 可控", source: "ad_search_term_daily_metrics" },
+      { label: "动作边界", value: "只允许人工留痕和复盘", source: "business_rule" },
+    ],
+  },
+};
+const searchIntentPreflightConsistency = buildSearchIntentManualActionPreflightConsistencySummary({
+  readback: searchIntentManualActionReadback,
+  preflight: searchIntentReadyPreflight,
+});
+assertEqual(searchIntentPreflightConsistency?.title, "后端预检一致性核对");
+assertEqual(searchIntentPreflightConsistency?.tone, "ready");
+assertIncludes(searchIntentPreflightConsistency?.rows[1]?.value ?? "", "4 条将保存证据");
+assertIncludes(searchIntentPreflightConsistency?.rows[2]?.value ?? "", "SearchTerm / 分组 / 表现判断一致");
+assertIncludes(searchIntentPreflightConsistency?.rows[3]?.value ?? "", "扩量复核");
+assertIncludes(searchIntentPreflightConsistency?.boundary ?? "", "以后端 preflight evidence_snapshot_preview 为准");
+const searchIntentMissingDecisionPreflight = {
+  ...searchIntentReadyPreflight,
+  evidence_snapshot_preview: {
+    ...searchIntentReadyPreflight.evidence_snapshot_preview,
+    items: searchIntentReadyPreflight.evidence_snapshot_preview.items.filter((item) => item.label !== "搜索词表现判断"),
+  },
+};
+const missingDecisionConsistency = buildSearchIntentManualActionPreflightConsistencySummary({
+  readback: searchIntentManualActionReadback,
+  preflight: searchIntentMissingDecisionPreflight,
+});
+assertEqual(missingDecisionConsistency?.tone, "blocked");
+assertIncludes(missingDecisionConsistency?.rows[2]?.value ?? "", "缺少搜索词表现判断");
+assertIncludes(missingDecisionConsistency?.rows[2]?.detail ?? "", "不能完整回看为什么处理这条 SearchTerm");
+const waitingPreflightConsistency = buildSearchIntentManualActionPreflightConsistencySummary({
+  readback: searchIntentManualActionReadback,
+  preflight: null,
+});
+assertEqual(waitingPreflightConsistency?.tone, "waiting");
+assertIncludes(waitingPreflightConsistency?.rows[1]?.value ?? "", "等待读取 evidence_snapshot_preview");
 const mismatchSearchIntentManualActionReadback = buildSearchIntentManualActionReadbackSummary({
   evidenceSnapshot: searchIntentManualEvidenceSnapshot,
   primarySearchTerm: "beach wagon",

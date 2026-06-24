@@ -81,6 +81,7 @@ import {
   buildManualActionPostWritePreflightRequest,
   buildManualActionRequestPayload,
   buildSignalManualActionEvidenceSnapshot,
+  buildSearchIntentManualActionPreflightConsistencySummary,
   buildSearchIntentManualActionReadbackSummary,
   mergeManualActionEvidenceSnapshots,
   canSaveReviewRecordWithPreflight,
@@ -128,6 +129,7 @@ import {
   selectManualActionsForSignal,
   selectNextReviewTodo,
   selectReviewTodosForSignal,
+  SearchIntentManualActionPreflightConsistencySummary,
   SearchIntentManualActionReadbackSummary,
 } from "./reviewUi";
 import {
@@ -1084,6 +1086,14 @@ export function SignalTriageWorkbench() {
         nextManualStep: activeSearchIntentReviewCard?.nextManualStep,
       }),
     [activeSearchIntentReviewCard, selectedSearchIntentManualActionEvidenceSnapshot],
+  );
+  const selectedSearchIntentManualActionPreflightConsistency = useMemo(
+    () =>
+      buildSearchIntentManualActionPreflightConsistencySummary({
+        readback: selectedSearchIntentManualActionReadback,
+        preflight: selectedManualActionPreviewPreflight,
+      }),
+    [selectedManualActionPreviewPreflight, selectedSearchIntentManualActionReadback],
   );
   const selectedManualActionEvidenceSnapshot = useMemo(
     () => mergeManualActionEvidenceSnapshots(selectedSearchIntentManualActionEvidenceSnapshot, selectedBaseManualActionEvidenceSnapshot),
@@ -2494,6 +2504,9 @@ export function SignalTriageWorkbench() {
                 {selectedSearchIntentManualActionReadback && (
                   <SearchIntentManualActionReadbackCard summary={selectedSearchIntentManualActionReadback} />
                 )}
+                {selectedSearchIntentManualActionPreflightConsistency && (
+                  <SearchIntentManualActionPreflightConsistencyCard summary={selectedSearchIntentManualActionPreflightConsistency} />
+                )}
                 {selectedSearchIntentManualActionEvidenceSnapshot.length > 0 && (
                   <div className="manualActionContextSnapshot" aria-label="Parent ASIN 广告搜索词表现复核背景核对">
                     <strong>Parent ASIN 广告搜索词表现复核背景核对</strong>
@@ -3453,6 +3466,33 @@ function SearchIntentSelectedTermReasonPanel({ summary }: { summary: SearchInten
 function SearchIntentManualActionReadbackCard({ summary }: { summary: SearchIntentManualActionReadbackSummary }) {
   return (
     <div className={`searchIntentManualActionReadback ${summary.tone}`} aria-label="搜索词人工留痕对象读回">
+      <strong>{summary.title}</strong>
+      <dl>
+        {summary.rows.map((row) => (
+          <div key={row.label}>
+            <dt>{row.label}</dt>
+            <dd>
+              <b>{row.value}</b>
+              <small>{row.detail}</small>
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <small>{summary.boundary}</small>
+    </div>
+  );
+}
+
+function SearchIntentManualActionPreflightConsistencyCard({
+  summary,
+}: {
+  summary: SearchIntentManualActionPreflightConsistencySummary;
+}) {
+  return (
+    <div
+      className={`searchIntentManualActionPreflightConsistency ${summary.tone}`}
+      aria-label="搜索词人工留痕后端预检一致性"
+    >
       <strong>{summary.title}</strong>
       <dl>
         {summary.rows.map((row) => (

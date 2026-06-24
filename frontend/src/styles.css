@@ -6289,7 +6289,8 @@ button.reviewTodoQueueNext:focus-visible {
   line-height: 1.35;
 }
 
-.searchIntentManualActionReadback {
+.searchIntentManualActionReadback,
+.searchIntentManualActionPreflightConsistency {
   display: grid;
   gap: 7px;
   border: 1px solid #d8e8f3;
@@ -6298,7 +6299,8 @@ button.reviewTodoQueueNext:focus-visible {
   background: #ffffff;
 }
 
-.searchIntentManualActionReadback.ready {
+.searchIntentManualActionReadback.ready,
+.searchIntentManualActionPreflightConsistency.ready {
   border-color: #bcdccf;
   background: #f7fffb;
 }
@@ -6308,24 +6310,33 @@ button.reviewTodoQueueNext:focus-visible {
   background: #fffaf0;
 }
 
-.searchIntentManualActionReadback.waiting {
+.searchIntentManualActionReadback.waiting,
+.searchIntentManualActionPreflightConsistency.waiting {
   border-color: #cfe2fb;
   background: #f8fbff;
 }
 
-.searchIntentManualActionReadback > strong {
+.searchIntentManualActionPreflightConsistency.blocked {
+  border-color: #f0b5ad;
+  background: #fff7f5;
+}
+
+.searchIntentManualActionReadback > strong,
+.searchIntentManualActionPreflightConsistency > strong {
   color: #25364b;
   font-size: 12px;
   line-height: 1.25;
 }
 
-.searchIntentManualActionReadback dl {
+.searchIntentManualActionReadback dl,
+.searchIntentManualActionPreflightConsistency dl {
   display: grid;
   gap: 5px;
   margin: 0;
 }
 
-.searchIntentManualActionReadback dl div {
+.searchIntentManualActionReadback dl div,
+.searchIntentManualActionPreflightConsistency dl div {
   min-width: 0;
   display: grid;
   gap: 2px;
@@ -6335,27 +6346,31 @@ button.reviewTodoQueueNext:focus-visible {
   background: rgba(255, 255, 255, 0.8);
 }
 
-.searchIntentManualActionReadback dt {
+.searchIntentManualActionReadback dt,
+.searchIntentManualActionPreflightConsistency dt {
   color: #66758a;
   font-size: 11px;
   font-weight: 800;
 }
 
-.searchIntentManualActionReadback dd {
+.searchIntentManualActionReadback dd,
+.searchIntentManualActionPreflightConsistency dd {
   min-width: 0;
   display: grid;
   gap: 2px;
   margin: 0;
 }
 
-.searchIntentManualActionReadback b {
+.searchIntentManualActionReadback b,
+.searchIntentManualActionPreflightConsistency b {
   color: #1f3147;
   font-size: 12px;
   font-weight: 850;
   overflow-wrap: anywhere;
 }
 
-.searchIntentManualActionReadback small {
+.searchIntentManualActionReadback small,
+.searchIntentManualActionPreflightConsistency small {
   color: #637288;
   font-size: 11px;
   line-height: 1.35;

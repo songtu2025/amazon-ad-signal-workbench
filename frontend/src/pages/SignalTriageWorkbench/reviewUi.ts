@@ -236,6 +236,7 @@ export interface SearchIntentManualActionContextInput {
 }
 
 export type SearchIntentManualActionReadbackTone = "ready" | "warning" | "waiting";
+export type SearchIntentManualActionPreflightConsistencyTone = "ready" | "blocked" | "waiting";
 
 export interface SearchIntentManualActionReadbackInput {
   evidenceSnapshot?: ManualActionEvidenceSnapshotForUi[] | null;
@@ -249,6 +250,18 @@ export interface SearchIntentManualActionReadbackInput {
 export interface SearchIntentManualActionReadbackSummary {
   title: string;
   tone: SearchIntentManualActionReadbackTone;
+  rows: { label: string; value: string; detail: string }[];
+  boundary: string;
+}
+
+export interface SearchIntentManualActionPreflightConsistencyInput {
+  readback?: SearchIntentManualActionReadbackSummary | null;
+  preflight?: ManualActionPreflightForUi | null;
+}
+
+export interface SearchIntentManualActionPreflightConsistencySummary {
+  title: string;
+  tone: SearchIntentManualActionPreflightConsistencyTone;
   rows: { label: string; value: string; detail: string }[];
   boundary: string;
 }
@@ -2702,6 +2715,108 @@ export function buildSearchIntentManualActionReadbackSummary(
     ],
     boundary:
       "人工留痕只能记录观察、标记已处理、加入复盘或忽略本次；不能自动加词、否词、调价、暂停广告，也不能把搜索词表现分组当作动作对象。",
+  };
+}
+
+function searchIntentReadbackRowValue(readback: SearchIntentManualActionReadbackSummary, label: string) {
+  return normalizedPreflightTargetValue(readback.rows.find((row) => row.label === label)?.value);
+}
+
+function normalizedSearchIntentReadbackSearchTerm(value: string | null | undefined) {
+  return normalizeManualActionSearchTerm(normalizedPreflightTargetValue(value).replace(/^SearchTerm[:：]\s*/i, ""));
+}
+
+function searchIntentPreflightItemValue(preflight: ManualActionPreflightForUi, labels: string[]) {
+  return manualActionSnapshotItemValue(preflight.evidence_snapshot_preview?.items ?? [], labels);
+}
+
+export function buildSearchIntentManualActionPreflightConsistencySummary(
+  input: SearchIntentManualActionPreflightConsistencyInput | null,
+): SearchIntentManualActionPreflightConsistencySummary | null {
+  const readback = input?.readback ?? null;
+  if (!readback) return null;
+  const preflight = input?.preflight ?? null;
+  if (!preflight?.evidence_snapshot_preview) {
+    return {
+      title: "后端预检一致性核对",
+      tone: "waiting",
+      rows: [
+        {
+          label: "前端读回",
+          value: readback.tone === "ready" ? "已读回 SearchTerm 对象" : "等待对象确认",
+          detail: "页面读回只做点击前核对，不能证明证据已经可保存。",
+        },
+        {
+          label: "后端预检",
+          value: "等待读取 evidence_snapshot_preview",
+          detail: "只有后端预检返回可保存快照后，人工动作才有复盘可回看的证据来源。",
+        },
+      ],
+      boundary:
+        "实际写入以后端 preflight evidence_snapshot_preview 为准；未读到后端快照前，不能把页面读回当成已保存证据。",
+    };
+  }
+
+  const preview = preflight.evidence_snapshot_preview;
+  const previewItemCount = preview.item_count ?? preview.items?.length ?? 0;
+  const preflightSearchTerm = searchIntentPreflightItemValue(preflight, ["搜索词", "SearchTerm"]);
+  const preflightIntentLabel = searchIntentPreflightItemValue(preflight, [
+    "Parent ASIN 广告搜索词表现复核",
+    "搜索词表现分组",
+    "Parent ASIN 搜索词表现聚合",
+    "语义组",
+  ]);
+  const preflightDecision = searchIntentPreflightItemValue(preflight, ["搜索词表现判断"]);
+  const readbackSearchTerm = normalizedSearchIntentReadbackSearchTerm(searchIntentReadbackRowValue(readback, "复盘对象"));
+  const readbackIntentLabel = searchIntentReadbackRowValue(readback, "入口上下文");
+  const missingLabels: string[] = [];
+  if (!preflightSearchTerm) missingLabels.push("搜索词");
+  if (!preflightIntentLabel) missingLabels.push("Parent ASIN 广告搜索词表现复核");
+  if (!preflightDecision) missingLabels.push("搜索词表现判断");
+
+  const mismatches: string[] = [];
+  if (readbackSearchTerm && preflightSearchTerm && readbackSearchTerm !== normalizeManualActionSearchTerm(preflightSearchTerm)) {
+    mismatches.push("SearchTerm 与页面读回不一致");
+  }
+  if (readbackIntentLabel && preflightIntentLabel && readbackIntentLabel !== preflightIntentLabel) {
+    mismatches.push("搜索词表现分组与页面读回不一致");
+  }
+  if (!manualActionPreflightHasSavableEvidenceSnapshotPreview(preflight)) {
+    mismatches.push("后端预检快照不可保存");
+  }
+  const blockers = [...missingLabels.map((label) => `缺少${label}`), ...mismatches];
+  const tone: SearchIntentManualActionPreflightConsistencyTone = blockers.length > 0 ? "blocked" : "ready";
+
+  return {
+    title: "后端预检一致性核对",
+    tone,
+    rows: [
+      {
+        label: "前端读回",
+        value: readback.tone === "warning" ? "SearchTerm 由用户手动切换" : "SearchTerm 上下文已读回",
+        detail: "用于提示用户当前页面看到的入口、对象和当时判断；不直接写入人工动作。",
+      },
+      {
+        label: "后端预检",
+        value: `${previewItemCount} 条将保存证据 / will_write=${String(preflight.will_write)}`,
+        detail: preview.boundary || "后端预检只返回将保存的证据快照，不执行广告动作。",
+      },
+      {
+        label: "可保存证据",
+        value: blockers.length > 0 ? `待补齐：${blockers.join("；")}` : "SearchTerm / 分组 / 表现判断一致",
+        detail:
+          blockers.length > 0
+            ? "缺少这些证据时，保存后 7/14 天复盘不能完整回看为什么处理这条 SearchTerm。"
+            : "后端快照已包含搜索词、Parent ASIN 广告搜索词表现复核和搜索词表现判断。",
+      },
+      {
+        label: "复盘判断",
+        value: preflightDecision || "缺少搜索词表现判断",
+        detail: "该判断只服务人工复核优先级，不能自动加词、否词、调价或暂停广告。",
+      },
+    ],
+    boundary:
+      "人工动作实际写入以后端 preflight evidence_snapshot_preview 为准；缺少搜索词、Parent ASIN 广告搜索词表现复核或搜索词表现判断时，不能把前端读回当成复盘证据。",
   };
 }
 
