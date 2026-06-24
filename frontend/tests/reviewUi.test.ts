@@ -2309,6 +2309,8 @@ const readyManualConfirmationEvidenceReadiness = manualConfirmationEvidenceReadi
     { label: "投放词证据", value: "关键词 / 自动投放上下文可读回" },
     { label: "广告组合流判断", value: "搜索词只能说明同广告组上下文，不能自动归因到单个广告 ASIN" },
     { label: "同组投放商品表现", value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看" },
+    { label: "逐投放上下文", value: "优先复核 RBK004-Exact / beach essentials / B016EXMVZS" },
+    { label: "广告位边界", value: "广告组级广告位缺失，活动级广告位只作背景" },
     { label: "ABA 背景", value: "站点级 ABA 匹配" },
     { label: "证据缺口", value: "广告位仍需补证" },
     { label: "需要补证", value: "补齐广告位和投放词维护状态" },
@@ -2324,6 +2326,8 @@ const readyManualConfirmationEvidenceReadiness = manualConfirmationEvidenceReadi
     { label: "投放词证据", value: "投放词上下文" },
     { label: "广告组合流判断", value: "同广告组上下文已回看" },
     { label: "同组投放商品表现", value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看" },
+    { label: "逐投放上下文", value: "优先复核 RBK004-Exact / beach essentials / B016EXMVZS" },
+    { label: "广告位边界", value: "广告组级广告位缺失，活动级广告位只作背景" },
     { label: "ABA 背景", value: "站点级市场背景" },
     { label: "证据缺口", value: "需要补广告位" },
     { label: "需要补证", value: "补齐广告位和投放词维护状态" },
@@ -2354,6 +2358,8 @@ const readyManualConfirmationDiagnosisBridge = manualConfirmationDiagnosisBridge
     { label: "投放词证据", value: "关键词 / 自动投放上下文可读回" },
     { label: "广告组合流判断", value: "搜索词只能说明同广告组上下文，不能自动归因到单个广告 ASIN" },
     { label: "同组投放商品表现", value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看" },
+    { label: "逐投放上下文", value: "优先复核 RBK004-Exact / beach essentials / B016EXMVZS" },
+    { label: "广告位边界", value: "广告组级广告位缺失，活动级广告位只作背景" },
     { label: "ABA 背景", value: "站点级 ABA 匹配" },
     { label: "证据缺口", value: "广告位仍需补证" },
     { label: "需要补证", value: "补齐广告位和投放词维护状态" },
@@ -2388,6 +2394,8 @@ const blockedManualConfirmationEvidenceReadiness = manualConfirmationEvidenceRea
 assertEqual(blockedManualConfirmationEvidenceReadiness?.tone, "blocked");
 assertIncludes(JSON.stringify(blockedManualConfirmationEvidenceReadiness), "缺：Parent ASIN入口 / 广告 ASIN承接");
 assertIncludes(JSON.stringify(blockedManualConfirmationEvidenceReadiness), "广告组合流判断");
+assertIncludes(JSON.stringify(blockedManualConfirmationEvidenceReadiness), "逐投放上下文");
+assertIncludes(JSON.stringify(blockedManualConfirmationEvidenceReadiness), "广告位边界");
 assertIncludes(JSON.stringify(blockedManualConfirmationEvidenceReadiness), "动作边界");
 assertIncludes(blockedManualConfirmationEvidenceReadiness?.summary ?? "", "不能把当前点击当成可复盘留痕");
 const snapshotOnlySearchTermChainReadiness = manualConfirmationEvidenceReadinessSummary(
@@ -2415,7 +2423,7 @@ assertEqual(snapshotOnlySearchTermChainReadiness?.tone, "blocked");
 assertIncludes(snapshotOnlySearchTermChainReadiness?.summary ?? "", "不一致");
 assertIncludes(
   JSON.stringify(snapshotOnlySearchTermChainReadiness),
-  "页面缺少：Parent ASIN入口 / 广告 ASIN承接 / 投放词证据 / 广告组合流判断 / 同组投放商品表现 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
+  "页面缺少：Parent ASIN入口 / 广告 ASIN承接 / 投放词证据 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 广告位边界 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
 );
 const blockedManualConfirmationDiagnosisBridge = manualConfirmationDiagnosisBridgeSummary(
   {

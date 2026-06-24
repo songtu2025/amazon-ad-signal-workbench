@@ -321,7 +321,7 @@ async function main() {
   );
   assert(
     manualConfirmationEvidenceItems.map((item: any) => item.label).join(" / ") ===
-      "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 复核路径 / Parent ASIN 入口 / 广告 ASIN 承接 / 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 广告位边界 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
+      "业务问题 / 当前判断 / 能证明 / 不能证明 / 人工下一步 / 复核路径 / Parent ASIN 入口 / 广告 ASIN 承接 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 广告位边界 / ABA 背景 / 证据缺口 / 需要补证 / 动作边界",
     "右侧人工确认证据依据必须保留固定业务判断结构和广告搜索词表现复核链。",
   );
   assertIncludes(asText(manualConfirmationEvidenceItems), nextLabel);
@@ -330,6 +330,8 @@ async function main() {
   assertIncludes(asText(manualConfirmationEvidenceItems), "不能");
   assertIncludes(asText(manualConfirmationEvidenceItems), "人工");
   assertIncludes(asText(manualConfirmationEvidenceItems), "投放词");
+  assertIncludes(asText(manualConfirmationEvidenceItems), "逐投放上下文");
+  assertIncludes(asText(manualConfirmationEvidenceItems), "广告位边界");
   assertIncludes(asText(manualConfirmationEvidenceItems), "ABA");
   assertIncludes(asText(manualConfirmationEvidenceItems), "不得自动");
 

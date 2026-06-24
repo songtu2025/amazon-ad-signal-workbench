@@ -3001,6 +3001,8 @@ export function manualConfirmationEvidenceReadinessSummary(
     "投放词证据",
     "广告组合流判断",
     "同组投放商品表现",
+    "逐投放上下文",
+    "广告位边界",
     "ABA 背景",
     "证据缺口",
     "需要补证",
@@ -3030,7 +3032,8 @@ export function manualConfirmationEvidenceReadinessSummary(
             label: "广告搜索词表现复核链",
             manual: searchTermReviewChainLabels,
             snapshot: searchTermReviewChainLabels,
-            detail: "确认搜索词进入人工确认前，Parent ASIN 入口、广告 ASIN 承接、投放词、广告组合流判断、同组投放商品表现、ABA、证据缺口、需要补证和动作边界会一起保存。",
+            detail:
+              "确认搜索词进入人工确认前，Parent ASIN 入口、广告 ASIN 承接、投放词、广告组合流判断、同组投放商品表现、逐投放上下文、广告位边界、ABA、证据缺口、需要补证和动作边界会一起保存。",
           },
         ]
       : []),

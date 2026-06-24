@@ -4435,6 +4435,12 @@ export function buildManualConfirmationEvidenceItems(
           detail: "用于确认同广告组广告 ASIN 的承接差异；不能把搜索词或广告位自动归因到单个广告 ASIN。",
         },
         {
+          label: "逐投放上下文",
+          value: "按广告组、投放词、广告 ASIN 和搜索词表现顺序复核；具体排序以后端 evidence_snapshot 中的逐投放上下文为准。",
+          detail:
+            "用于确认人工点击前不是只看搜索词合计，而是回到广告组容器、投放词和广告 ASIN 承接顺序；不能把排序解释成自动加词、否词或调价。",
+        },
+        {
           label: "投放词证据",
           value: searchTermOpportunityReviewChain.targetingEvidence,
           detail: "用于确认搜索词来自当前广告组投放上下文，不代表完整关键词库。",
