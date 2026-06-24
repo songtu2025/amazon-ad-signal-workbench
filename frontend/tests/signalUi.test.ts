@@ -5771,7 +5771,7 @@ assertIncludes(searchIntentPanelContext.signalMetricBoundary, "卡片指标覆�
 assertIncludes(searchIntentPanelContext.signalMetricBoundary, "按标准化用户搜索词及规则归类聚合");
 assertIncludes(searchIntentPanelContext.signalMetricBoundary, "可行动证据子集");
 assertIncludes(searchIntentPanelContext.boundary, "不把搜索词表现分组当作人工动作对象");
-assertIncludes(searchIntentPanelContext.emptyText, "当前展示 1 组广告搜索词表现分组");
+assertIncludes(searchIntentPanelContext.emptyText, "当前展示 1 组 Parent ASIN 广告搜索词表现复核");
 
 const emptySearchIntentPanelContext = buildSearchIntentPanelContext([]);
 assertIncludes(emptySearchIntentPanelContext.purpose, "不是经营商品入口、广告组入口或人工动作对象");
@@ -6140,8 +6140,9 @@ const searchIntentEntryLockSummary = buildSearchIntentEntryLockSummary(
 assertEqual(searchIntentEntryLockSummary?.title, "诊断入口锁定核对");
 assertEqual(searchIntentEntryLockSummary?.rows[0]?.label, "经营诊断入口");
 assertEqual(searchIntentEntryLockSummary?.rows[0]?.value, "Parent ASIN B00K4W4AAA");
-assertIncludes(searchIntentEntryLockSummary?.rows[0]?.detail ?? "", "不把搜索词表现分组写回 ProductScope");
-assertEqual(searchIntentEntryLockSummary?.rows[1]?.label, "搜索词表现分组");
+assertIncludes(searchIntentEntryLockSummary?.rows[0]?.detail ?? "", "不把 Parent ASIN 广告搜索词表现复核写回 ProductScope");
+assertEqual(searchIntentEntryLockSummary?.rows[1]?.label, "Parent ASIN 广告搜索词表现复核");
+assertIncludes(searchIntentEntryLockSummary?.rows[1]?.detail ?? "", "从当前 Parent ASIN 视角聚合广告中的用户搜索词表现行");
 assertEqual(searchIntentEntryLockSummary?.rows[1]?.value, "规则语义：海滩出行用品");
 assertIncludes(searchIntentEntryLockSummary?.rows[1]?.detail ?? "", "二级队列筛选");
 assertEqual(searchIntentEntryLockSummary?.rows[2]?.value, "SearchTerm：beach essentials");

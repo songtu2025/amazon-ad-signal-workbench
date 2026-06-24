@@ -241,7 +241,7 @@ assertIncludes(workbenchSource, "绑定诊断入口：{selectedProductScopeOptio
 assertIncludes(workbenchSource, 'aria-label="广告搜索词表现复核入口锁定"');
 assertIncludes(workbenchSource, "searchIntentEntryLock");
 assertIncludes(signalUiSource, "诊断入口锁定核对");
-assertIncludes(signalUiSource, "不把搜索词表现分组写回 ProductScope");
+assertIncludes(signalUiSource, "不把 Parent ASIN 广告搜索词表现复核写回 ProductScope");
 assertIncludes(signalUiSource, "不会切换经营诊断入口");
 assertNotIncludes(workbenchSource, "filterSignalsBySearchIntent(normalizedSignals, intentLabel)");
 assertNotIncludes(workbenchSource, 'setFilter("opportunity_expansion");');
@@ -288,7 +288,7 @@ assertIncludes(workbenchSource, "card.signalMetricBoundary");
 assertIncludes(workbenchSource, "与具体信号关系");
 assertIncludes(workbenchSource, "优先打开");
 assertIncludes(workbenchSource, "card.boundary");
-assertIncludes(workbenchSource, "当前搜索词表现分组：{activeSearchIntentLabel}");
+assertIncludes(workbenchSource, "当前 Parent ASIN 广告搜索词表现复核：{activeSearchIntentLabel}");
 assertIncludes(workbenchSource, "广告搜索词表现复核不切换经营商品或广告组");
 assertIncludes(workbenchSource, "当前 Parent ASIN 广告搜索词表现复核暂无对应 AI 信号");
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 广告搜索词表现复核"');

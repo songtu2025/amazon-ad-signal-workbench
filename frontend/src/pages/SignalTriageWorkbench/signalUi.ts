@@ -6323,7 +6323,7 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
       "边界：只复核广告用户搜索词表现；不改变诊断入口，不把搜索词表现分组当作人工动作对象，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
     emptyText:
       cards.length > 0
-        ? `当前展示 ${cards.length} 组广告搜索词表现分组，点击后只筛选当前诊断入口内的同类 SearchTerm 信号。`
+        ? `当前展示 ${cards.length} 组 Parent ASIN 广告搜索词表现复核，点击后只筛选当前诊断入口内的同类 SearchTerm 信号。`
         : "当前诊断入口下没有可关联的广告用户搜索词表现行；这不是系统故障，也不代表 Parent ASIN 没有自然搜索词，只代表当前广告上下文没有可复核的 SearchTerm 表现。",
   };
 }
@@ -6344,12 +6344,12 @@ export function buildSearchIntentEntryLockSummary(
       {
         label: "经营诊断入口",
         value: scopeLabel,
-        detail: "保持当前顶部 / 经营诊断入口筛选器，不把搜索词表现分组写回 ProductScope。",
+        detail: "保持当前顶部 / 经营诊断入口筛选器，不把 Parent ASIN 广告搜索词表现复核写回 ProductScope。",
       },
       {
-        label: "搜索词表现分组",
+        label: "Parent ASIN 广告搜索词表现复核",
         value: intentLabel,
-        detail: "只作为当前入口内的二级队列筛选，用于缩小同类广告 SearchTerm 信号。",
+        detail: "从当前 Parent ASIN 视角聚合广告中的用户搜索词表现行，只作为二级队列筛选，用于缩小同类 SearchTerm 信号。",
       },
       {
         label: "优先诊断对象",

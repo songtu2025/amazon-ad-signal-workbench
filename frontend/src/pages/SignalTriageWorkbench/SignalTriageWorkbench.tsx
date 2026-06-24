@@ -2014,7 +2014,7 @@ export function SignalTriageWorkbench() {
             {activeSearchIntentLabel && (
               <div className="searchIntentActiveFilter" aria-label="当前广告搜索词表现复核筛选">
                 <span>
-                  当前搜索词表现分组：{activeSearchIntentLabel}
+                  当前 Parent ASIN 广告搜索词表现复核：{activeSearchIntentLabel}
                   <small>诊断入口保持不变，这里只是从 Parent ASIN 视角聚合广告用户搜索词表现，并筛出同类 SearchTerm 信号；不做商品归因；ABA 只作站点级背景。</small>
                   <small>绑定诊断入口：{selectedProductScopeOption?.label ?? activeProductScopeId}</small>
                 </span>
