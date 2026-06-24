@@ -20,6 +20,7 @@ import {
   buildManualActionRequestPayload,
   buildSignalManualActionEvidenceSnapshot,
   buildSearchIntentManualActionEvidenceSnapshot,
+  buildSearchIntentManualActionReadbackSummary,
   mergeManualActionEvidenceSnapshots,
   canSaveReviewEffect,
   canSaveReviewRecordWithPreflight,
@@ -2700,6 +2701,40 @@ assertEqual(searchIntentManualEvidenceSnapshot[2].label, "ABA语义参考词");
 assertEqual(searchIntentManualEvidenceSnapshot[3].label, "ABA语义参考排名");
 assertEqual(searchIntentManualEvidenceSnapshot[4].label, "ABA周期");
 assertEqual(searchIntentManualEvidenceSnapshot[5].label, "ABA匹配边界");
+const searchIntentManualActionReadback = buildSearchIntentManualActionReadbackSummary({
+  evidenceSnapshot: searchIntentManualEvidenceSnapshot,
+  operationDecisionLabel: "扩量复核",
+  operationDecisionReason: "有订单且 ACOS 可控，优先人工复核是否存在可扩量机会。",
+  primarySearchTerm: "beach essentials",
+  primarySearchTermReason: "该词订单最多，适合作为优先打开的 SearchTerm。",
+  nextManualStep: "打开具体 SearchTerm 后人工复核。",
+});
+assertEqual(searchIntentManualActionReadback?.title, "人工留痕对象读回");
+assertEqual(searchIntentManualActionReadback?.tone, "ready");
+assertEqual(searchIntentManualActionReadback?.rows[0]?.label, "入口上下文");
+assertIncludes(searchIntentManualActionReadback?.rows[0]?.value ?? "", "规则语义：海滩出行用品");
+assertIncludes(searchIntentManualActionReadback?.rows[0]?.detail ?? "", "不写成 ProductScope 或人工动作对象");
+assertEqual(searchIntentManualActionReadback?.rows[1]?.label, "复盘对象");
+assertIncludes(searchIntentManualActionReadback?.rows[1]?.value ?? "", "SearchTerm：beach essentials");
+assertIncludes(searchIntentManualActionReadback?.rows[1]?.detail ?? "", "会落到这个具体 SearchTerm");
+assertEqual(searchIntentManualActionReadback?.rows[2]?.label, "当时判断");
+assertIncludes(searchIntentManualActionReadback?.rows[2]?.value ?? "", "扩量复核");
+assertIncludes(searchIntentManualActionReadback?.rows[2]?.detail ?? "", "可扩量机会");
+assertEqual(searchIntentManualActionReadback?.rows[3]?.label, "选择理由");
+assertIncludes(searchIntentManualActionReadback?.rows[3]?.value ?? "", "优先 SearchTerm：beach essentials");
+assertIncludes(searchIntentManualActionReadback?.rows[3]?.detail ?? "", "订单最多");
+assertEqual(searchIntentManualActionReadback?.rows[4]?.label, "保存后用途");
+assertIncludes(searchIntentManualActionReadback?.rows[4]?.value ?? "", "打开具体 SearchTerm 后人工复核");
+assertIncludes(searchIntentManualActionReadback?.rows[4]?.detail ?? "", "后端 preflight evidence_snapshot_preview");
+assertIncludes(searchIntentManualActionReadback?.boundary ?? "", "不能自动加词、否词、调价、暂停广告");
+assertIncludes(searchIntentManualActionReadback?.boundary ?? "", "不能把搜索词表现分组当作动作对象");
+const mismatchSearchIntentManualActionReadback = buildSearchIntentManualActionReadbackSummary({
+  evidenceSnapshot: searchIntentManualEvidenceSnapshot,
+  primarySearchTerm: "beach wagon",
+});
+assertEqual(mismatchSearchIntentManualActionReadback?.tone, "warning");
+assertIncludes(mismatchSearchIntentManualActionReadback?.rows[1]?.detail ?? "", "与聚合卡片优先 SearchTerm 不一致");
+assertEqual(buildSearchIntentManualActionReadbackSummary({ evidenceSnapshot: [] }), null);
 const signalManualEvidenceSnapshot = buildSignalManualActionEvidenceSnapshot({
   evidence: {
     primary_object: {

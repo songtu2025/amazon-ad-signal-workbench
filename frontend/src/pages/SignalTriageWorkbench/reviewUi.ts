@@ -235,6 +235,24 @@ export interface SearchIntentManualActionContextInput {
   abaMatchBoundary?: string | null;
 }
 
+export type SearchIntentManualActionReadbackTone = "ready" | "warning" | "waiting";
+
+export interface SearchIntentManualActionReadbackInput {
+  evidenceSnapshot?: ManualActionEvidenceSnapshotForUi[] | null;
+  operationDecisionLabel?: string | null;
+  operationDecisionReason?: string | null;
+  primarySearchTerm?: string | null;
+  primarySearchTermReason?: string | null;
+  nextManualStep?: string | null;
+}
+
+export interface SearchIntentManualActionReadbackSummary {
+  title: string;
+  tone: SearchIntentManualActionReadbackTone;
+  rows: { label: string; value: string; detail: string }[];
+  boundary: string;
+}
+
 export interface ManualActionPreflightForUi {
   status?: string | null;
   mode?: string | null;
@@ -2612,6 +2630,79 @@ export function buildSearchIntentManualActionEvidenceSnapshot(
     });
   }
   return snapshot;
+}
+
+function manualActionSnapshotItemValue(snapshot: ManualActionEvidenceSnapshotForUi[], labels: string[]) {
+  return normalizedPreflightTargetValue(
+    snapshot.find((item) => labels.includes(normalizedPreflightTargetValue(item.label)))?.value,
+  );
+}
+
+function normalizeManualActionSearchTerm(value: string | null | undefined) {
+  return normalizedPreflightTargetValue(value).toLowerCase().replace(/\s+/g, " ");
+}
+
+export function buildSearchIntentManualActionReadbackSummary(
+  input: SearchIntentManualActionReadbackInput | null,
+): SearchIntentManualActionReadbackSummary | null {
+  const snapshot = input?.evidenceSnapshot ?? [];
+  const intentLabel = manualActionSnapshotItemValue(snapshot, [
+    "Parent ASIN 广告搜索词表现复核",
+    "搜索词表现分组",
+    "Parent ASIN 搜索词表现聚合",
+    "语义组",
+  ]);
+  const searchTerm = manualActionSnapshotItemValue(snapshot, ["搜索词", "SearchTerm"]);
+  if (!intentLabel && !searchTerm) return null;
+
+  const primarySearchTerm = normalizedPreflightTargetValue(input?.primarySearchTerm);
+  const normalizedSearchTerm = normalizeManualActionSearchTerm(searchTerm);
+  const normalizedPrimarySearchTerm = normalizeManualActionSearchTerm(primarySearchTerm);
+  const isPrimaryMismatch = Boolean(normalizedSearchTerm && normalizedPrimarySearchTerm && normalizedSearchTerm !== normalizedPrimarySearchTerm);
+  const tone: SearchIntentManualActionReadbackTone = !searchTerm ? "waiting" : isPrimaryMismatch ? "warning" : "ready";
+  const objectDetail = !searchTerm
+    ? "还没有读回具体 SearchTerm；不能直接写入人工动作，先等待后端预检确认稳定对象。"
+    : isPrimaryMismatch
+      ? "当前复盘对象与聚合卡片优先 SearchTerm 不一致；如果这是用户手动切换，应按当前 SearchTerm 证据留痕。"
+      : "人工动作和 7/14 天复盘会落到这个具体 SearchTerm，搜索词表现分组只保留为回看上下文。";
+
+  return {
+    title: "人工留痕对象读回",
+    tone,
+    rows: [
+      {
+        label: "入口上下文",
+        value: intentLabel || "等待 Parent ASIN 搜索词表现复核上下文",
+        detail: "读回当前 Parent ASIN 广告搜索词表现复核入口；它只做上下文，不写成 ProductScope 或人工动作对象。",
+      },
+      {
+        label: "复盘对象",
+        value: searchTerm ? `SearchTerm：${searchTerm}` : "等待具体 SearchTerm",
+        detail: objectDetail,
+      },
+      {
+        label: "当时判断",
+        value: normalizedPreflightTargetValue(input?.operationDecisionLabel) || "以后端预检快照为准",
+        detail:
+          normalizedPreflightTargetValue(input?.operationDecisionReason) ||
+          "如果后端预检没有搜索词表现判断，保存后复盘只能看到分组，不能回看为什么选择这条 SearchTerm。",
+      },
+      {
+        label: "选择理由",
+        value: primarySearchTerm ? `优先 SearchTerm：${primarySearchTerm}` : "等待优先 SearchTerm",
+        detail:
+          normalizedPreflightTargetValue(input?.primarySearchTermReason) ||
+          "需要结合订单、花费、ACOS、广告组、投放词和广告位证据确认人工复核优先级。",
+      },
+      {
+        label: "保存后用途",
+        value: normalizedPreflightTargetValue(input?.nextManualStep) || "保存人工动作后进入 7/14 天复盘读回",
+        detail: "按钮只保存人工留痕和复盘待办；实际写入以后端 preflight evidence_snapshot_preview 为准。",
+      },
+    ],
+    boundary:
+      "人工留痕只能记录观察、标记已处理、加入复盘或忽略本次；不能自动加词、否词、调价、暂停广告，也不能把搜索词表现分组当作动作对象。",
+  };
 }
 
 export function buildSignalManualActionEvidenceSnapshot(

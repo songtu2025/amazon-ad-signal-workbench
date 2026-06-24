@@ -81,6 +81,7 @@ import {
   buildManualActionPostWritePreflightRequest,
   buildManualActionRequestPayload,
   buildSignalManualActionEvidenceSnapshot,
+  buildSearchIntentManualActionReadbackSummary,
   mergeManualActionEvidenceSnapshots,
   canSaveReviewRecordWithPreflight,
   buildReviewRecordReadbackExpectation,
@@ -127,6 +128,7 @@ import {
   selectManualActionsForSignal,
   selectNextReviewTodo,
   selectReviewTodosForSignal,
+  SearchIntentManualActionReadbackSummary,
 } from "./reviewUi";
 import {
   buildAdProductComparisonRows,
@@ -1071,6 +1073,18 @@ export function SignalTriageWorkbench() {
         : null;
     return buildSignalManualActionEvidenceSnapshot(selectedSignal, scopedIntentLabel);
   }, [activeSearchIntentLabel, selectedSignal]);
+  const selectedSearchIntentManualActionReadback = useMemo(
+    () =>
+      buildSearchIntentManualActionReadbackSummary({
+        evidenceSnapshot: selectedSearchIntentManualActionEvidenceSnapshot,
+        operationDecisionLabel: activeSearchIntentReviewCard?.operationDecisionLabel,
+        operationDecisionReason: activeSearchIntentReviewCard?.operationDecisionReason,
+        primarySearchTerm: activeSearchIntentReviewCard?.primarySearchTerm,
+        primarySearchTermReason: activeSearchIntentReviewCard?.primarySearchTermReason,
+        nextManualStep: activeSearchIntentReviewCard?.nextManualStep,
+      }),
+    [activeSearchIntentReviewCard, selectedSearchIntentManualActionEvidenceSnapshot],
+  );
   const selectedManualActionEvidenceSnapshot = useMemo(
     () => mergeManualActionEvidenceSnapshots(selectedSearchIntentManualActionEvidenceSnapshot, selectedBaseManualActionEvidenceSnapshot),
     [selectedBaseManualActionEvidenceSnapshot, selectedSearchIntentManualActionEvidenceSnapshot],
@@ -2477,6 +2491,9 @@ export function SignalTriageWorkbench() {
                     <small>{selectedManualActionRouteSplit.boundary}</small>
                   </div>
                 )}
+                {selectedSearchIntentManualActionReadback && (
+                  <SearchIntentManualActionReadbackCard summary={selectedSearchIntentManualActionReadback} />
+                )}
                 {selectedSearchIntentManualActionEvidenceSnapshot.length > 0 && (
                   <div className="manualActionContextSnapshot" aria-label="Parent ASIN 广告搜索词表现复核背景核对">
                     <strong>Parent ASIN 广告搜索词表现复核背景核对</strong>
@@ -3417,6 +3434,26 @@ function SearchIntentSelectedTermReasonPanel({ summary }: { summary: SearchInten
         <strong>{summary.title}</strong>
         <span>Parent ASIN 广告搜索词表现复核</span>
       </div>
+      <dl>
+        {summary.rows.map((row) => (
+          <div key={row.label}>
+            <dt>{row.label}</dt>
+            <dd>
+              <b>{row.value}</b>
+              <small>{row.detail}</small>
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <small>{summary.boundary}</small>
+    </div>
+  );
+}
+
+function SearchIntentManualActionReadbackCard({ summary }: { summary: SearchIntentManualActionReadbackSummary }) {
+  return (
+    <div className={`searchIntentManualActionReadback ${summary.tone}`} aria-label="搜索词人工留痕对象读回">
+      <strong>{summary.title}</strong>
       <dl>
         {summary.rows.map((row) => (
           <div key={row.label}>

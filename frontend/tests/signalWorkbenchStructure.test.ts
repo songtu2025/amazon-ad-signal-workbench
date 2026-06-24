@@ -88,6 +88,11 @@ const searchIntentTermReasonRenderIndex = workbenchSource.indexOf(
   "<SearchIntentSelectedTermReasonPanel summary={selectedSearchIntentTermReasonSummary} />",
 );
 const signalDiagnosisRenderIndex = workbenchSource.indexOf("<SignalDiagnosis");
+const manualActionSectionIndex = workbenchSource.indexOf('<section className="manualActions" aria-label="人工处理">');
+const searchIntentManualActionReadbackIndex = workbenchSource.indexOf(
+  "<SearchIntentManualActionReadbackCard summary={selectedSearchIntentManualActionReadback} />",
+);
+const manualActionGridIndex = workbenchSource.indexOf('<div className="manualActionGrid" aria-label="人工动作按钮">');
 assert(diagnosisPanelIndex >= 0, "诊断区必须存在");
 assert(routeGuideRenderIndex > diagnosisPanelIndex, "广告证据链导览必须渲染在诊断区内");
 assert(routeGuideRenderIndex < selectedSignalBranchIndex, "广告证据链导览不能被单条信号选中状态挡住");
@@ -142,6 +147,8 @@ assert(searchIntentFocusContextRenderIndex > selectedSignalScopeContextRenderInd
 assert(searchIntentFocusContextRenderIndex < signalDiagnosisRenderIndex, "广告搜索词聚合承接必须先于信号详情展示");
 assert(searchIntentTermReasonRenderIndex > searchIntentFocusContextRenderIndex, "具体 SearchTerm 复核理由必须跟在聚合承接之后");
 assert(searchIntentTermReasonRenderIndex < signalDiagnosisRenderIndex, "具体 SearchTerm 复核理由必须先于信号详情展示");
+assert(searchIntentManualActionReadbackIndex > manualActionSectionIndex, "搜索词人工留痕对象读回必须渲染在人工确认区内");
+assert(searchIntentManualActionReadbackIndex < manualActionGridIndex, "搜索词人工留痕对象读回必须先于人工动作按钮");
 
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 经营诊断路径"');
 assertIncludes(workbenchSource, 'aria-label="诊断入口路径说明"');
@@ -237,6 +244,18 @@ assertNotIncludes(workbenchSource, 'aria-label="搜索词语义聚焦"');
 assertNotIncludes(workbenchSource, "聚焦语义组");
 assertNotIncludes(workbenchSource, "搜索词机会二级筛选");
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 广告搜索词表现复核背景核对"');
+assertIncludes(workbenchSource, 'aria-label="搜索词人工留痕对象读回"');
+assertIncludes(workbenchSource, "buildSearchIntentManualActionReadbackSummary");
+assertIncludes(workbenchSource, "selectedSearchIntentManualActionReadback");
+assertIncludes(workbenchSource, "SearchIntentManualActionReadbackCard");
+assertIncludes(workbenchSource, "searchIntentManualActionReadback");
+assertIncludes(reviewUiSource, "buildSearchIntentManualActionReadbackSummary");
+assertIncludes(reviewUiSource, "人工留痕对象读回");
+assertIncludes(reviewUiSource, "入口上下文");
+assertIncludes(reviewUiSource, "复盘对象");
+assertIncludes(reviewUiSource, "当时判断");
+assertIncludes(reviewUiSource, "保存后用途");
+assertIncludes(reviewUiSource, "不能自动加词、否词、调价、暂停广告");
 assertIncludes(workbenchSource, 'aria-label="逐投放上下文复核"');
 assertIncludes(workbenchSource, "同一个 SearchTerm 可能跨广告活动、广告组和投放词出现");
 assertIncludes(workbenchSource, "实际写入以后端 preflight evidence_snapshot_preview 为准");
