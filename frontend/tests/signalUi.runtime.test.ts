@@ -357,6 +357,23 @@ async function main() {
   assert(benchmarkQueueSwitch?.tone === "blocked", "beach essentials 已留痕时，右侧必须阻断重复写入而不是换对象保存。");
   assertIncludes(asText(benchmarkQueueSwitch), "beach essentials");
   assertIncludes(asText(benchmarkQueueSwitch), "已经有人工留痕");
+  const benchmarkExpectedObjectId =
+    triage.recommended_manual_status?.object_id ||
+    triage.recommended_candidate?.manual_action_preview?.object_id ||
+    triage.recommended_candidate?.stable_object_id ||
+    `search_term:${marketId}:${recommendedLabel}`;
+  const benchmarkBlockedPreflight = await fetchJson(
+    `/api/manual-action/preflight?market_id=${marketId}&product_scope_id=${scope}&expected_object_type=search_term&expected_object_id=${encodeURIComponent(
+      benchmarkExpectedObjectId,
+    )}&action_type=add_to_review`,
+  );
+  assert(benchmarkBlockedPreflight.status === "blocked", "已留痕的 beach essentials 后端预检必须阻断重复写入。");
+  assert(
+    (benchmarkBlockedPreflight.blockers ?? []).some((blocker: any) => blocker.code === "duplicate_manual_action"),
+    "已留痕的 beach essentials 必须返回 duplicate_manual_action 阻断原因。",
+  );
+  assert(benchmarkBlockedPreflight.target?.object_id === benchmarkExpectedObjectId, "阻断预检目标必须仍是 beach essentials。");
+  assertIncludes(asText(benchmarkBlockedPreflight.target), recommendedLabel);
 
   const evidenceBlocks = indexById(
     triage.next_unhandled_evidence_drilldown?.business_evidence_blocks,
