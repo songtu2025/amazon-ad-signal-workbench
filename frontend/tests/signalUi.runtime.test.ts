@@ -343,6 +343,12 @@ async function main() {
   );
   assert(recommendedSearchTermReviewChain !== null, "推荐候选也必须能生成广告搜索词表现复核链。");
   const recommendedReviewChainText = asText(recommendedSearchTermReviewChain);
+  assert(recommendedSearchTermReviewChain.reviewLayers.length === 3, "真实广告搜索词表现复核链必须生成三层分层判断。");
+  assertIncludes(asText(recommendedSearchTermReviewChain.reviewLayers), "广告组合流判断");
+  assertIncludes(asText(recommendedSearchTermReviewChain.reviewLayers), "同组投放商品表现");
+  assertIncludes(asText(recommendedSearchTermReviewChain.reviewLayers), "广告位边界");
+  assertIncludes(asText(recommendedSearchTermReviewChain.reviewLayers), "不能证明某个广告 ASIN 应自动加词");
+  assertIncludes(asText(recommendedSearchTermReviewChain.reviewLayers), "不能证明广告位导致");
   assertIncludes(recommendedReviewChainText, recommendedLabel);
   assertIncludes(recommendedReviewChainText, "RBK004-扩展-beach essentials");
   assertIncludes(recommendedReviewChainText, "B016EXMVZS");

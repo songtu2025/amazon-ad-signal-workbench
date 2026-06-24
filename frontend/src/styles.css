@@ -4185,6 +4185,51 @@ button.reviewTodoQueueNext:focus-visible {
   color: #40536a;
 }
 
+.searchTermReviewLayerGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.searchTermReviewLayer {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #d7e6f0;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.searchTermReviewLayer div,
+.searchTermReviewLayer dl {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  margin: 0;
+}
+
+.searchTermReviewLayer strong {
+  color: #1f4263;
+  font-size: 12px;
+}
+
+.searchTermReviewLayer span,
+.searchTermReviewLayer dd {
+  min-width: 0;
+  margin: 0;
+  color: #40536a;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.searchTermReviewLayer dt {
+  color: #6b7c8f;
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .searchTermAdContextRows {
   display: grid;
   gap: 8px;
@@ -6878,6 +6923,10 @@ button.reviewTodoQueueNext:focus-visible {
 
   .evidenceWorkbench .evidenceRoute {
     padding: 0;
+  }
+
+  .searchTermReviewLayerGrid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .searchTermAdContextRow {

@@ -3651,6 +3651,7 @@ export interface SearchTermOpportunityReviewChain {
   businessQuestion: string;
   objectGrain: string;
   reviewPath: string;
+  reviewLayers: SearchTermOpportunityReviewLayer[];
   parentScopeContext: string;
   adAsinCoverage: string;
   targetingEvidence: string;
@@ -3665,6 +3666,15 @@ export interface SearchTermOpportunityReviewChain {
   requiredEvidence: string;
   nextManualStep: string;
   actionBoundary: string;
+}
+
+export interface SearchTermOpportunityReviewLayer {
+  label: string;
+  purpose: string;
+  evidence: string;
+  proves: string;
+  doesNotProve: string;
+  nextManualStep: string;
 }
 
 export interface SearchTermAdContextRow {
@@ -4158,6 +4168,32 @@ export function buildSearchTermOpportunityReviewChain(
     "ABA 只能作为站点级市场背景，不能当作店铺、商品、广告组或广告 ASIN 数据。",
     ["站点级", "ABA"],
   );
+  const reviewLayers: SearchTermOpportunityReviewLayer[] = [
+    {
+      label: "广告组合流判断",
+      purpose: "判断同一个 SearchTerm 处在哪些广告组容器和多商品结构里，避免把广告组汇总误读成单个 ASIN 结论。",
+      evidence: adGroupSynthesis,
+      proves: "能证明搜索词出现在哪些广告组上下文里，以及广告组是否存在多广告 ASIN、主推策略或广告位证据缺口。",
+      doesNotProve: "不能证明某个广告 ASIN 应自动加词、否词、调价或拆分广告组。",
+      nextManualStep: "先打开广告组核对同组 ASIN、主推策略和投放目的，再决定记录观察或加入复盘。",
+    },
+    {
+      label: "同组投放商品表现",
+      purpose: "比较同广告组内投放商品的花费、点击、订单、销售额、ACOS 和 CVR，判断承接差异是否值得人工复核。",
+      evidence: adGroupProductPerformance,
+      proves: "能证明同广告组广告商品的承接强弱和样本边界。",
+      doesNotProve: "不能证明该 SearchTerm 的消耗或订单应自动归因到某个广告 ASIN。",
+      nextManualStep: "人工对比高花费、低转化和主推款 ASIN，必要时加入复盘观察处理后指标。",
+    },
+    {
+      label: "广告位边界",
+      purpose: "确认当前广告位证据停留在搜索词直连、广告组级、广告活动级还是缺失，避免把活动级背景当成归因。",
+      evidence: placementBoundary,
+      proves: "能证明当前是否具备足够粒度解释广告位影响。",
+      doesNotProve: "缺少搜索词直连或广告组级广告位时，不能证明广告位导致该搜索词或该广告组表现差异。",
+      nextManualStep: "若要判断广告位影响，先补广告组级或搜索词直连广告位；否则只把广告位作为边界说明。",
+    },
+  ];
 
   return {
     title:
@@ -4170,6 +4206,7 @@ export function buildSearchTermOpportunityReviewChain(
       directSearchTermContract?.objectGrain ?? "SearchTerm + 同广告活动 / 广告组上下文 + 站点级 ABA 背景",
     reviewPath:
       "Parent ASIN 销售盘 -> 有广告数据的广告 ASIN -> 广告组容器 -> 同组投放商品表现 -> 投放词 -> 广告位边界 -> 具体 SearchTerm -> 人工确认 -> 7/14 天复盘",
+    reviewLayers,
     parentScopeContext,
     adAsinCoverage,
     targetingEvidence,

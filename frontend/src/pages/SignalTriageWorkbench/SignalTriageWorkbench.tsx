@@ -3109,6 +3109,28 @@ function SearchTermOpportunityReviewChainPanel({
         <span>{chain.title}</span>
       </div>
       <p>{chain.businessQuestion}</p>
+      {chain.reviewLayers.length > 0 && (
+        <div className="searchTermReviewLayerGrid" aria-label="广告搜索词复核分层判断">
+          {chain.reviewLayers.map((layer) => (
+            <article className="searchTermReviewLayer" key={layer.label}>
+              <div>
+                <strong>{layer.label}</strong>
+                <span>{layer.purpose}</span>
+              </div>
+              <dl>
+                <dt>证据</dt>
+                <dd>{layer.evidence}</dd>
+                <dt>能证明</dt>
+                <dd>{layer.proves}</dd>
+                <dt>不能证明</dt>
+                <dd>{layer.doesNotProve}</dd>
+                <dt>人工下一步</dt>
+                <dd>{layer.nextManualStep}</dd>
+              </dl>
+            </article>
+          ))}
+        </div>
+      )}
       <ul>
         <li>
           <b>对象粒度</b>
