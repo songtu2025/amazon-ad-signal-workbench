@@ -1558,11 +1558,22 @@ export function SignalTriageWorkbench() {
             <p>{productScopeAnalysisPath.boundary}</p>
           </div>
           {productScopeFirstScreenSummary && (
-            <div className="productScopeBusinessPreview" aria-label="Parent ASIN 首屏经营摘要">
-              <div className="productScopeBusinessPreviewHeader">
-                <strong>{productScopeFirstScreenSummary.title}</strong>
-                <span>{productScopeFirstScreenSummary.summary}</span>
-              </div>
+            <details className="productScopeBusinessPreview" aria-label="Parent ASIN 首屏经营摘要">
+              <summary className="productScopeBusinessPreviewSummary">
+                <div className="productScopeBusinessPreviewHeader">
+                  <strong>{productScopeFirstScreenSummary.title}</strong>
+                  <span>{productScopeFirstScreenSummary.summary}</span>
+                </div>
+                <div className="productScopeBusinessPreviewFacts">
+                  {productScopeFirstScreenSummary.factItems.map((item) => (
+                    <div className={`productScopeBusinessPreviewFact ${item.tone}`} key={item.label}>
+                      <span>{item.label}</span>
+                      <strong>{item.value}</strong>
+                    </div>
+                  ))}
+                </div>
+              </summary>
+              <div className="productScopeBusinessPreviewBody">
               <div
                 className={`productScopeMvpStatus ${productScopeFirstScreenSummary.mvpStatus.tone}`}
                 aria-label="诊断 MVP 状态判定"
@@ -1574,14 +1585,6 @@ export function SignalTriageWorkbench() {
                 <p>{productScopeFirstScreenSummary.mvpStatus.summary}</p>
                 <p>{productScopeFirstScreenSummary.mvpStatus.detail}</p>
                 <small>{productScopeFirstScreenSummary.mvpStatus.boundary}</small>
-              </div>
-              <div className="productScopeBusinessPreviewFacts">
-                {productScopeFirstScreenSummary.factItems.map((item) => (
-                  <div className={`productScopeBusinessPreviewFact ${item.tone}`} key={item.label}>
-                    <span>{item.label}</span>
-                    <strong>{item.value}</strong>
-                  </div>
-                ))}
               </div>
               <div className="productScopeLandingGates" aria-label="MVP 落地门禁">
                 {productScopeFirstScreenSummary.landingGates.map((item) => (
@@ -1675,7 +1678,8 @@ export function SignalTriageWorkbench() {
                 <span>只进入诊断工作台，不写入人工动作，不执行广告调整。</span>
               </div>
               <p>{productScopeFirstScreenSummary.boundary}</p>
-            </div>
+              </div>
+            </details>
           )}
           <details className="productScopeDetails">
             <summary>

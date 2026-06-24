@@ -187,6 +187,13 @@ assertNotIncludes(workbenchSource, 'aria-label="经营商品优先入口说明"'
 assertIncludes(workbenchSource, "productScopePathPreview");
 assertIncludes(workbenchSource, "buildProductScopeFirstScreenSummary");
 assertIncludes(workbenchSource, "productScopeBusinessPreview");
+assertIncludes(workbenchSource, '<details className="productScopeBusinessPreview" aria-label="Parent ASIN 首屏经营摘要">');
+assertIncludes(workbenchSource, 'className="productScopeBusinessPreviewSummary"');
+assertIncludes(workbenchSource, 'className="productScopeBusinessPreviewBody"');
+assertNotIncludes(workbenchSource, '<div className="productScopeBusinessPreview" aria-label="Parent ASIN 首屏经营摘要">');
+assertIncludes(stylesSource, ".productScopeBusinessPreviewSummary");
+assertIncludes(stylesSource, ".productScopeBusinessPreviewBody");
+assertIncludes(stylesSource, 'content: "展开证据"');
 assertIncludes(workbenchSource, "useRef");
 assertIncludes(workbenchSource, "workbenchGridRef");
 assertIncludes(workbenchSource, "isEvidenceDrilldownFocused");

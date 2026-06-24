@@ -618,12 +618,51 @@ h3 {
 
 .productScopeBusinessPreview {
   grid-column: 1 / -1;
-  display: grid;
-  gap: 8px;
   border: 1px solid #cfdeec;
   border-radius: 8px;
-  padding: 10px;
   background: #ffffff;
+  overflow: hidden;
+}
+
+.productScopeBusinessPreviewSummary {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.1fr) minmax(0, 1.8fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.productScopeBusinessPreviewSummary::-webkit-details-marker {
+  display: none;
+}
+
+.productScopeBusinessPreviewSummary::after {
+  content: "展开证据";
+  justify-self: end;
+  border: 1px solid #c9d8ea;
+  border-radius: 8px;
+  padding: 5px 8px;
+  color: #2f5f9d;
+  background: #f4f8fd;
+  font-size: 12px;
+  font-weight: 820;
+  white-space: nowrap;
+}
+
+.productScopeBusinessPreview[open] .productScopeBusinessPreviewSummary {
+  border-bottom: 1px solid #e0e9f3;
+}
+
+.productScopeBusinessPreview[open] .productScopeBusinessPreviewSummary::after {
+  content: "收起证据";
+}
+
+.productScopeBusinessPreviewBody {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
 }
 
 .productScopeBusinessPreviewHeader {
@@ -700,7 +739,7 @@ h3 {
 
 .productScopeBusinessPreviewFacts {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 8px;
 }
 
@@ -7096,6 +7135,14 @@ button.reviewTodoQueueNext:focus-visible {
 
   .productScopeBusinessPreviewPath {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .productScopeBusinessPreviewSummary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .productScopeBusinessPreviewSummary::after {
+    justify-self: start;
   }
 
   .selectedSignalScopeContextGrid {
