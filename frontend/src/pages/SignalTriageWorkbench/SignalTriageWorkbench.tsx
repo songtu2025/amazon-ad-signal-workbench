@@ -156,6 +156,7 @@ import {
   buildDiagnosisPathSummary,
   buildSearchIntentPanelContext,
   buildSearchIntentReviewCards,
+  buildSearchIntentEntryLockSummary,
   buildSearchIntentFocusContext,
   buildSelectedSignalScopeContext,
   buildSignalDiagnosticScope,
@@ -575,6 +576,10 @@ export function SignalTriageWorkbench() {
   const selectedProductScopeOption = useMemo(
     () => productScopeOptions.find((option) => option.scope_id === activeProductScopeId) ?? null,
     [activeProductScopeId, productScopeOptions],
+  );
+  const searchIntentEntryLockSummary = useMemo(
+    () => buildSearchIntentEntryLockSummary(selectedProductScopeOption, activeSearchIntentLabel, activeSearchIntentReviewCard),
+    [activeSearchIntentLabel, activeSearchIntentReviewCard, selectedProductScopeOption],
   );
   const productScopeCandidateGapExplanation = useMemo(
     () => buildProductScopeCandidateGapExplanation(selectedProductScopeOption, signalTriageSummary),
@@ -1981,6 +1986,23 @@ export function SignalTriageWorkbench() {
                 <button type="button" onClick={clearSearchIntentFocus}>
                   清除
                 </button>
+              </div>
+            )}
+            {searchIntentEntryLockSummary && (
+              <div className="searchIntentEntryLock" aria-label="广告搜索词表现复核入口锁定">
+                <strong>{searchIntentEntryLockSummary.title}</strong>
+                <dl>
+                  {searchIntentEntryLockSummary.rows.map((row) => (
+                    <div key={row.label}>
+                      <dt>{row.label}</dt>
+                      <dd>
+                        <b>{row.value}</b>
+                        <small>{row.detail}</small>
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <small>{searchIntentEntryLockSummary.boundary}</small>
               </div>
             )}
             {searchIntentReviewCards.length > 0 ? (

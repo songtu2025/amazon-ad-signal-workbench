@@ -29,6 +29,7 @@ import {
   buildProductScopeEvidenceMatrix,
   buildProductScopeEvidenceRouteDecision,
   buildProductScopeEvidenceRouteGuide,
+  buildSearchIntentEntryLockSummary,
   buildManualActionCandidateAdGroupBridge,
   buildManualActionDecisionFactItems,
   buildProductScopeQueueHeader,
@@ -6054,6 +6055,33 @@ const clearedSearchIntentFocusSelection = resolveSearchIntentFocusSelection(
 assertEqual(clearedSearchIntentFocusSelection.intentLabel, null);
 assertEqual(clearedSearchIntentFocusSelection.scopeId, null);
 assertEqual(clearedSearchIntentFocusSelection.signalId, null);
+
+const searchIntentEntryLockSummary = buildSearchIntentEntryLockSummary(
+  {
+    scope_id: "parent_asin:B00K4W4AAA",
+    scope_type: "parent_asin",
+    label: "Parent ASIN B00K4W4AAA",
+    parent_asin: "B00K4W4AAA",
+  },
+  "规则语义：海滩出行用品",
+  {
+    primarySearchTerm: "beach essentials",
+    primarySearchTermReason: "扩量复核先看有订单、订单更多且 ACOS 更低的具体 SearchTerm。",
+  },
+);
+
+assertEqual(searchIntentEntryLockSummary?.title, "诊断入口锁定核对");
+assertEqual(searchIntentEntryLockSummary?.rows[0]?.label, "经营诊断入口");
+assertEqual(searchIntentEntryLockSummary?.rows[0]?.value, "Parent ASIN B00K4W4AAA");
+assertIncludes(searchIntentEntryLockSummary?.rows[0]?.detail ?? "", "不把搜索词表现分组写回 ProductScope");
+assertEqual(searchIntentEntryLockSummary?.rows[1]?.label, "搜索词表现分组");
+assertEqual(searchIntentEntryLockSummary?.rows[1]?.value, "规则语义：海滩出行用品");
+assertIncludes(searchIntentEntryLockSummary?.rows[1]?.detail ?? "", "二级队列筛选");
+assertEqual(searchIntentEntryLockSummary?.rows[2]?.value, "SearchTerm：beach essentials");
+assertIncludes(searchIntentEntryLockSummary?.rows[2]?.detail ?? "", "扩量复核先看");
+assertIncludes(searchIntentEntryLockSummary?.boundary ?? "", "不会切换经营诊断入口");
+assertIncludes(searchIntentEntryLockSummary?.boundary ?? "", "必须使用诊断入口筛选器或明确入口按钮");
+assertEqual(buildSearchIntentEntryLockSummary(null, null), null);
 
 const adProductOpportunityKeyEvidence = buildKeyEvidenceFacts(
   [

@@ -116,6 +116,12 @@ export interface SearchIntentFocusContext {
   tone: SignalQueueScopeTone;
 }
 
+export interface SearchIntentEntryLockSummary {
+  title: string;
+  rows: { label: string; value: string; detail: string }[];
+  boundary: string;
+}
+
 export interface SignalQueueObjectStatusTodo {
   object_id?: string | null;
   review_window?: string | null;
@@ -6306,6 +6312,40 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
       cards.length > 0
         ? `当前展示 ${cards.length} 组广告搜索词表现分组，点击后只筛选当前诊断入口内的同类 SearchTerm 信号。`
         : "当前诊断入口下没有可关联的广告用户搜索词表现行；这不是系统故障，也不代表 Parent ASIN 没有自然搜索词，只代表当前广告上下文没有可复核的 SearchTerm 表现。",
+  };
+}
+
+export function buildSearchIntentEntryLockSummary(
+  selectedScope: ProductScopeFilterOption | null,
+  activeSearchIntentLabel: string | null | undefined,
+  activeCard?: Pick<SearchIntentReviewCard, "primarySearchTerm" | "primarySearchTermReason"> | null,
+): SearchIntentEntryLockSummary | null {
+  const intentLabel = activeSearchIntentLabel?.trim();
+  if (!intentLabel) return null;
+
+  const scopeLabel = diagnosisScopeLabel(selectedScope);
+  const primarySearchTerm = activeCard?.primarySearchTerm?.trim();
+  return {
+    title: "诊断入口锁定核对",
+    rows: [
+      {
+        label: "经营诊断入口",
+        value: scopeLabel,
+        detail: "保持当前顶部 / 经营诊断入口筛选器，不把搜索词表现分组写回 ProductScope。",
+      },
+      {
+        label: "搜索词表现分组",
+        value: intentLabel,
+        detail: "只作为当前入口内的二级队列筛选，用于缩小同类广告 SearchTerm 信号。",
+      },
+      {
+        label: "优先诊断对象",
+        value: primarySearchTerm ? `SearchTerm：${primarySearchTerm}` : "等待命中具体 SearchTerm",
+        detail: activeCard?.primarySearchTermReason || "人工确认和复盘仍以后端预检确认的具体 SearchTerm 稳定对象为准。",
+      },
+    ],
+    boundary:
+      "点击 Parent ASIN 广告搜索词表现复核卡片不会切换经营诊断入口；如需切换 Parent ASIN、ASIN 或广告对象，必须使用诊断入口筛选器或明确入口按钮。",
   };
 }
 

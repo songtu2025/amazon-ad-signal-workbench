@@ -2784,6 +2784,57 @@ button.reviewTodoQueueNext:focus-visible {
   cursor: pointer;
 }
 
+.searchIntentEntryLock {
+  border: 1px solid #d8e5f3;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+  color: #41536a;
+}
+
+.searchIntentEntryLock strong {
+  color: #213047;
+  font-size: 12px;
+}
+
+.searchIntentEntryLock dl {
+  margin: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.searchIntentEntryLock dl div {
+  display: grid;
+  grid-template-columns: minmax(74px, 92px) minmax(0, 1fr);
+  gap: 6px;
+  align-items: start;
+}
+
+.searchIntentEntryLock dt {
+  color: #52647a;
+  font-weight: 720;
+}
+
+.searchIntentEntryLock dd {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.searchIntentEntryLock b {
+  color: #1d416d;
+  overflow-wrap: anywhere;
+}
+
+.searchIntentEntryLock small {
+  color: #52647a;
+  line-height: 1.35;
+}
+
 .searchIntentReviewList {
   display: grid;
   gap: 7px;
