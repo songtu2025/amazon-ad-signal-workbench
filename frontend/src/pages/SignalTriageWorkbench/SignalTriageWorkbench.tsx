@@ -2523,7 +2523,7 @@ export function SignalTriageWorkbench() {
                         </li>
                       ))}
                     </ul>
-                    <p>只核对当前 Parent ASIN 下广告搜索词表现复核背景；实际写入以后端 preflight evidence_snapshot_preview 为准，搜索词表现分组不是人工动作对象。</p>
+                    <p>只核对当前 Parent ASIN 广告搜索词表现复核背景；实际写入以后端 preflight evidence_snapshot_preview 为准，复核上下文不是人工动作对象。</p>
                   </div>
                 )}
                 {selectedBackendManualActionPreview?.preflightChecks.length ? (

@@ -2608,7 +2608,7 @@ export function buildSearchIntentManualActionEvidenceSnapshot(
     snapshot.push({
       label: "搜索词",
       value: searchTerm,
-      detail: "人工处理对象仍落到具体 SearchTerm 信号，搜索词表现分组只作为复盘上下文。",
+      detail: "人工处理对象仍落到具体 SearchTerm 信号，Parent ASIN 广告搜索词表现复核只作为复盘上下文。",
       source: "积加API",
     });
   }
@@ -2685,7 +2685,7 @@ export function buildSearchIntentManualActionReadbackSummary(
     ? "还没有读回具体 SearchTerm；不能直接写入人工动作，先等待后端预检确认稳定对象。"
     : isPrimaryMismatch
       ? "当前复盘对象与聚合卡片优先 SearchTerm 不一致；如果这是用户手动切换，应按当前 SearchTerm 证据留痕。"
-      : "人工动作和 7/14 天复盘会落到这个具体 SearchTerm，搜索词表现分组只保留为回看上下文。";
+      : "人工动作和 7/14 天复盘会落到这个具体 SearchTerm，Parent ASIN 广告搜索词表现复核只保留为回看上下文。";
 
   return {
     title: "人工留痕对象读回",
@@ -2722,7 +2722,7 @@ export function buildSearchIntentManualActionReadbackSummary(
       },
     ],
     boundary:
-      "人工留痕只能记录观察、标记已处理、加入复盘或忽略本次；不能自动加词、否词、调价、暂停广告，也不能把搜索词表现分组当作动作对象。",
+      "人工留痕只能记录观察、标记已处理、加入复盘或忽略本次；不能自动加词、否词、调价、暂停广告，也不能把 Parent ASIN 广告搜索词表现复核当作动作对象。",
   };
 }
 
@@ -2787,7 +2787,7 @@ export function buildSearchIntentManualActionPreflightConsistencySummary(
     mismatches.push("SearchTerm 与页面读回不一致");
   }
   if (readbackIntentLabel && preflightIntentLabel && readbackIntentLabel !== preflightIntentLabel) {
-    mismatches.push("搜索词表现分组与页面读回不一致");
+    mismatches.push("Parent ASIN 广告搜索词表现复核与页面读回不一致");
   }
   if (!manualActionPreflightHasSavableEvidenceSnapshotPreview(preflight)) {
     mismatches.push("后端预检快照不可保存");

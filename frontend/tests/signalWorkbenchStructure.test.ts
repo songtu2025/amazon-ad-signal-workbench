@@ -320,7 +320,7 @@ assertIncludes(reviewUiSource, "不能自动加词、否词、调价、暂停广
 assertIncludes(workbenchSource, 'aria-label="逐投放上下文复核"');
 assertIncludes(workbenchSource, "同一个 SearchTerm 可能跨广告活动、广告组和投放词出现");
 assertIncludes(workbenchSource, "实际写入以后端 preflight evidence_snapshot_preview 为准");
-assertIncludes(workbenchSource, "搜索词表现分组不是人工动作对象");
+assertIncludes(workbenchSource, "复核上下文不是人工动作对象");
 assertNotIncludes(workbenchSource, "当前语义组留痕");
 const searchIntentReviewPanelIndex = workbenchSource.indexOf('aria-label="Parent ASIN 广告搜索词表现复核"');
 const queueTabsIndex = workbenchSource.indexOf('aria-label="队列筛选"');

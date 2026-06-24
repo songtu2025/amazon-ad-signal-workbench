@@ -2738,7 +2738,7 @@ assertEqual(searchIntentManualActionReadback?.rows[4]?.label, "保存后用途")
 assertIncludes(searchIntentManualActionReadback?.rows[4]?.value ?? "", "打开具体 SearchTerm 后人工复核");
 assertIncludes(searchIntentManualActionReadback?.rows[4]?.detail ?? "", "后端 preflight evidence_snapshot_preview");
 assertIncludes(searchIntentManualActionReadback?.boundary ?? "", "不能自动加词、否词、调价、暂停广告");
-assertIncludes(searchIntentManualActionReadback?.boundary ?? "", "不能把搜索词表现分组当作动作对象");
+assertIncludes(searchIntentManualActionReadback?.boundary ?? "", "不能把 Parent ASIN 广告搜索词表现复核当作动作对象");
 const searchIntentReadyPreflight = {
   will_write: false,
   evidence_snapshot_preview: {
