@@ -3162,7 +3162,7 @@ def search_intent_current_judgement(metrics: MetricSnapshot) -> str:
     if metrics.orders > 0:
         return "当前判断：已有订单但样本或 ACOS 还不足以直接放量，先复核具体搜索词和投放词承接。"
     if metrics.clicks >= 20:
-        return "当前判断：有点击但暂无订单，先判断搜索意图和商品承接是否偏离。"
+        return "当前判断：有点击但暂无订单，先判断广告用户搜索词表现和广告商品承接是否偏离。"
     return "当前判断：样本偏少，只适合观察，不应包装成广告调整建议。"
 
 

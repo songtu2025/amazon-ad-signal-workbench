@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
-from app.services import signal_triage
+from app.models.signals import MetricSnapshot
+from app.services import signal_detection, signal_triage
 
 
 def make_candidate() -> dict[str, object]:
@@ -651,6 +652,15 @@ def test_search_intent_summaries_respect_parent_asin_product_scope(monkeypatch) 
     assert "不能把搜索词表现分组当作人工动作对象" in summaries[0].does_not_prove
     assert "语义组人工动作" not in summaries[0].does_not_prove
     assert "出单最多的具体 SearchTerm 信号" in summaries[0].next_manual_step
+
+
+def test_search_intent_current_judgement_uses_ad_search_term_performance_subject() -> None:
+    judgement = signal_detection.search_intent_current_judgement(
+        MetricSnapshot(clicks=24, cost=18.6, orders=0, sales=0, cvr=0, acos=None, cpc=0.775)
+    )
+
+    assert "广告用户搜索词表现和广告商品承接" in judgement
+    assert "搜索意图和商品承接" not in judgement
 
 
 def test_review_candidates_require_actionable_manual_triage_gate(monkeypatch) -> None:

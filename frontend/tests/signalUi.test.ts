@@ -1819,7 +1819,7 @@ assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.businessQue
 assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.currentJudgement ?? "", "投放词 1 个");
 assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.currentJudgement ?? "", "广告 ASIN 2 个");
 assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.targetingEvidence ?? "", "kids sunglasses");
-assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.proves ?? "", "搜索意图表现分化");
+assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.proves ?? "", "广告搜索词表现分化");
 assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.doesNotProve ?? "", "自动加词");
 assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.doesNotProve ?? "", "不能把搜索词归因到单个广告 ASIN");
 assertIncludes(adGroupDiagnosisRows[0].searchTermDiagnosis?.decision.nextManualStep ?? "", "优先比较有效搜索词和无订单花费词");
@@ -1849,7 +1849,7 @@ assertIncludes(manualActionAdGroupBridge.synthesisBoundary, "自动加词");
 assertIncludes(manualActionAdGroupBridge.synthesisBoundary, "单个广告 ASIN");
 assertIncludes(manualActionAdGroupBridge.synthesisGap, "广告组级广告位证据");
 assertIncludes(manualActionAdGroupBridge.searchTermBoundary, "搜索词边界");
-assertIncludes(manualActionAdGroupBridge.searchTermBoundary, "搜索意图表现分化");
+assertIncludes(manualActionAdGroupBridge.searchTermBoundary, "广告搜索词表现分化");
 assertIncludes(manualActionAdGroupBridge.searchTermBoundary, "不能把搜索词归因到单个广告 ASIN");
 assertIncludes(manualActionAdGroupBridge.placementBoundary, "广告位边界");
 assertIncludes(manualActionAdGroupBridge.placementBoundary, "只有广告活动级广告位背景");

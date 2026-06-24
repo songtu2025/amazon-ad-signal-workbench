@@ -5303,7 +5303,7 @@ function productScopeSearchTermDecision(
   let proves = "能证明当前广告组存在可人工复核的搜索词样本，但还不能直接判断应做广告动作。";
 
   if (effectiveTerms.length > 0 && zeroOrderTerms.length > 0) {
-    proves = "能证明同广告组内搜索意图表现分化：有词产生订单，也有词产生花费但没有订单。";
+    proves = "能证明同广告组内广告搜索词表现分化：有词产生订单，也有词产生花费但没有订单。";
   } else if (effectiveTerms.length > 0) {
     proves = "能证明当前广告组存在产生订单的搜索词，可作为人工复核扩量或稳定承接的线索。";
   } else if (zeroOrderTerms.length > 0) {
