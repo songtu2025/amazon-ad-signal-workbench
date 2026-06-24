@@ -2647,7 +2647,7 @@ export function manualActionEvidenceReasonText(
     visible.push(contextBoundary);
   }
 
-  return visible.map(({ item }) => `${item.label}：${item.value}`).join("；");
+  return visible.map(({ item }) => `${manualActionEvidenceDisplayLabel(item.label)}：${item.value}`).join("；");
 }
 
 export function reviewContextText(action: { review_context?: ReviewContextForUi | null } | null) {
@@ -2689,6 +2689,7 @@ function reviewContextDisplayText(text: string) {
   return text
     .replace(/Parent ASIN 搜索词表现聚合/g, "Parent ASIN 广告搜索词表现复核")
     .replace(/搜索意图分组/g, "搜索词表现分组")
+    .replace(/语义组/g, "搜索词表现分组")
     .replace(/聚合标签/g, "搜索词表现分组");
 }
 

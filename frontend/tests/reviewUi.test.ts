@@ -241,10 +241,20 @@ assertIncludes(reviewContextText(abaContextTodo) ?? "", "ABA 站点级参考：b
 assertIncludes(reviewContextText(abaContextTodo) ?? "", "同一 Parent ASIN 广告搜索词表现复核已有 2 次人工留痕");
 assertIncludes(reviewContextText(abaContextTodo) ?? "", "不会自动改规则或执行广告");
 assertIncludes(manualActionEvidenceSnapshotText(abaContextTodo) ?? "", "复盘上下文：Parent ASIN 广告搜索词表现复核：规则语义：海滩出行用品");
+assertNotIncludes(manualActionEvidenceSnapshotText(abaContextTodo) ?? "", "语义组：");
 const contextDetails = buildReviewTodoQueueDetails([abaContextTodo], { isGlobalScope: true });
 assertIncludes(contextDetails?.rows[0].contextText ?? "", "留痕证据快照");
+assertIncludes(contextDetails?.rows[0].contextText ?? "", "搜索词表现分组：规则语义：海滩出行用品");
+assertNotIncludes(contextDetails?.rows[0].contextText ?? "", "语义组：");
 assertIncludes(contextDetails?.rows[0].contextText ?? "", "ABA语义参考词");
 assertIncludes(contextDetails?.rows[0].contextText ?? "", "ABA 站点级参考：beach essentials / 排名 208");
+const legacySemanticGroupContextText = reviewContextText({
+  review_context: {
+    repeat_summary: "同一语义组已有 2 次人工留痕，复盘时应判断规则反馈口径是否需要人工复核。",
+  },
+});
+assertIncludes(legacySemanticGroupContextText ?? "", "同一搜索词表现分组已有 2 次人工留痕");
+assertNotIncludes(legacySemanticGroupContextText ?? "", "语义组");
 assertEqual(
   buildReviewTodoQueueDetails([pendingTodo, dueTodo], {
     isGlobalScope: false,
@@ -2687,15 +2697,21 @@ assertEqual(manualActionRequestPayload.expected_object_id, "beach essentials for
 assertEqual(manualActionRequestPayload.expected_can_auto_execute_ads, false);
 assertEqual(manualActionRequestPayload.expected_can_auto_change_rules, false);
 assertEqual(manualActionRequestPayload.evidence_snapshot.length, 0);
-const manualActionReasonText = manualActionEvidenceReasonText([
-  { label: "广告商品覆盖", value: "覆盖 raw 投放行 6/7 / 证据行 6 条" },
-  { label: "广告指标汇总", value: "花费 $64.92 / 订单 18 / ACOS 38.0%" },
-  { label: "Top 花费来源", value: "来自 SP 广告商品快照" },
-  { label: "搜索词市场背景", value: "同广告组搜索词 18 条 / ABA Top1000 匹配 1 条" },
-]);
+const manualActionReasonText = manualActionEvidenceReasonText(
+  [
+    { label: "广告商品覆盖", value: "覆盖 raw 投放行 6/7 / 证据行 6 条" },
+    { label: "广告指标汇总", value: "花费 $64.92 / 订单 18 / ACOS 38.0%" },
+    { label: "Top 花费来源", value: "来自 SP 广告商品快照" },
+    { label: "搜索词市场背景", value: "同广告组搜索词 18 条 / ABA Top1000 匹配 1 条" },
+    { label: "语义组", value: "规则语义：海滩出行用品" },
+  ],
+  4,
+);
 assertIncludes(manualActionReasonText ?? "", "广告商品覆盖：覆盖 raw 投放行 6/7 / 证据行 6 条");
 assertIncludes(manualActionReasonText ?? "", "广告指标汇总：花费 $64.92 / 订单 18 / ACOS 38.0%");
 assertIncludes(manualActionReasonText ?? "", "搜索词市场背景：同广告组搜索词 18 条 / ABA Top1000 匹配 1 条");
+assertIncludes(manualActionReasonText ?? "", "搜索词表现分组：规则语义：海滩出行用品");
+assertNotIncludes(manualActionReasonText ?? "", "语义组：");
 assertEqual(manualActionReasonText?.includes("Top 花费来源"), false);
 const adAsinManualActionReasonText = manualActionEvidenceReasonText(adAsinBusinessEvidenceSnapshot);
 assertIncludes(adAsinManualActionReasonText ?? "", "广告商品覆盖：覆盖 raw 投放行 2/2 / 证据行 2 条");
