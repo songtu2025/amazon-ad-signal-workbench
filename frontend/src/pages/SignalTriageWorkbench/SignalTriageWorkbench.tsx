@@ -658,6 +658,10 @@ export function SignalTriageWorkbench() {
     () => buildProductScopePriorityQueueItems(productScopeOptions, normalizedSignals, reviewTodos, 10),
     [normalizedSignals, productScopeOptions, reviewTodos],
   );
+  const productScopePriorityDecisionSummary = useMemo(
+    () => buildProductScopePriorityDecisionSummary(productScopePriorityQueueItems),
+    [productScopePriorityQueueItems],
+  );
   const activeProductScopePriorityItem = useMemo(
     () => productScopePriorityQueueItems.find((item) => item.scopeId === activeProductScopeId) ?? null,
     [activeProductScopeId, productScopePriorityQueueItems],
@@ -1874,6 +1878,12 @@ export function SignalTriageWorkbench() {
             </div>
           </div>
           <p className="queueScopeHint">{productScopeQueueHeader.description}</p>
+          {productScopePriorityDecisionSummary && (
+            <ProductScopePriorityDecisionSummaryPanel
+              summary={productScopePriorityDecisionSummary}
+              onOpenTop={handleSelectProductScopePriority}
+            />
+          )}
           {productScopePriorityQueueItems.length > 0 && (
             <section className="productScopePriorityQueue" aria-label="今日 Parent ASIN 优先处理清单">
               <div className="productScopePriorityQueueHeader">
@@ -3698,6 +3708,65 @@ function ProductScopeDrilldownEvidencePanel({
         </section>
       )}
     </>
+  );
+}
+
+interface ProductScopePriorityDecisionSummary {
+  topScopeId: string;
+  topLabel: string;
+  topPriorityLabel: string;
+  headline: string;
+  rankReason: string;
+  scaleText: string;
+  nextManualStep: string;
+  boundary: string;
+}
+
+function buildProductScopePriorityDecisionSummary(items: ProductScopePriorityQueueItem[]): ProductScopePriorityDecisionSummary | null {
+  const topItem = items[0];
+  if (!topItem) return null;
+
+  const urgentCount = items.filter((item) => item.tone === "urgent").length;
+  const reviewCount = items.filter((item) => item.tone === "review").length;
+  const dueReviewTodoCount = items.reduce((total, item) => total + item.dueReviewTodoCount, 0);
+  const signalCount = items.reduce((total, item) => total + item.signalCount, 0);
+  const topVerb = topItem.dueReviewTodoCount > 0 ? "先复盘" : "先处理";
+
+  return {
+    topScopeId: topItem.scopeId,
+    topLabel: topItem.label,
+    topPriorityLabel: topItem.priorityLabel,
+    headline: `${topVerb} ${topItem.label}：${topItem.mainQuestion}`,
+    rankReason: topItem.rankReason,
+    scaleText: `待处理规模：${items.length} 个 Parent ASIN / 高优先 ${urgentCount} 个 / 待复盘 ${reviewCount} 个 / 到期复盘 ${dueReviewTodoCount} 条 / AI 信号 ${signalCount} 条`,
+    nextManualStep: topItem.nextManualStep,
+    boundary:
+      "本摘要只做首页分诊排序，不替代销售表现、广告 ASIN、广告组、投放词、搜索词和广告位证据；点击后进入单个 Parent ASIN 诊断链路。",
+  };
+}
+
+function ProductScopePriorityDecisionSummaryPanel({
+  summary,
+  onOpenTop,
+}: {
+  summary: ProductScopePriorityDecisionSummary;
+  onOpenTop: (scopeId: string) => void;
+}) {
+  return (
+    <section className="productScopePriorityDecisionSummary" aria-label="Parent ASIN 首页分诊摘要">
+      <div className="productScopePriorityDecisionHeader">
+        <strong>今日先看什么</strong>
+        <span>{summary.topPriorityLabel}</span>
+      </div>
+      <b>{summary.headline}</b>
+      <p>{summary.scaleText}</p>
+      <p>排序依据：{summary.rankReason}</p>
+      <p>人工下一步：{summary.nextManualStep}</p>
+      <small>{summary.boundary}</small>
+      <button type="button" onClick={() => onOpenTop(summary.topScopeId)} aria-label={`打开今日优先 Parent ASIN ${summary.topLabel}`}>
+        打开今日优先 Parent ASIN
+      </button>
+    </section>
   );
 }
 

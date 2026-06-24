@@ -235,6 +235,8 @@ assertIncludes(workbenchSource, 'aria-label="当前 Parent ASIN 进入理由"');
 assertIncludes(workbenchSource, 'aria-label="允许的人工动作"');
 assertIncludes(stylesSource, ".productScopePriorityEntryBridge");
 assertIncludes(stylesSource, "order: 1;");
+assertIncludes(stylesSource, ".productScopePriorityDecisionSummary");
+assertIncludes(stylesSource, ".productScopePriorityDecisionHeader");
 assertIncludes(stylesSource, ".productScopeDiagnosisBrief");
 assertIncludes(stylesSource, ".productScopeDiagnosisBriefSection");
 assertIncludes(stylesSource, ".productScopeTargetingEvidence");
@@ -456,6 +458,14 @@ assertIncludes(workbenchSource, "当前诊断入口下没有命中这条复盘�
 assertIncludes(workbenchSource, "当前诊断入口下没有命中推荐候选信号");
 assertIncludes(workbenchSource, "当前诊断入口下没有命中下一个候选信号");
 assertIncludes(workbenchSource, "productScopePriorityQueueItems");
+assertIncludes(workbenchSource, "const productScopePriorityDecisionSummary = useMemo");
+assertIncludes(workbenchSource, "buildProductScopePriorityDecisionSummary(productScopePriorityQueueItems)");
+assertIncludes(workbenchSource, "ProductScopePriorityDecisionSummaryPanel");
+assertIncludes(workbenchSource, 'aria-label="Parent ASIN 首页分诊摘要"');
+assertIncludes(workbenchSource, "今日先看什么");
+assertIncludes(workbenchSource, "待处理规模：${items.length} 个 Parent ASIN");
+assertIncludes(workbenchSource, "本摘要只做首页分诊排序，不替代销售表现、广告 ASIN、广告组、投放词、搜索词和广告位证据");
+assertIncludes(workbenchSource, "打开今日优先 Parent ASIN");
 assertIncludes(workbenchSource, "handleSelectProductScopePriority");
 assertIncludes(workbenchSource, 'aria-label="今日 Parent ASIN 优先处理清单"');
 assertIncludes(workbenchSource, "今日 Parent ASIN 优先处理清单");
@@ -463,7 +473,15 @@ assertIncludes(workbenchSource, "先排序，再下钻");
 assertIncludes(workbenchSource, "避免 10 个 Parent ASIN 像看 10 张报纸");
 assertIncludes(workbenchSource, "排序依据：{item.rankReason}");
 assertIncludes(workbenchSource, "handleSelectProductScopePriority(item.scopeId)");
+const productScopePriorityDecisionSummaryRenderIndex = workbenchSource.indexOf(
+  "<ProductScopePriorityDecisionSummaryPanel",
+);
 const productScopePriorityQueueIndex = workbenchSource.indexOf('className="productScopePriorityQueue"');
+assert(productScopePriorityDecisionSummaryRenderIndex > 0, "左侧必须有 Parent ASIN 首页分诊摘要");
+assert(
+  productScopePriorityDecisionSummaryRenderIndex < productScopePriorityQueueIndex,
+  "Parent ASIN 首页分诊摘要必须先于优先处理清单，先给结论再给列表",
+);
 assert(productScopePriorityQueueIndex > 0, "左侧必须有 Parent ASIN 今日优先处理清单");
 assert(productScopePriorityQueueIndex < signalRowsIndex, "Parent ASIN 优先处理清单必须在信号行之前，先帮用户排序再展开信号");
 assertIncludes(signalUiSource, "buildProductScopePriorityQueueItems");
