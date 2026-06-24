@@ -84,6 +84,9 @@ const selectedSignalScopeContextRenderIndex = workbenchSource.indexOf(
 const searchIntentFocusContextRenderIndex = workbenchSource.indexOf(
   "<SearchIntentFocusContextStrip context={selectedSearchIntentFocusContext} />",
 );
+const searchIntentTermReasonRenderIndex = workbenchSource.indexOf(
+  "<SearchIntentSelectedTermReasonPanel summary={selectedSearchIntentTermReasonSummary} />",
+);
 const signalDiagnosisRenderIndex = workbenchSource.indexOf("<SignalDiagnosis");
 assert(diagnosisPanelIndex >= 0, "诊断区必须存在");
 assert(routeGuideRenderIndex > diagnosisPanelIndex, "广告证据链导览必须渲染在诊断区内");
@@ -94,16 +97,21 @@ assertIncludes(workbenchSource, "buildSelectedSignalScopeContext");
 assertIncludes(workbenchSource, "selectedSignalScopeContext");
 assertIncludes(workbenchSource, "buildSearchIntentFocusContext");
 assertIncludes(workbenchSource, "selectedSearchIntentFocusContext");
+assertIncludes(workbenchSource, "buildSearchIntentSelectedTermReasonSummary");
+assertIncludes(workbenchSource, "selectedSearchIntentTermReasonSummary");
 assertIncludes(workbenchSource, "activeSearchIntentReviewCard");
 assertIncludes(workbenchSource, "function evidenceFactDisplayLabel");
 assertIncludes(workbenchSource, 'label === "Parent ASIN 搜索词表现聚合"');
 assertIncludes(workbenchSource, 'return "搜索词表现分组";');
 assertIncludes(workbenchSource, "function SelectedSignalScopeContextStrip");
 assertIncludes(workbenchSource, "function SearchIntentFocusContextStrip");
+assertIncludes(workbenchSource, "function SearchIntentSelectedTermReasonPanel");
 assertIncludes(workbenchSource, 'aria-label="选中信号与当前诊断入口关系"');
 assertIncludes(workbenchSource, 'aria-label="广告搜索词表现复核与当前信号关系"');
+assertIncludes(workbenchSource, 'aria-label="具体 SearchTerm 复核理由"');
 assertIncludes(signalUiSource, "buildSelectedSignalScopeContext");
 assertIncludes(signalUiSource, "buildSearchIntentFocusContext");
+assertIncludes(signalUiSource, "buildSearchIntentSelectedTermReasonSummary");
 assertIncludes(signalUiSource, "当前诊断入口仍是");
 assertIncludes(signalUiSource, "选中信号只决定中间证据和右侧人工确认对象");
 assertIncludes(signalUiSource, "不能自动归因");
@@ -115,9 +123,16 @@ assertIncludes(signalUiSource, "搜索词表现分组");
 assertIncludes(signalUiSource, "当前诊断对象");
 assertIncludes(signalUiSource, "运营判断");
 assertIncludes(signalUiSource, "优先 SearchTerm");
+assertIncludes(signalUiSource, "Parent ASIN 聚合视角");
+assertIncludes(signalUiSource, "优先打开理由");
+assertIncludes(signalUiSource, "当前中间诊断");
+assertIncludes(signalUiSource, "这块只解释为什么从当前 Parent ASIN 的广告搜索词表现聚合进入具体 SearchTerm");
+assertIncludes(signalUiSource, "不能自动加词、否词、调价或暂停广告");
 assertIncludes(workbenchSource, "context.pathItems.map");
 assertIncludes(workbenchSource, "Parent ASIN 广告搜索词表现复核");
 assertIncludes(workbenchSource, "搜索词表现分组");
+assertIncludes(workbenchSource, "summary.rows.map");
+assertIncludes(workbenchSource, "searchIntentTermReason");
 assertNotIncludes(workbenchSource, "<b>聚合标签</b>");
 assertIncludes(signalUiSource, "以后端预检确认的 SearchTerm 稳定对象为准");
 assertNotIncludes(signalUiSource, "右侧人工动作也必须落到这条 SearchTerm 的稳定对象");
@@ -125,6 +140,8 @@ assert(selectedSignalScopeContextRenderIndex > selectedSignalBranchIndex, "选�
 assert(selectedSignalScopeContextRenderIndex < signalDiagnosisRenderIndex, "选中信号入口关系必须先于信号详情展示");
 assert(searchIntentFocusContextRenderIndex > selectedSignalScopeContextRenderIndex, "广告搜索词聚合承接必须跟在入口关系之后");
 assert(searchIntentFocusContextRenderIndex < signalDiagnosisRenderIndex, "广告搜索词聚合承接必须先于信号详情展示");
+assert(searchIntentTermReasonRenderIndex > searchIntentFocusContextRenderIndex, "具体 SearchTerm 复核理由必须跟在聚合承接之后");
+assert(searchIntentTermReasonRenderIndex < signalDiagnosisRenderIndex, "具体 SearchTerm 复核理由必须先于信号详情展示");
 
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 经营诊断路径"');
 assertIncludes(workbenchSource, 'aria-label="诊断入口路径说明"');

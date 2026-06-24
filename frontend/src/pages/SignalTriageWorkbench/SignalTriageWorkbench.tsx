@@ -158,6 +158,7 @@ import {
   buildSearchIntentReviewCards,
   buildSearchIntentEntryLockSummary,
   buildSearchIntentFocusContext,
+  buildSearchIntentSelectedTermReasonSummary,
   buildSelectedSignalScopeContext,
   buildSignalDiagnosticScope,
   buildSignalLayerOverview,
@@ -215,6 +216,7 @@ import {
   SelectedSignalScopeContext,
   SearchIntentPanelContext,
   SearchIntentFocusContext,
+  SearchIntentSelectedTermReasonSummary,
   triggerEvidenceCountText,
   filterEvidenceBySource,
   filterSignalsBySearchIntent,
@@ -700,6 +702,10 @@ export function SignalTriageWorkbench() {
   const selectedSearchIntentFocusContext = useMemo(
     () => buildSearchIntentFocusContext(activeSearchIntentLabel, selectedSignal, selectedProductScopeOption, activeSearchIntentReviewCard),
     [activeSearchIntentLabel, activeSearchIntentReviewCard, selectedProductScopeOption, selectedSignal],
+  );
+  const selectedSearchIntentTermReasonSummary = useMemo(
+    () => buildSearchIntentSelectedTermReasonSummary(activeSearchIntentLabel, selectedSignal, activeSearchIntentReviewCard),
+    [activeSearchIntentLabel, activeSearchIntentReviewCard, selectedSignal],
   );
   const selectedTriageBusinessEvidenceItems =
     selectedSignal?.id && selectedSignal.id === signalTriageSummary?.recommended_candidate?.signal_id
@@ -2250,6 +2256,9 @@ export function SignalTriageWorkbench() {
             <>
               {selectedSignalScopeContext && <SelectedSignalScopeContextStrip context={selectedSignalScopeContext} />}
               {selectedSearchIntentFocusContext && <SearchIntentFocusContextStrip context={selectedSearchIntentFocusContext} />}
+              {selectedSearchIntentTermReasonSummary && (
+                <SearchIntentSelectedTermReasonPanel summary={selectedSearchIntentTermReasonSummary} />
+              )}
               <SignalDiagnosis
                 signal={selectedSignal}
                 triageBusinessEvidenceItems={selectedTriageBusinessEvidenceItems}
@@ -3397,6 +3406,29 @@ function SearchIntentFocusContextStrip({ context }: { context: SearchIntentFocus
       </div>
       <p>{context.relation}</p>
       <small>{context.boundary}</small>
+    </div>
+  );
+}
+
+function SearchIntentSelectedTermReasonPanel({ summary }: { summary: SearchIntentSelectedTermReasonSummary }) {
+  return (
+    <div className={`searchIntentTermReason ${summary.tone}`} aria-label="具体 SearchTerm 复核理由">
+      <div className="searchIntentTermReasonHeader">
+        <strong>{summary.title}</strong>
+        <span>Parent ASIN 广告搜索词表现复核</span>
+      </div>
+      <dl>
+        {summary.rows.map((row) => (
+          <div key={row.label}>
+            <dt>{row.label}</dt>
+            <dd>
+              <b>{row.value}</b>
+              <small>{row.detail}</small>
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <small>{summary.boundary}</small>
     </div>
   );
 }

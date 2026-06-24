@@ -122,6 +122,15 @@ export interface SearchIntentEntryLockSummary {
   boundary: string;
 }
 
+export type SearchIntentSelectedTermReasonTone = "ready" | "warning" | "waiting";
+
+export interface SearchIntentSelectedTermReasonSummary {
+  title: string;
+  tone: SearchIntentSelectedTermReasonTone;
+  rows: { label: string; value: string; detail: string }[];
+  boundary: string;
+}
+
 export interface SignalQueueObjectStatusTodo {
   object_id?: string | null;
   review_window?: string | null;
@@ -7478,6 +7487,91 @@ export function buildSearchIntentFocusContext(
     relation: `这个广告搜索词表现聚合用于从 ${scopeLabel} 视角按标准化搜索词/语义标签聚合广告中实际产生表现的用户搜索词行；左侧只用它缩小同类 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。${decisionText}`,
     boundary: `Parent ASIN 广告搜索词表现复核「${focusLabel}」只是从 Parent ASIN 视角聚合广告搜索词表现的分析视角，不是经营商品、广告组或人工动作对象；扩量 / 止损 / 观察判断只服务人工复核优先级；ABA 只作站点级背景，实际写入以后端 preflight evidence_snapshot_preview 为准。`,
     tone: "container",
+  };
+}
+
+function searchIntentSelectedSignalSearchTerm(signal: ProductScopedSignalForUi | null | undefined): string {
+  if (!signal) return "";
+  const primaryObject = signal.evidence?.primary_object;
+  const candidates: unknown[] = [
+    primaryObject?.search_term,
+    primaryObject?.label,
+    primaryObject?.object_id,
+    (signal as { object_id?: unknown }).object_id,
+  ];
+  const evidence = signal.evidence as SearchIntentFilterSignalForUi["evidence"] | undefined;
+  evidence?.facts?.forEach((fact) => {
+    if (isSearchTermFactLabel(fact.label)) candidates.push(fact.value);
+  });
+  signal.evidence?.source_rows?.forEach((row) => {
+    candidates.push(row.search_term, row.normalized_query, row.query);
+  });
+  return candidates.map((candidate) => stringValue(candidate)).find(Boolean) ?? "";
+}
+
+export function buildSearchIntentSelectedTermReasonSummary(
+  selectedIntentLabel: string | null | undefined,
+  signal: ProductScopedSignalForUi | null | undefined,
+  searchIntentReviewCard:
+    | Pick<
+        SearchIntentReviewCard,
+        "intentLabel" | "operationDecisionLabel" | "operationDecisionReason" | "primarySearchTerm" | "primarySearchTermReason" | "nextManualStep"
+      >
+    | null
+    | undefined = null,
+): SearchIntentSelectedTermReasonSummary | null {
+  const focusLabel = selectedIntentLabel?.trim();
+  if (!focusLabel || !signal) return null;
+  if (filterSignalsBySearchIntent([signal], focusLabel).length === 0) return null;
+
+  const decisionCard = searchIntentReviewCard?.intentLabel === focusLabel ? searchIntentReviewCard : null;
+  const selectedSearchTerm = searchIntentSelectedSignalSearchTerm(signal);
+  const primarySearchTerm = decisionCard?.primarySearchTerm?.trim() ?? "";
+  const normalizedPrimarySearchTerm = normalizeSearchIntentSearchTerm(primarySearchTerm);
+  const matchedPrimarySearchTerm = normalizedPrimarySearchTerm
+    ? searchIntentSignalMatchesSearchTerm(signal, normalizedPrimarySearchTerm)
+    : Boolean(selectedSearchTerm);
+  const tone: SearchIntentSelectedTermReasonTone = !selectedSearchTerm ? "waiting" : matchedPrimarySearchTerm ? "ready" : "warning";
+  const currentObjectDetail = !selectedSearchTerm
+    ? "当前聚合分组还没有命中具体 SearchTerm 信号；只能先检查广告搜索词快照和信号准入条件。"
+    : matchedPrimarySearchTerm
+      ? "当前中间诊断已经落到该聚合分组下优先复核的 SearchTerm；继续看广告组、投放词、广告 ASIN 和广告位证据。"
+      : "当前选中 SearchTerm 与聚合卡片的优先项不一致；这通常表示用户手动切换了信号，需要按当前信号证据复核。";
+
+  return {
+    title: "具体 SearchTerm 复核理由",
+    tone,
+    rows: [
+      {
+        label: "Parent ASIN 聚合视角",
+        value: focusLabel,
+        detail: "从当前 Parent ASIN 关联广告中的用户搜索词表现行聚合，不是经营商品、广告组或人工动作对象。",
+      },
+      {
+        label: "当前判断",
+        value: decisionCard?.operationDecisionLabel ?? "等待聚合判断",
+        detail:
+          decisionCard?.operationDecisionReason ??
+          "先用花费、点击、订单、ACOS、广告组和投放词证据判断这组广告搜索词是扩量、止损还是观察。",
+      },
+      {
+        label: "优先打开理由",
+        value: primarySearchTerm ? `SearchTerm：${primarySearchTerm}` : "等待命中具体 SearchTerm",
+        detail: decisionCard?.primarySearchTermReason ?? "需要有广告搜索词表现行和具体 SearchTerm 信号后，才能给出优先复核对象。",
+      },
+      {
+        label: "当前中间诊断",
+        value: selectedSearchTerm ? `SearchTerm：${selectedSearchTerm}` : "未选中具体 SearchTerm",
+        detail: currentObjectDetail,
+      },
+      {
+        label: "人工下一步",
+        value: decisionCard?.nextManualStep ?? "打开具体 SearchTerm 后人工复核广告组、投放词、广告 ASIN 和广告位证据。",
+        detail: "页面只支持记录观察、标记已处理、加入复盘或忽略本次；不能自动加词、否词、调价或暂停广告。",
+      },
+    ],
+    boundary:
+      "这块只解释为什么从当前 Parent ASIN 的广告搜索词表现聚合进入具体 SearchTerm；不能证明单个 ASIN 归因，也不会自动执行任何广告动作。",
   };
 }
 

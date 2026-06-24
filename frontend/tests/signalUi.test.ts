@@ -39,6 +39,7 @@ import {
   buildSignalDiagnosticScope,
   buildSelectedSignalScopeContext,
   buildSearchIntentFocusContext,
+  buildSearchIntentSelectedTermReasonSummary,
   buildSearchIntentPanelContext,
   buildSignalLayerOverview,
   buildSignalQueueMeta,
@@ -5083,21 +5084,23 @@ assertIncludes(selectedSearchTermScopeContext.boundary, "当前诊断入口仍�
 assertIncludes(selectedSearchTermScopeContext.boundary, "选中信号只决定中间证据和右侧人工确认对象");
 assertEqual(selectedSearchTermScopeContext.tone, "unattributed");
 
-const selectedSearchIntentFocusContext = buildSearchIntentFocusContext(
-  "规则语义：海滩出行用品",
-  {
-    ...searchTermSignalWithoutAsin,
-    signal_category: "search_term_opportunity",
-    object_type: "search_term",
-    evidence: {
-      primary_object: {
-        object_type: "search_term",
-        label: "beach essentials",
-        search_term: "beach essentials",
-        intent_label: "规则语义：海滩出行用品",
-      },
+const selectedSearchIntentSignal: ProductScopedSignalForUi = {
+  ...searchTermSignalWithoutAsin,
+  signal_category: "search_term_opportunity",
+  object_type: "search_term",
+  evidence: {
+    primary_object: {
+      object_type: "search_term",
+      label: "beach essentials",
+      search_term: "beach essentials",
+      intent_label: "规则语义：海滩出行用品",
     },
   },
+};
+
+const selectedSearchIntentFocusContext = buildSearchIntentFocusContext(
+  "规则语义：海滩出行用品",
+  selectedSearchIntentSignal,
   selectedParentScopeForSignalContext,
   selectedSearchIntentDecisionCard,
 );
@@ -5130,6 +5133,55 @@ assertIncludes(selectedSearchIntentFocusContext.boundary, "不是经营商品、
 assertIncludes(selectedSearchIntentFocusContext.boundary, "扩量 / 止损 / 观察判断只服务人工复核优先级");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "实际写入以后端 preflight evidence_snapshot_preview 为准");
 assertEqual(buildSearchIntentFocusContext("规则语义：太阳镜", searchTermSignalWithoutAsin), null);
+
+const selectedSearchIntentTermReasonSummary = buildSearchIntentSelectedTermReasonSummary(
+  "规则语义：海滩出行用品",
+  selectedSearchIntentSignal,
+  selectedSearchIntentDecisionCard,
+);
+
+if (!selectedSearchIntentTermReasonSummary) {
+  throw new Error("当前广告搜索词表现复核命中具体 SearchTerm 时应生成复核理由");
+}
+
+assertEqual(selectedSearchIntentTermReasonSummary.title, "具体 SearchTerm 复核理由");
+assertEqual(selectedSearchIntentTermReasonSummary.tone, "ready");
+assertEqual(selectedSearchIntentTermReasonSummary.rows[0]?.label, "Parent ASIN 聚合视角");
+assertIncludes(selectedSearchIntentTermReasonSummary.rows[0]?.detail ?? "", "当前 Parent ASIN 关联广告中的用户搜索词表现行");
+assertEqual(selectedSearchIntentTermReasonSummary.rows[1]?.label, "当前判断");
+assertIncludes(selectedSearchIntentTermReasonSummary.rows[1]?.value ?? "", "扩量复核");
+assertIncludes(selectedSearchIntentTermReasonSummary.rows[1]?.detail ?? "", "可扩量机会");
+assertEqual(selectedSearchIntentTermReasonSummary.rows[2]?.label, "优先打开理由");
+assertIncludes(selectedSearchIntentTermReasonSummary.rows[2]?.value ?? "", "SearchTerm：beach essentials");
+assertIncludes(selectedSearchIntentTermReasonSummary.rows[2]?.detail ?? "", "订单最多");
+assertEqual(selectedSearchIntentTermReasonSummary.rows[3]?.label, "当前中间诊断");
+assertIncludes(selectedSearchIntentTermReasonSummary.rows[3]?.value ?? "", "SearchTerm：beach essentials");
+assertIncludes(selectedSearchIntentTermReasonSummary.rows[3]?.detail ?? "", "广告组、投放词、广告 ASIN 和广告位证据");
+assertEqual(selectedSearchIntentTermReasonSummary.rows[4]?.label, "人工下一步");
+assertIncludes(selectedSearchIntentTermReasonSummary.rows[4]?.value ?? "", "打开具体 SearchTerm 后人工复核");
+assertIncludes(selectedSearchIntentTermReasonSummary.rows[4]?.detail ?? "", "不能自动加词、否词、调价或暂停广告");
+assertIncludes(selectedSearchIntentTermReasonSummary.boundary, "从当前 Parent ASIN 的广告搜索词表现聚合进入具体 SearchTerm");
+assertIncludes(selectedSearchIntentTermReasonSummary.boundary, "不能证明单个 ASIN 归因");
+assertIncludes(selectedSearchIntentTermReasonSummary.boundary, "不会自动执行任何广告动作");
+
+const mismatchedSearchIntentTermReasonSummary = buildSearchIntentSelectedTermReasonSummary(
+  "规则语义：海滩出行用品",
+  {
+    ...selectedSearchIntentSignal,
+    evidence: {
+      primary_object: {
+        object_type: "search_term",
+        label: "beach wagon",
+        search_term: "beach wagon",
+        intent_label: "规则语义：海滩出行用品",
+      },
+    },
+  },
+  selectedSearchIntentDecisionCard,
+);
+assertEqual(mismatchedSearchIntentTermReasonSummary?.tone, "warning");
+assertIncludes(mismatchedSearchIntentTermReasonSummary?.rows[3]?.detail ?? "", "与聚合卡片的优先项不一致");
+assertEqual(buildSearchIntentSelectedTermReasonSummary("规则语义：太阳镜", selectedSearchIntentSignal), null);
 
 const selectedAdGroupScopeContext = buildSelectedSignalScopeContext(selectedParentScopeForSignalContext, adGroupSignal);
 assertIncludes(selectedAdGroupScopeContext?.relation ?? "", "投放容器");

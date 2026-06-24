@@ -2835,6 +2835,90 @@ button.reviewTodoQueueNext:focus-visible {
   line-height: 1.35;
 }
 
+.searchIntentTermReason {
+  border: 1px solid #d8e5f3;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  color: #41536a;
+  font-size: 12px;
+}
+
+.searchIntentTermReason.ready {
+  border-color: #badbd0;
+  background: #f7fffb;
+}
+
+.searchIntentTermReason.warning {
+  border-color: #f4cf9a;
+  background: #fffaf0;
+}
+
+.searchIntentTermReason.waiting {
+  border-color: #cfe2fb;
+  background: #f8fbff;
+}
+
+.searchIntentTermReasonHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.searchIntentTermReasonHeader strong {
+  color: #213047;
+  font-size: 13px;
+}
+
+.searchIntentTermReasonHeader span {
+  color: #52647a;
+  font-size: 11px;
+  font-weight: 720;
+  text-align: right;
+}
+
+.searchIntentTermReason dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.searchIntentTermReason dl div {
+  border: 1px solid #e4edf6;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  padding: 7px;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.searchIntentTermReason dt {
+  color: #52647a;
+  font-size: 11px;
+  font-weight: 720;
+}
+
+.searchIntentTermReason dd {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.searchIntentTermReason b {
+  color: #1d416d;
+  overflow-wrap: anywhere;
+}
+
+.searchIntentTermReason small {
+  color: #52647a;
+  line-height: 1.4;
+}
+
 .searchIntentReviewList {
   display: grid;
   gap: 7px;
