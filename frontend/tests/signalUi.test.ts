@@ -5180,6 +5180,13 @@ assertIncludes(productScopeDiagnosisBrief.summary, "不是四块报表纵向堆�
 assertIncludes(productScopeDiagnosisBrief.summary, "最后由 AI 汇总");
 assertIncludes(productScopeDiagnosisBrief.summary, "只输出可人工确认的下一步");
 assertEqual(productScopeDiagnosisBrief.statusLabel, "人工留痕 MVP");
+assertEqual(productScopeDiagnosisBrief.decisionGuide.title, "Parent ASIN 决策导览");
+assertIncludes(productScopeDiagnosisBrief.decisionGuide.primaryDecision, "先展开");
+assertIncludes(productScopeDiagnosisBrief.decisionGuide.readPath, "不逐个读完整报表");
+assertIncludes(productScopeDiagnosisBrief.decisionGuide.expandFocus, "投放商品 -> 投放词 -> 搜索词 -> 广告位");
+assertIncludes(productScopeDiagnosisBrief.decisionGuide.notToDo, "不要把销售子 ASIN 全量");
+assertIncludes(productScopeDiagnosisBrief.decisionGuide.notToDo, "自动加词");
+assertIncludes(productScopeDiagnosisBrief.decisionGuide.nextManualStep, "人工");
 assertEqual(productScopeDiagnosisBrief.sections.length, 4);
 assertEqual(productScopeDiagnosisBrief.sections[0].title, "Parent ASIN 销售表现入口");
 assertIncludes(productScopeDiagnosisBrief.sections[0].purpose, "是否值得进入广告诊断");

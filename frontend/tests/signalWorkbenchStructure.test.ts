@@ -674,6 +674,15 @@ assertIncludes(workbenchSource, 'aria-label="广告 ASIN 范围同步提示"');
 assertIncludes(workbenchSource, "productScopeSelectionSummary.scopeSyncNotice");
 assertIncludes(workbenchSource, 'aria-label="广告 ASIN 候选缺口解释"');
 assertIncludes(workbenchSource, "productScopeCandidateGapExplanation");
+assertIncludes(workbenchSource, 'aria-label="Parent ASIN 决策导览"');
+assertIncludes(workbenchSource, "brief.decisionGuide.primaryDecision");
+assertIncludes(workbenchSource, "brief.decisionGuide.readPath");
+assertIncludes(workbenchSource, "brief.decisionGuide.expandFocus");
+assertIncludes(workbenchSource, "brief.decisionGuide.notToDo");
+assertIncludes(signalUiSource, "ProductScopeDecisionGuide");
+assertIncludes(signalUiSource, "不逐个读完整报表");
+assertIncludes(signalUiSource, "投放商品 -> 投放词 -> 搜索词 -> 广告位");
+assertIncludes(stylesSource, ".productScopeDecisionGuide");
 assertIncludes(workbenchSource, "productScopeBusinessPreviewPath");
 assertIncludes(workbenchSource, "productScopeBusinessPreviewPathSummary");
 assertIncludes(workbenchSource, "productScopeFirstScreenSummary.pathSummary");
@@ -728,6 +737,12 @@ const adGroupEvidenceSummaryIndex = workbenchSource.indexOf('aria-label="广告�
 const adGroupPriorityGateIndex = workbenchSource.indexOf('aria-label="广告组优先判断"');
 const adGroupPriorityTriageIndex = workbenchSource.indexOf('aria-label="优先广告组三段判断"');
 const adGroupRowsIndex = workbenchSource.indexOf('className="productScopeAdGroupDiagnosisRows"');
+const productScopeDecisionGuideIndex = workbenchSource.indexOf('aria-label="Parent ASIN 决策导览"');
+const diagnosisBriefPathIndex = workbenchSource.indexOf('aria-label="运营诊断路径顺序"');
+assert(
+  productScopeDecisionGuideIndex > 0 && productScopeDecisionGuideIndex < diagnosisBriefPathIndex,
+  "Parent ASIN 决策导览必须先于四段路径，先告诉用户是否展开、展开哪里和不能做什么。",
+);
 assert(
   adGroupDiagnosisDecisionIndex < adGroupEvidenceSummaryIndex &&
     adGroupDiagnosisDecisionIndex < adGroupDiagnosisMetricsIndex &&

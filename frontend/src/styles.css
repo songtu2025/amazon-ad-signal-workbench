@@ -2087,6 +2087,82 @@ h3 {
   line-height: 1.5;
 }
 
+.productScopeDecisionGuide {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #cfe0ef;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.productScopeDecisionGuide.ready {
+  border-color: #b9dbc8;
+  background: #f7fbf8;
+}
+
+.productScopeDecisionGuide.waiting {
+  border-color: #d9d4b7;
+  background: #fffdf5;
+}
+
+.productScopeDecisionGuide.blocked {
+  border-color: #efc8bd;
+  background: #fff8f6;
+}
+
+.productScopeDecisionGuide > div {
+  display: grid;
+  gap: 4px;
+}
+
+.productScopeDecisionGuide span,
+.productScopeDecisionGuide b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.productScopeDecisionGuide > div > span {
+  color: #617187;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.productScopeDecisionGuide > div > strong {
+  color: #14273e;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.productScopeDecisionGuide ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.productScopeDecisionGuide li {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid rgba(139, 161, 181, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.productScopeDecisionGuide li b {
+  color: #2c4c69;
+  font-size: 12px;
+}
+
+.productScopeDecisionGuide li span {
+  color: #5f7084;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .productScopeDiagnosisBriefPath {
   display: flex;
   flex-wrap: wrap;
@@ -8644,6 +8720,10 @@ button.reviewTodoQueueNext:focus-visible {
 
   .productScopeLandingGates {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .productScopeDecisionGuide ul {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .productScopeAdCoverageDecision ul {

@@ -3944,6 +3944,30 @@ function ProductScopeDiagnosisBriefPanel({ brief }: { brief: ProductScopeDiagnos
         <h3>{brief.title}</h3>
         <span>{brief.statusLabel}</span>
       </div>
+      <div className={`productScopeDecisionGuide ${brief.decisionGuide.tone}`} aria-label="Parent ASIN 决策导览">
+        <div>
+          <span>{brief.decisionGuide.title}</span>
+          <strong>{brief.decisionGuide.primaryDecision}</strong>
+        </div>
+        <ul>
+          <li>
+            <b>读法</b>
+            <span>{brief.decisionGuide.readPath}</span>
+          </li>
+          <li>
+            <b>展开焦点</b>
+            <span>{brief.decisionGuide.expandFocus}</span>
+          </li>
+          <li>
+            <b>不要做</b>
+            <span>{brief.decisionGuide.notToDo}</span>
+          </li>
+          <li>
+            <b>人工下一步</b>
+            <span>{brief.decisionGuide.nextManualStep}</span>
+          </li>
+        </ul>
+      </div>
       <p className="productScopeDiagnosisBriefSummary">{brief.summary}</p>
       <div className="productScopeDiagnosisBriefPath" aria-label="运营诊断路径顺序">
         {brief.sections.map((section) => (

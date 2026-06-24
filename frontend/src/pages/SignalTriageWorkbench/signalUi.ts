@@ -3970,11 +3970,22 @@ export interface ProductScopeDiagnosisBriefSection {
   tone: "scope" | "ready" | "context" | "manual" | "blocked";
 }
 
+export interface ProductScopeDecisionGuide {
+  title: string;
+  primaryDecision: string;
+  readPath: string;
+  expandFocus: string;
+  notToDo: string;
+  nextManualStep: string;
+  tone: "ready" | "waiting" | "blocked";
+}
+
 export interface ProductScopeDiagnosisBrief {
   title: string;
   summary: string;
   statusLabel: string;
   statusTone: ProductScopeMvpStatus["tone"];
+  decisionGuide: ProductScopeDecisionGuide;
   sections: ProductScopeDiagnosisBriefSection[];
   manualActions: string[];
   boundary: string;
@@ -5074,6 +5085,31 @@ export function buildProductScopeDiagnosisBrief(
   const salesEntryNextManualStep = hasAdvertisedAsin
     ? `${adFact?.value ?? "只把有 advertised_products 证据的广告 ASIN 带入后续诊断。"} 下一步进入广告组排序和具体广告证据，不把未投放子 ASIN 拉入广告分析。`
     : `${firstScreenSummary.adCoverageDecision.nextManualStep} 暂不看广告组排序，先补广告对象证据。`;
+  const decisionGuide: ProductScopeDecisionGuide = hasAdvertisedAsin
+    ? {
+        title: "Parent ASIN 决策导览",
+        primaryDecision: primaryAdGroup
+          ? `先展开 ${primaryAdGroup.title}：${primaryAdGroup.problemType}；${primaryAdGroup.statusLabel}。`
+          : "可以进入广告诊断，但暂无可排序广告组；先确认广告组、投放商品、投放词、搜索词和广告位证据是否齐全。",
+        readPath: "先判断 Parent ASIN 是否有广告证据，再看广告 ASIN 覆盖，接着只展开问题广告组，不逐个读完整报表。",
+        expandFocus: primaryAdGroup
+          ? `${primaryAdGroup.problemLocator.problemLocation}；下钻顺序为投放商品 -> 投放词 -> 搜索词 -> 广告位。`
+          : "暂时不展开广告组明细；补齐广告组诊断行后再进入四层广告证据。",
+        notToDo:
+          "不要把销售子 ASIN 全量、搜索词或广告位直接归因到单个广告 ASIN，也不要把 AI 判断包装成自动加词、否词、调价或暂停广告。",
+        nextManualStep: primaryAdGroup ? primaryAdGroup.problemLocator.nextManualStep : salesEntryNextManualStep,
+        tone: primaryAdGroup ? "ready" : "waiting",
+      }
+    : {
+        title: "Parent ASIN 决策导览",
+        primaryDecision: "暂不展开广告组：当前缺少可进入广告诊断的广告 ASIN。",
+        readPath: "先补 advertised_products、广告组、投放词、搜索词或广告位证据，再进入广告诊断路径。",
+        expandFocus: "没有广告对象证据时，只能把 Parent ASIN 当经营背景，不能生成广告问题归因。",
+        notToDo:
+          "不要用未投放销售子 ASIN、ABA 或销售表现直接生成广告动作，也不要自动创建人工复盘记录。",
+        nextManualStep: salesEntryNextManualStep,
+        tone: "blocked",
+      };
 
   return {
     title: "Parent ASIN 运营诊断路径",
@@ -5081,6 +5117,7 @@ export function buildProductScopeDiagnosisBrief(
       "这不是四块报表纵向堆叠，而是一条运营决策路径：先用 Parent ASIN 销售表现确认入口，再判断先看哪个广告组，接着下钻投放商品、投放词、搜索词和广告位，最后由 AI 汇总判断，只输出可人工确认的下一步。",
     statusLabel: firstScreenSummary.mvpStatus.statusLabel,
     statusTone: firstScreenSummary.mvpStatus.tone,
+    decisionGuide,
     sections: [
       {
         id: "sales_summary",
