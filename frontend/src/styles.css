@@ -4333,6 +4333,72 @@ button.reviewTodoQueueNext:focus-visible {
   overflow-wrap: anywhere;
 }
 
+.diagnosisEvidenceDetails,
+.compactEvidenceDetails details {
+  border: 1px solid #dce8f3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.diagnosisEvidenceDetails {
+  padding: 0;
+}
+
+.diagnosisEvidenceDetails summary,
+.compactEvidenceDetails summary {
+  cursor: pointer;
+  color: #1f4f7a;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.diagnosisEvidenceDetails summary {
+  padding: 8px 10px;
+}
+
+.diagnosisEvidenceDetails[open] {
+  padding-bottom: 8px;
+}
+
+.diagnosisEvidenceDetails[open] summary {
+  border-bottom: 1px solid #e5eef7;
+  margin-bottom: 8px;
+}
+
+.diagnosisEvidenceDetails ul {
+  padding: 0 10px;
+}
+
+.compactEvidenceDetails {
+  grid-template-columns: 1fr;
+}
+
+.compactEvidenceDetails details {
+  display: grid;
+  gap: 6px;
+  padding: 9px 10px;
+}
+
+.compactEvidenceDetails summary {
+  display: grid;
+  gap: 4px;
+}
+
+.compactEvidenceDetails summary::marker {
+  color: #6b8db0;
+}
+
+.compactEvidenceDetails details[open] summary {
+  border-bottom: 1px solid #e5eef7;
+  padding-bottom: 7px;
+  margin-bottom: 2px;
+}
+
+.compactEvidenceDetails small {
+  display: block;
+}
+
 .diagnosisEvidenceSummary.strong {
   box-shadow: inset 3px 0 0 #16a34a;
 }

@@ -3191,9 +3191,9 @@ function DiagnosisContractPanel({
     <section className="diagnosisContractPanel diagnosisStep stepEvidence" aria-label="业务判断与指标目的">
       <div className="detailSectionHeader">
         <h3>业务判断与指标目的</h3>
-        <span>{items.length} 个判断块</span>
+        <span>先看人工下一步 / {items.length} 个证据块可展开</span>
       </div>
-      <p className="diagnosisContractIntro">先回答这条信号要判断什么，再说明指标能证明什么、不能证明什么，以及人工下一步。</p>
+      <p className="diagnosisContractIntro">默认只给运营决策摘要；完整指标目的、证明边界和补证要求保留在展开项里。</p>
       {summary && (
         <div className={`diagnosisEvidenceSummary ${summary.tone}`} aria-label="证据强度和判断边界摘要">
           <div>
@@ -3207,42 +3207,49 @@ function DiagnosisContractPanel({
               <span>{summary.objectReadback}</span>
             </li>
             <li>
-              <b>强度依据</b>
-              <span>{summary.strengthReason}</span>
-            </li>
-            <li>
-              <b>能证明</b>
-              <span>{summary.proves}</span>
-            </li>
-            <li>
-              <b>不能证明</b>
-              <span>{summary.doesNotProve}</span>
+              <b>人工下一步</b>
+              <span>{summary.nextManualStep}</span>
             </li>
             <li>
               <b>证据缺口</b>
               <span>{summary.evidenceGap}</span>
             </li>
-            <li>
-              <b>人工下一步</b>
-              <span>{summary.nextManualStep}</span>
-            </li>
           </ul>
+          <details className="diagnosisEvidenceDetails">
+            <summary>查看能证明 / 不能证明 / 强度依据</summary>
+            <ul>
+              <li>
+                <b>强度依据</b>
+                <span>{summary.strengthReason}</span>
+              </li>
+              <li>
+                <b>能证明</b>
+                <span>{summary.proves}</span>
+              </li>
+              <li>
+                <b>不能证明</b>
+                <span>{summary.doesNotProve}</span>
+              </li>
+            </ul>
+          </details>
         </div>
       )}
-      <div className="triageBusinessEvidenceStrip" aria-label="指标为什么服务业务判断">
+      <div className="triageBusinessEvidenceStrip compactEvidenceDetails" aria-label="指标为什么服务业务判断">
         {items.map((item) => (
-          <span key={item.sectionId}>
-            <b>{item.title}</b>
-            <strong>{item.businessQuestion}</strong>
+          <details key={item.sectionId}>
+            <summary>
+              <b>{item.title}</b>
+              <strong>当前判断：{item.currentJudgement}</strong>
+            </summary>
+            <small>业务问题：{item.businessQuestion}</small>
             <small>对象粒度：{item.objectGrain}</small>
             {item.metricText && <small>指标目的：{item.metricText}</small>}
-            <small>当前判断：{item.currentJudgement}</small>
             <small>能证明：{item.proves}</small>
             <small>不能证明：{item.doesNotProve}</small>
             <small>证据缺口：{item.evidenceGap}</small>
             <small>需要补证：{item.requiredEvidence}</small>
             <small>人工下一步：{item.nextManualStep}</small>
-          </span>
+          </details>
         ))}
       </div>
     </section>

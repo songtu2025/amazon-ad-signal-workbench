@@ -2697,7 +2697,7 @@ const searchTermPreflightPriorityEvidenceRows = manualActionPreflightPriorityEvi
     ],
   },
 });
-assertEqual(searchTermPreflightPriorityEvidenceRows.length, 10);
+assertEqual(searchTermPreflightPriorityEvidenceRows.length, 8);
 const searchTermPreflightPriorityRow = (label: string) => searchTermPreflightPriorityEvidenceRows.find((row) => row.label === label);
 assertIncludes(searchTermPreflightPriorityRow("AI 准入")?.value ?? "", "不会自动执行广告动作");
 assertIncludes(searchTermPreflightPriorityRow("投放词证据")?.value ?? "", "beach essentials");
@@ -2707,8 +2707,8 @@ assertIncludes(searchTermPreflightPriorityRow("动作边界")?.value ?? "", "人
 assertIncludes(searchTermPreflightPriorityRow("搜索词边界")?.detail ?? "", "不能自动归因");
 assertIncludes(searchTermPreflightPriorityRow("广告位边界")?.source ?? "", "ad_placement_daily_metrics");
 assertEqual(Boolean(searchTermPreflightPriorityRow("证据缺口")), true);
-assertEqual(Boolean(searchTermPreflightPriorityRow("广告位证据缺口")), true);
-assertEqual(Boolean(searchTermPreflightPriorityRow("诊断证据缺口")), true);
+assertEqual(Boolean(searchTermPreflightPriorityRow("广告位证据缺口")), false);
+assertEqual(Boolean(searchTermPreflightPriorityRow("诊断证据缺口")), false);
 const searchIntentManualEvidenceSnapshot = buildSearchIntentManualActionEvidenceSnapshot({
   intentLabel: "规则语义：海滩出行用品",
   searchTerm: "beach essentials",

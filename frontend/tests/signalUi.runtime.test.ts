@@ -649,36 +649,26 @@ async function main() {
   const priorityEvidenceText = JSON.stringify(priorityEvidenceRows);
   assert(preflightEvidenceRows.some((item) => item.label === "搜索词边界" && item.source), "完整证据快照预览应展示搜索词边界及来源。");
   assert(preflightEvidenceRows.some((item) => item.label === "广告位边界" && item.source), "完整证据快照预览应展示广告位边界及来源。");
+  assert(preflightEvidenceRows.some((item) => item.label === "逐投放上下文" && item.source), "完整证据快照预览应展示逐投放上下文及来源。");
+  assert(preflightEvidenceRows.some((item) => item.label === "广告位活动级背景" && item.source), "完整证据快照预览应展示广告位活动级背景及来源。");
   assertIncludes(priorityEvidenceText, "AI 准入");
-  assertIncludes(priorityEvidenceText, "搜索词表现分组");
+  assertIncludes(priorityEvidenceText, "搜索词");
   assertIncludes(priorityEvidenceText, "搜索词表现判断");
+  assertIncludes(priorityEvidenceText, "人工下一步");
   assertIncludes(priorityEvidenceText, "同组投放商品表现");
-  assertIncludes(priorityEvidenceText, "逐投放上下文");
-  assertIncludes(priorityEvidenceText, "投放词证据");
-  assertIncludes(priorityEvidenceText, "ABA 背景");
-  assertIncludes(priorityEvidenceText, "搜索词边界");
-  assertIncludes(priorityEvidenceText, "广告位边界");
-  assertIncludes(priorityEvidenceText, "广告位活动级背景");
   assertIncludes(priorityEvidenceText, "证据缺口");
   assertIncludes(priorityEvidenceText, "需要补证");
   assertIncludes(priorityEvidenceText, "动作边界");
+  assertNotIncludes(priorityEvidenceText, "逐投放上下文");
+  assertNotIncludes(priorityEvidenceText, "广告位活动级背景");
   assertOrderedLabels(
     priorityEvidenceRows.map((item) => item.label),
     [
       "AI 准入",
       "搜索词",
-      "搜索词表现分组",
       "搜索词表现判断",
-      "Parent ASIN入口",
-      "广告 ASIN承接",
-      "广告组合流判断",
+      "人工下一步",
       "同组投放商品表现",
-      "逐投放上下文",
-      "投放词证据",
-      "搜索词边界",
-      "广告位边界",
-      "广告位活动级背景",
-      "ABA 背景",
       "证据缺口",
       "需要补证",
       "动作边界",
