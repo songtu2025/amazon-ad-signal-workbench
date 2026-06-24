@@ -729,6 +729,8 @@ def save_review_record(
             raise ValueError("review_record_missing_ad_group_synthesis")
         if not _review_record_has_ad_group_product_performance(expected_evidence_snapshot):
             raise ValueError("review_record_missing_ad_group_product_performance")
+        if not _review_record_has_ad_context_rows(expected_evidence_snapshot):
+            raise ValueError("review_record_missing_ad_context_rows")
         if not _review_record_has_targeting_evidence(expected_evidence_snapshot):
             raise ValueError("review_record_missing_targeting_evidence")
         if not _review_record_has_aba_context(expected_evidence_snapshot):
@@ -845,6 +847,10 @@ def _review_record_has_ad_group_synthesis(evidence_snapshot: list[ManualActionEv
 
 def _review_record_has_ad_group_product_performance(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
     return _review_record_has_snapshot_label(evidence_snapshot, "同组投放商品表现")
+
+
+def _review_record_has_ad_context_rows(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:
+    return _review_record_has_snapshot_label(evidence_snapshot, "逐投放上下文")
 
 
 def _review_record_has_targeting_evidence(evidence_snapshot: list[ManualActionEvidenceSnapshot] | None) -> bool:

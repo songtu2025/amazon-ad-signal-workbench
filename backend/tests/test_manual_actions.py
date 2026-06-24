@@ -86,6 +86,12 @@ def diagnosis_evidence_snapshot() -> list[dict[str, str]]:
             "source": "advertised_products + ad_product_daily_metrics",
         },
         {
+            "label": "逐投放上下文",
+            "value": "优先复核广告组 RBK004-kids sunglasses-精准 / 投放词 kids sunglasses / 订单 0 / 花费 10",
+            "detail": "每行只证明该搜索词在对应广告活动、广告组和投放词下的广告表现。",
+            "source": "ad_search_term_daily_metrics",
+        },
+        {
             "label": "投放词证据",
             "value": "sunglasses for kids / 1 个",
             "detail": "用于确认用户搜索词是否已有投放词承接。",
@@ -1856,6 +1862,74 @@ def test_review_record_rejects_search_term_snapshot_without_action_boundary_at_s
         assert str(error) == "review_record_missing_action_boundary"
     else:
         raise AssertionError("搜索词复盘缺少动作边界时不能保存 ReviewRecord")
+
+    assert not (tmp_path / "review_records.jsonl").exists()
+
+
+def test_review_record_rejects_search_term_snapshot_without_ad_context_rows_at_service_layer(tmp_path: Path) -> None:
+    evidence_snapshot = diagnosis_without_label_snapshot("逐投放上下文")
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+        "evidence_snapshot": evidence_snapshot,
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+    effect = manual_actions.build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    try:
+        manual_actions.save_review_record(
+            effect,
+            review_note="缺少逐投放上下文不能保存",
+            reviewer_name="本地运营",
+            expected_action_id="manual-action-fixed",
+            expected_object_type="search_term",
+            expected_object_id="kids sunglasses",
+            expected_review_window="7d",
+            expected_evidence_snapshot=evidence_snapshot,
+            expected_can_auto_change_rules=False,
+            expected_can_auto_execute_ads=False,
+            review_root=tmp_path,
+        )
+    except ValueError as error:
+        assert str(error) == "review_record_missing_ad_context_rows"
+    else:
+        raise AssertionError("搜索词复盘缺少逐投放上下文时不能保存 ReviewRecord")
 
     assert not (tmp_path / "review_records.jsonl").exists()
 

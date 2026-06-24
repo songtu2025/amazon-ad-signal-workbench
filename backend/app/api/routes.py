@@ -251,6 +251,7 @@ def create_signal_review_record(
             "review_record_missing_ad_product_coverage",
             "review_record_missing_placement_performance",
             "review_record_missing_ad_group_synthesis",
+            "review_record_missing_ad_context_rows",
             "review_record_missing_targeting_evidence",
             "review_record_missing_aba_context",
             "review_record_missing_evidence_gap",
@@ -301,6 +302,8 @@ def _validate_review_record_evidence_snapshot_preflight(
             raise HTTPException(status_code=409, detail="review_record_missing_ad_group_synthesis")
         if not _review_record_evidence_snapshot_has_ad_group_product_performance(request.expected_evidence_snapshot):
             raise HTTPException(status_code=409, detail="review_record_missing_ad_group_product_performance")
+        if not _review_record_evidence_snapshot_has_ad_context_rows(request.expected_evidence_snapshot):
+            raise HTTPException(status_code=409, detail="review_record_missing_ad_context_rows")
         if not _review_record_evidence_snapshot_has_targeting_evidence(request.expected_evidence_snapshot):
             raise HTTPException(status_code=409, detail="review_record_missing_targeting_evidence")
         if not _review_record_evidence_snapshot_has_aba_context(request.expected_evidence_snapshot):
@@ -391,6 +394,10 @@ def _review_record_evidence_snapshot_has_ad_group_synthesis(items: object) -> bo
 
 def _review_record_evidence_snapshot_has_ad_group_product_performance(items: object) -> bool:
     return _review_record_evidence_snapshot_has_label(items, "同组投放商品表现")
+
+
+def _review_record_evidence_snapshot_has_ad_context_rows(items: object) -> bool:
+    return _review_record_evidence_snapshot_has_label(items, "逐投放上下文")
 
 
 def _review_record_evidence_snapshot_has_targeting_evidence(items: object) -> bool:
@@ -517,6 +524,7 @@ def _review_todo_missing_required_evidence(todo: ReviewTodo) -> bool:
         and _review_record_evidence_snapshot_has_ad_asin_coverage(todo.evidence_snapshot)
         and _review_record_evidence_snapshot_has_ad_group_synthesis(todo.evidence_snapshot)
         and _review_record_evidence_snapshot_has_ad_group_product_performance(todo.evidence_snapshot)
+        and _review_record_evidence_snapshot_has_ad_context_rows(todo.evidence_snapshot)
         and _review_record_evidence_snapshot_has_targeting_evidence(todo.evidence_snapshot)
         and _review_record_evidence_snapshot_has_aba_context(todo.evidence_snapshot)
         and _review_record_evidence_snapshot_has_evidence_gap(todo.evidence_snapshot)
