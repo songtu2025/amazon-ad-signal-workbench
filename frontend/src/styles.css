@@ -1854,6 +1854,165 @@ h3 {
   font-size: 12px;
 }
 
+.productScopeDiagnosisBrief {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding: 14px 0 16px 46px;
+  border-top: 1px solid #dce9f5;
+  order: 2;
+}
+
+.productScopeDiagnosisBrief::before {
+  content: "诊";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #c6d9ea;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #f6faff;
+  color: #28496a;
+  font-size: 13px;
+  font-weight: 820;
+}
+
+.productScopeDiagnosisBriefSummary,
+.productScopeDiagnosisBriefBoundary {
+  margin: 0;
+  color: #607186;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.productScopeDiagnosisBriefSections {
+  display: grid;
+  gap: 9px;
+}
+
+.productScopeDiagnosisBriefSection {
+  display: grid;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid #d8e6f1;
+  border-radius: 8px;
+  background: #fbfdff;
+  color: #425d78;
+  overflow-wrap: anywhere;
+}
+
+.productScopeDiagnosisBriefSection.scope,
+.productScopeDiagnosisBriefSection.context {
+  background: #f7fbff;
+  border-color: #c9ddef;
+}
+
+.productScopeDiagnosisBriefSection.ready,
+.productScopeDiagnosisBriefSection.manual {
+  background: #f7fbf8;
+  border-color: #bddcc9;
+}
+
+.productScopeDiagnosisBriefSection.blocked {
+  background: #fff8f6;
+  border-color: #efc8bd;
+}
+
+.productScopeDiagnosisBriefSectionHeader {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+}
+
+.productScopeDiagnosisBriefSectionHeader > span {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #c8d9ea;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #365575;
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.productScopeDiagnosisBriefSectionHeader div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.productScopeDiagnosisBriefSectionHeader strong,
+.productScopeDiagnosisBriefSectionHeader p {
+  margin: 0;
+}
+
+.productScopeDiagnosisBriefSectionHeader strong {
+  color: #14273e;
+  font-size: 13px;
+}
+
+.productScopeDiagnosisBriefSectionHeader p {
+  color: #60758c;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.productScopeDiagnosisBriefSection ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.productScopeDiagnosisBriefSection li {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 8px;
+  padding: 7px 8px;
+  border: 1px solid #dce6ef;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.productScopeDiagnosisBriefSection b,
+.productScopeDiagnosisBriefSection span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.productScopeDiagnosisBriefSection b {
+  color: #526b84;
+}
+
+.productScopeDiagnosisBriefSection span {
+  color: #263f58;
+}
+
+.productScopeDiagnosisBriefActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.productScopeDiagnosisBriefActions span {
+  padding: 5px 8px;
+  border: 1px solid #c8d9ea;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #2f5170;
+  font-size: 12px;
+  font-weight: 740;
+}
+
 .productScopeEvidenceRouteGuide {
   position: relative;
   display: grid;

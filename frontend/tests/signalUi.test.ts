@@ -18,6 +18,7 @@ import {
   buildKeyEvidenceFacts,
   buildProductScopeGroupOverview,
   buildProductScopeFirstScreenSummary,
+  buildProductScopeDiagnosisBrief,
   buildProductScopeEntryGuidance,
   buildProductScopeOptionGroups,
   buildProductScopePriorityQueueItems,
@@ -5027,6 +5028,35 @@ assertIncludes(productScopeFirstScreenSummary.landingGates[2].detail, "人工复
 assertEqual(productScopeFirstScreenSummary.landingGates[3].label, "复盘门槛");
 assertIncludes(productScopeFirstScreenSummary.landingGates[3].value, "最早 2026-06-22");
 assertIncludes(productScopeFirstScreenSummary.landingGates[3].detail, "review_records");
+
+const productScopeDiagnosisBrief = buildProductScopeDiagnosisBrief(
+  productScopeFirstScreenSummary,
+  productScopeEvidenceRouteGuide,
+  adGroupDiagnosisRows,
+);
+if (!productScopeDiagnosisBrief) {
+  throw new Error("Parent ASIN 诊断详情摘要不能为空");
+}
+assertEqual(productScopeDiagnosisBrief.title, "Parent ASIN 诊断详情摘要");
+assertIncludes(productScopeDiagnosisBrief.summary, "决策漏斗");
+assertIncludes(productScopeDiagnosisBrief.summary, "避免逐块读成长报表");
+assertEqual(productScopeDiagnosisBrief.statusLabel, "人工留痕 MVP");
+assertEqual(productScopeDiagnosisBrief.sections.length, 4);
+assertEqual(productScopeDiagnosisBrief.sections[0].title, "销售表现摘要");
+assertIncludes(productScopeDiagnosisBrief.sections[0].purpose, "限定销售子 ASIN 只是经营背景");
+assertIncludes(productScopeDiagnosisBrief.sections[0].doesNotProve, "所有子 ASIN 都有广告数据");
+assertEqual(productScopeDiagnosisBrief.sections[1].title, "广告组问题排序");
+assertIncludes(productScopeDiagnosisBrief.sections[1].purpose, "避免运营逐个广告组读报表");
+assertIncludes(productScopeDiagnosisBrief.sections[1].currentJudgement, "花费");
+assertEqual(productScopeDiagnosisBrief.sections[2].title, "广告组下具体数据");
+assertIncludes(productScopeDiagnosisBrief.sections[2].purpose, "投放商品、投放词、搜索词和广告位");
+assertIncludes(productScopeDiagnosisBrief.sections[2].currentJudgement, "7 层证据");
+assertEqual(productScopeDiagnosisBrief.sections[3].title, "AI 诊断摘要");
+assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "不是让 AI 自动改广告");
+assertIncludes(productScopeDiagnosisBrief.sections[3].doesNotProve, "不代表系统可以自动加词");
+assertIncludes(productScopeDiagnosisBrief.manualActions.join(" / "), "记录观察");
+assertIncludes(productScopeDiagnosisBrief.manualActions.join(" / "), "加入复盘");
+assertIncludes(productScopeDiagnosisBrief.boundary, "搜索词和广告位不能直接归因");
 
 const noCandidateMvpSummary = buildProductScopeFirstScreenSummary(productScopeGroupOverview, {
   signal_status: { candidate_count: 0 },

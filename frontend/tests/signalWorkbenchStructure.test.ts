@@ -31,6 +31,7 @@ const reviewUiSource = readFileSync(join(process.cwd(), "src", "pages", "SignalT
 const stylesSource = readFileSync(join(process.cwd(), "src", "styles.css"), "utf8");
 
 assertIncludes(workbenchSource, "buildProductScopeEvidenceMatrix");
+assertIncludes(workbenchSource, "buildProductScopeDiagnosisBrief");
 assertIncludes(workbenchSource, "productScopeAdGroupDiagnosisRows");
 assertIncludes(workbenchSource, "buildNoActionableManualGate");
 assertIncludes(workbenchSource, "buildProductScopeCandidateGapExplanation");
@@ -40,10 +41,13 @@ assertIncludes(workbenchSource, "NoActionableManualGate");
 assertIncludes(workbenchSource, "const productScopeEvidenceMatrix = useMemo");
 assertIncludes(workbenchSource, "const productScopeEvidenceRouteGuide = useMemo");
 assertIncludes(workbenchSource, "const productScopeAdGroupDiagnosis = useMemo");
+assertIncludes(workbenchSource, "const productScopeDiagnosisBrief = useMemo");
 assertIncludes(workbenchSource, "const noActionableManualGate = useMemo");
 assertIncludes(workbenchSource, "const productScopeCandidateGapExplanation = useMemo");
 assertIncludes(workbenchSource, "matrix={productScopeEvidenceMatrix}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupDiagnosisPanel rows={productScopeAdGroupDiagnosis}");
+assertIncludes(workbenchSource, "ProductScopeDiagnosisBriefPanel brief={productScopeDiagnosisBrief}");
+assertIncludes(workbenchSource, "function ProductScopeDiagnosisBriefPanel");
 assertIncludes(workbenchSource, "function ProductScopeEvidenceMatrixPanel");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupDiagnosisPanel");
 assertIncludes(workbenchSource, 'aria-label="广告组内投放商品表现"');
@@ -61,6 +65,13 @@ assertIncludes(workbenchSource, "guide.decision.currentJudgement");
 assertIncludes(workbenchSource, "guide.decision.doesNotProve");
 assertIncludes(workbenchSource, "guide.decision.nextManualStep");
 assertIncludes(signalUiSource, "buildProductScopeEvidenceRouteDecision");
+assertIncludes(signalUiSource, "buildProductScopeDiagnosisBrief");
+assertIncludes(signalUiSource, "Parent ASIN 诊断详情摘要");
+assertIncludes(signalUiSource, "销售表现摘要");
+assertIncludes(signalUiSource, "广告组问题排序");
+assertIncludes(signalUiSource, "广告组下具体数据");
+assertIncludes(signalUiSource, "AI 诊断摘要");
+assertIncludes(signalUiSource, "避免逐块读成长报表");
 assertIncludes(signalUiSource, "哪些广告对象真的有广告数据");
 assertIncludes(signalUiSource, "先看经营入口，再看广告 ASIN、广告组、投放词/搜索词/广告位");
 assertIncludes(signalUiSource, "AI 信号诊断、人工确认和 7/14 天复盘");
@@ -72,6 +83,9 @@ assertIncludes(signalUiSource, 'layerId: "review"');
 assertIncludes(signalUiSource, "复盘门槛：先有人工留痕和 7d / 14d ReviewTodo");
 
 const diagnosisPanelIndex = workbenchSource.indexOf('<section className="diagnosisPanel">');
+const diagnosisBriefRenderIndex = workbenchSource.indexOf(
+  "{productScopeDiagnosisBrief && <ProductScopeDiagnosisBriefPanel brief={productScopeDiagnosisBrief} />}",
+);
 const routeGuideRenderIndex = workbenchSource.indexOf(
   "{productScopeEvidenceRouteGuide && <ProductScopeEvidenceRouteGuidePanel guide={productScopeEvidenceRouteGuide} />}",
 );
@@ -108,6 +122,9 @@ const reviewMetricTableIndex = workbenchSource.indexOf('aria-label="复盘指标
 const reviewRecordPreflightChecklistIndex = workbenchSource.indexOf('aria-label="复盘保存前检查清单"');
 const saveReviewRecordButtonIndex = workbenchSource.indexOf('<button className="secondaryButton" onClick={handleSaveReviewRecord}');
 assert(diagnosisPanelIndex >= 0, "诊断区必须存在");
+assert(diagnosisBriefRenderIndex > diagnosisPanelIndex, "Parent ASIN 诊断详情摘要必须渲染在诊断区内");
+assert(diagnosisBriefRenderIndex < routeGuideRenderIndex, "Parent ASIN 诊断详情摘要必须先于广告证据链导览");
+assert(diagnosisBriefRenderIndex < selectedSignalBranchIndex, "Parent ASIN 诊断详情摘要不能被单条信号选中状态挡住");
 assert(routeGuideRenderIndex > diagnosisPanelIndex, "广告证据链导览必须渲染在诊断区内");
 assert(routeGuideRenderIndex < selectedSignalBranchIndex, "广告证据链导览不能被单条信号选中状态挡住");
 assert(adGroupDiagnosisRenderIndex > diagnosisPanelIndex, "广告组问题定位必须渲染在诊断区内");
@@ -128,6 +145,10 @@ assertIncludes(workbenchSource, "function SearchIntentSelectedTermReasonPanel");
 assertIncludes(workbenchSource, 'aria-label="选中信号与当前诊断入口关系"');
 assertIncludes(workbenchSource, 'aria-label="广告搜索词表现复核与当前信号关系"');
 assertIncludes(workbenchSource, 'aria-label="具体 SearchTerm 复核理由"');
+assertIncludes(workbenchSource, 'aria-label="Parent ASIN 诊断详情摘要"');
+assertIncludes(workbenchSource, 'aria-label="允许的人工动作"');
+assertIncludes(stylesSource, ".productScopeDiagnosisBrief");
+assertIncludes(stylesSource, ".productScopeDiagnosisBriefSection");
 assertIncludes(workbenchSource, 'aria-label="SearchTerm 复核执行路径"');
 assertIncludes(signalUiSource, "buildSelectedSignalScopeContext");
 assertIncludes(signalUiSource, "buildSearchIntentFocusContext");

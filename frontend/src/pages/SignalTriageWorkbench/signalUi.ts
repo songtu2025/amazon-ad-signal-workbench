@@ -3898,6 +3898,28 @@ export interface ProductScopeEvidenceRouteGuide {
   boundary: string;
 }
 
+export interface ProductScopeDiagnosisBriefSection {
+  id: "sales_summary" | "ad_group_priority" | "ad_group_detail" | "ai_summary";
+  label: string;
+  title: string;
+  purpose: string;
+  currentJudgement: string;
+  proves: string;
+  doesNotProve: string;
+  nextManualStep: string;
+  tone: "scope" | "ready" | "context" | "manual" | "blocked";
+}
+
+export interface ProductScopeDiagnosisBrief {
+  title: string;
+  summary: string;
+  statusLabel: string;
+  statusTone: ProductScopeMvpStatus["tone"];
+  sections: ProductScopeDiagnosisBriefSection[];
+  manualActions: string[];
+  boundary: string;
+}
+
 export interface ProductScopeAdGroupActionableReview {
   title: string;
   evidence: string;
@@ -4954,6 +4976,90 @@ export function productScopeAdGroupDiagnosisRows(summary: SignalTriageSummaryFor
       forbiddenActions: row.forbidden_actions?.length ? row.forbidden_actions : ["自动调价", "自动暂停广告", "自动否词", "自动新增关键词"],
       searchTermDiagnosis: productScopeSearchTermDiagnosis(row),
     }));
+}
+
+export function buildProductScopeDiagnosisBrief(
+  firstScreenSummary: ProductScopeFirstScreenSummary | null,
+  routeGuide: ProductScopeEvidenceRouteGuide | null,
+  adGroupRows: ProductScopeAdGroupDiagnosisRow[],
+): ProductScopeDiagnosisBrief | null {
+  if (!firstScreenSummary) return null;
+  const salesFact = firstScreenSummary.factItems[0];
+  const adFact = firstScreenSummary.factItems[1];
+  const primaryAdGroup = adGroupRows[0];
+  const routeDecision = routeGuide?.decision;
+  const routeStepText = routeGuide
+    ? `${routeGuide.steps.length} 层证据：${routeGuide.summary}`
+    : firstScreenSummary.pathSummary;
+  const adGroupJudgement = primaryAdGroup
+    ? `${primaryAdGroup.title}：${primaryAdGroup.statusLabel}；${primaryAdGroup.metrics}`
+    : "暂无可排序广告组；先确认广告商品、搜索词和广告位证据是否可下钻。";
+  const adGroupProves = primaryAdGroup
+    ? primaryAdGroup.evidenceSynthesis.proves
+    : "当前只能证明还没有足够广告组诊断行进入排序。";
+  const adGroupDoesNotProve = primaryAdGroup
+    ? primaryAdGroup.evidenceSynthesis.doesNotProve
+    : "不能证明广告组没有问题，也不能把缺失排序解释成广告结构健康。";
+  const adGroupNextManualStep = primaryAdGroup
+    ? primaryAdGroup.problemLocator.nextManualStep
+    : "先补齐广告组、投放商品、投放词、搜索词和广告位证据，再进入人工复核。";
+
+  return {
+    title: "Parent ASIN 诊断详情摘要",
+    summary:
+      "选中 Parent ASIN 后先读这一段：它把经营销售盘、广告组排序、广告组下具体证据和 AI 人工动作合成一条决策漏斗，避免逐块读成长报表。",
+    statusLabel: firstScreenSummary.mvpStatus.statusLabel,
+    statusTone: firstScreenSummary.mvpStatus.tone,
+    sections: [
+      {
+        id: "sales_summary",
+        label: "1",
+        title: "销售表现摘要",
+        purpose: "判断当前 Parent ASIN 是否值得进入广告复核，并限定销售子 ASIN 只是经营背景。",
+        currentJudgement: salesFact?.value ?? firstScreenSummary.summary,
+        proves: "能证明当前经营盘、销售子 ASIN 范围和销售表现背景。",
+        doesNotProve: "不能证明 Parent ASIN 下所有子 ASIN 都有广告数据，也不能直接生成广告动作对象。",
+        nextManualStep: adFact?.value ?? "只把有 advertised_products 证据的广告 ASIN 带入后续诊断。",
+        tone: "scope",
+      },
+      {
+        id: "ad_group_priority",
+        label: "2",
+        title: "广告组问题排序",
+        purpose: "先找最值得人工处理的广告组，避免运营逐个广告组读报表。",
+        currentJudgement: adGroupJudgement,
+        proves: adGroupProves,
+        doesNotProve: adGroupDoesNotProve,
+        nextManualStep: adGroupNextManualStep,
+        tone: primaryAdGroup ? "ready" : "blocked",
+      },
+      {
+        id: "ad_group_detail",
+        label: "3",
+        title: "广告组下具体数据",
+        purpose: "把广告组拆成投放商品、投放词、搜索词和广告位四类证据，再判断问题落点。",
+        currentJudgement: routeStepText,
+        proves: routeDecision?.proves ?? "能证明当前页面已经给出广告证据下钻路径。",
+        doesNotProve:
+          routeDecision?.doesNotProve ?? "不能证明搜索词、广告位或广告组表现已经归因到单个广告 ASIN。",
+        nextManualStep: routeDecision?.nextManualStep ?? "按证据链逐层核对后，再进入右侧人工确认。",
+        tone: routeGuide ? "context" : "blocked",
+      },
+      {
+        id: "ai_summary",
+        label: "4",
+        title: "AI 诊断摘要",
+        purpose: "把证据翻译成人工可执行的记录、处理、复盘或忽略，而不是让 AI 自动改广告。",
+        currentJudgement: firstScreenSummary.mvpStatus.summary,
+        proves: firstScreenSummary.mvpStatus.detail,
+        doesNotProve: "不代表系统可以自动加词、否词、调价或暂停广告；也不代表没有 ready 复盘时已经证明建议有效。",
+        nextManualStep: firstScreenSummary.pathSteps.find((step) => step.label === "人工确认")?.detail ?? "右侧只允许人工确认动作。",
+        tone: firstScreenSummary.mvpStatus.tone === "blocked" ? "blocked" : "manual",
+      },
+    ],
+    manualActions: ["记录观察", "标记已处理", "加入复盘", "忽略本次"],
+    boundary: firstScreenSummary.boundary,
+  };
 }
 
 function productScopeAdGroupAdvertisedProductPerformance(

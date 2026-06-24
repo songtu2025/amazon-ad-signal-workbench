@@ -141,6 +141,7 @@ import {
   buildKeyEvidenceFacts,
   buildProductScopeGroupOverview,
   buildProductScopeFirstScreenSummary,
+  buildProductScopeDiagnosisBrief,
   buildProductScopeAnalysisPath,
   buildProductScopeEntryGuidance,
   buildProductScopeOptionGroups,
@@ -206,6 +207,7 @@ import {
   signalTriageSummaryText,
   ProductScopeAdmissionCard,
   ProductScopeAdGroupDiagnosisRow,
+  ProductScopeDiagnosisBrief,
   ProductScopeEvidenceMatrix,
   ProductScopeEvidenceRouteGuide,
   NoActionableManualGate,
@@ -618,6 +620,10 @@ export function SignalTriageWorkbench() {
   const productScopeFirstScreenSummary = useMemo(
     () => buildProductScopeFirstScreenSummary(productScopeGroupOverview, signalTriageSummary),
     [productScopeGroupOverview, signalTriageSummary],
+  );
+  const productScopeDiagnosisBrief = useMemo(
+    () => buildProductScopeDiagnosisBrief(productScopeFirstScreenSummary, productScopeEvidenceRouteGuide, productScopeAdGroupDiagnosis),
+    [productScopeAdGroupDiagnosis, productScopeEvidenceRouteGuide, productScopeFirstScreenSummary],
   );
   const productScopeSelectionSummary = useMemo(
     () => buildProductScopeSelectionSummary(selectedProductScopeOption),
@@ -2318,6 +2324,7 @@ export function SignalTriageWorkbench() {
         </aside>
 
         <section className="diagnosisPanel">
+          {productScopeDiagnosisBrief && <ProductScopeDiagnosisBriefPanel brief={productScopeDiagnosisBrief} />}
           {productScopeEvidenceRouteGuide && <ProductScopeEvidenceRouteGuidePanel guide={productScopeEvidenceRouteGuide} />}
           {productScopeAdGroupDiagnosis.length > 0 && <ProductScopeAdGroupDiagnosisPanel rows={productScopeAdGroupDiagnosis} />}
           {productScopeCandidateGapExplanation && (
@@ -3663,6 +3670,55 @@ function ProductScopeDrilldownEvidencePanel({
         </section>
       )}
     </>
+  );
+}
+
+function ProductScopeDiagnosisBriefPanel({ brief }: { brief: ProductScopeDiagnosisBrief }) {
+  return (
+    <section className={`productScopeDiagnosisBrief diagnosisStep stepSummary ${brief.statusTone}`} aria-label="Parent ASIN 诊断详情摘要">
+      <div className="detailSectionHeader">
+        <h3>{brief.title}</h3>
+        <span>{brief.statusLabel}</span>
+      </div>
+      <p className="productScopeDiagnosisBriefSummary">{brief.summary}</p>
+      <div className="productScopeDiagnosisBriefSections">
+        {brief.sections.map((section) => (
+          <article className={`productScopeDiagnosisBriefSection ${section.tone}`} key={section.id}>
+            <div className="productScopeDiagnosisBriefSectionHeader">
+              <span>{section.label}</span>
+              <div>
+                <strong>{section.title}</strong>
+                <p>{section.purpose}</p>
+              </div>
+            </div>
+            <ul>
+              <li>
+                <b>当前判断</b>
+                <span>{section.currentJudgement}</span>
+              </li>
+              <li>
+                <b>能证明</b>
+                <span>{section.proves}</span>
+              </li>
+              <li>
+                <b>不能证明</b>
+                <span>{section.doesNotProve}</span>
+              </li>
+              <li>
+                <b>人工下一步</b>
+                <span>{section.nextManualStep}</span>
+              </li>
+            </ul>
+          </article>
+        ))}
+      </div>
+      <div className="productScopeDiagnosisBriefActions" aria-label="允许的人工动作">
+        {brief.manualActions.map((action) => (
+          <span key={action}>{action}</span>
+        ))}
+      </div>
+      <p className="productScopeDiagnosisBriefBoundary">{brief.boundary}</p>
+    </section>
   );
 }
 
