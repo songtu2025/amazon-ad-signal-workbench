@@ -1570,7 +1570,7 @@ export function SignalTriageWorkbench() {
                   <table>
                     <thead>
                       <tr>
-                        <th>广告 ASIN</th>
+                        <th>广告 ASIN（有投放证据）</th>
                         <th>花费</th>
                         <th>订单</th>
                         <th>销售额</th>
@@ -1656,7 +1656,7 @@ export function SignalTriageWorkbench() {
                 <p key={note}>{note}</p>
               ))}
               {productScopeGroupOverview && (
-                <div className="productGroupOverview" aria-label="商品组概览">
+                <div className="productGroupOverview" aria-label="Parent ASIN 经营背景与广告证据概览">
                   <div className="productGroupOverviewHeader">
                     <strong>{productScopeGroupOverview.title}</strong>
                     <span>{productScopeGroupOverview.summary}</span>
@@ -1691,11 +1691,11 @@ export function SignalTriageWorkbench() {
                     </ul>
                   </div>
                   {productScopeGroupOverview.adAsinRows.length > 0 && (
-                    <div className="productGroupAsinTableWrap" aria-label="广告 ASIN 对比">
+                    <div className="productGroupAsinTableWrap" aria-label="广告 ASIN 投放证据对比">
                       <table className="productGroupAsinTable">
                         <thead>
                           <tr>
-                            <th>广告 ASIN</th>
+                            <th>广告 ASIN（有投放证据）</th>
                             <th>花费</th>
                             <th>订单</th>
                             <th>销售额</th>

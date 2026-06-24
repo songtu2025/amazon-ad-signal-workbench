@@ -7018,7 +7018,7 @@ export function buildProductScopeGroupOverview(
     ...adAsinOptions.flatMap((option) => option.strategy_notes ?? []),
   ]);
   const boundaryNotes = [
-    "Parent ASIN 是商品组入口；子 ASIN 来自销售表现 parent_asin/variationAsin 或人工映射，广告 ASIN 只代表当前投放覆盖，未投放子 ASIN 不进入广告信号队列。",
+    "销售子 ASIN 来自 sales_product_daily_metrics、parent_asin/variationAsin 或人工映射；广告 ASIN 来自 advertised_products。两者不能互相替代，未投放子 ASIN 只作为经营背景，不进入广告信号队列。",
     "广告组是投放容器，一个广告组至少包含一个广告商品，也可能包含多个广告商品，不能用广告组数量或广告覆盖数量推断完整子商品数量。",
   ];
   if (selectedScope.metric_boundary) {
@@ -7040,13 +7040,13 @@ export function buildProductScopeGroupOverview(
   const parentAdSales = scopeAdSales(selectedScope);
   const relationItems: ProductScopeRelationItem[] = [
     {
-      label: "Parent ASIN 经营盘子",
-      value: `Parent ASIN ${parentAsin} / ${childAsins.length} 个销售表现子 ASIN / 订单 ${parentOrders} / 销售额 ${formatScopeMoney(parentSales)}`,
+      label: "销售背景（不直接诊断）",
+      value: `Parent ASIN ${parentAsin} / 销售表现识别 ${childAsins.length} 个子 ASIN / 订单 ${parentOrders} / 销售额 ${formatScopeMoney(parentSales)}；用于先看整体经营，不等同广告对象`,
       tone: "primary",
     },
     {
-      label: "广告证据下钻",
-      value: `${adAsinLabels.length} 个当前投放广告 ASIN / 广告花费 ${formatScopeMoney(parentAdSpend)} / 广告订单 ${parentAdOrders} / 广告销售额 ${formatScopeMoney(parentAdSales)}，继续看广告组、投放词和搜索词`,
+      label: "广告诊断对象（有投放证据）",
+      value: `仅 ${adAsinLabels.length} 个 advertised_products 广告 ASIN 可下钻 / 广告花费 ${formatScopeMoney(parentAdSpend)} / 广告订单 ${parentAdOrders} / 广告销售额 ${formatScopeMoney(parentAdSales)}，继续看广告组、投放词和搜索词`,
       tone: "direct",
     },
     {
@@ -7058,15 +7058,15 @@ export function buildProductScopeGroupOverview(
       tone: "strategy",
     },
     {
-      label: "广告上下文",
+      label: "广告流量上下文（不可归因 ASIN）",
       value: `投放词、搜索词 ${searchTermContextCount} 条 / 广告位 ${placementContextCount} 条只做问题定位，不做 ASIN 归因`,
       tone: "context",
     },
   ];
 
   return {
-    title: `Parent ASIN ${parentAsin} 商品组`,
-    summary: `已识别 ${childAsins.length} 个销售表现子 ASIN / ${adAsinLabels.length} 个当前投放广告 ASIN`,
+    title: `Parent ASIN ${parentAsin} 经营背景与广告证据`,
+    summary: `经营背景：${childAsins.length} 个销售表现子 ASIN；广告诊断：仅 ${adAsinLabels.length} 个有投放证据的广告 ASIN 可下钻`,
     adAsinLabels,
     adAsinRows,
     adCoverageDecision,
@@ -7085,7 +7085,7 @@ export function buildProductScopeFirstScreenSummary(
   const advertisedAsinCount = overview.adAsinRows.length;
   const adAsinText =
     advertisedAsinCount > 0
-      ? `${advertisedAsinCount} 个当前投放广告 ASIN，只进入有广告证据的广告 ASIN。`
+      ? `${advertisedAsinCount} 个当前投放广告 ASIN，只进入有 advertised_products 证据的广告 ASIN；这不是销售子 ASIN 全量。`
       : "当前没有可进入广告诊断的广告 ASIN。";
   const actionabilityMessage =
     triageSummary?.actionability_status?.message?.trim() ||
@@ -7183,7 +7183,7 @@ export function buildProductScopeFirstScreenSummary(
     },
   ];
   return {
-    title: "Parent ASIN 销售盘",
+    title: "Parent ASIN 销售入口与广告证据",
     summary: overview.summary,
     mvpStatus,
     factItems: overview.relationItems.slice(0, 2),

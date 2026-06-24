@@ -4759,8 +4759,8 @@ if (!productScopeGroupOverview) {
   throw new Error("Parent ASIN 入口应显示商品组概览");
 }
 
-assertEqual(productScopeGroupOverview.title, "Parent ASIN B0PARENT 商品组");
-assertEqual(productScopeGroupOverview.summary, "已识别 12 个销售表现子 ASIN / 3 个当前投放广告 ASIN");
+assertEqual(productScopeGroupOverview.title, "Parent ASIN B0PARENT 经营背景与广告证据");
+assertEqual(productScopeGroupOverview.summary, "经营背景：12 个销售表现子 ASIN；广告诊断：仅 3 个有投放证据的广告 ASIN 可下钻");
 assertEqual(productScopeGroupOverview.adAsinLabels.length, 3);
 assertIncludes(productScopeGroupOverview.adAsinLabels[0], "B016EXMW02");
 assertIncludes(productScopeGroupOverview.adAsinLabels[0], "$80.00");
@@ -4787,13 +4787,14 @@ assertIncludes(productScopeGroupOverview.adCoverageDecision.doesNotProve, "不�
 assertIncludes(productScopeGroupOverview.adCoverageDecision.nextManualStep, "未覆盖 B016EXMW1G、B016EXMW4S、B016EXMXTC、B06VW5SQ97、B07MH544J8 等 9 个");
 assertIncludes(productScopeGroupOverview.adCoverageDecision.nextManualStep, "补广告投放行、非 SP 来源或商品映射证据");
 assertEqual(productScopeGroupOverview.relationItems.length, 4);
-assertEqual(productScopeGroupOverview.relationItems[0].label, "Parent ASIN 经营盘子");
+assertEqual(productScopeGroupOverview.relationItems[0].label, "销售背景（不直接诊断）");
 assertIncludes(productScopeGroupOverview.relationItems[0].value, "Parent ASIN B0PARENT");
-assertIncludes(productScopeGroupOverview.relationItems[0].value, "12 个销售表现子 ASIN");
+assertIncludes(productScopeGroupOverview.relationItems[0].value, "销售表现识别 12 个子 ASIN");
 assertIncludes(productScopeGroupOverview.relationItems[0].value, "订单 24591");
 assertIncludes(productScopeGroupOverview.relationItems[0].value, "$262341.49");
-assertEqual(productScopeGroupOverview.relationItems[1].label, "广告证据下钻");
-assertIncludes(productScopeGroupOverview.relationItems[1].value, "3 个当前投放广告 ASIN");
+assertIncludes(productScopeGroupOverview.relationItems[0].value, "不等同广告对象");
+assertEqual(productScopeGroupOverview.relationItems[1].label, "广告诊断对象（有投放证据）");
+assertIncludes(productScopeGroupOverview.relationItems[1].value, "仅 3 个 advertised_products 广告 ASIN 可下钻");
 assertIncludes(productScopeGroupOverview.relationItems[1].value, "广告花费 $764.11");
 assertIncludes(productScopeGroupOverview.relationItems[1].value, "广告订单 281");
 assertIncludes(productScopeGroupOverview.relationItems[1].value, "广告销售额 $2715.06");
@@ -4801,16 +4802,18 @@ assertIncludes(productScopeGroupOverview.relationItems[1].value, "广告组");
 assertIncludes(productScopeGroupOverview.relationItems[1].value, "投放词");
 assertEqual(productScopeGroupOverview.relationItems[2].label, "策略事实");
 assertIncludes(productScopeGroupOverview.relationItems[2].value, "主推款");
-assertEqual(productScopeGroupOverview.relationItems[3].label, "广告上下文");
+assertEqual(productScopeGroupOverview.relationItems[3].label, "广告流量上下文（不可归因 ASIN）");
 assertIncludes(productScopeGroupOverview.relationItems[3].value, "投放词");
 assertIncludes(productScopeGroupOverview.relationItems[3].value, "搜索词 20 条");
 assertIncludes(productScopeGroupOverview.relationItems[3].value, "不做 ASIN 归因");
 assertEqual(productScopeGroupOverview.strategyNotes.length, 2);
 assertIncludes(productScopeGroupOverview.strategyNotes.join(" / "), "主推款");
-assertIncludes(productScopeGroupOverview.boundaryNotes.join(" / "), "Parent ASIN 是商品组入口");
+assertIncludes(productScopeGroupOverview.boundaryNotes.join(" / "), "销售子 ASIN 来自 sales_product_daily_metrics");
+assertIncludes(productScopeGroupOverview.boundaryNotes.join(" / "), "广告 ASIN 来自 advertised_products");
 assertIncludes(productScopeGroupOverview.boundaryNotes.join(" / "), "广告组是投放容器，一个广告组至少包含一个广告商品，也可能包含多个广告商品");
-assertIncludes(productScopeGroupOverview.boundaryNotes.join(" / "), "广告 ASIN 只代表当前投放覆盖");
-assertIncludes(productScopeGroupOverview.boundaryNotes.join(" / "), "未投放子 ASIN 不进入广告信号队列");
+assertIncludes(productScopeGroupOverview.boundaryNotes.join(" / "), "两者不能互相替代");
+assertIncludes(productScopeGroupOverview.boundaryNotes.join(" / "), "未投放子 ASIN 只作为经营背景");
+assertIncludes(productScopeGroupOverview.boundaryNotes.join(" / "), "不进入广告信号队列");
 assertIncludes(productScopeGroupOverview.boundaryNotes.join(" / "), "经营订单/销售额来自 sales_product_daily_metrics");
 assertIncludes(productScopeGroupOverview.boundaryNotes.join(" / "), "搜索词 20 条");
 assertIncludes(productScopeGroupOverview.boundaryNotes.join(" / "), "广告位 10 条");
@@ -4836,7 +4839,7 @@ const productScopeFirstScreenSummary = buildProductScopeFirstScreenSummary(produ
 if (!productScopeFirstScreenSummary) {
   throw new Error("Parent ASIN 首屏经营摘要不能为空");
 }
-assertEqual(productScopeFirstScreenSummary.title, "Parent ASIN 销售盘");
+assertEqual(productScopeFirstScreenSummary.title, "Parent ASIN 销售入口与广告证据");
 assertEqual(productScopeFirstScreenSummary.summary, productScopeGroupOverview.summary);
 assertEqual(productScopeFirstScreenSummary.factItems.length, 2);
 assertIncludes(productScopeFirstScreenSummary.factItems[0].value, "Parent ASIN B0PARENT");
@@ -4864,7 +4867,8 @@ assertEqual(productScopeFirstScreenSummary.pathSteps.length, 7);
 assertEqual(productScopeFirstScreenSummary.pathSteps[0].label, "Parent ASIN 经营盘");
 assertIncludes(productScopeFirstScreenSummary.pathSteps[0].detail, "Parent ASIN B0PARENT");
 assertEqual(productScopeFirstScreenSummary.pathSteps[1].label, "广告 ASIN 覆盖");
-assertIncludes(productScopeFirstScreenSummary.pathSteps[1].detail, "只进入有广告证据的广告 ASIN");
+assertIncludes(productScopeFirstScreenSummary.pathSteps[1].detail, "只进入有 advertised_products 证据的广告 ASIN");
+assertIncludes(productScopeFirstScreenSummary.pathSteps[1].detail, "不是销售子 ASIN 全量");
 assertEqual(productScopeFirstScreenSummary.pathSteps[2].label, "广告组结构");
 assertIncludes(productScopeFirstScreenSummary.pathSteps[2].detail, "广告组是投放容器，不是产品");
 assertEqual(productScopeFirstScreenSummary.pathSteps[3].label, "投放词 / 搜索词 / 广告位");
@@ -4883,7 +4887,7 @@ assertIncludes(productScopeFirstScreenSummary.boundary, "未投放子 ASIN 不�
 assertIncludes(productScopeFirstScreenSummary.boundary, "搜索词和广告位不能直接归因");
 assertEqual(productScopeFirstScreenSummary.landingGates.length, 4);
 assertEqual(productScopeFirstScreenSummary.landingGates[0].label, "经营口径");
-assertIncludes(productScopeFirstScreenSummary.landingGates[0].value, "12 个销售表现子 ASIN");
+assertIncludes(productScopeFirstScreenSummary.landingGates[0].value, "销售表现识别 12 个子 ASIN");
 assertIncludes(productScopeFirstScreenSummary.landingGates[0].detail, "经营背景");
 assertEqual(productScopeFirstScreenSummary.landingGates[1].label, "广告证据");
 assertIncludes(productScopeFirstScreenSummary.landingGates[1].value, "3 个广告 ASIN 可下钻");
