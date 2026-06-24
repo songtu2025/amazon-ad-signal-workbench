@@ -4186,6 +4186,14 @@ export function buildSearchTermOpportunityReviewChain(
       nextManualStep: "人工对比高花费、低转化和主推款 ASIN，必要时加入复盘观察处理后指标。",
     },
     {
+      label: "投放词证据",
+      purpose: "确认当前 SearchTerm 是由关键词、商品定向还是自动投放上下文承接，避免把出单搜索词直接当成完整关键词库结论。",
+      evidence: targetingEvidence,
+      proves: "能证明该搜索词在当前广告活动、广告组和投放对象下有可回看的投放承接证据。",
+      doesNotProve: "不能证明关键词库已完整覆盖，也不能证明应该自动加词、自动否词或调整竞价。",
+      nextManualStep: "人工核对投放词、匹配方式和广告组目的，再决定记录观察、加入复盘或忽略本次。",
+    },
+    {
       label: "广告位边界",
       purpose: "确认当前广告位证据停留在搜索词直连、广告组级、广告活动级还是缺失，避免把活动级背景当成归因。",
       evidence: placementBoundary,
