@@ -20,6 +20,7 @@ import {
   buildProductScopeFirstScreenSummary,
   buildProductScopeEntryGuidance,
   buildProductScopeOptionGroups,
+  buildProductScopePriorityQueueItems,
   buildProductScopeSignalExplanation,
   buildProductScopeAdmissionCard,
   buildNoActionableManualGate,
@@ -592,6 +593,76 @@ assertEqual(
 assertEqual(productScopeOptionGroups[0].options.map((option) => option.scope_id).join(","), "parent_asin:B0PARENT");
 assertEqual(productScopeOptionGroups[1].options.map((option) => option.scope_id).join(","), "ad_asin:B000TEST01");
 assertEqual(productScopeOptionGroups[2].options.map((option) => option.scope_id).join(","), "all,unattributed,sales_asin:B000SALES1");
+
+const productScopePriorityQueueItems = buildProductScopePriorityQueueItems(
+  [
+    {
+      scope_id: "parent_asin:B0REVIEW",
+      scope_type: "parent_asin",
+      label: "Parent ASIN B0REVIEW",
+      parent_asin: "B0REVIEW",
+      child_asins: ["B0REVIEWCHILD"],
+      ad_spend: 20,
+      ad_orders: 1,
+      ad_sales: 30,
+    },
+    {
+      scope_id: "parent_asin:B0URGENT",
+      scope_type: "parent_asin",
+      label: "Parent ASIN B0URGENT",
+      parent_asin: "B0URGENT",
+      child_asins: ["B0URGENTCHILD"],
+      ad_spend: 140,
+      ad_orders: 0,
+      ad_sales: 0,
+    },
+    {
+      scope_id: "parent_asin:B0WATCH",
+      scope_type: "parent_asin",
+      label: "Parent ASIN B0WATCH",
+      parent_asin: "B0WATCH",
+      child_asins: ["B0WATCHCHILD"],
+      ad_spend: 9,
+      ad_orders: 1,
+      ad_sales: 18,
+    },
+    {
+      scope_id: "parent_asin:B0QUIET",
+      scope_type: "parent_asin",
+      label: "Parent ASIN B0QUIET",
+      parent_asin: "B0QUIET",
+      child_asins: ["B0QUIETCHILD"],
+    },
+  ],
+  [
+    {
+      ...searchTermSignal,
+      id: "sig-review-parent",
+      severity: 2,
+      evidence: { source_rows: [{ source_table: "advertised_products", asin: "B0REVIEWCHILD" }] },
+    },
+    {
+      ...advertisedProductSignal,
+      id: "sig-urgent-parent",
+      severity: 5,
+      evidence: {
+        primary_object: { label: "B0URGENTCHILD", asin: "B0URGENTCHILD" },
+        source_rows: [{ source_table: "advertised_products", asin: "B0URGENTCHILD" }],
+      },
+    },
+  ] satisfies ProductScopedSignalForUi[],
+  [{ signal_id: "sig-review-parent", is_due: true }],
+);
+assertEqual(productScopePriorityQueueItems.map((item) => item.scopeId).join(","), "parent_asin:B0REVIEW,parent_asin:B0URGENT,parent_asin:B0WATCH,parent_asin:B0QUIET");
+assertEqual(productScopePriorityQueueItems[0].priorityLabel, "先复盘");
+assertEqual(productScopePriorityQueueItems[0].tone, "review");
+assertIncludes(productScopePriorityQueueItems[0].mainQuestion, "已到期复盘");
+assertIncludes(productScopePriorityQueueItems[1].mainQuestion, "高优先级广告信号");
+assertIncludes(productScopePriorityQueueItems[1].nextManualStep, "右侧选择记录观察、标记已处理、加入复盘或忽略本次");
+assertIncludes(productScopePriorityQueueItems[1].boundary, "未投放子 ASIN 不进入广告动作对象");
+assertEqual(productScopePriorityQueueItems[2].priorityLabel, "观察");
+assertEqual(productScopePriorityQueueItems[3].priorityLabel, "暂不展开");
+assertIncludes(productScopePriorityQueueItems[3].evidenceSummary, "当前无投放广告证据");
 
 const parentAsinOptions = [
   {

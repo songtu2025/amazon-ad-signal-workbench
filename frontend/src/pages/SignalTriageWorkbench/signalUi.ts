@@ -1397,6 +1397,28 @@ export interface ProductScopeQueueHeader {
   description: string;
 }
 
+export type ProductScopePriorityQueueTone = "urgent" | "review" | "watch" | "quiet";
+
+export interface ProductScopePriorityQueueReviewTodo {
+  signal_id?: string | null;
+  is_due?: boolean | null;
+}
+
+export interface ProductScopePriorityQueueItem {
+  scopeId: string;
+  label: string;
+  priorityLabel: string;
+  tone: ProductScopePriorityQueueTone;
+  mainQuestion: string;
+  evidenceSummary: string;
+  nextManualStep: string;
+  boundary: string;
+  signalCount: number;
+  reviewTodoCount: number;
+  dueReviewTodoCount: number;
+  score: number;
+}
+
 export interface ProductScopeSignalExplanationInput {
   scopeSignalCount: number;
   allSignalCount: number;
@@ -6594,6 +6616,127 @@ export function buildProductScopeOptionGroups(options: ProductScopeFilterOption[
     groups.push({ label: "辅助排查入口（非广告动作对象）", options: assistOptions });
   }
   return groups;
+}
+
+export function buildProductScopePriorityQueueItems(
+  options: ProductScopeFilterOption[],
+  signals: ProductScopedSignalForUi[],
+  reviewTodos: ProductScopePriorityQueueReviewTodo[] = [],
+  limit = 10,
+): ProductScopePriorityQueueItem[] {
+  const parentOptions = options.filter((option) => option.scope_type === "parent_asin" || option.scope_id.startsWith("parent_asin:"));
+
+  return parentOptions
+    .map((option) => {
+      const scopeSignals = filterSignalsByProductScope(signals, option.scope_id, options);
+      const scopeSignalIds = new Set(scopeSignals.map((signal) => signal.id));
+      const scopeReviewTodos = reviewTodos.filter((todo) => Boolean(todo.signal_id && scopeSignalIds.has(todo.signal_id)));
+      const dueReviewTodoCount = scopeReviewTodos.filter((todo) => Boolean(todo.is_due)).length;
+      const highSignalCount = scopeSignals.filter((signal) => signal.severity >= 4).length;
+      const openSignalCount = scopeSignals.filter((signal) => signal.status !== "adopted" && signal.status !== "ignored" && signal.status !== "false_positive").length;
+      const strongestKind = productScopePriorityDominantKind(scopeSignals);
+      const adSpend = scopeAdSpend(option);
+      const adOrders = scopeAdOrders(option);
+      const adSales = scopeAdSales(option);
+      const hasAdEvidence = hasProductScopeAdEvidence(option);
+      const score =
+        dueReviewTodoCount * 1000 +
+        scopeReviewTodos.length * 520 +
+        highSignalCount * 150 +
+        openSignalCount * 55 +
+        scopeSignals.reduce((total, signal) => total + signal.severity, 0) * 8 +
+        Math.min(adSpend, 500);
+      const priority = productScopePriorityLabel({
+        dueReviewTodoCount,
+        reviewTodoCount: scopeReviewTodos.length,
+        highSignalCount,
+        openSignalCount,
+        hasAdEvidence,
+      });
+
+      return {
+        scopeId: option.scope_id,
+        label: option.label ?? option.parent_asin ?? option.scope_id.replace("parent_asin:", ""),
+        priorityLabel: priority.label,
+        tone: priority.tone,
+        mainQuestion: productScopePriorityQuestion({
+          strongestKind,
+          dueReviewTodoCount,
+          highSignalCount,
+          hasAdEvidence,
+        }),
+        evidenceSummary: hasAdEvidence
+          ? `广告花费 ${formatScopeMoney(adSpend)} / 广告订单 ${adOrders} / 广告销售额 ${formatScopeMoney(adSales)} / AI 信号 ${scopeSignals.length} 条`
+          : `当前无投放广告证据 / AI 信号 ${scopeSignals.length} 条 / 复盘待办 ${scopeReviewTodos.length} 条`,
+        nextManualStep: productScopePriorityNextStep({
+          dueReviewTodoCount,
+          reviewTodoCount: scopeReviewTodos.length,
+          highSignalCount,
+          openSignalCount,
+          hasAdEvidence,
+        }),
+        boundary:
+          "这只是 Parent ASIN 今日分诊入口；点击后仍按广告 ASIN、广告组、投放词、搜索词和广告位证据下钻，未投放子 ASIN 不进入广告动作对象。",
+        signalCount: scopeSignals.length,
+        reviewTodoCount: scopeReviewTodos.length,
+        dueReviewTodoCount,
+        score,
+      } satisfies ProductScopePriorityQueueItem;
+    })
+    .sort((left, right) => right.score - left.score || left.label.localeCompare(right.label))
+    .slice(0, limit);
+}
+
+function productScopePriorityDominantKind(signals: ProductScopedSignalForUi[]): SignalQueueKind | null {
+  const counts = new Map<SignalQueueKind, number>();
+  signals.forEach((signal) => {
+    const kind = signalQueueKind(signal);
+    counts.set(kind, (counts.get(kind) ?? 0) + 1);
+  });
+  return Array.from(counts.entries()).sort((left, right) => right[1] - left[1])[0]?.[0] ?? null;
+}
+
+function productScopePriorityLabel(input: {
+  dueReviewTodoCount: number;
+  reviewTodoCount: number;
+  highSignalCount: number;
+  openSignalCount: number;
+  hasAdEvidence: boolean;
+}): { label: string; tone: ProductScopePriorityQueueTone } {
+  if (input.dueReviewTodoCount > 0) return { label: "先复盘", tone: "review" };
+  if (input.reviewTodoCount > 0) return { label: "等复盘", tone: "review" };
+  if (input.highSignalCount > 0) return { label: "今日优先", tone: "urgent" };
+  if (input.openSignalCount > 0) return { label: "排队复核", tone: "watch" };
+  if (input.hasAdEvidence) return { label: "观察", tone: "watch" };
+  return { label: "暂不展开", tone: "quiet" };
+}
+
+function productScopePriorityQuestion(input: {
+  strongestKind: SignalQueueKind | null;
+  dueReviewTodoCount: number;
+  highSignalCount: number;
+  hasAdEvidence: boolean;
+}): string {
+  if (input.dueReviewTodoCount > 0) return "已到期复盘，需要先判断人工动作后的 7/14 天结果。";
+  if (!input.hasAdEvidence) return "当前没有投放广告证据，只保留销售背景，不继续展开广告诊断。";
+  if (input.highSignalCount > 0) return "存在高优先级广告信号，需要先判断是否影响花费、订单或 ACOS。";
+  if (input.strongestKind) return `主要看${signalQueueKindLabel(input.strongestKind)}，先确认是否需要人工留痕或加入复盘。`;
+  return "当前没有明确待处理信号，保持观察，不需要像报表一样展开阅读。";
+}
+
+function productScopePriorityNextStep(input: {
+  dueReviewTodoCount: number;
+  reviewTodoCount: number;
+  highSignalCount: number;
+  openSignalCount: number;
+  hasAdEvidence: boolean;
+}): string {
+  if (input.dueReviewTodoCount > 0) return "先打开这个 Parent ASIN，核对到期 ReviewTodo，再人工保存复盘记录。";
+  if (input.reviewTodoCount > 0) return "暂不判断效果，等待 ReviewTodo 到期；只补充观察，不自动改广告。";
+  if (input.highSignalCount > 0) return "打开后先看最高优先级信号，再在右侧选择记录观察、标记已处理、加入复盘或忽略本次。";
+  if (input.openSignalCount > 0) return "打开后只复核当前广告证据是否足够，证据不足时记录观察或保持待确认。";
+  if (input.hasAdEvidence) return "保留观察即可；没有明确异常或机会时，不需要逐层阅读全部广告数据。";
+  return "不进入广告诊断；需要先补齐 advertised_products、搜索词或广告位证据。";
 }
 
 export function buildProductScopeSelectionSummary(selectedScope: ProductScopeFilterOption | null): ProductScopeSelectionSummary {

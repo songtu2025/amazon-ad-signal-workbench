@@ -1364,6 +1364,139 @@ h3 {
   line-height: 1.45;
 }
 
+.productScopePriorityQueue {
+  display: grid;
+  gap: 10px;
+  margin: 10px 12px 0;
+  border: 1px solid #d9e5f1;
+  border-radius: 8px;
+  padding: 10px;
+  background: #f8fbff;
+}
+
+.productScopePriorityQueueHeader {
+  display: grid;
+  gap: 3px;
+}
+
+.productScopePriorityQueueHeader strong {
+  color: #22324a;
+  font-size: 13px;
+}
+
+.productScopePriorityQueueHeader span {
+  color: #63758b;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.productScopePriorityQueueRows {
+  display: grid;
+  gap: 7px;
+}
+
+.productScopePriorityQueueRow {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #dce7f2;
+  border-radius: 8px;
+  padding: 8px;
+  background: #ffffff;
+  color: inherit;
+  text-align: left;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 8px;
+  position: relative;
+}
+
+.productScopePriorityQueueRow::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 0;
+  width: 3px;
+  border-radius: 999px;
+  background: #c7d8e8;
+}
+
+.productScopePriorityQueueRow.active {
+  border-color: #a9cdef;
+  background: #f5fbff;
+}
+
+.productScopePriorityQueueRow.urgent::before {
+  background: #e06b55;
+}
+
+.productScopePriorityQueueRow.review::before {
+  background: #7c69d8;
+}
+
+.productScopePriorityQueueRow.watch::before {
+  background: #2f8a67;
+}
+
+.productScopePriorityQueueRow.quiet::before {
+  background: #9aa9ba;
+}
+
+.productScopePriorityRank {
+  width: 26px;
+  height: 26px;
+  border: 1px solid #cfe1f3;
+  border-radius: 8px;
+  background: #f6fbff;
+  color: #23558a;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.productScopePriorityBody {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.productScopePriorityTopline {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.productScopePriorityTopline strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #1f3047;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.productScopePriorityTopline b {
+  border: 1px solid #d6e4f1;
+  border-radius: 999px;
+  padding: 2px 6px;
+  background: #f7fbff;
+  color: #2d587f;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.productScopePriorityBody span,
+.productScopePriorityBody small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #52657b;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .queueDiagnosisPath {
   display: grid;
   gap: 8px;

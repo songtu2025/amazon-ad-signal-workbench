@@ -144,6 +144,7 @@ import {
   buildProductScopeAnalysisPath,
   buildProductScopeEntryGuidance,
   buildProductScopeOptionGroups,
+  buildProductScopePriorityQueueItems,
   buildProductScopeAdmissionCard,
   buildProductScopeEvidenceMatrix,
   buildNoActionableManualGate,
@@ -638,6 +639,10 @@ export function SignalTriageWorkbench() {
     () => buildProductScopeEntryGuidance(productScopeOptions, productScope?.coverage),
     [productScope?.coverage, productScopeOptions],
   );
+  const productScopePriorityQueueItems = useMemo(
+    () => buildProductScopePriorityQueueItems(productScopeOptions, normalizedSignals, reviewTodos, 10),
+    [normalizedSignals, productScopeOptions, reviewTodos],
+  );
 
   const queueFilteredSignals = useMemo(() => {
     if (filter === "all") return displayProductScopedSignals;
@@ -773,6 +778,12 @@ export function SignalTriageWorkbench() {
   function handleSelectQueueFilter(nextFilter: QueueFilter) {
     clearSearchIntentFocus();
     setFilter(nextFilter);
+  }
+
+  function handleSelectProductScopePriority(scopeId: string) {
+    clearSearchIntentFocus();
+    setFilter("all");
+    setSelectedProductScopeId(scopeId);
   }
 
   function clearSearchIntentFocus() {
@@ -1844,6 +1855,37 @@ export function SignalTriageWorkbench() {
             </div>
           </div>
           <p className="queueScopeHint">{productScopeQueueHeader.description}</p>
+          {productScopePriorityQueueItems.length > 0 && (
+            <section className="productScopePriorityQueue" aria-label="今日 Parent ASIN 优先处理清单">
+              <div className="productScopePriorityQueueHeader">
+                <strong>今日 Parent ASIN 优先处理清单</strong>
+                <span>先排序，再下钻；避免 10 个 Parent ASIN 像看 10 张报纸。</span>
+              </div>
+              <div className="productScopePriorityQueueRows">
+                {productScopePriorityQueueItems.map((item, index) => (
+                  <button
+                    type="button"
+                    className={`productScopePriorityQueueRow ${item.tone} ${activeProductScopeId === item.scopeId ? "active" : ""}`}
+                    key={item.scopeId}
+                    onClick={() => handleSelectProductScopePriority(item.scopeId)}
+                    aria-label={`打开 ${item.label} 的 Parent ASIN 广告诊断`}
+                  >
+                    <span className="productScopePriorityRank">{index + 1}</span>
+                    <span className="productScopePriorityBody">
+                      <span className="productScopePriorityTopline">
+                        <strong>{item.label}</strong>
+                        <b>{item.priorityLabel}</b>
+                      </span>
+                      <span>{item.mainQuestion}</span>
+                      <small>{item.evidenceSummary}</small>
+                      <small>{item.nextManualStep}</small>
+                      <small>{item.boundary}</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
           {diagnosisPathSummary && <QueueDiagnosisPathPanel summary={diagnosisPathSummary} />}
           <div className="queueDecisionStrip" aria-label="优先处理提示">
             {recommendedManualActionCandidate && (
