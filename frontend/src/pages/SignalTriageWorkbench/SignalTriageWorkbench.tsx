@@ -2338,7 +2338,9 @@ export function SignalTriageWorkbench() {
         </aside>
 
         <section className="diagnosisPanel">
-          {activeProductScopePriorityItem && <ProductScopePriorityEntryBridgePanel item={activeProductScopePriorityItem} />}
+          {activeProductScopePriorityItem && (
+            <ProductScopePriorityEntryBridgePanel item={activeProductScopePriorityItem} adGroup={selectedAdGroupDiagnosis} />
+          )}
           {productScopeDiagnosisBrief && <ProductScopeDiagnosisBriefPanel brief={productScopeDiagnosisBrief} />}
           {productScopeAdGroupDiagnosis.length > 0 && (
             <ProductScopeAdGroupDiagnosisPanel
@@ -3697,7 +3699,20 @@ function ProductScopeDrilldownEvidencePanel({
   );
 }
 
-function ProductScopePriorityEntryBridgePanel({ item }: { item: ProductScopePriorityQueueItem }) {
+function ProductScopePriorityEntryBridgePanel({
+  item,
+  adGroup,
+}: {
+  item: ProductScopePriorityQueueItem;
+  adGroup: ProductScopeAdGroupDiagnosisRow | null;
+}) {
+  const adGroupReadback = adGroup
+    ? `${adGroup.title} / ${adGroup.problemType} / ${adGroup.statusLabel} / ${adGroup.metrics}`
+    : "暂无可聚焦广告组；先补齐广告组、投放商品、投放词、搜索词和广告位证据。";
+  const adGroupFocusReason = adGroup
+    ? `${adGroup.nextReviewFocus}；${adGroup.boundary}`
+    : "没有广告组诊断行时，不能把 Parent ASIN 直接包装成广告组问题，也不能生成自动广告动作。";
+
   return (
     <section className={`productScopePriorityEntryBridge diagnosisStep ${item.tone}`} aria-label="当前 Parent ASIN 进入理由">
       <div className="detailSectionHeader">
@@ -3721,11 +3736,21 @@ function ProductScopePriorityEntryBridgePanel({ item }: { item: ProductScopePrio
           <span>{item.evidenceSummary}</span>
         </li>
         <li>
+          <b>默认聚焦广告组</b>
+          <span>{adGroupReadback}</span>
+        </li>
+        <li>
+          <b>聚焦原因</b>
+          <span>{adGroupFocusReason}</span>
+        </li>
+        <li>
           <b>人工下一步</b>
           <span>{item.nextManualStep}</span>
         </li>
       </ul>
-      <small>{item.boundary} 本区只解释进入理由，不写入人工动作，也不执行任何广告操作。</small>
+      <small>
+        {item.boundary} 下方“广告组问题定位”可切换当前广告组焦点；本区只解释进入理由，不写入人工动作，也不执行任何广告操作。
+      </small>
     </section>
   );
 }

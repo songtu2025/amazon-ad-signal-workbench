@@ -51,7 +51,7 @@ assertIncludes(workbenchSource, "matrix={productScopeEvidenceMatrix}");
 assertIncludes(workbenchSource, "rows={productScopeAdGroupDiagnosis}");
 assertIncludes(workbenchSource, "selectedId={selectedAdGroupDiagnosis?.id ?? null}");
 assertIncludes(workbenchSource, "onSelect={setSelectedAdGroupDiagnosisId}");
-assertIncludes(workbenchSource, "ProductScopePriorityEntryBridgePanel item={activeProductScopePriorityItem}");
+assertIncludes(workbenchSource, "ProductScopePriorityEntryBridgePanel item={activeProductScopePriorityItem} adGroup={selectedAdGroupDiagnosis}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupFocusPanel row={selectedAdGroupDiagnosis}");
 assertIncludes(workbenchSource, "ProductScopeDiagnosisBriefPanel brief={productScopeDiagnosisBrief}");
 assertIncludes(workbenchSource, "function ProductScopePriorityEntryBridgePanel");
@@ -74,6 +74,10 @@ assertIncludes(workbenchSource, 'aria-label="当前广告组具体数据"');
 assertIncludes(workbenchSource, 'aria-label="当前 Parent ASIN 进入理由"');
 assertIncludes(workbenchSource, "从左侧优先处理清单进入此诊断范围");
 assertIncludes(workbenchSource, "先确认为什么看，再沿 Parent ASIN、广告 ASIN、广告组、投放词、搜索词和广告位下钻");
+assertIncludes(workbenchSource, "默认聚焦广告组");
+assertIncludes(workbenchSource, "聚焦原因");
+assertIncludes(workbenchSource, "暂无可聚焦广告组；先补齐广告组、投放商品、投放词、搜索词和广告位证据。");
+assertIncludes(workbenchSource, "下方“广告组问题定位”可切换当前广告组焦点");
 assertIncludes(workbenchSource, "本区只解释进入理由，不写入人工动作，也不执行任何广告操作");
 assertIncludes(workbenchSource, "ProductScopeTargetingEvidencePanel row={row}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupOperationalChecklistPanel row={row}");
@@ -120,7 +124,7 @@ assertIncludes(signalUiSource, "复盘门槛：先有人工留痕和 7d / 14d Re
 
 const diagnosisPanelIndex = workbenchSource.indexOf('<section className="diagnosisPanel">');
 const productScopePriorityEntryBridgeRenderIndex = workbenchSource.indexOf(
-  "{activeProductScopePriorityItem && <ProductScopePriorityEntryBridgePanel item={activeProductScopePriorityItem} />}",
+  "<ProductScopePriorityEntryBridgePanel item={activeProductScopePriorityItem} adGroup={selectedAdGroupDiagnosis} />",
 );
 const diagnosisBriefRenderIndex = workbenchSource.indexOf(
   "{productScopeDiagnosisBrief && <ProductScopeDiagnosisBriefPanel brief={productScopeDiagnosisBrief} />}",
@@ -179,6 +183,10 @@ assert(productScopePriorityEntryBridgeRenderIndex > diagnosisPanelIndex, "Parent
 assert(
   productScopePriorityEntryBridgeRenderIndex < diagnosisBriefRenderIndex,
   "Parent ASIN 进入理由必须先于诊断详情摘要，先解释为什么进入再展开纵向链路",
+);
+assert(
+  productScopePriorityEntryBridgeRenderIndex < selectedAdGroupFocusRenderIndex,
+  "Parent ASIN 进入理由必须先于当前广告组具体数据，先说明默认聚焦广告组再展示明细",
 );
 assert(diagnosisBriefRenderIndex > diagnosisPanelIndex, "Parent ASIN 诊断详情摘要必须渲染在诊断区内");
 assert(diagnosisBriefRenderIndex < adGroupDiagnosisRenderIndex, "Parent ASIN 诊断详情摘要必须先于广告组优先级列表");
