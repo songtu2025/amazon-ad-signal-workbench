@@ -2664,6 +2664,13 @@ h3 {
   font-size: 12px;
 }
 
+.productScopeAdGroupChecklist p {
+  margin: 0;
+  color: #52687d;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .productScopeAdGroupChecklist strong {
   color: #132942;
   font-size: 12px;
@@ -2674,6 +2681,33 @@ h3 {
   color: #63778c;
   font-size: 12px;
   line-height: 1.4;
+}
+
+.productScopeAdGroupChecklistProof {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.productScopeAdGroupChecklistProof span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #dbe7f2;
+  border-radius: 7px;
+  background: #fbfdff;
+}
+
+.productScopeAdGroupChecklistProof b {
+  color: #284a67;
+  font-size: 11px;
+}
+
+.productScopeAdGroupChecklistProof small {
+  color: #5f7287;
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .productScopeAdGroupEvidenceSynthesis {
@@ -8249,6 +8283,10 @@ button.reviewTodoQueueNext:focus-visible {
   }
 
   .productScopeAdGroupDiagnosisDecision {
+    grid-template-columns: 1fr;
+  }
+
+  .productScopeAdGroupChecklistProof {
     grid-template-columns: 1fr;
   }
 

@@ -4119,7 +4119,10 @@ interface ProductScopeAdGroupChecklistItem {
   key: string;
   label: string;
   title: string;
+  purpose: string;
   judgement: string;
+  proves: string;
+  doesNotProve: string;
   nextStep: string;
 }
 
@@ -4145,28 +4148,40 @@ function buildProductScopeAdGroupChecklistItems(row: ProductScopeAdGroupDiagnosi
       key: "advertised-products",
       label: "1",
       title: "投放商品",
+      purpose: "确认当前广告组实际投放哪些广告 ASIN，而不是把 Parent ASIN 下所有变体都放进广告分析。",
       judgement: advertisedProductText,
+      proves: "能证明当前广告组内有广告证据的投放商品范围和样本表现。",
+      doesNotProve: "不能证明未投放子 ASIN 存在广告问题，也不能把搜索词或广告位自动归因到单个广告 ASIN。",
       nextStep: "先确认哪些 advertised_products 真的参与投放，未投放子 ASIN 只作经营背景。",
     },
     {
       key: "targeting",
       label: "2",
       title: "投放词",
+      purpose: "确认搜索词表现来自哪些 keyword_text / target_id，先看投放上下文再判断搜索词表现。",
       judgement: targetingText || "等待投放词证据",
+      proves: "能证明当前广告组内搜索词样本对应的投放上下文。",
+      doesNotProve: "不能证明完整关键词库覆盖，也不能据此自动加词、否词或调价。",
       nextStep: "只用 keyword_text / target_id 解释投放上下文，不能当作完整关键词库。",
     },
     {
       key: "search-terms",
       label: "3",
       title: "搜索词",
+      purpose: "判断用户真实搜索词在当前广告组里是扩量机会、花费浪费还是继续观察。",
       judgement: searchTermText,
+      proves: row.searchTermDiagnosis?.decision.proves ?? "有搜索词表现后，才能证明搜索词层的机会、浪费或观察价值。",
+      doesNotProve: row.searchTermDiagnosis?.decision.doesNotProve ?? "不能在缺少搜索词表现时自动加词、否词或归因到单个广告 ASIN。",
       nextStep: row.searchTermDiagnosis?.decision.nextManualStep ?? "补齐搜索词表现后再判断扩量、止损或观察。",
     },
     {
       key: "placements",
       label: "4",
       title: "广告位",
+      purpose: "确认当前问题是否可能和 Top of Search、商品页等流量位置有关。",
       judgement: row.placementDecision.currentJudgement,
+      proves: row.placementDecision.proves,
+      doesNotProve: row.placementDecision.doesNotProve,
       nextStep: `${row.placementDecision.evidenceLevel}；${row.placementDecision.nextManualStep}`,
     },
   ];
@@ -4187,7 +4202,18 @@ function ProductScopeAdGroupOperationalChecklistPanel({ row }: { row: ProductSco
             <span>{item.label}</span>
             <div>
               <b>{item.title}</b>
+              <p>{item.purpose}</p>
               <strong>{item.judgement}</strong>
+              <div className="productScopeAdGroupChecklistProof">
+                <span>
+                  <b>能证明</b>
+                  <small>{item.proves}</small>
+                </span>
+                <span>
+                  <b>不能证明</b>
+                  <small>{item.doesNotProve}</small>
+                </span>
+              </div>
               <small>{item.nextStep}</small>
             </div>
           </li>
