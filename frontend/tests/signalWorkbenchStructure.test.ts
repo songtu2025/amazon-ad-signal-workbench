@@ -58,10 +58,18 @@ assertIncludes(workbenchSource, "function ProductScopeAdGroupDiagnosisPanel");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupFocusPanel");
 assertIncludes(workbenchSource, "function ProductScopeTargetingEvidencePanel");
 assertIncludes(workbenchSource, "function buildProductScopeTargetingEvidenceRows");
+assertIncludes(workbenchSource, "function ProductScopeAdGroupOperationalChecklistPanel");
+assertIncludes(workbenchSource, "function buildProductScopeAdGroupChecklistItems");
+assertIncludes(workbenchSource, "function ProductScopeAdGroupReasoningDetails");
 assertIncludes(workbenchSource, 'aria-label="广告组内投放商品表现"');
 assertIncludes(workbenchSource, 'aria-label="投放词证据独立复核"');
+assertIncludes(workbenchSource, 'aria-label="当前广告组运营检查清单"');
+assertIncludes(workbenchSource, 'aria-label="广告组推理细节"');
 assertIncludes(workbenchSource, 'aria-label="当前广告组具体数据"');
 assertIncludes(workbenchSource, "ProductScopeTargetingEvidencePanel row={row}");
+assertIncludes(workbenchSource, "ProductScopeAdGroupOperationalChecklistPanel row={row}");
+assertIncludes(workbenchSource, "ProductScopeAdGroupReasoningDetails row={row}");
+assertIncludes(workbenchSource, "先看证据层，再看 AI 推理");
 assertIncludes(workbenchSource, "投放词证据来自搜索词表现行的 keyword_text / target_id");
 assertIncludes(workbenchSource, "SP 关键词详情和商品定向详情第一阶段仍属暂缓同步");
 assertIncludes(workbenchSource, "aria-pressed={isSelected}");
@@ -108,9 +116,14 @@ const adGroupDiagnosisRenderIndex = workbenchSource.indexOf("<ProductScopeAdGrou
 const selectedAdGroupFocusRenderIndex = workbenchSource.indexOf(
   "{selectedAdGroupDiagnosis && <ProductScopeAdGroupFocusPanel row={selectedAdGroupDiagnosis} />}",
 );
+const adGroupChecklistIndex = workbenchSource.indexOf("<ProductScopeAdGroupOperationalChecklistPanel row={row} />");
 const advertisedProductsInFocusIndex = workbenchSource.indexOf('aria-label="广告组内投放商品表现"');
 const targetingEvidenceInFocusIndex = workbenchSource.indexOf("<ProductScopeTargetingEvidencePanel row={row} />");
-const searchTermDiagnosisPanelIndex = workbenchSource.indexOf('aria-label="搜索词问题定位"');
+const searchTermDiagnosisPanelIndex = workbenchSource.indexOf(
+  "{row.searchTermDiagnosis && <ProductScopeSearchTermDiagnosisPanel rowId={row.id} diagnosis={row.searchTermDiagnosis} />}",
+);
+const placementDecisionIndex = workbenchSource.indexOf('aria-label="广告位证据判断"');
+const adGroupReasoningDetailsIndex = workbenchSource.indexOf("<ProductScopeAdGroupReasoningDetails row={row} />");
 const selectedSignalBranchIndex = workbenchSource.indexOf("{selectedSignal ? (");
 const selectedSignalScopeContextRenderIndex = workbenchSource.indexOf(
   "<SelectedSignalScopeContextStrip context={selectedSignalScopeContext} />",
@@ -148,8 +161,11 @@ assert(adGroupDiagnosisRenderIndex > diagnosisPanelIndex, "广告组问题定位
 assert(adGroupDiagnosisRenderIndex < selectedAdGroupFocusRenderIndex, "广告组问题定位必须先于当前广告组具体数据");
 assert(selectedAdGroupFocusRenderIndex > diagnosisPanelIndex, "当前广告组具体数据必须渲染在诊断区内");
 assert(selectedAdGroupFocusRenderIndex < routeGuideRenderIndex, "当前广告组具体数据必须先于广告证据链导览");
+assert(adGroupChecklistIndex < advertisedProductsInFocusIndex, "运营检查清单必须先于广告组证据明细");
 assert(advertisedProductsInFocusIndex < targetingEvidenceInFocusIndex, "投放词证据必须放在广告组内投放商品之后");
 assert(targetingEvidenceInFocusIndex < searchTermDiagnosisPanelIndex, "投放词证据必须先于搜索词问题定位");
+assert(searchTermDiagnosisPanelIndex < placementDecisionIndex, "搜索词问题定位必须先于广告位证据判断");
+assert(placementDecisionIndex < adGroupReasoningDetailsIndex, "AI 推理细节必须放在广告位证据之后");
 assert(routeGuideRenderIndex > diagnosisPanelIndex, "广告证据链导览必须渲染在诊断区内");
 assert(routeGuideRenderIndex < selectedSignalBranchIndex, "广告证据链导览不能被单条信号选中状态挡住");
 assert(adGroupDiagnosisRenderIndex < selectedSignalBranchIndex, "广告组问题定位不能被单条信号选中状态挡住");
@@ -175,6 +191,8 @@ assertIncludes(stylesSource, ".productScopeDiagnosisBrief");
 assertIncludes(stylesSource, ".productScopeDiagnosisBriefSection");
 assertIncludes(stylesSource, ".productScopeTargetingEvidence");
 assertIncludes(stylesSource, ".productScopeTargetingEvidenceHeader");
+assertIncludes(stylesSource, ".productScopeAdGroupChecklist");
+assertIncludes(stylesSource, ".productScopeAdGroupReasoningDetails");
 assertIncludes(workbenchSource, 'aria-label="SearchTerm 复核执行路径"');
 assertIncludes(signalUiSource, "buildSelectedSignalScopeContext");
 assertIncludes(signalUiSource, "buildSearchIntentFocusContext");

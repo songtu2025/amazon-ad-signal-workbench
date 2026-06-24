@@ -2402,6 +2402,7 @@ h3 {
 
 .productScopeAdGroupOwnership,
 .productScopeAdGroupAdvertisedProducts,
+.productScopeAdGroupChecklist,
 .productScopeTargetingEvidence,
 .productScopeAdGroupProblemLocator,
 .productScopeAdGroupEvidenceSynthesis {
@@ -2416,6 +2417,94 @@ h3 {
 .productScopeAdGroupOwnership {
   border-color: #c9ddf0;
   background: #f6faff;
+}
+
+.productScopeAdGroupChecklist {
+  border-color: #c6dcef;
+  background: #f7fbff;
+}
+
+.productScopeAdGroupChecklistHeader,
+.productScopeAdGroupReasoningDetails summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.productScopeAdGroupChecklistHeader strong,
+.productScopeAdGroupReasoningDetails summary span {
+  color: #14273e;
+  font-size: 13px;
+  font-weight: 820;
+}
+
+.productScopeAdGroupChecklistHeader span,
+.productScopeAdGroupReasoningDetails summary strong {
+  color: #31536f;
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.productScopeAdGroupChecklist ol {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.productScopeAdGroupChecklist li {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #d8e6f1;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.productScopeAdGroupChecklist li > span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #eaf3ff;
+  color: #1f5d9d;
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.productScopeAdGroupChecklist li div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.productScopeAdGroupChecklist b,
+.productScopeAdGroupChecklist strong,
+.productScopeAdGroupChecklist small {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.productScopeAdGroupChecklist b {
+  color: #294b6a;
+  font-size: 12px;
+}
+
+.productScopeAdGroupChecklist strong {
+  color: #132942;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.productScopeAdGroupChecklist small {
+  color: #63778c;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .productScopeAdGroupEvidenceSynthesis {
@@ -2553,6 +2642,50 @@ h3 {
 
 .productScopeTargetingEvidence li small {
   min-width: 0;
+}
+
+.productScopeAdGroupReasoningDetails {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #d5e3ef;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.productScopeAdGroupReasoningDetails summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.productScopeAdGroupReasoningDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.productScopeAdGroupReasoningDetails summary::after {
+  content: "展开";
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border: 1px solid #cddded;
+  border-radius: 999px;
+  color: #31536f;
+  background: #f7fbff;
+  font-size: 11px;
+  font-weight: 780;
+}
+
+.productScopeAdGroupReasoningDetails[open] summary::after {
+  content: "收起";
+}
+
+.productScopeAdGroupReasoningDetails[open] {
+  background: #fbfdff;
+}
+
+.productScopeAdGroupReasoningDetails > div,
+.productScopeAdGroupReasoningDetails > p,
+.productScopeAdGroupReasoningDetails > small {
+  margin-top: 8px;
 }
 
 .productScopeAdGroupActionability {

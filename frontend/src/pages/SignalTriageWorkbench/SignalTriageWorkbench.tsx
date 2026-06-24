@@ -3957,43 +3957,95 @@ function ProductScopeTargetingEvidencePanel({ row }: { row: ProductScopeAdGroupD
   );
 }
 
-function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
+interface ProductScopeAdGroupChecklistItem {
+  key: string;
+  label: string;
+  title: string;
+  judgement: string;
+  nextStep: string;
+}
+
+function buildProductScopeAdGroupChecklistItems(row: ProductScopeAdGroupDiagnosisRow): ProductScopeAdGroupChecklistItem[] {
+  const targetingRows = buildProductScopeTargetingEvidenceRows(row);
+  const advertisedProductText =
+    row.advertisedProductPerformance.length > 0
+      ? `${row.advertisedProductPerformance.length} 个投放商品；${row.advertisedProductPerformance
+          .slice(0, 2)
+          .map((product) => `${product.asin} ${product.metrics}`)
+          .join(" / ")}`
+      : "当前广告组缺少投放商品表现证据";
+  const targetingText = targetingRows
+    .slice(0, 2)
+    .map((item) => `${item.targetingText}：${item.statusLabel}`)
+    .join(" / ");
+  const searchTermText = row.searchTermDiagnosis
+    ? `${row.searchTermDiagnosis.termSummary}；${row.searchTermDiagnosis.decision.currentJudgement}`
+    : "当前广告组缺少搜索词表现证据";
+
+  return [
+    {
+      key: "advertised-products",
+      label: "1",
+      title: "投放商品",
+      judgement: advertisedProductText,
+      nextStep: "先确认哪些 advertised_products 真的参与投放，未投放子 ASIN 只作经营背景。",
+    },
+    {
+      key: "targeting",
+      label: "2",
+      title: "投放词",
+      judgement: targetingText || "等待投放词证据",
+      nextStep: "只用 keyword_text / target_id 解释投放上下文，不能当作完整关键词库。",
+    },
+    {
+      key: "search-terms",
+      label: "3",
+      title: "搜索词",
+      judgement: searchTermText,
+      nextStep: row.searchTermDiagnosis?.decision.nextManualStep ?? "补齐搜索词表现后再判断扩量、止损或观察。",
+    },
+    {
+      key: "placements",
+      label: "4",
+      title: "广告位",
+      judgement: row.placementDecision.currentJudgement,
+      nextStep: `${row.placementDecision.evidenceLevel}；${row.placementDecision.nextManualStep}`,
+    },
+  ];
+}
+
+function ProductScopeAdGroupOperationalChecklistPanel({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
+  const items = buildProductScopeAdGroupChecklistItems(row);
+
   return (
-    <section className={`productScopeAdGroupFocus diagnosisStep stepEvidence ${row.statusTone}`} aria-label="当前广告组具体数据">
-      <div className="detailSectionHeader">
-        <h3>当前广告组具体数据</h3>
-        <span>{row.statusLabel}</span>
+    <div className="productScopeAdGroupChecklist" aria-label="当前广告组运营检查清单">
+      <div className="productScopeAdGroupChecklistHeader">
+        <strong>运营检查清单</strong>
+        <span>先看证据层，再看 AI 推理</span>
       </div>
-      <div className="productScopeAdGroupDiagnosisHeader">
-        <div>
-          <span>{row.problemType}</span>
-          <strong>{row.title}</strong>
-        </div>
-        <b>{row.statusLabel}</b>
-      </div>
-      <div className="productScopeAdGroupDiagnosisMetrics">
-        <span>{row.metrics}</span>
-        <span>{row.trafficContext}</span>
-      </div>
-      <small>{row.trafficContextBoundary}</small>
-      {row.advertisedProductPerformance.length > 0 && (
-        <div className="productScopeAdGroupAdvertisedProducts" aria-label="广告组内投放商品表现">
-          <strong>广告组内投放商品表现</strong>
-          <ul>
-            {row.advertisedProductPerformance.map((product) => (
-              <li key={product.key}>
-                <b>{product.asin}</b>
-                <span>
-                  {product.msku ? `${product.msku} / ` : ""}
-                  {product.metrics}
-                  {product.sampleBoundary ? `；${product.sampleBoundary}` : ""}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      <ProductScopeTargetingEvidencePanel row={row} />
+      <ol>
+        {items.map((item) => (
+          <li key={item.key}>
+            <span>{item.label}</span>
+            <div>
+              <b>{item.title}</b>
+              <strong>{item.judgement}</strong>
+              <small>{item.nextStep}</small>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function ProductScopeAdGroupReasoningDetails({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
+  return (
+    <details className="productScopeAdGroupReasoningDetails" aria-label="广告组推理细节">
+      <summary>
+        <span>AI 推理细节</span>
+        <strong>{row.evidenceSynthesis.statusLabel}</strong>
+      </summary>
       <div className="productScopeAdGroupOwnership" aria-label="广告组问题归属判定">
         <div>
           <strong>{row.ownershipDecision.title}</strong>
@@ -4091,6 +4143,48 @@ function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagno
       <p>{row.reason}</p>
       <small>{row.nextReviewFocus}</small>
       <small>{row.boundary}</small>
+    </details>
+  );
+}
+
+function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
+  return (
+    <section className={`productScopeAdGroupFocus diagnosisStep stepEvidence ${row.statusTone}`} aria-label="当前广告组具体数据">
+      <div className="detailSectionHeader">
+        <h3>当前广告组具体数据</h3>
+        <span>{row.statusLabel}</span>
+      </div>
+      <div className="productScopeAdGroupDiagnosisHeader">
+        <div>
+          <span>{row.problemType}</span>
+          <strong>{row.title}</strong>
+        </div>
+        <b>{row.statusLabel}</b>
+      </div>
+      <div className="productScopeAdGroupDiagnosisMetrics">
+        <span>{row.metrics}</span>
+        <span>{row.trafficContext}</span>
+      </div>
+      <small>{row.trafficContextBoundary}</small>
+      <ProductScopeAdGroupOperationalChecklistPanel row={row} />
+      {row.advertisedProductPerformance.length > 0 && (
+        <div className="productScopeAdGroupAdvertisedProducts" aria-label="广告组内投放商品表现">
+          <strong>广告组内投放商品表现</strong>
+          <ul>
+            {row.advertisedProductPerformance.map((product) => (
+              <li key={product.key}>
+                <b>{product.asin}</b>
+                <span>
+                  {product.msku ? `${product.msku} / ` : ""}
+                  {product.metrics}
+                  {product.sampleBoundary ? `；${product.sampleBoundary}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <ProductScopeTargetingEvidencePanel row={row} />
       {row.searchTermDiagnosis && <ProductScopeSearchTermDiagnosisPanel rowId={row.id} diagnosis={row.searchTermDiagnosis} />}
       <div className="productScopePlacementEvidenceDecision" aria-label="广告位证据判断">
         <strong>{row.placementDecision.title}</strong>
@@ -4122,6 +4216,7 @@ function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagno
           </li>
         </ul>
       </div>
+      <ProductScopeAdGroupReasoningDetails row={row} />
       <div className="productScopeAdGroupDiagnosisForbidden" aria-label="禁止的自动广告动作">
         {row.forbiddenActions.map((action) => (
           <span key={`${row.id}-${action}`}>{action}</span>
