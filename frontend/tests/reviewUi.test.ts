@@ -32,6 +32,7 @@ import {
   manualActionEvidenceReasonText,
   manualActionSavableEvidenceReasonText,
   manualActionIntentText,
+  manualActionChoiceGuideItems,
   manualActionButtonGate,
   manualActionButtonExpectationText,
   manualActionPreflightErrorForAction,
@@ -1880,6 +1881,15 @@ assertEqual(
   manualActionIntentText("ignore"),
   "人工忽略本次，不进入当前 7/14 天复盘待办；不自动执行广告动作，信号和证据保留。",
 );
+const manualActionChoiceGuide = manualActionChoiceGuideItems();
+assertEqual(manualActionChoiceGuide.map((item) => item.actionType).join(" / "), "add_to_review / observe / handled / ignore");
+assertIncludes(manualActionChoiceGuide[0]?.whenToUse ?? "", "7/14 天后回看");
+assertIncludes(manualActionChoiceGuide[0]?.writes ?? "", "生成 7d / 14d 复盘待办");
+assertIncludes(manualActionChoiceGuide[0]?.boundary ?? "", "不自动执行广告动作");
+assertIncludes(manualActionChoiceGuide[1]?.whenToUse ?? "", "还不承诺已经处理");
+assertIncludes(manualActionChoiceGuide[2]?.whenToUse ?? "", "在线下完成处理动作");
+assertIncludes(manualActionChoiceGuide[3]?.writes ?? "", "不生成当前 7/14 天复盘待办");
+assertIncludes(manualActionChoiceGuide[3]?.boundary ?? "", "信号和证据保留");
 assertEqual(
   manualActionPostWriteExpectationText("observe"),
   "写后预期：只写 1 条人工留痕，生成 7 天和 14 天复盘待办；不会保存复盘结论，不执行广告动作。",

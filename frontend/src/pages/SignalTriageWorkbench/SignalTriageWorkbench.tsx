@@ -94,6 +94,7 @@ import {
   manualActionEmptyStateText,
   manualActionEvidenceSnapshotText,
   manualActionSavableEvidenceReasonText,
+  manualActionChoiceGuideItems,
   manualActionButtonExpectationText,
   manualActionIntentText,
   manualActionPostWriteExpectationSummaryText,
@@ -2639,6 +2640,36 @@ export function SignalTriageWorkbench() {
                 </div>
                 <div className="manualActionButtonBoundary" aria-label="人工留痕动作">
                   只保存人工留痕和复盘待办，不执行广告动作
+                </div>
+                <div className="manualActionChoiceGuide" aria-label="人工动作选择依据">
+                  {manualActionChoiceGuideItems().map((guide) => {
+                    const guidePreflight = manualActionPreflightForAction(
+                      guide.actionType,
+                      manualActionPreflightsByAction,
+                      manualActionPreflight,
+                    );
+                    const guidePreflightError = manualActionPreflightErrorForAction(
+                      guide.actionType,
+                      manualActionPreflightErrorsByAction,
+                      manualActionPreflightError,
+                    );
+                    const guideGate = manualActionButtonGate(
+                      guide.actionType,
+                      guidePreflight,
+                      guidePreflightError,
+                      hasReviewTodoForSelectedObject,
+                      manualActionExpectedTargetForSignal(selectedSignal, guide.actionType),
+                    );
+                    return (
+                      <div key={guide.actionType} className={`manualActionChoiceGuideItem ${guideGate.disabled ? "blocked" : "ready"}`}>
+                        <span>{guide.label}</span>
+                        <b>{guideGate.disabled ? guideGate.compactReason ?? "暂不可用" : "可人工点击"}</b>
+                        <p>{guide.whenToUse}</p>
+                        <small>{guide.writes}</small>
+                        <small>{guideGate.reason ?? guide.boundary}</small>
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="manualActionGrid" aria-label="人工动作按钮">
                   {manualActionOrder.map((actionType) => {

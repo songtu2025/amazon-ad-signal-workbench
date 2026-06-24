@@ -96,6 +96,7 @@ const searchIntentManualActionReadbackIndex = workbenchSource.indexOf(
 const searchIntentManualActionPreflightConsistencyIndex = workbenchSource.indexOf(
   "<SearchIntentManualActionPreflightConsistencyCard summary={selectedSearchIntentManualActionPreflightConsistency} />",
 );
+const manualActionChoiceGuideIndex = workbenchSource.indexOf('className="manualActionChoiceGuide"');
 const manualActionGridIndex = workbenchSource.indexOf('<div className="manualActionGrid" aria-label="人工动作按钮">');
 const reviewFlowTodoIndex = workbenchSource.indexOf('className="sideSection reviewFlowItem reviewFlowTodo"');
 const reviewTodoDecisionReadbackIndex = workbenchSource.indexOf('aria-label="复盘待办业务判断读回"');
@@ -159,6 +160,10 @@ assertIncludes(workbenchSource, "summary.rows.map");
 assertIncludes(workbenchSource, "summary.executionSteps.map");
 assertIncludes(workbenchSource, "searchIntentTermReason");
 assertIncludes(workbenchSource, "searchIntentExecutionPath");
+assertIncludes(workbenchSource, 'aria-label="人工动作选择依据"');
+assertIncludes(workbenchSource, "manualActionChoiceGuideItems().map");
+assertIncludes(workbenchSource, "guideGate.disabled ? guideGate.compactReason");
+assertIncludes(workbenchSource, "guideGate.reason ?? guide.boundary");
 assertNotIncludes(workbenchSource, "<b>聚合标签</b>");
 assertIncludes(signalUiSource, "以后端预检确认的 SearchTerm 稳定对象为准");
 assertNotIncludes(signalUiSource, "右侧人工动作也必须落到这条 SearchTerm 的稳定对象");
@@ -178,6 +183,8 @@ assert(
   searchIntentManualActionPreflightConsistencyIndex < manualActionGridIndex,
   "搜索词后端预检一致性核对必须先于人工动作按钮",
 );
+assert(manualActionChoiceGuideIndex > manualActionSectionIndex, "人工动作选择依据必须渲染在人工确认区内");
+assert(manualActionChoiceGuideIndex < manualActionGridIndex, "人工动作选择依据必须先于人工动作按钮展示");
 assert(reviewFlowTodoIndex >= 0, "复盘待办区必须存在");
 assert(reviewTodoDecisionReadbackIndex > reviewFlowTodoIndex, "复盘待办必须先读回当时业务判断");
 assert(reviewRecordSavePathIndex > reviewTodoDecisionReadbackIndex, "复盘保存顺序必须紧跟业务判断读回");

@@ -332,6 +332,14 @@ export interface ManualActionButtonGate {
   compactReason: string | null;
 }
 
+export interface ManualActionChoiceGuideItem {
+  actionType: ManualActionForUi["action_type"];
+  label: string;
+  whenToUse: string;
+  writes: string;
+  boundary: string;
+}
+
 export interface ManualActionExpectedTargetForUi {
   objectType?: string | null;
   objectId?: string | null;
@@ -3065,6 +3073,39 @@ export function manualActionIntentText(actionType: ManualActionForUi["action_typ
     ignore: "人工忽略本次，不进入当前 7/14 天复盘待办；不自动执行广告动作，信号和证据保留。",
   };
   return intentText[actionType];
+}
+
+export function manualActionChoiceGuideItems(): ManualActionChoiceGuideItem[] {
+  return [
+    {
+      actionType: "add_to_review",
+      label: "加入复盘",
+      whenToUse: "已确认这条信号值得 7/14 天后回看处理前后指标。",
+      writes: "写入人工留痕，并生成 7d / 14d 复盘待办。",
+      boundary: manualActionIntentText("add_to_review"),
+    },
+    {
+      actionType: "observe",
+      label: "记录观察",
+      whenToUse: "证据值得保留，但现在还不承诺已经处理或需要判断效果。",
+      writes: "写入人工观察，并生成 7d / 14d 复盘待办。",
+      boundary: manualActionIntentText("observe"),
+    },
+    {
+      actionType: "handled",
+      label: "标记已处理",
+      whenToUse: "运营已经在线下完成处理动作，需要把动作和证据留痕。",
+      writes: "写入已处理记录，并生成 7d / 14d 复盘待办。",
+      boundary: manualActionIntentText("handled"),
+    },
+    {
+      actionType: "ignore",
+      label: "忽略本次",
+      whenToUse: "当前不进入复盘，但仍保留信号和证据供后续回看。",
+      writes: "只写入忽略留痕，不生成当前 7/14 天复盘待办。",
+      boundary: manualActionIntentText("ignore"),
+    },
+  ];
 }
 
 export function manualActionButtonExpectationText(
