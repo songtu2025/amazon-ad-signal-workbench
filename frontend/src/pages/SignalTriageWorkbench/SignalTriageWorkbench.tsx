@@ -2390,7 +2390,9 @@ export function SignalTriageWorkbench() {
             </div>
           </div>
 
-          {selectedAdGroupDiagnosis && <ProductScopeAdGroupActionBridgeCard row={selectedAdGroupDiagnosis} />}
+          {selectedAdGroupDiagnosis && (
+            <ProductScopeAdGroupActionBridgeCard row={selectedAdGroupDiagnosis} priorityItem={activeProductScopePriorityItem} />
+          )}
 
           {selectedSignal ? (
             <>
@@ -4106,8 +4108,21 @@ function ProductScopeAdGroupOperationalChecklistPanel({ row }: { row: ProductSco
   );
 }
 
-function ProductScopeAdGroupActionBridgeCard({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
+function ProductScopeAdGroupActionBridgeCard({
+  row,
+  priorityItem,
+}: {
+  row: ProductScopeAdGroupDiagnosisRow;
+  priorityItem: ProductScopePriorityQueueItem | null;
+}) {
   const items = buildProductScopeAdGroupChecklistItems(row);
+  const scopeLabel = priorityItem?.label ?? "未绑定 Parent ASIN 入口";
+  const scopeRankReason =
+    priorityItem?.rankReason ?? "当前广告组来自诊断入口下的广告组问题定位；若不是 Parent ASIN 入口，只按广告组证据复核。";
+  const scopeMainQuestion =
+    priorityItem?.mainQuestion ?? "先确认广告组容器内投放商品、投放词、搜索词和广告位证据是否足够。";
+  const scopeBoundary =
+    priorityItem?.boundary ?? "没有 Parent ASIN 分诊来源时，右侧人工动作只保存当前广告组留痕或复盘待办。";
 
   return (
     <section className="adGroupActionBridgeCard" aria-label="当前广告组人工动作承接">
@@ -4116,6 +4131,15 @@ function ProductScopeAdGroupActionBridgeCard({ row }: { row: ProductScopeAdGroup
         <span>{row.statusLabel}</span>
       </div>
       <p>先按中间检查清单复核，再选择右侧人工动作；这里只保存人工留痕或复盘待办。</p>
+      <div className="adGroupActionBridgeScope" aria-label="Parent ASIN 分诊路径承接">
+        <span>Parent ASIN 来源：{scopeLabel}</span>
+        <span>进入理由：{scopeRankReason}</span>
+        <span>主问题：{scopeMainQuestion}</span>
+        <small>
+          当前广告组：{row.title} / {row.problemType}。{scopeBoundary}
+          这里把 Parent ASIN 分诊理由带到人工动作前核对，不执行广告操作。
+        </small>
+      </div>
       <ul className="adGroupActionBridgeList">
         {items.map((item) => (
           <li key={item.key}>

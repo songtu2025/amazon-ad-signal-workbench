@@ -81,11 +81,19 @@ assertIncludes(workbenchSource, "下方“广告组问题定位”可切换当�
 assertIncludes(workbenchSource, "本区只解释进入理由，不写入人工动作，也不执行任何广告操作");
 assertIncludes(workbenchSource, "ProductScopeTargetingEvidencePanel row={row}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupOperationalChecklistPanel row={row}");
-assertIncludes(workbenchSource, "ProductScopeAdGroupActionBridgeCard row={selectedAdGroupDiagnosis}");
+assertIncludes(workbenchSource, "ProductScopeAdGroupActionBridgeCard row={selectedAdGroupDiagnosis} priorityItem={activeProductScopePriorityItem}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupReasoningDetails row={row}");
 assertIncludes(workbenchSource, "先看证据层，再看 AI 推理");
 assertIncludes(workbenchSource, "先按中间检查清单复核，再选择右侧人工动作");
 assertIncludes(workbenchSource, "这里只保存人工留痕或复盘待办");
+assertIncludes(workbenchSource, 'aria-label="Parent ASIN 分诊路径承接"');
+assertIncludes(workbenchSource, "Parent ASIN 来源");
+assertIncludes(workbenchSource, "进入理由");
+assertIncludes(workbenchSource, "主问题");
+assertIncludes(workbenchSource, "当前广告组：");
+assertIncludes(workbenchSource, "这里把 Parent ASIN 分诊理由带到人工动作前核对，不执行广告操作。");
+assertIncludes(workbenchSource, "未绑定 Parent ASIN 入口");
+assertIncludes(workbenchSource, "没有 Parent ASIN 分诊来源时，右侧人工动作只保存当前广告组留痕或复盘待办。");
 assertIncludes(workbenchSource, "不能自动调价、暂停、否词或加词");
 assertIncludes(workbenchSource, "投放词证据来自搜索词表现行的 keyword_text / target_id");
 assertIncludes(workbenchSource, "SP 关键词详情和商品定向详情第一阶段仍属暂缓同步");
@@ -147,7 +155,7 @@ const adGroupReasoningDetailsIndex = workbenchSource.indexOf("<ProductScopeAdGro
 const selectedSignalBranchIndex = workbenchSource.indexOf("{selectedSignal ? (");
 const actionPanelIndex = workbenchSource.indexOf('<aside className="actionPanel">');
 const adGroupActionBridgeRenderIndex = workbenchSource.indexOf(
-  "{selectedAdGroupDiagnosis && <ProductScopeAdGroupActionBridgeCard row={selectedAdGroupDiagnosis} />}",
+  "<ProductScopeAdGroupActionBridgeCard row={selectedAdGroupDiagnosis} priorityItem={activeProductScopePriorityItem} />",
 );
 const actionDecisionCardIndex = workbenchSource.indexOf('className="actionDecisionCard"');
 const selectedSignalScopeContextRenderIndex = workbenchSource.indexOf(
@@ -233,6 +241,7 @@ assertIncludes(stylesSource, ".productScopeTargetingEvidence");
 assertIncludes(stylesSource, ".productScopeTargetingEvidenceHeader");
 assertIncludes(stylesSource, ".productScopeAdGroupChecklist");
 assertIncludes(stylesSource, ".adGroupActionBridgeCard");
+assertIncludes(stylesSource, ".adGroupActionBridgeScope");
 assertIncludes(stylesSource, ".adGroupActionBridgeList");
 assertIncludes(stylesSource, ".productScopeAdGroupReasoningDetails");
 assertIncludes(workbenchSource, 'aria-label="SearchTerm 复核执行路径"');
