@@ -2402,6 +2402,7 @@ h3 {
 
 .productScopeAdGroupOwnership,
 .productScopeAdGroupAdvertisedProducts,
+.productScopeTargetingEvidence,
 .productScopeAdGroupProblemLocator,
 .productScopeAdGroupEvidenceSynthesis {
   display: grid;
@@ -2459,6 +2460,9 @@ h3 {
 .productScopeAdGroupOwnership li,
 .productScopeAdGroupAdvertisedProducts strong,
 .productScopeAdGroupAdvertisedProducts li,
+.productScopeTargetingEvidence strong,
+.productScopeTargetingEvidence p,
+.productScopeTargetingEvidence li,
 .productScopeAdGroupProblemLocator strong,
 .productScopeAdGroupProblemLocator p,
 .productScopeAdGroupProblemLocator li,
@@ -2472,6 +2476,7 @@ h3 {
 
 .productScopeAdGroupOwnership strong,
 .productScopeAdGroupAdvertisedProducts strong,
+.productScopeTargetingEvidence strong,
 .productScopeAdGroupProblemLocator strong,
 .productScopeAdGroupEvidenceSynthesis strong {
   color: #14273e;
@@ -2481,6 +2486,8 @@ h3 {
 .productScopeAdGroupOwnership p,
 .productScopeAdGroupOwnership li,
 .productScopeAdGroupAdvertisedProducts li,
+.productScopeTargetingEvidence p,
+.productScopeTargetingEvidence li,
 .productScopeAdGroupProblemLocator p,
 .productScopeAdGroupProblemLocator li,
 .productScopeAdGroupEvidenceSynthesis p,
@@ -2492,6 +2499,7 @@ h3 {
 
 .productScopeAdGroupOwnership ul,
 .productScopeAdGroupAdvertisedProducts ul,
+.productScopeTargetingEvidence ul,
 .productScopeAdGroupProblemLocator ul,
 .productScopeAdGroupEvidenceSynthesis ul {
   display: grid;
@@ -2503,6 +2511,7 @@ h3 {
 
 .productScopeAdGroupOwnership li,
 .productScopeAdGroupAdvertisedProducts li,
+.productScopeTargetingEvidence li,
 .productScopeAdGroupProblemLocator li,
 .productScopeAdGroupEvidenceSynthesis li {
   display: grid;
@@ -2512,10 +2521,38 @@ h3 {
 
 .productScopeAdGroupOwnership b,
 .productScopeAdGroupAdvertisedProducts b,
+.productScopeTargetingEvidence b,
 .productScopeAdGroupProblemLocator b,
 .productScopeAdGroupEvidenceSynthesis b {
   color: #294b6a;
   font-size: 12px;
+}
+
+.productScopeTargetingEvidence {
+  border-color: #c9ddf0;
+  background: #f8fbff;
+}
+
+.productScopeTargetingEvidenceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.productScopeTargetingEvidenceHeader span {
+  color: #31536f;
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.productScopeTargetingEvidence li {
+  grid-template-columns: minmax(120px, 0.8fr) minmax(110px, 0.7fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.productScopeTargetingEvidence li small {
+  min-width: 0;
 }
 
 .productScopeAdGroupActionability {

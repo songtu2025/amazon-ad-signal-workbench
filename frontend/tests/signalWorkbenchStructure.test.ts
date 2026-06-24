@@ -56,8 +56,14 @@ assertIncludes(workbenchSource, "function ProductScopeDiagnosisBriefPanel");
 assertIncludes(workbenchSource, "function ProductScopeEvidenceMatrixPanel");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupDiagnosisPanel");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupFocusPanel");
+assertIncludes(workbenchSource, "function ProductScopeTargetingEvidencePanel");
+assertIncludes(workbenchSource, "function buildProductScopeTargetingEvidenceRows");
 assertIncludes(workbenchSource, 'aria-label="广告组内投放商品表现"');
+assertIncludes(workbenchSource, 'aria-label="投放词证据独立复核"');
 assertIncludes(workbenchSource, 'aria-label="当前广告组具体数据"');
+assertIncludes(workbenchSource, "ProductScopeTargetingEvidencePanel row={row}");
+assertIncludes(workbenchSource, "投放词证据来自搜索词表现行的 keyword_text / target_id");
+assertIncludes(workbenchSource, "SP 关键词详情和商品定向详情第一阶段仍属暂缓同步");
 assertIncludes(workbenchSource, "aria-pressed={isSelected}");
 assertIncludes(workbenchSource, "onClick={() => onSelect(row.id)}");
 assertIncludes(workbenchSource, "row.advertisedProductPerformance");
@@ -102,6 +108,9 @@ const adGroupDiagnosisRenderIndex = workbenchSource.indexOf("<ProductScopeAdGrou
 const selectedAdGroupFocusRenderIndex = workbenchSource.indexOf(
   "{selectedAdGroupDiagnosis && <ProductScopeAdGroupFocusPanel row={selectedAdGroupDiagnosis} />}",
 );
+const advertisedProductsInFocusIndex = workbenchSource.indexOf('aria-label="广告组内投放商品表现"');
+const targetingEvidenceInFocusIndex = workbenchSource.indexOf("<ProductScopeTargetingEvidencePanel row={row} />");
+const searchTermDiagnosisPanelIndex = workbenchSource.indexOf('aria-label="搜索词问题定位"');
 const selectedSignalBranchIndex = workbenchSource.indexOf("{selectedSignal ? (");
 const selectedSignalScopeContextRenderIndex = workbenchSource.indexOf(
   "<SelectedSignalScopeContextStrip context={selectedSignalScopeContext} />",
@@ -139,6 +148,8 @@ assert(adGroupDiagnosisRenderIndex > diagnosisPanelIndex, "广告组问题定位
 assert(adGroupDiagnosisRenderIndex < selectedAdGroupFocusRenderIndex, "广告组问题定位必须先于当前广告组具体数据");
 assert(selectedAdGroupFocusRenderIndex > diagnosisPanelIndex, "当前广告组具体数据必须渲染在诊断区内");
 assert(selectedAdGroupFocusRenderIndex < routeGuideRenderIndex, "当前广告组具体数据必须先于广告证据链导览");
+assert(advertisedProductsInFocusIndex < targetingEvidenceInFocusIndex, "投放词证据必须放在广告组内投放商品之后");
+assert(targetingEvidenceInFocusIndex < searchTermDiagnosisPanelIndex, "投放词证据必须先于搜索词问题定位");
 assert(routeGuideRenderIndex > diagnosisPanelIndex, "广告证据链导览必须渲染在诊断区内");
 assert(routeGuideRenderIndex < selectedSignalBranchIndex, "广告证据链导览不能被单条信号选中状态挡住");
 assert(adGroupDiagnosisRenderIndex < selectedSignalBranchIndex, "广告组问题定位不能被单条信号选中状态挡住");
@@ -162,6 +173,8 @@ assertIncludes(workbenchSource, 'aria-label="Parent ASIN 诊断详情摘要"');
 assertIncludes(workbenchSource, 'aria-label="允许的人工动作"');
 assertIncludes(stylesSource, ".productScopeDiagnosisBrief");
 assertIncludes(stylesSource, ".productScopeDiagnosisBriefSection");
+assertIncludes(stylesSource, ".productScopeTargetingEvidence");
+assertIncludes(stylesSource, ".productScopeTargetingEvidenceHeader");
 assertIncludes(workbenchSource, 'aria-label="SearchTerm 复核执行路径"');
 assertIncludes(signalUiSource, "buildSelectedSignalScopeContext");
 assertIncludes(signalUiSource, "buildSearchIntentFocusContext");

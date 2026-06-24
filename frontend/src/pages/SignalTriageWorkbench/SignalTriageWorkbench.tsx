@@ -3835,6 +3835,128 @@ function ProductScopeAdGroupDiagnosisPanel({
   );
 }
 
+interface ProductScopeTargetingEvidenceRow {
+  key: string;
+  targetingText: string;
+  statusLabel: string;
+  searchTermSamples: string;
+  metrics: string;
+  boundary: string;
+}
+
+function buildProductScopeTargetingEvidenceRows(row: ProductScopeAdGroupDiagnosisRow): ProductScopeTargetingEvidenceRow[] {
+  const diagnosis = row.searchTermDiagnosis;
+  const terms = [...(diagnosis?.effectiveTerms ?? []), ...(diagnosis?.zeroOrderTerms ?? [])];
+
+  if (terms.length === 0) {
+    return [
+      {
+        key: `${row.id}-targeting-gap`,
+        targetingText: "等待投放词证据",
+        statusLabel: "证据缺口",
+        searchTermSamples: "当前广告组没有可展示的搜索词表现行",
+        metrics: "缺少 keyword_text / target_id 对应的投放上下文",
+        boundary: "不能判断当前广告组的投放词结构，也不能据此做加词、否词或调价。",
+      },
+    ];
+  }
+
+  const groups = new Map<
+    string,
+    {
+      targetingText: string;
+      effectiveCount: number;
+      zeroOrderCount: number;
+      samples: string[];
+      metrics: string[];
+      hasExplicitTargeting: boolean;
+    }
+  >();
+
+  for (const term of terms) {
+    const rawTargetingText = term.targetingText?.trim();
+    const targetingText = rawTargetingText || "未标记投放词";
+    const key = targetingText.toLowerCase();
+    const group =
+      groups.get(key) ??
+      {
+        targetingText,
+        effectiveCount: 0,
+        zeroOrderCount: 0,
+        samples: [],
+        metrics: [],
+        hasExplicitTargeting: Boolean(rawTargetingText),
+      };
+
+    if (term.termTypeLabel.includes("有效")) {
+      group.effectiveCount += 1;
+    } else if (term.termTypeLabel.includes("零单") || term.termTypeLabel.includes("无订单")) {
+      group.zeroOrderCount += 1;
+    }
+
+    if (term.label && group.samples.length < 3 && !group.samples.includes(term.label)) {
+      group.samples.push(term.label);
+    }
+    if (term.metrics && group.metrics.length < 2 && !group.metrics.includes(term.metrics)) {
+      group.metrics.push(term.metrics);
+    }
+    group.hasExplicitTargeting = group.hasExplicitTargeting || Boolean(rawTargetingText);
+    groups.set(key, group);
+  }
+
+  return Array.from(groups.values()).map((group, index) => {
+    const statusParts = [
+      group.effectiveCount > 0 ? `有效搜索词 ${group.effectiveCount} 条` : null,
+      group.zeroOrderCount > 0 ? `无订单花费词 ${group.zeroOrderCount} 条` : null,
+    ].filter((part): part is string => Boolean(part));
+
+    return {
+      key: `${row.id}-targeting-${index}-${group.targetingText}`,
+      targetingText: group.targetingText,
+      statusLabel: statusParts.join(" / ") || "仅有搜索词样本",
+      searchTermSamples: group.samples.length ? group.samples.join(" / ") : "暂无搜索词样本",
+      metrics: group.metrics.length ? group.metrics.join("；") : "等待搜索词表现指标",
+      boundary: group.hasExplicitTargeting
+        ? "投放词来自搜索词表现行的 keyword_text / target_id，只说明当前广告组内投放上下文，不代表完整关键词库。"
+        : "当前搜索词表现行未带出明确投放词，只能先按搜索词表现复核，不能判断关键词库覆盖。",
+    };
+  });
+}
+
+function ProductScopeTargetingEvidencePanel({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
+  const rows = buildProductScopeTargetingEvidenceRows(row);
+  const decision = row.searchTermDiagnosis?.decision ?? null;
+
+  return (
+    <div className="productScopeTargetingEvidence" aria-label="投放词证据独立复核">
+      <div className="productScopeTargetingEvidenceHeader">
+        <strong>投放词证据</strong>
+        <span>{rows.length} 个投放上下文</span>
+      </div>
+      <p>当前广告组的搜索词表现来自哪些投放词或投放对象？</p>
+      {decision && (
+        <small>
+          投放词判断：{decision.targetingEvidence}；下一步：{decision.nextManualStep}
+        </small>
+      )}
+      <ul>
+        {rows.map((item) => (
+          <li key={item.key}>
+            <b>{item.targetingText}</b>
+            <span>{item.statusLabel}</span>
+            <small>搜索词样本：{item.searchTermSamples}</small>
+            <small>指标：{item.metrics}</small>
+            <small>{item.boundary}</small>
+          </li>
+        ))}
+      </ul>
+      <small>
+        投放词证据来自搜索词表现行的 keyword_text / target_id；SP 关键词详情和商品定向详情第一阶段仍属暂缓同步，页面不能据此自动加词、否词或调价。
+      </small>
+    </div>
+  );
+}
+
 function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
   return (
     <section className={`productScopeAdGroupFocus diagnosisStep stepEvidence ${row.statusTone}`} aria-label="当前广告组具体数据">
@@ -3871,6 +3993,7 @@ function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagno
           </ul>
         </div>
       )}
+      <ProductScopeTargetingEvidencePanel row={row} />
       <div className="productScopeAdGroupOwnership" aria-label="广告组问题归属判定">
         <div>
           <strong>{row.ownershipDecision.title}</strong>
