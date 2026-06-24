@@ -4841,8 +4841,8 @@ assertEqual(productScopeGroupOverview.relationItems.length, 4);
 assertEqual(productScopeGroupOverview.relationItems[0].label, "销售背景（不直接诊断）");
 assertIncludes(productScopeGroupOverview.relationItems[0].value, "Parent ASIN B0PARENT");
 assertIncludes(productScopeGroupOverview.relationItems[0].value, "销售表现识别 12 个子 ASIN");
-assertIncludes(productScopeGroupOverview.relationItems[0].value, "订单 24591");
-assertIncludes(productScopeGroupOverview.relationItems[0].value, "$262341.49");
+assertIncludes(productScopeGroupOverview.relationItems[0].value, "经营订单 24591");
+assertIncludes(productScopeGroupOverview.relationItems[0].value, "经营销售额 $262341.49");
 assertIncludes(productScopeGroupOverview.relationItems[0].value, "不等同广告对象");
 assertEqual(productScopeGroupOverview.relationItems[1].label, "广告诊断对象（有投放证据）");
 assertIncludes(productScopeGroupOverview.relationItems[1].value, "仅 3 个 advertised_products 广告 ASIN 可下钻");
@@ -4890,7 +4890,7 @@ const productScopeFirstScreenSummary = buildProductScopeFirstScreenSummary(produ
 if (!productScopeFirstScreenSummary) {
   throw new Error("Parent ASIN 首屏经营摘要不能为空");
 }
-assertEqual(productScopeFirstScreenSummary.title, "Parent ASIN 销售入口与广告证据");
+assertEqual(productScopeFirstScreenSummary.title, "Parent ASIN 经营销售入口与广告证据");
 assertEqual(productScopeFirstScreenSummary.summary, productScopeGroupOverview.summary);
 assertEqual(productScopeFirstScreenSummary.factItems.length, 2);
 assertIncludes(productScopeFirstScreenSummary.factItems[0].value, "Parent ASIN B0PARENT");
@@ -4912,10 +4912,10 @@ assertIncludes(productScopeFirstScreenSummary.mvpStatus.summary, "当前有 3 �
 assertIncludes(productScopeFirstScreenSummary.mvpStatus.summary, "不是完整复盘闭环");
 assertIncludes(productScopeFirstScreenSummary.mvpStatus.detail, "Parent ASIN -> 广告 ASIN -> 广告组 / 搜索词 / 广告位");
 assertIncludes(productScopeFirstScreenSummary.mvpStatus.boundary, "ready 复盘");
-assertIncludes(productScopeFirstScreenSummary.pathSummary, "Parent ASIN 销售入口 -> 广告 ASIN -> 广告组");
+assertIncludes(productScopeFirstScreenSummary.pathSummary, "Parent ASIN 经营销售入口 -> 广告 ASIN -> 广告组");
 assertIncludes(productScopeFirstScreenSummary.pathSummary, "AI 信号诊断 -> 人工确认 -> 7/14 天复盘");
 assertEqual(productScopeFirstScreenSummary.pathSteps.length, 7);
-assertEqual(productScopeFirstScreenSummary.pathSteps[0].label, "Parent ASIN 经营盘");
+assertEqual(productScopeFirstScreenSummary.pathSteps[0].label, "Parent ASIN 经营销售盘");
 assertIncludes(productScopeFirstScreenSummary.pathSteps[0].detail, "Parent ASIN B0PARENT");
 assertEqual(productScopeFirstScreenSummary.pathSteps[1].label, "广告 ASIN 覆盖");
 assertIncludes(productScopeFirstScreenSummary.pathSteps[1].detail, "只进入有 advertised_products 证据的广告 ASIN");

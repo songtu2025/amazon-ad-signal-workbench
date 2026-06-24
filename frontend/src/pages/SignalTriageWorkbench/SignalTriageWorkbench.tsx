@@ -1582,8 +1582,8 @@ export function SignalTriageWorkbench() {
                       <tr>
                         <th>广告 ASIN（有投放证据）</th>
                         <th>花费</th>
-                        <th>订单</th>
-                        <th>销售额</th>
+                        <th>广告订单</th>
+                        <th>广告销售额</th>
                         <th>ACOS</th>
                         <th>下钻判断</th>
                         <th>策略</th>
@@ -1707,8 +1707,8 @@ export function SignalTriageWorkbench() {
                           <tr>
                             <th>广告 ASIN（有投放证据）</th>
                             <th>花费</th>
-                            <th>订单</th>
-                            <th>销售额</th>
+                            <th>广告订单</th>
+                            <th>广告销售额</th>
                             <th>ACOS</th>
                             <th>下钻判断</th>
                             <th>策略</th>

@@ -7122,7 +7122,7 @@ export function buildProductScopeGroupOverview(
   const relationItems: ProductScopeRelationItem[] = [
     {
       label: "销售背景（不直接诊断）",
-      value: `Parent ASIN ${parentAsin} / 销售表现识别 ${childAsins.length} 个子 ASIN / 订单 ${parentOrders} / 销售额 ${formatScopeMoney(parentSales)}；用于先看整体经营，不等同广告对象`,
+      value: `Parent ASIN ${parentAsin} / 销售表现识别 ${childAsins.length} 个子 ASIN / 经营订单 ${parentOrders} / 经营销售额 ${formatScopeMoney(parentSales)}；用于先看整体经营，不等同广告对象`,
       tone: "primary",
     },
     {
@@ -7162,7 +7162,7 @@ export function buildProductScopeFirstScreenSummary(
   triageSummary?: SignalTriageSummaryForUi | null,
 ): ProductScopeFirstScreenSummary | null {
   if (!overview) return null;
-  const salesFact = overview.relationItems[0]?.value ?? "Parent ASIN 销售盘等待销售表现证据";
+  const salesFact = overview.relationItems[0]?.value ?? "Parent ASIN 经营销售盘等待销售表现证据";
   const advertisedAsinCount = overview.adAsinRows.length;
   const adAsinText =
     advertisedAsinCount > 0
@@ -7227,7 +7227,7 @@ export function buildProductScopeFirstScreenSummary(
         ? `已有 ${manualActionCount} 条人工留痕，最早 ${earliestDueDate || "等待窗口"} 后复盘`
         : "暂无人工留痕，不能生成复盘结论";
   const pathSummary =
-    "Parent ASIN 销售入口 -> 广告 ASIN -> 广告组 -> 投放词 / 搜索词 / 广告位 -> AI 信号诊断 -> 人工确认 -> 7/14 天复盘";
+    "Parent ASIN 经营销售入口 -> 广告 ASIN -> 广告组 -> 投放词 / 搜索词 / 广告位 -> AI 信号诊断 -> 人工确认 -> 7/14 天复盘";
   const aiSignalStepDetail =
     candidateCount === undefined
       ? `等待 AI 准入扫描；${actionabilityMessage}`
@@ -7264,7 +7264,7 @@ export function buildProductScopeFirstScreenSummary(
     },
   ];
   return {
-    title: "Parent ASIN 销售入口与广告证据",
+    title: "Parent ASIN 经营销售入口与广告证据",
     summary: overview.summary,
     mvpStatus,
     factItems: overview.relationItems.slice(0, 2),
@@ -7273,7 +7273,7 @@ export function buildProductScopeFirstScreenSummary(
     landingGates,
     pathSummary,
     pathSteps: [
-      { label: "Parent ASIN 经营盘", detail: salesFact },
+      { label: "Parent ASIN 经营销售盘", detail: salesFact },
       { label: "广告 ASIN 覆盖", detail: adAsinText },
       { label: "广告组结构", detail: "广告组是投放容器，不是产品；先看同组广告商品、花费和订单分化。" },
       {
