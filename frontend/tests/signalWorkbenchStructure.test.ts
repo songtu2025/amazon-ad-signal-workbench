@@ -97,6 +97,15 @@ const searchIntentManualActionPreflightConsistencyIndex = workbenchSource.indexO
   "<SearchIntentManualActionPreflightConsistencyCard summary={selectedSearchIntentManualActionPreflightConsistency} />",
 );
 const manualActionGridIndex = workbenchSource.indexOf('<div className="manualActionGrid" aria-label="人工动作按钮">');
+const reviewFlowTodoIndex = workbenchSource.indexOf('className="sideSection reviewFlowItem reviewFlowTodo"');
+const reviewTodoDecisionReadbackIndex = workbenchSource.indexOf('aria-label="复盘待办业务判断读回"');
+const reviewRecordSavePathIndex = workbenchSource.indexOf('aria-label="复盘保存顺序核对"');
+const reviewTodoEvidenceReadbackIndex = workbenchSource.indexOf('aria-label="复盘待办证据回读核对"');
+const reviewEffectWindowLedgerIndex = workbenchSource.indexOf('aria-label="复盘效果窗口口径"');
+const reviewRecordSaveGateIndex = workbenchSource.indexOf('aria-label="复盘保存门槛"');
+const reviewMetricTableIndex = workbenchSource.indexOf('aria-label="复盘指标对比"');
+const reviewRecordPreflightChecklistIndex = workbenchSource.indexOf('aria-label="复盘保存前检查清单"');
+const saveReviewRecordButtonIndex = workbenchSource.indexOf('<button className="secondaryButton" onClick={handleSaveReviewRecord}');
 assert(diagnosisPanelIndex >= 0, "诊断区必须存在");
 assert(routeGuideRenderIndex > diagnosisPanelIndex, "广告证据链导览必须渲染在诊断区内");
 assert(routeGuideRenderIndex < selectedSignalBranchIndex, "广告证据链导览不能被单条信号选中状态挡住");
@@ -161,6 +170,16 @@ assert(
   searchIntentManualActionPreflightConsistencyIndex < manualActionGridIndex,
   "搜索词后端预检一致性核对必须先于人工动作按钮",
 );
+assert(reviewFlowTodoIndex >= 0, "复盘待办区必须存在");
+assert(reviewTodoDecisionReadbackIndex > reviewFlowTodoIndex, "复盘待办必须先读回当时业务判断");
+assert(reviewRecordSavePathIndex > reviewTodoDecisionReadbackIndex, "复盘保存顺序必须紧跟业务判断读回");
+assert(reviewRecordSavePathIndex < reviewTodoEvidenceReadbackIndex, "保存顺序核对必须先于完整证据门禁");
+assert(reviewRecordSavePathIndex < reviewEffectWindowLedgerIndex, "保存顺序核对必须先于处理前后指标窗口详情");
+assert(reviewRecordSavePathIndex < reviewRecordSaveGateIndex, "保存顺序核对必须先于保存门槛");
+assert(reviewEffectWindowLedgerIndex < reviewRecordSaveGateIndex, "处理前后指标窗口必须先于保存门槛");
+assert(reviewRecordSaveGateIndex < reviewMetricTableIndex, "保存门槛必须先于指标明细表");
+assert(reviewMetricTableIndex < reviewRecordPreflightChecklistIndex, "指标明细表必须先于保存前检查清单");
+assert(reviewRecordPreflightChecklistIndex < saveReviewRecordButtonIndex, "保存按钮必须在保存前检查清单之后");
 
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 经营诊断路径"');
 assertIncludes(workbenchSource, 'aria-label="诊断入口路径说明"');

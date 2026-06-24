@@ -2939,6 +2939,24 @@ export function SignalTriageWorkbench() {
                           <small>{selectedReviewTodoDecisionReadback.boundary}</small>
                         </div>
                       )}
+                      {selectedReviewRecordSavePath && (
+                        <div
+                          className={`manualConfirmationEvidenceReadiness reviewRecordSavePath ${selectedReviewRecordSavePath.tone}`}
+                          aria-label="复盘保存顺序核对"
+                        >
+                          <strong>{selectedReviewRecordSavePath.title}</strong>
+                          <ul>
+                            {selectedReviewRecordSavePath.rows.map((row) => (
+                              <li key={row.label} className={row.tone}>
+                                <span>{row.label}</span>
+                                <b>{row.value}</b>
+                                <p>{row.detail}</p>
+                              </li>
+                            ))}
+                          </ul>
+                          <small>{selectedReviewRecordSavePath.boundary}</small>
+                        </div>
+                      )}
                       {selectedReviewTodoEvidenceReadback && (
                         <div
                           className={`manualConfirmationEvidenceReadiness reviewTodoEvidenceReadback ${selectedReviewTodoEvidenceReadback.tone}`}
@@ -2987,24 +3005,6 @@ export function SignalTriageWorkbench() {
                         </dl>
                         <small>{selectedReviewEffectWindowLedger.boundary}</small>
                       </div>
-                      {selectedReviewRecordSavePath && (
-                        <div
-                          className={`manualConfirmationEvidenceReadiness reviewRecordSavePath ${selectedReviewRecordSavePath.tone}`}
-                          aria-label="复盘保存顺序核对"
-                        >
-                          <strong>{selectedReviewRecordSavePath.title}</strong>
-                          <ul>
-                            {selectedReviewRecordSavePath.rows.map((row) => (
-                              <li key={row.label} className={row.tone}>
-                                <span>{row.label}</span>
-                                <b>{row.value}</b>
-                                <p>{row.detail}</p>
-                              </li>
-                            ))}
-                          </ul>
-                          <small>{selectedReviewRecordSavePath.boundary}</small>
-                        </div>
-                      )}
                       <p
                         className={`reviewRecordSaveGate ${selectedReviewRecordSaveGate.tone}`}
                         aria-label="复盘保存门槛"
