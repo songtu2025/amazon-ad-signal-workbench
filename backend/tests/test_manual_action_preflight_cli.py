@@ -1479,6 +1479,112 @@ def test_manual_action_preflight_post_write_accepts_new_complete_action_after_le
     assert payload["blockers"] == []
 
 
+def test_manual_action_preflight_post_write_review_todos_keep_search_term_ad_evidence_chain(monkeypatch) -> None:
+    module = load_manual_action_preflight_script()
+    from app.services.manual_action_preflight import SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS
+
+    signal_id = "sig-opportunity-search-term-1-beach-essentials"
+    complete_evidence = [
+        {"label": "排查路径", "value": "Parent ASIN -> 广告组 -> 投放商品 -> 投放词 -> 搜索词", "source": "business_rule"},
+        {"label": "AI 准入", "value": "ready_for_manual_confirmation / 允许人工留痕", "source": "actionability_status"},
+        {"label": "搜索词", "value": "beach essentials / 对象ID search_term:1:beach essentials", "source": "manual_action_target"},
+        {"label": "搜索词表现分组", "value": "Parent ASIN B00K4W4AAA 下的广告用户搜索词表现聚合", "source": "ad_search_term_daily_metrics"},
+        {"label": "Parent ASIN入口", "value": "B00K4W4AAA 只作为经营诊断入口，不是人工动作对象", "source": "diagnosis_contract"},
+        {"label": "广告 ASIN承接", "value": "当前 Parent 范围有 3 个 ASIN 具备广告证据", "source": "advertised_products"},
+        {"label": "广告组合流判断", "value": "已串联广告组、投放商品、投放词、搜索词和广告位边界", "source": "diagnosis_contract"},
+        {"label": "同组投放商品表现", "value": "同广告组 B016EXMVZS / B07BS9754Q / B016EXMW02 已回看", "source": "ad_product_daily_metrics"},
+        {"label": "逐投放上下文", "value": "RBK004-beach essentials-精准 / 投放词 beach essentials", "source": "ad_search_term_daily_metrics"},
+        {"label": "投放词证据", "value": "投放词 beach essentials 具备搜索词承接证据", "source": "ad_search_term_daily_metrics"},
+        {"label": "搜索词边界", "value": "beach essentials 只能说明同广告组搜索词上下文", "source": "business_rule"},
+        {"label": "广告位边界", "value": "广告组级广告位 0 条；同广告活动广告位 6 条", "source": "ad_placement_daily_metrics"},
+        {"label": "ABA 背景", "value": "ABA 排名 208 / 只作站点级市场背景", "source": "ABA导出"},
+        {"label": "证据缺口", "value": "缺少搜索词直连广告位和广告组级广告位", "source": "diagnosis_contract"},
+        {"label": "需要补证", "value": "需要同周期 ad_placement_daily_metrics 和主推策略确认", "source": "diagnosis_contract"},
+        {"label": "动作边界", "value": "只允许记录观察、标记已处理、加入复盘或忽略本次", "source": "business_rule"},
+    ]
+    saved_action_data = {
+        "signal_id": signal_id,
+        "action_type": "add_to_review",
+        "shop_id": "market:1",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "search_term:1:beach essentials",
+        "object_label": "beach essentials",
+        "evidence_snapshot": complete_evidence,
+    }
+
+    monkeypatch.setattr(
+        module,
+        "build_signal_triage_payload",
+        lambda selected_market_id=None, top=5, product_scope_id=None: {
+            "status": "ready_for_manual_confirmation",
+            "review_status": {
+                "manual_action_count": 1,
+                "review_record_count": 0,
+                "manual_action_identity_issue_count": 0,
+            },
+            "recommended_candidate": {
+                "signal_id": signal_id,
+                "shop_id": "market:1",
+                "shop_name": "rivbos",
+                "object_type": "search_term",
+                "stable_object_id": "search_term:1:beach essentials",
+                "object_label": "beach essentials",
+                "manual_action_preview": {
+                    "will_write": False,
+                    "signal_id": signal_id,
+                    "action_type": "add_to_review",
+                    "object_type": "search_term",
+                    "object_id": "search_term:1:beach essentials",
+                    "object_label": "beach essentials",
+                    "shop_id": "market:1",
+                    "shop_name": "rivbos",
+                    "market_id": 1,
+                    "review_windows": ["7d", "14d"],
+                },
+            },
+        },
+    )
+    monkeypatch.setattr(module, "load_manual_actions", lambda market_id=None: [SimpleNamespace(**saved_action_data)])
+    monkeypatch.setattr(
+        module,
+        "build_review_todos",
+        lambda market_id=None: [
+            SimpleNamespace(**saved_action_data, review_window=review_window)
+            for review_window in ("7d", "14d")
+        ],
+    )
+    monkeypatch.setattr(module, "load_review_records", lambda market_id=None: [])
+
+    payload = module.build_manual_action_preflight_payload(
+        selected_market_id=1,
+        product_scope_id="parent_asin:B00K4W4AAA",
+        expected_object_id="search_term:1:beach essentials",
+        expected_object_type="search_term",
+        expected_action_type="add_to_review",
+        expect_written=True,
+    )
+
+    labels = [item["label"] for item in payload["evidence_snapshot_preview"]["items"]]
+    assert payload["status"] == "post_write_verified"
+    assert payload["evidence_snapshot_preview"]["status"] == "saved"
+    assert payload["evidence_snapshot_preview"]["item_count"] == len(complete_evidence)
+    assert set(SEARCH_TERM_REQUIRED_REVIEW_EVIDENCE_LABELS).issubset(labels)
+    assert payload["post_write_checks"]["target_review_todo_count"] == 2
+    assert {
+        item["review_window"]: item["evidence_snapshot_count"]
+        for item in payload["post_write_checks"]["target_review_todo_evidence_snapshot_counts"]
+    } == {"7d": len(complete_evidence), "14d": len(complete_evidence)}
+    for label in ("同组投放商品表现", "逐投放上下文", "投放词证据", "搜索词边界", "广告位边界"):
+        assert label in labels
+    assert labels.index("同组投放商品表现") < labels.index("逐投放上下文")
+    assert labels.index("逐投放上下文") < labels.index("投放词证据")
+    assert labels.index("投放词证据") < labels.index("搜索词边界")
+    assert labels.index("搜索词边界") < labels.index("广告位边界")
+    assert "不重新生成当前候选证据" in payload["evidence_snapshot_preview"]["boundary"]
+    assert payload["blockers"] == []
+
+
 def test_manual_action_preflight_reports_post_write_target_identities(monkeypatch, tmp_path) -> None:
     module = load_manual_action_preflight_script()
     from app.services.manual_actions import save_manual_action
