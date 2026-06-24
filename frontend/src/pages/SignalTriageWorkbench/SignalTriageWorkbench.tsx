@@ -1964,7 +1964,7 @@ export function SignalTriageWorkbench() {
                   <p>{recommendedManualActionCandidate.reason}</p>
                   <div className="recommendedManualActionPreview" aria-label="推荐留痕只读预检">
                     <span>只读预检</span>
-                    <span>{recommendedManualActionCandidate.manualActionPreview.actionType}</span>
+                    <span>{manualActionDisplayLabel(recommendedManualActionCandidate.manualActionPreview.actionType)}</span>
                     <span>对象ID：{recommendedManualActionCandidate.manualActionPreview.objectId}</span>
                     <span>窗口：{recommendedManualActionCandidate.manualActionPreview.reviewWindows.join(" / ")}</span>
                   </div>
@@ -1998,7 +1998,7 @@ export function SignalTriageWorkbench() {
                   <p>{nextUnhandledEvidenceDrilldownText(signalTriageSummary)}</p>
                   <div className="recommendedManualActionPreview" aria-label="下一个候选只读预检">
                     <span>只读预检</span>
-                    <span>{nextUnhandledManualActionCandidate.manualActionPreview.actionType}</span>
+                    <span>{manualActionDisplayLabel(nextUnhandledManualActionCandidate.manualActionPreview.actionType)}</span>
                     <span>对象ID：{nextUnhandledManualActionCandidate.manualActionPreview.objectId}</span>
                     <span>窗口：{nextUnhandledManualActionCandidate.manualActionPreview.reviewWindows.join(" / ")}</span>
                   </div>

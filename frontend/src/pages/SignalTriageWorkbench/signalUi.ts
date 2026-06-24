@@ -344,6 +344,20 @@ export interface RecommendedManualActionPreview {
   preflightChecks: ManualActionPreflightCheck[];
 }
 
+const userFacingManualActionLabels: Record<string, string> = {
+  observe: "记录观察",
+  handled: "标记已处理",
+  add_to_review: "加入复盘",
+  ignore: "忽略本次",
+};
+
+function userFacingManualActionText(text: string): string {
+  return Object.entries(userFacingManualActionLabels).reduce(
+    (current, [actionCode, actionLabel]) => current.replace(new RegExp(`\\b${actionCode}\\b`, "g"), actionLabel),
+    text,
+  );
+}
+
 export interface ManualActionPreflightCheck {
   checkId: string;
   label: string;
@@ -2150,7 +2164,7 @@ export function buildBackendRecommendedManualActionCandidate<T extends ManualAct
   return {
     signal,
     objectLabel,
-    reason: summary?.recommendation_reason || summary?.next_action || `后端推荐 ${objectLabel} 进入人工确认。`,
+    reason: userFacingManualActionText(summary?.recommendation_reason || summary?.next_action || `后端推荐 ${objectLabel} 进入人工确认。`),
     manualActionPreview: {
       willWrite: false,
       actionType: "add_to_review",
@@ -2188,7 +2202,7 @@ export function buildNextUnhandledManualActionCandidate<T extends ManualActionCa
   return {
     signal,
     objectLabel,
-    reason: summary?.next_action || `下一个未留痕候选 ${objectLabel} 需要人工确认。`,
+    reason: userFacingManualActionText(summary?.next_action || `下一个未留痕候选 ${objectLabel} 需要人工确认。`),
     manualActionPreview: {
       willWrite: false,
       actionType: "add_to_review",
@@ -6796,7 +6810,7 @@ export function recommendedManualStatusText(summary: SignalTriageSummaryForUi | 
       ? "推荐对象已有人工留痕，继续等待复盘窗口。"
       : "推荐对象尚未人工留痕；请在右侧点击加入复盘或记录观察。";
   }
-  return `${label}：${nextAction}`;
+  return `${label}：${userFacingManualActionText(nextAction)}`;
 }
 
 export function preferredProductScopeId(options: ProductScopeFilterOption[]): string {

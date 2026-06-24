@@ -1091,6 +1091,8 @@ const nextUnhandledManualActionCandidate = buildNextUnhandledManualActionCandida
 assertEqual(nextUnhandledManualActionCandidate?.signal.id, "sig-next-unhandled");
 assertEqual(nextUnhandledManualActionCandidate?.manualActionPreview.objectId, "B06VW5SQ97");
 assertIncludes(nextUnhandledManualActionCandidate?.reason ?? "", "下一个未留痕候选 RBK004-RBK004-2 深蓝");
+assertIncludes(nextUnhandledManualActionCandidate?.reason ?? "", "加入复盘");
+assertNotIncludes(nextUnhandledManualActionCandidate?.reason ?? "", "add_to_review");
 assertIncludes(nextUnhandledManualActionCandidate?.reason ?? "", "不要自动执行广告动作");
 
 const backendRecommendedCandidateWithNextPreview = buildBackendRecommendedManualActionCandidate(

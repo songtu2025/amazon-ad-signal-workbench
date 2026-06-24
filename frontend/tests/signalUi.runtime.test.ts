@@ -212,6 +212,7 @@ async function main() {
   assert(nextCandidate !== null, "下一候选应能构造成独立人工动作候选。");
   assert(nextCandidate?.objectLabel === nextLabel, "下一候选展示名应来自 next_unhandled_candidate。");
   assertIncludes(nextCandidate?.reason ?? "", nextLabel);
+  assertNotIncludes(nextCandidate?.reason ?? "", "add_to_review");
   assertIncludes(nextCandidate?.reason ?? "", "不要自动执行广告动作");
 
   const productScopeDrilldown = triage.product_scope_drilldown;
