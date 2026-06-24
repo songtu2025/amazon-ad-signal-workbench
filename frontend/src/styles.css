@@ -2541,6 +2541,34 @@ h3 {
   line-height: 1.35;
 }
 
+.productScopeAdGroupDiagnosisDecision {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.productScopeAdGroupDiagnosisDecision span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #d7e6f4;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.productScopeAdGroupDiagnosisDecision b {
+  color: #254864;
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.productScopeAdGroupDiagnosisDecision small {
+  color: #5d7287;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .productScopeAdGroupOwnership,
 .productScopeAdGroupAdvertisedProducts,
 .productScopeAdGroupChecklist,
@@ -8119,6 +8147,10 @@ button.reviewTodoQueueNext:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .productScopeAdGroupDiagnosisDecision {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .productScopeSearchTermColumns {
     grid-template-columns: 1fr;
   }
@@ -8213,6 +8245,10 @@ button.reviewTodoQueueNext:focus-visible {
   }
 
   .searchIntentExecutionPath {
+    grid-template-columns: 1fr;
+  }
+
+  .productScopeAdGroupDiagnosisDecision {
     grid-template-columns: 1fr;
   }
 

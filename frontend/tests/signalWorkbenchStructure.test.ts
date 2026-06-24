@@ -570,6 +570,14 @@ assertIncludes(workbenchSource, 'scope_id: "loading_product_scope"');
 assertIncludes(workbenchSource, "正在读取诊断入口");
 assertIncludes(workbenchSource, "disabled={productScope === null || loading}");
 assertIncludes(workbenchSource, 'aria-label="广告组问题定位"');
+assertIncludes(workbenchSource, 'className="productScopeAdGroupDiagnosisDecision"');
+assertIncludes(workbenchSource, 'aria-label="广告组业务判断"');
+assertIncludes(workbenchSource, "<b>问题落点</b>");
+assertIncludes(workbenchSource, "<b>证据合流</b>");
+assertIncludes(workbenchSource, "<b>证据缺口</b>");
+assertIncludes(workbenchSource, "<b>人工下一步</b>");
+assertIncludes(workbenchSource, "row.evidenceSynthesis.statusLabel");
+assertIncludes(workbenchSource, "row.evidenceSynthesis.evidenceGap");
 assertIncludes(workbenchSource, 'aria-label="广告组问题归属判定"');
 assertIncludes(workbenchSource, "row.ownershipDecision.statusLabel");
 assertIncludes(workbenchSource, "row.ownershipDecision.issueOwner");
@@ -585,6 +593,14 @@ assertIncludes(workbenchSource, "row.problemLocator.doesNotProve");
 assertIncludes(workbenchSource, "row.problemLocator.nextManualStep");
 assertIncludes(signalUiSource, "ProductScopeAdGroupProblemLocator");
 assertIncludes(signalUiSource, "不能证明应自动拆广告组");
+const adGroupDiagnosisMetricsIndex = workbenchSource.indexOf('className="productScopeAdGroupDiagnosisMetrics"');
+const adGroupDiagnosisDecisionIndex = workbenchSource.indexOf('aria-label="广告组业务判断"');
+const adGroupTrafficBoundaryIndex = workbenchSource.indexOf("{row.trafficContextBoundary}");
+assert(
+  adGroupDiagnosisMetricsIndex < adGroupDiagnosisDecisionIndex &&
+    adGroupDiagnosisDecisionIndex < adGroupTrafficBoundaryIndex,
+  "广告组列表行必须先给指标，再前置业务判断，最后补上下文边界，避免用户只读裸指标。",
+);
 assertIncludes(workbenchSource, 'aria-label="广告组证据合流判断"');
 assertIncludes(workbenchSource, "row.evidenceSynthesis.statusLabel");
 assertIncludes(workbenchSource, "row.evidenceSynthesis.evidenceChain");

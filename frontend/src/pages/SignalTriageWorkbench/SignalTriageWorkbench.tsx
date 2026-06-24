@@ -3965,6 +3965,24 @@ function ProductScopeAdGroupDiagnosisPanel({
                 <span>{row.metrics}</span>
                 <span>{row.trafficContext}</span>
               </div>
+              <div className="productScopeAdGroupDiagnosisDecision" aria-label="广告组业务判断">
+                <span>
+                  <b>问题落点</b>
+                  <small>{row.problemLocator.problemLocation}</small>
+                </span>
+                <span>
+                  <b>证据合流</b>
+                  <small>{row.evidenceSynthesis.statusLabel}</small>
+                </span>
+                <span>
+                  <b>证据缺口</b>
+                  <small>{row.evidenceSynthesis.evidenceGap}</small>
+                </span>
+                <span>
+                  <b>人工下一步</b>
+                  <small>{row.problemLocator.nextManualStep}</small>
+                </span>
+              </div>
               <small>{row.trafficContextBoundary}</small>
               <small>{row.nextReviewFocus}</small>
             </button>
