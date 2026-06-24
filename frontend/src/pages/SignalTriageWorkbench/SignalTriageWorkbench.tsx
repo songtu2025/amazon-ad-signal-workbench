@@ -4289,6 +4289,7 @@ function ProductScopeAdGroupActionBridgeCard({
   priorityItem: ProductScopePriorityQueueItem | null;
 }) {
   const items = buildProductScopeAdGroupChecklistItems(row);
+  const reviewPath = items.map((item) => item.title).join(" → ");
   const scopeLabel = priorityItem?.label ?? "未绑定 Parent ASIN 入口";
   const scopeReadback = priorityItem ? `${scopeLabel} / ${priorityItem.priorityLabel}` : `${scopeLabel} / 当前广告组诊断`;
   const scopeBoundary =
@@ -4309,6 +4310,20 @@ function ProductScopeAdGroupActionBridgeCard({
           {scopeBoundary}
           右侧只核对能否留痕或加入复盘，不重复解释 Parent ASIN 排序理由，也不执行广告操作。
         </small>
+      </div>
+      <div className="adGroupActionBridgePreflightEvidence" aria-label="人工点击前证据读回">
+        <span>
+          <b>复核顺序</b>
+          <small>{reviewPath}</small>
+        </span>
+        <span>
+          <b>证据缺口</b>
+          <small>{row.evidenceSynthesis.evidenceGap}</small>
+        </span>
+        <span>
+          <b>动作边界</b>
+          <small>{row.forbiddenActions.join(" / ")}；只能人工记录或加入复盘。</small>
+        </span>
       </div>
       <ul className="adGroupActionBridgeList">
         {items.map((item) => (
