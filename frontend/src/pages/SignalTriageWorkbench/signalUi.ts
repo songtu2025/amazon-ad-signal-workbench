@@ -1411,6 +1411,7 @@ export interface ProductScopePriorityQueueItem {
   tone: ProductScopePriorityQueueTone;
   mainQuestion: string;
   evidenceSummary: string;
+  rankReason: string;
   nextManualStep: string;
   boundary: string;
   signalCount: number;
@@ -6774,6 +6775,14 @@ export function buildProductScopePriorityQueueItems(
         evidenceSummary: hasAdEvidence
           ? `广告花费 ${formatScopeMoney(adSpend)} / 广告订单 ${adOrders} / 广告销售额 ${formatScopeMoney(adSales)} / AI 信号 ${scopeSignals.length} 条`
           : `当前无投放广告证据 / AI 信号 ${scopeSignals.length} 条 / 复盘待办 ${scopeReviewTodos.length} 条`,
+        rankReason: productScopePriorityRankReason({
+          dueReviewTodoCount,
+          reviewTodoCount: scopeReviewTodos.length,
+          highSignalCount,
+          openSignalCount,
+          adSpend,
+          hasAdEvidence,
+        }),
         nextManualStep: productScopePriorityNextStep({
           dueReviewTodoCount,
           reviewTodoCount: scopeReviewTodos.length,
@@ -6843,6 +6852,32 @@ function productScopePriorityNextStep(input: {
   if (input.openSignalCount > 0) return "打开后只复核当前广告证据是否足够，证据不足时记录观察或保持待确认。";
   if (input.hasAdEvidence) return "保留观察即可；没有明确异常或机会时，不需要逐层阅读全部广告数据。";
   return "不进入广告诊断；需要先补齐 advertised_products、搜索词或广告位证据。";
+}
+
+function productScopePriorityRankReason(input: {
+  dueReviewTodoCount: number;
+  reviewTodoCount: number;
+  highSignalCount: number;
+  openSignalCount: number;
+  adSpend: number;
+  hasAdEvidence: boolean;
+}): string {
+  if (input.dueReviewTodoCount > 0) {
+    return `复盘到期优先于普通信号；到期 ${input.dueReviewTodoCount} 项 / 高优先级 ${input.highSignalCount} 条 / 广告花费 ${formatScopeMoney(input.adSpend)}。`;
+  }
+  if (input.reviewTodoCount > 0) {
+    return `已有复盘排程优先于新分析；待复盘 ${input.reviewTodoCount} 项 / 高优先级 ${input.highSignalCount} 条 / 广告花费 ${formatScopeMoney(input.adSpend)}。`;
+  }
+  if (input.highSignalCount > 0) {
+    return `高优先级信号优先；高优先级 ${input.highSignalCount} 条 / 待复核 ${input.openSignalCount} 条 / 广告花费 ${formatScopeMoney(input.adSpend)}。`;
+  }
+  if (input.openSignalCount > 0) {
+    return `待复核信号优先于安静对象；待复核 ${input.openSignalCount} 条 / 广告花费 ${formatScopeMoney(input.adSpend)}。`;
+  }
+  if (input.hasAdEvidence) {
+    return `有广告证据但暂无强信号；按广告花费 ${formatScopeMoney(input.adSpend)} 保留观察。`;
+  }
+  return "无广告证据排在后面；只保留经营背景，暂不展开广告诊断。";
 }
 
 export function buildProductScopeSelectionSummary(selectedScope: ProductScopeFilterOption | null): ProductScopeSelectionSummary {

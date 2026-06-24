@@ -426,11 +426,16 @@ assertIncludes(workbenchSource, 'aria-label="今日 Parent ASIN 优先处理清�
 assertIncludes(workbenchSource, "今日 Parent ASIN 优先处理清单");
 assertIncludes(workbenchSource, "先排序，再下钻");
 assertIncludes(workbenchSource, "避免 10 个 Parent ASIN 像看 10 张报纸");
+assertIncludes(workbenchSource, "排序依据：{item.rankReason}");
 assertIncludes(workbenchSource, "handleSelectProductScopePriority(item.scopeId)");
 const productScopePriorityQueueIndex = workbenchSource.indexOf('className="productScopePriorityQueue"');
 assert(productScopePriorityQueueIndex > 0, "左侧必须有 Parent ASIN 今日优先处理清单");
 assert(productScopePriorityQueueIndex < signalRowsIndex, "Parent ASIN 优先处理清单必须在信号行之前，先帮用户排序再展开信号");
 assertIncludes(signalUiSource, "buildProductScopePriorityQueueItems");
+assertIncludes(signalUiSource, "rankReason: productScopePriorityRankReason");
+assertIncludes(signalUiSource, "复盘到期优先于普通信号");
+assertIncludes(signalUiSource, "高优先级信号优先");
+assertIncludes(signalUiSource, "无广告证据排在后面");
 assertIncludes(signalUiSource, "这只是 Parent ASIN 今日分诊入口");
 assertIncludes(signalUiSource, "未投放子 ASIN 不进入广告动作对象");
 assertIncludes(signalUiSource, "当前没有明确待处理信号，保持观察，不需要像报表一样展开阅读。");

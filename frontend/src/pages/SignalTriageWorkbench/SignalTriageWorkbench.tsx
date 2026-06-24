@@ -1892,6 +1892,7 @@ export function SignalTriageWorkbench() {
                       </span>
                       <span>{item.mainQuestion}</span>
                       <small>{item.evidenceSummary}</small>
+                      <small>排序依据：{item.rankReason}</small>
                       <small>{item.nextManualStep}</small>
                       <small>{item.boundary}</small>
                     </span>
