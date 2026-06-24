@@ -44,14 +44,17 @@ assertIncludes(workbenchSource, "const productScopeAdGroupDiagnosis = useMemo");
 assertIncludes(workbenchSource, "const [selectedAdGroupDiagnosisId, setSelectedAdGroupDiagnosisId] = useState<string | null>(null);");
 assertIncludes(workbenchSource, "const selectedAdGroupDiagnosis = useMemo");
 assertIncludes(workbenchSource, "const productScopeDiagnosisBrief = useMemo");
+assertIncludes(workbenchSource, "const activeProductScopePriorityItem = useMemo");
 assertIncludes(workbenchSource, "const noActionableManualGate = useMemo");
 assertIncludes(workbenchSource, "const productScopeCandidateGapExplanation = useMemo");
 assertIncludes(workbenchSource, "matrix={productScopeEvidenceMatrix}");
 assertIncludes(workbenchSource, "rows={productScopeAdGroupDiagnosis}");
 assertIncludes(workbenchSource, "selectedId={selectedAdGroupDiagnosis?.id ?? null}");
 assertIncludes(workbenchSource, "onSelect={setSelectedAdGroupDiagnosisId}");
+assertIncludes(workbenchSource, "ProductScopePriorityEntryBridgePanel item={activeProductScopePriorityItem}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupFocusPanel row={selectedAdGroupDiagnosis}");
 assertIncludes(workbenchSource, "ProductScopeDiagnosisBriefPanel brief={productScopeDiagnosisBrief}");
+assertIncludes(workbenchSource, "function ProductScopePriorityEntryBridgePanel");
 assertIncludes(workbenchSource, "function ProductScopeDiagnosisBriefPanel");
 assertIncludes(workbenchSource, "function ProductScopeEvidenceMatrixPanel");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupDiagnosisPanel");
@@ -68,6 +71,10 @@ assertIncludes(workbenchSource, 'aria-label="当前广告组运营检查清单"'
 assertIncludes(workbenchSource, 'aria-label="当前广告组人工动作承接"');
 assertIncludes(workbenchSource, 'aria-label="广告组推理细节"');
 assertIncludes(workbenchSource, 'aria-label="当前广告组具体数据"');
+assertIncludes(workbenchSource, 'aria-label="当前 Parent ASIN 进入理由"');
+assertIncludes(workbenchSource, "从左侧优先处理清单进入此诊断范围");
+assertIncludes(workbenchSource, "先确认为什么看，再沿 Parent ASIN、广告 ASIN、广告组、投放词、搜索词和广告位下钻");
+assertIncludes(workbenchSource, "本区只解释进入理由，不写入人工动作，也不执行任何广告操作");
 assertIncludes(workbenchSource, "ProductScopeTargetingEvidencePanel row={row}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupOperationalChecklistPanel row={row}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupActionBridgeCard row={selectedAdGroupDiagnosis}");
@@ -112,6 +119,9 @@ assertIncludes(signalUiSource, 'layerId: "review"');
 assertIncludes(signalUiSource, "复盘门槛：先有人工留痕和 7d / 14d ReviewTodo");
 
 const diagnosisPanelIndex = workbenchSource.indexOf('<section className="diagnosisPanel">');
+const productScopePriorityEntryBridgeRenderIndex = workbenchSource.indexOf(
+  "{activeProductScopePriorityItem && <ProductScopePriorityEntryBridgePanel item={activeProductScopePriorityItem} />}",
+);
 const diagnosisBriefRenderIndex = workbenchSource.indexOf(
   "{productScopeDiagnosisBrief && <ProductScopeDiagnosisBriefPanel brief={productScopeDiagnosisBrief} />}",
 );
@@ -165,6 +175,11 @@ const reviewMetricTableIndex = workbenchSource.indexOf('aria-label="复盘指标
 const reviewRecordPreflightChecklistIndex = workbenchSource.indexOf('aria-label="复盘保存前检查清单"');
 const saveReviewRecordButtonIndex = workbenchSource.indexOf('<button className="secondaryButton" onClick={handleSaveReviewRecord}');
 assert(diagnosisPanelIndex >= 0, "诊断区必须存在");
+assert(productScopePriorityEntryBridgeRenderIndex > diagnosisPanelIndex, "Parent ASIN 进入理由必须渲染在诊断区内");
+assert(
+  productScopePriorityEntryBridgeRenderIndex < diagnosisBriefRenderIndex,
+  "Parent ASIN 进入理由必须先于诊断详情摘要，先解释为什么进入再展开纵向链路",
+);
 assert(diagnosisBriefRenderIndex > diagnosisPanelIndex, "Parent ASIN 诊断详情摘要必须渲染在诊断区内");
 assert(diagnosisBriefRenderIndex < adGroupDiagnosisRenderIndex, "Parent ASIN 诊断详情摘要必须先于广告组优先级列表");
 assert(diagnosisBriefRenderIndex < selectedSignalBranchIndex, "Parent ASIN 诊断详情摘要不能被单条信号选中状态挡住");
@@ -200,7 +215,10 @@ assertIncludes(workbenchSource, 'aria-label="选中信号与当前诊断入口�
 assertIncludes(workbenchSource, 'aria-label="广告搜索词表现复核与当前信号关系"');
 assertIncludes(workbenchSource, 'aria-label="具体 SearchTerm 复核理由"');
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 诊断详情摘要"');
+assertIncludes(workbenchSource, 'aria-label="当前 Parent ASIN 进入理由"');
 assertIncludes(workbenchSource, 'aria-label="允许的人工动作"');
+assertIncludes(stylesSource, ".productScopePriorityEntryBridge");
+assertIncludes(stylesSource, "order: 1;");
 assertIncludes(stylesSource, ".productScopeDiagnosisBrief");
 assertIncludes(stylesSource, ".productScopeDiagnosisBriefSection");
 assertIncludes(stylesSource, ".productScopeTargetingEvidence");

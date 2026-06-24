@@ -221,6 +221,7 @@ import {
   SignalTriageDiagnosisContractItem,
   SignalMetricDecisionItem,
   SignalTriageDiagnosisPathItem,
+  ProductScopePriorityQueueItem,
   SelectedSignalScopeContext,
   SearchIntentPanelContext,
   SearchIntentFocusContext,
@@ -656,6 +657,10 @@ export function SignalTriageWorkbench() {
   const productScopePriorityQueueItems = useMemo(
     () => buildProductScopePriorityQueueItems(productScopeOptions, normalizedSignals, reviewTodos, 10),
     [normalizedSignals, productScopeOptions, reviewTodos],
+  );
+  const activeProductScopePriorityItem = useMemo(
+    () => productScopePriorityQueueItems.find((item) => item.scopeId === activeProductScopeId) ?? null,
+    [activeProductScopeId, productScopePriorityQueueItems],
   );
 
   const queueFilteredSignals = useMemo(() => {
@@ -2333,6 +2338,7 @@ export function SignalTriageWorkbench() {
         </aside>
 
         <section className="diagnosisPanel">
+          {activeProductScopePriorityItem && <ProductScopePriorityEntryBridgePanel item={activeProductScopePriorityItem} />}
           {productScopeDiagnosisBrief && <ProductScopeDiagnosisBriefPanel brief={productScopeDiagnosisBrief} />}
           {productScopeAdGroupDiagnosis.length > 0 && (
             <ProductScopeAdGroupDiagnosisPanel
@@ -3688,6 +3694,39 @@ function ProductScopeDrilldownEvidencePanel({
         </section>
       )}
     </>
+  );
+}
+
+function ProductScopePriorityEntryBridgePanel({ item }: { item: ProductScopePriorityQueueItem }) {
+  return (
+    <section className={`productScopePriorityEntryBridge diagnosisStep ${item.tone}`} aria-label="当前 Parent ASIN 进入理由">
+      <div className="detailSectionHeader">
+        <h3>当前 Parent ASIN 进入理由</h3>
+        <span>{item.priorityLabel}</span>
+      </div>
+      <p>
+        从左侧优先处理清单进入此诊断范围：先确认为什么看，再沿 Parent ASIN、广告 ASIN、广告组、投放词、搜索词和广告位下钻。
+      </p>
+      <ul>
+        <li>
+          <b>排序依据</b>
+          <span>{item.rankReason}</span>
+        </li>
+        <li>
+          <b>主问题</b>
+          <span>{item.mainQuestion}</span>
+        </li>
+        <li>
+          <b>当前证据</b>
+          <span>{item.evidenceSummary}</span>
+        </li>
+        <li>
+          <b>人工下一步</b>
+          <span>{item.nextManualStep}</span>
+        </li>
+      </ul>
+      <small>{item.boundary} 本区只解释进入理由，不写入人工动作，也不执行任何广告操作。</small>
+    </section>
   );
 }
 
