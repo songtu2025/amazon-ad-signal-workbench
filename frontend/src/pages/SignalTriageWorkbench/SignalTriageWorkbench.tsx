@@ -85,6 +85,7 @@ import {
   buildReviewRecordReadbackExpectation,
   buildReviewRecordReadbackTarget,
   filterReviewTodosByProductScope,
+  buildReviewTodoDecisionReadbackSummary,
   buildReviewTodoEvidenceReadbackSummary,
   manualActionBoundaryText,
   manualActionEmptyStateText,
@@ -862,6 +863,10 @@ export function SignalTriageWorkbench() {
   const nextReviewTodoEvidenceText = manualActionEvidenceSnapshotText(nextReviewTodo);
   const selectedReviewTodoEvidenceReadback = useMemo(
     () => buildReviewTodoEvidenceReadbackSummary(nextReviewTodo),
+    [nextReviewTodo],
+  );
+  const selectedReviewTodoDecisionReadback = useMemo(
+    () => buildReviewTodoDecisionReadbackSummary(nextReviewTodo),
     [nextReviewTodo],
   );
   const selectedReviewEvidenceSnapshot = useMemo(() => {
@@ -2844,6 +2849,25 @@ export function SignalTriageWorkbench() {
                       </span>
                       {nextReviewTodoReadback && <span>{nextReviewTodoReadback}</span>}
                       {nextReviewTodoEvidenceText && <span>{nextReviewTodoEvidenceText}</span>}
+                      {selectedReviewTodoDecisionReadback && (
+                        <div
+                          className={`manualConfirmationEvidenceReadiness reviewTodoDecisionReadback ${selectedReviewTodoDecisionReadback.tone}`}
+                          aria-label="复盘待办业务判断读回"
+                        >
+                          <strong>{selectedReviewTodoDecisionReadback.title}</strong>
+                          <p>{selectedReviewTodoDecisionReadback.summary}</p>
+                          <ul>
+                            {selectedReviewTodoDecisionReadback.rows.map((row) => (
+                              <li key={row.label} className={row.tone}>
+                                <span>{row.label}</span>
+                                <b>{row.value}</b>
+                                <p>{row.detail}</p>
+                              </li>
+                            ))}
+                          </ul>
+                          <small>{selectedReviewTodoDecisionReadback.boundary}</small>
+                        </div>
+                      )}
                       {selectedReviewTodoEvidenceReadback && (
                         <div
                           className={`manualConfirmationEvidenceReadiness reviewTodoEvidenceReadback ${selectedReviewTodoEvidenceReadback.tone}`}

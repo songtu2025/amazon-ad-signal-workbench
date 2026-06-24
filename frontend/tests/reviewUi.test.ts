@@ -6,6 +6,7 @@ import {
   buildRuleImprovementReadiness,
   buildReviewRecordPreflightChecklist,
   buildReviewRecordSaveGateSummary,
+  buildReviewTodoDecisionReadbackSummary,
   buildReviewTodoEvidenceReadbackSummary,
   buildReviewEffectWindowLedger,
   buildRuleFeedbackCandidate,
@@ -1127,12 +1128,21 @@ const searchTermReviewTodoWithFullChain: ReviewTodoForUi = {
   ],
 };
 const readyReviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary(searchTermReviewTodoWithFullChain);
+const readyReviewTodoDecisionReadback = buildReviewTodoDecisionReadbackSummary(searchTermReviewTodoWithFullChain);
 const searchTermSnapshotLabels = searchTermReviewTodoWithFullChain.evidence_snapshot?.map((item) => item.label).join(" / ") ?? "";
 assertEqual(
   searchTermSnapshotLabels,
   "排查路径 / AI 准入 / 搜索词表现分组 / 搜索词表现判断 / Parent ASIN入口 / 广告 ASIN承接 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景 / 人工确认判断依据 / 能证明的事实 / 不能证明的边界 / 人工下一步 / 证据缺口 / 需要补证 / 动作边界",
 );
 assertEqual(readyReviewTodoEvidenceReadback?.tone, "ready");
+assertEqual(readyReviewTodoDecisionReadback?.tone, "ready");
+assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "复盘待办业务判断读回");
+assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "搜索词表现判断");
+assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "扩量复核：订单 23");
+assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "人工下一步");
+assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "需要补证");
+assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "不自动执行广告动作");
+assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "未到期不判断效果");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "复盘待办证据回读核对");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "业务判断");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "诊断路径");
@@ -1171,6 +1181,12 @@ const blockedReviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary
 assertEqual(blockedReviewTodoEvidenceReadback?.tone, "blocked");
 assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadback), "缺：ABA 背景 / 证据缺口 / 需要补证");
 assertIncludes(JSON.stringify(blockedReviewTodoEvidenceReadback), "不能直接保存可复盘结论");
+const blockedReviewTodoDecisionReadback = buildReviewTodoDecisionReadbackSummary({
+  ...searchTermReviewTodoWithFullChain,
+  evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot?.filter((item) => item.label !== "搜索词表现判断"),
+});
+assertEqual(blockedReviewTodoDecisionReadback?.tone, "blocked");
+assertIncludes(JSON.stringify(blockedReviewTodoDecisionReadback), "缺少当时为什么进入复盘的判断");
 const searchTermManualActionReadbackPathAfterTodo = buildManualActionReadbackPathItems({
   latestManualAction: {
     action_type: "add_to_review",

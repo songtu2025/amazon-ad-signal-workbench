@@ -407,6 +407,14 @@ export interface ReviewTodoEvidenceReadbackSummary {
   boundary: string;
 }
 
+export interface ReviewTodoDecisionReadbackSummary {
+  title: string;
+  tone: "ready" | "waiting" | "blocked";
+  summary: string;
+  rows: ReviewTodoEvidenceReadbackRow[];
+  boundary: string;
+}
+
 export interface ManualActionPathStep {
   label: string;
   value: string;
@@ -1261,6 +1269,7 @@ const reviewRecordAbaContextLabels = ["ABA 背景"];
 const reviewRecordEvidenceGapLabels = ["证据缺口"];
 const reviewRecordRequiredEvidenceLabels = ["需要补证"];
 const reviewRecordManualActionBoundaryLabels = ["动作边界"];
+const reviewRecordManualNextStepLabels = ["人工下一步"];
 
 const reviewRecordDiagnosisSupportLabels = [
   "广告组问题定位",
@@ -1287,6 +1296,62 @@ const reviewRecordDiagnosisSupportLabels = [
 ];
 
 const reviewTodoBusinessJudgementLabels = ["人工确认判断依据", "能证明的事实", "不能证明的边界", "人工下一步"];
+
+function reviewTodoDecisionSnapshotText(snapshot: ManualActionEvidenceSnapshotForUi[], labels: string[]) {
+  const item = snapshot.find((snapshotItem) => labels.includes(String(snapshotItem.label ?? "").trim()));
+  return item ? reviewRecordEvidenceItemText(item) : null;
+}
+
+export function buildReviewTodoDecisionReadbackSummary(todo: ReviewTodoForUi | null): ReviewTodoDecisionReadbackSummary | null {
+  if (!todo) return null;
+  const snapshot = (todo.evidence_snapshot ?? []).filter(
+    (item) => String(item.label ?? "").trim() && String(item.value ?? "").trim(),
+  );
+  const hasSnapshot = snapshot.length > 0;
+  const isSearchTermTodo = normalizedPreflightTargetValue(todo.object_type) === "search_term";
+  const decisionText = reviewTodoDecisionSnapshotText(
+    snapshot,
+    isSearchTermTodo ? reviewRecordSearchTermPerformanceDecisionLabels : ["人工确认判断依据"],
+  );
+  const nextStepText = reviewTodoDecisionSnapshotText(snapshot, reviewRecordManualNextStepLabels);
+  const requiredEvidenceText = reviewTodoDecisionSnapshotText(snapshot, reviewRecordRequiredEvidenceLabels);
+  const boundaryText = reviewTodoDecisionSnapshotText(snapshot, reviewRecordManualActionBoundaryLabels);
+  const hasCoreReadback = Boolean(decisionText && nextStepText && boundaryText);
+  const tone: ReviewTodoDecisionReadbackSummary["tone"] = hasCoreReadback ? "ready" : hasSnapshot ? "blocked" : "waiting";
+
+  return {
+    title: isSearchTermTodo ? "复盘待办业务判断读回" : "复盘待办判断读回",
+    tone,
+    summary: hasCoreReadback
+      ? "已能第一眼回看当时为什么进入复盘、人工下一步和动作边界；待办仍只表示排程，未到期不判断效果。"
+      : hasSnapshot
+        ? "当前待办有证据快照，但缺少业务判断、人工下一步或动作边界；保存 ReviewRecord 前必须回到完整证据核对。"
+        : "当前待办没有证据快照；只能看到排程，不能回看当时判断。",
+    rows: [
+      {
+        label: isSearchTermTodo ? "搜索词表现判断" : "当时判断",
+        value: decisionText ? "已回读" : hasSnapshot ? "缺少判断" : "等待证据快照",
+        detail: decisionText ?? "缺少当时为什么进入复盘的判断，不能只凭处理后指标反推原因。",
+        tone: (decisionText ? "ready" : hasSnapshot ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
+      },
+      {
+        label: "人工下一步",
+        value: nextStepText ? "已回读" : hasSnapshot ? "缺少下一步" : "等待证据快照",
+        detail: nextStepText ?? "缺少人工下一步，用户无法知道到期后应复核哪个证据层。",
+        tone: (nextStepText ? "ready" : hasSnapshot ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
+      },
+      {
+        label: "需要补证",
+        value: requiredEvidenceText ? "已回读" : hasSnapshot ? "缺少补证项" : "等待证据快照",
+        detail: requiredEvidenceText ?? "缺少需要补证，复盘时容易把证据缺口误读成效果结论。",
+        tone: (requiredEvidenceText ? "ready" : hasSnapshot ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
+      },
+    ],
+    boundary: boundaryText
+      ? `${boundaryText}；复盘待办只表示进入 7/14 天排程，不自动执行广告动作，也不代表建议已经有效。`
+      : "复盘待办只表示进入 7/14 天排程；缺少动作边界时，不得保存效果结论或自动执行广告动作。",
+  };
+}
 
 function reviewTodoMissingLabelGroups(labels: Set<string>, labelGroups: string[][]) {
   return labelGroups
