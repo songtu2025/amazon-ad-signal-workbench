@@ -143,7 +143,9 @@ assertIncludes(workbenchSource, "guide.decision.nextManualStep");
 assertIncludes(signalUiSource, "buildProductScopeEvidenceRouteDecision");
 assertIncludes(signalUiSource, "buildProductScopeDiagnosisBrief");
 assertIncludes(signalUiSource, "Parent ASIN 诊断详情摘要");
-assertIncludes(signalUiSource, "销售表现摘要");
+assertIncludes(signalUiSource, "销售入口准入判断");
+assertIncludes(signalUiSource, "是否值得进入广告诊断");
+assertIncludes(signalUiSource, "不把全部销售子 ASIN 当广告对象");
 assertIncludes(signalUiSource, "AI 优先诊断摘要");
 assertIncludes(signalUiSource, "不让运营先读完整广告报表");
 assertIncludes(signalUiSource, "广告组问题排序");
@@ -160,7 +162,7 @@ assertIncludes(signalUiSource, 'layerId: "manual_confirmation"');
 assertIncludes(signalUiSource, 'layerId: "review"');
 assertIncludes(signalUiSource, "复盘门槛：先有人工留痕和 7d / 14d ReviewTodo");
 
-const diagnosisBriefSalesIndex = signalUiSource.indexOf('title: "销售表现摘要"');
+const diagnosisBriefSalesIndex = signalUiSource.indexOf('title: "销售入口准入判断"');
 const diagnosisBriefAiIndex = signalUiSource.indexOf('title: "AI 优先诊断摘要"');
 const diagnosisBriefAdGroupIndex = signalUiSource.indexOf('title: "广告组问题排序"');
 assert(

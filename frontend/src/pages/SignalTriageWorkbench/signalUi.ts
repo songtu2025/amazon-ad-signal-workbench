@@ -4986,7 +4986,6 @@ export function buildProductScopeDiagnosisBrief(
   adGroupRows: ProductScopeAdGroupDiagnosisRow[],
 ): ProductScopeDiagnosisBrief | null {
   if (!firstScreenSummary) return null;
-  const salesFact = firstScreenSummary.factItems[0];
   const adFact = firstScreenSummary.factItems[1];
   const primaryAdGroup = adGroupRows[0];
   const routeDecision = routeGuide?.decision;
@@ -5005,6 +5004,18 @@ export function buildProductScopeDiagnosisBrief(
   const adGroupNextManualStep = primaryAdGroup
     ? primaryAdGroup.problemLocator.nextManualStep
     : "先补齐广告组、投放商品、投放词、搜索词和广告位证据，再进入人工复核。";
+  const adEvidenceGate = firstScreenSummary.landingGates.find((gate) => gate.label === "广告证据");
+  const hasAdvertisedAsin = firstScreenSummary.adAsinRows.length > 0;
+  const salesEntryCurrentJudgement = hasAdvertisedAsin
+    ? `可以进入广告诊断：${adEvidenceGate?.value ?? firstScreenSummary.adCoverageDecision.statusLabel}。${
+        adEvidenceGate?.detail ?? firstScreenSummary.adCoverageDecision.summary
+      } 经营销售盘只做背景，不把全部销售子 ASIN 当广告对象。`
+    : `暂不进入广告诊断：${adEvidenceGate?.value ?? "缺少广告 ASIN，不能进入广告诊断"}。${
+        adEvidenceGate?.detail ?? firstScreenSummary.adCoverageDecision.summary
+      } 先补齐 advertised_products、广告组、投放词、搜索词或广告位证据。`;
+  const salesEntryNextManualStep = hasAdvertisedAsin
+    ? `${adFact?.value ?? "只把有 advertised_products 证据的广告 ASIN 带入后续诊断。"} 下一步进入广告组排序和具体广告证据，不把未投放子 ASIN 拉入广告分析。`
+    : `${firstScreenSummary.adCoverageDecision.nextManualStep} 暂不看广告组排序，先补广告对象证据。`;
 
   return {
     title: "Parent ASIN 诊断详情摘要",
@@ -5016,12 +5027,12 @@ export function buildProductScopeDiagnosisBrief(
       {
         id: "sales_summary",
         label: "1",
-        title: "销售表现摘要",
-        purpose: "判断当前 Parent ASIN 是否值得进入广告复核，并限定销售子 ASIN 只是经营背景。",
-        currentJudgement: salesFact?.value ?? firstScreenSummary.summary,
-        proves: "能证明当前经营盘、销售子 ASIN 范围和销售表现背景。",
+        title: "销售入口准入判断",
+        purpose: "先回答这个 Parent ASIN 是否值得进入广告诊断，并限定销售子 ASIN 只是经营背景。",
+        currentJudgement: salesEntryCurrentJudgement,
+        proves: "能证明当前 Parent ASIN 经营盘、销售子 ASIN 范围，以及哪些广告 ASIN 有 advertised_products 证据可进入下钻。",
         doesNotProve: "不能证明 Parent ASIN 下所有子 ASIN 都有广告数据，也不能直接生成广告动作对象。",
-        nextManualStep: adFact?.value ?? "只把有 advertised_products 证据的广告 ASIN 带入后续诊断。",
+        nextManualStep: salesEntryNextManualStep,
         tone: "scope",
       },
       {
