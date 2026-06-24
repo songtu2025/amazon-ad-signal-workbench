@@ -4188,10 +4188,7 @@ function ProductScopeAdGroupActionBridgeCard({
 }) {
   const items = buildProductScopeAdGroupChecklistItems(row);
   const scopeLabel = priorityItem?.label ?? "未绑定 Parent ASIN 入口";
-  const scopeRankReason =
-    priorityItem?.rankReason ?? "当前广告组来自诊断入口下的广告组问题定位；若不是 Parent ASIN 入口，只按广告组证据复核。";
-  const scopeMainQuestion =
-    priorityItem?.mainQuestion ?? "先确认广告组容器内投放商品、投放词、搜索词和广告位证据是否足够。";
+  const scopeReadback = priorityItem ? `${scopeLabel} / ${priorityItem.priorityLabel}` : `${scopeLabel} / 当前广告组诊断`;
   const scopeBoundary =
     priorityItem?.boundary ?? "没有 Parent ASIN 分诊来源时，右侧人工动作只保存当前广告组留痕或复盘待办。";
 
@@ -4202,13 +4199,13 @@ function ProductScopeAdGroupActionBridgeCard({
         <span>{row.statusLabel}</span>
       </div>
       <p>先按中间检查清单复核，再选择右侧人工动作；这里只保存人工留痕或复盘待办。</p>
-      <div className="adGroupActionBridgeScope" aria-label="Parent ASIN 分诊路径承接">
-        <span>Parent ASIN 来源：{scopeLabel}</span>
-        <span>进入理由：{scopeRankReason}</span>
-        <span>主问题：{scopeMainQuestion}</span>
+      <div className="adGroupActionBridgeScope" aria-label="人工动作前核对">
+        <span>动作对象：{row.title} / {row.problemType}</span>
+        <span>来源读回：{scopeReadback}</span>
+        <span>允许动作：记录观察 / 标记已处理 / 加入复盘 / 忽略本次</span>
         <small>
-          当前广告组：{row.title} / {row.problemType}。{scopeBoundary}
-          这里把 Parent ASIN 分诊理由带到人工动作前核对，不执行广告操作。
+          {scopeBoundary}
+          右侧只核对能否留痕或加入复盘，不重复解释 Parent ASIN 排序理由，也不执行广告操作。
         </small>
       </div>
       <ul className="adGroupActionBridgeList">
