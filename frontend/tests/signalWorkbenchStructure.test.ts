@@ -60,16 +60,22 @@ assertIncludes(workbenchSource, "function ProductScopeTargetingEvidencePanel");
 assertIncludes(workbenchSource, "function buildProductScopeTargetingEvidenceRows");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupOperationalChecklistPanel");
 assertIncludes(workbenchSource, "function buildProductScopeAdGroupChecklistItems");
+assertIncludes(workbenchSource, "function ProductScopeAdGroupActionBridgeCard");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupReasoningDetails");
 assertIncludes(workbenchSource, 'aria-label="广告组内投放商品表现"');
 assertIncludes(workbenchSource, 'aria-label="投放词证据独立复核"');
 assertIncludes(workbenchSource, 'aria-label="当前广告组运营检查清单"');
+assertIncludes(workbenchSource, 'aria-label="当前广告组人工动作承接"');
 assertIncludes(workbenchSource, 'aria-label="广告组推理细节"');
 assertIncludes(workbenchSource, 'aria-label="当前广告组具体数据"');
 assertIncludes(workbenchSource, "ProductScopeTargetingEvidencePanel row={row}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupOperationalChecklistPanel row={row}");
+assertIncludes(workbenchSource, "ProductScopeAdGroupActionBridgeCard row={selectedAdGroupDiagnosis}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupReasoningDetails row={row}");
 assertIncludes(workbenchSource, "先看证据层，再看 AI 推理");
+assertIncludes(workbenchSource, "先按中间检查清单复核，再选择右侧人工动作");
+assertIncludes(workbenchSource, "这里只保存人工留痕或复盘待办");
+assertIncludes(workbenchSource, "不能自动调价、暂停、否词或加词");
 assertIncludes(workbenchSource, "投放词证据来自搜索词表现行的 keyword_text / target_id");
 assertIncludes(workbenchSource, "SP 关键词详情和商品定向详情第一阶段仍属暂缓同步");
 assertIncludes(workbenchSource, "aria-pressed={isSelected}");
@@ -125,6 +131,11 @@ const searchTermDiagnosisPanelIndex = workbenchSource.indexOf(
 const placementDecisionIndex = workbenchSource.indexOf('aria-label="广告位证据判断"');
 const adGroupReasoningDetailsIndex = workbenchSource.indexOf("<ProductScopeAdGroupReasoningDetails row={row} />");
 const selectedSignalBranchIndex = workbenchSource.indexOf("{selectedSignal ? (");
+const actionPanelIndex = workbenchSource.indexOf('<aside className="actionPanel">');
+const adGroupActionBridgeRenderIndex = workbenchSource.indexOf(
+  "{selectedAdGroupDiagnosis && <ProductScopeAdGroupActionBridgeCard row={selectedAdGroupDiagnosis} />}",
+);
+const actionDecisionCardIndex = workbenchSource.indexOf('className="actionDecisionCard"');
 const selectedSignalScopeContextRenderIndex = workbenchSource.indexOf(
   "<SelectedSignalScopeContextStrip context={selectedSignalScopeContext} />",
 );
@@ -169,6 +180,9 @@ assert(placementDecisionIndex < adGroupReasoningDetailsIndex, "AI 推理细节�
 assert(routeGuideRenderIndex > diagnosisPanelIndex, "广告证据链导览必须渲染在诊断区内");
 assert(routeGuideRenderIndex < selectedSignalBranchIndex, "广告证据链导览不能被单条信号选中状态挡住");
 assert(adGroupDiagnosisRenderIndex < selectedSignalBranchIndex, "广告组问题定位不能被单条信号选中状态挡住");
+assert(actionPanelIndex >= 0, "右侧建议处理区必须存在");
+assert(adGroupActionBridgeRenderIndex > actionPanelIndex, "当前广告组人工动作承接必须渲染在右侧建议处理区内");
+assert(adGroupActionBridgeRenderIndex < actionDecisionCardIndex, "当前广告组人工动作承接必须先于建议动作摘要");
 assertIncludes(workbenchSource, "buildSelectedSignalScopeContext");
 assertIncludes(workbenchSource, "selectedSignalScopeContext");
 assertIncludes(workbenchSource, "buildSearchIntentFocusContext");
@@ -192,6 +206,8 @@ assertIncludes(stylesSource, ".productScopeDiagnosisBriefSection");
 assertIncludes(stylesSource, ".productScopeTargetingEvidence");
 assertIncludes(stylesSource, ".productScopeTargetingEvidenceHeader");
 assertIncludes(stylesSource, ".productScopeAdGroupChecklist");
+assertIncludes(stylesSource, ".adGroupActionBridgeCard");
+assertIncludes(stylesSource, ".adGroupActionBridgeList");
 assertIncludes(stylesSource, ".productScopeAdGroupReasoningDetails");
 assertIncludes(workbenchSource, 'aria-label="SearchTerm 复核执行路径"');
 assertIncludes(signalUiSource, "buildSelectedSignalScopeContext");

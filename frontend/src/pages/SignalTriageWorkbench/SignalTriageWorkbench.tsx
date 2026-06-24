@@ -2381,6 +2381,8 @@ export function SignalTriageWorkbench() {
             </div>
           </div>
 
+          {selectedAdGroupDiagnosis && <ProductScopeAdGroupActionBridgeCard row={selectedAdGroupDiagnosis} />}
+
           {selectedSignal ? (
             <>
               <section className="actionDecisionCard" aria-label="建议处理摘要">
@@ -4036,6 +4038,30 @@ function ProductScopeAdGroupOperationalChecklistPanel({ row }: { row: ProductSco
         ))}
       </ol>
     </div>
+  );
+}
+
+function ProductScopeAdGroupActionBridgeCard({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
+  const items = buildProductScopeAdGroupChecklistItems(row);
+
+  return (
+    <section className="adGroupActionBridgeCard" aria-label="当前广告组人工动作承接">
+      <div className="adGroupActionBridgeHeader">
+        <strong>当前广告组人工动作承接</strong>
+        <span>{row.statusLabel}</span>
+      </div>
+      <p>先按中间检查清单复核，再选择右侧人工动作；这里只保存人工留痕或复盘待办。</p>
+      <ul className="adGroupActionBridgeList">
+        {items.map((item) => (
+          <li key={item.key}>
+            <span>{item.title}</span>
+            <b>{item.judgement}</b>
+            <small>{item.nextStep}</small>
+          </li>
+        ))}
+      </ul>
+      <small>若证据不足，优先记录观察或加入复盘；不能自动调价、暂停、否词或加词。</small>
+    </section>
   );
 }
 
