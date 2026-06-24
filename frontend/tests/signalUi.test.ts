@@ -3779,6 +3779,52 @@ assertIncludes(manualConfirmationEvidenceByLabel["需要补证"].detail ?? "", "
 assertIncludes(manualConfirmationEvidenceByLabel["动作边界"].value, "不得自动加词");
 assertIncludes(manualConfirmationEvidenceByLabel["动作边界"].detail ?? "", "不能把 ABA 当作店铺数据");
 
+const selectedSearchIntentDecisionCard = {
+  intentLabel: "规则语义：海滩出行用品",
+  title: "规则语义：海滩出行用品",
+  summary: "35 单 / 花费 77.38 / ACOS 23.42%",
+  sourceLabel: "规则语义",
+  operationDecisionLabel: "扩量复核",
+  operationDecisionReason: "有订单且 ACOS 可控，优先人工复核是否存在可扩量机会。",
+  operationDecisionTone: "scale" as const,
+  insight: "这组广告搜索词转化稳定。",
+  businessQuestion: "这组同类广告用户搜索词是否存在可扩量机会？",
+  currentJudgement: "当前进入扩量人工复核。",
+  metricPurpose: "花费、点击、订单、CVR 和 ACOS 用于判断是否值得继续人工复核。",
+  metricPurposeItems: [],
+  adContext: "覆盖 2 个广告组。",
+  evidenceGap: "需要补投放词和广告位证据。",
+  signalMetricBoundary: "卡片指标覆盖聚合表现行，具体信号只展示可行动子集。",
+  purpose: "从 Parent ASIN 视角聚合广告用户搜索词表现。",
+  boundary: "不自动执行广告动作。",
+  dataGrain: "ad_search_term_daily_metrics 用户搜索词表现行。",
+  proves: "能证明同类搜索词有广告订单。",
+  doesNotProve: "不能证明应该自动加词。",
+  nextManualStep: "打开具体 SearchTerm 后人工复核。",
+  primarySearchTerm: "beach essentials",
+  primarySearchTermReason: "该词订单最多，适合作为优先打开的 SearchTerm。",
+  topTerms: [],
+};
+
+const manualConfirmationSearchTermEvidenceItemsWithDecision = buildManualConfirmationEvidenceItems(
+  diagnosisContractItems,
+  searchTermOpportunityReviewChain,
+  undefined,
+  selectedSearchIntentDecisionCard,
+);
+assertIncludes(
+  manualConfirmationSearchTermEvidenceItemsWithDecision.map((item) => item.label).join(" / "),
+  "搜索词表现判断 / 复核路径",
+);
+const searchIntentDecisionEvidence = manualConfirmationSearchTermEvidenceItemsWithDecision.find(
+  (item) => item.label === "搜索词表现判断",
+);
+assertIncludes(searchIntentDecisionEvidence?.value ?? "", "扩量复核");
+assertIncludes(searchIntentDecisionEvidence?.value ?? "", "可扩量机会");
+assertIncludes(searchIntentDecisionEvidence?.detail ?? "", "优先打开 beach essentials");
+assertIncludes(searchIntentDecisionEvidence?.detail ?? "", "只用于人工复核优先级");
+assertIncludes(searchIntentDecisionEvidence?.detail ?? "", "不自动执行广告动作");
+
 const advertisedProductManualConfirmationEvidenceItems = buildManualConfirmationEvidenceItems(
   [],
   null,
@@ -5052,6 +5098,7 @@ const selectedSearchIntentFocusContext = buildSearchIntentFocusContext(
     },
   },
   selectedParentScopeForSignalContext,
+  selectedSearchIntentDecisionCard,
 );
 
 if (!selectedSearchIntentFocusContext) {
@@ -5066,13 +5113,20 @@ assertEqual(selectedSearchIntentFocusContext.pathItems[0]?.value, "Parent ASIN B
 assertEqual(selectedSearchIntentFocusContext.pathItems[1]?.label, "搜索词表现分组");
 assertIncludes(selectedSearchIntentFocusContext.pathItems[1]?.value ?? "", "当前 Parent ASIN 关联广告中的用户搜索词表现行");
 assertEqual(selectedSearchIntentFocusContext.pathItems[2]?.label, "当前诊断对象");
+assertEqual(selectedSearchIntentFocusContext.pathItems[3]?.label, "运营判断");
+assertIncludes(selectedSearchIntentFocusContext.pathItems[3]?.value ?? "", "扩量复核");
+assertIncludes(selectedSearchIntentFocusContext.pathItems[3]?.value ?? "", "可扩量机会");
+assertEqual(selectedSearchIntentFocusContext.pathItems[4]?.label, "优先 SearchTerm");
+assertIncludes(selectedSearchIntentFocusContext.pathItems[4]?.value ?? "", "beach essentials");
 assertIncludes(selectedSearchIntentFocusContext.relation, "搜索词表现分组");
 assertIncludes(selectedSearchIntentFocusContext.relation, "从 Parent ASIN B0PARENT 视角按标准化搜索词/语义标签聚合广告中实际产生表现的用户搜索词行");
 assertIncludes(selectedSearchIntentFocusContext.relation, "按表现分组缩小广告 SearchTerm 信号队列");
 assertIncludes(selectedSearchIntentFocusContext.relation, "若进入人工动作");
 assertIncludes(selectedSearchIntentFocusContext.relation, "以后端预检确认的 SearchTerm 稳定对象为准");
+assertIncludes(selectedSearchIntentFocusContext.relation, "当前聚合卡片判断为“扩量复核”");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "Parent ASIN 广告搜索词表现复核「规则语义：海滩出行用品」只是分析分组");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "不是经营商品、广告组或人工动作对象");
+assertIncludes(selectedSearchIntentFocusContext.boundary, "扩量 / 止损 / 观察判断只服务人工复核优先级");
 assertIncludes(selectedSearchIntentFocusContext.boundary, "实际写入以后端 preflight evidence_snapshot_preview 为准");
 assertEqual(buildSearchIntentFocusContext("规则语义：太阳镜", searchTermSignalWithoutAsin), null);
 

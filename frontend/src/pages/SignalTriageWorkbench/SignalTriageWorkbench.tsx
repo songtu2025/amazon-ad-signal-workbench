@@ -550,6 +550,10 @@ export function SignalTriageWorkbench() {
     () => buildSearchIntentPanelContext(searchIntentReviewCards),
     [searchIntentReviewCards],
   );
+  const activeSearchIntentReviewCard = useMemo(
+    () => (activeSearchIntentLabel ? searchIntentReviewCards.find((card) => card.intentLabel === activeSearchIntentLabel) ?? null : null),
+    [activeSearchIntentLabel, searchIntentReviewCards],
+  );
   const triageReviewFeedbackText = useMemo(() => signalTriageReviewFeedbackText(signalTriageSummary), [signalTriageSummary]);
   const reviewReadinessGateSummary = useMemo(() => buildReviewReadinessGateSummary(signalTriageSummary), [signalTriageSummary]);
   const reviewEvidenceRepairSummary = useMemo(
@@ -687,8 +691,8 @@ export function SignalTriageWorkbench() {
     [selectedProductScopeOption, selectedSignal],
   );
   const selectedSearchIntentFocusContext = useMemo(
-    () => buildSearchIntentFocusContext(activeSearchIntentLabel, selectedSignal, selectedProductScopeOption),
-    [activeSearchIntentLabel, selectedProductScopeOption, selectedSignal],
+    () => buildSearchIntentFocusContext(activeSearchIntentLabel, selectedSignal, selectedProductScopeOption, activeSearchIntentReviewCard),
+    [activeSearchIntentLabel, activeSearchIntentReviewCard, selectedProductScopeOption, selectedSignal],
   );
   const selectedTriageBusinessEvidenceItems =
     selectedSignal?.id && selectedSignal.id === signalTriageSummary?.recommended_candidate?.signal_id
@@ -711,8 +715,14 @@ export function SignalTriageWorkbench() {
     [selectedDiagnosisContractItems, selectedTriageBusinessEvidenceItems],
   );
   const selectedManualConfirmationEvidenceItems = useMemo(
-    () => buildManualConfirmationEvidenceItems(selectedDiagnosisContractItems, selectedSearchTermOpportunityReviewChain, selectedSignal),
-    [selectedDiagnosisContractItems, selectedSearchTermOpportunityReviewChain, selectedSignal],
+    () =>
+      buildManualConfirmationEvidenceItems(
+        selectedDiagnosisContractItems,
+        selectedSearchTermOpportunityReviewChain,
+        selectedSignal,
+        activeSearchIntentReviewCard,
+      ),
+    [activeSearchIntentReviewCard, selectedDiagnosisContractItems, selectedSearchTermOpportunityReviewChain, selectedSignal],
   );
   const selectedBackendManualActionPreview = canRecommendManualActionInCurrentScope
     ? manualActionPreviewForSelectedSignal(selectedSignal?.id, signalTriageSummary, selectedSignal)
