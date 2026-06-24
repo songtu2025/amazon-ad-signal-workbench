@@ -3811,6 +3811,7 @@ interface ProductScopePriorityDecisionSummary {
   topLabel: string;
   topPriorityLabel: string;
   headline: string;
+  readingStrategy: string;
   rankReason: string;
   scaleText: string;
   triageBuckets: ProductScopePriorityDecisionBucket[];
@@ -3827,12 +3828,17 @@ function buildProductScopePriorityDecisionSummary(items: ProductScopePriorityQue
   const dueReviewTodoCount = items.reduce((total, item) => total + item.dueReviewTodoCount, 0);
   const signalCount = items.reduce((total, item) => total + item.signalCount, 0);
   const topVerb = topItem.dueReviewTodoCount > 0 ? "先复盘" : "先处理";
+  const remainingCount = Math.max(items.length - 1, 0);
 
   return {
     topScopeId: topItem.scopeId,
     topLabel: topItem.label,
     topPriorityLabel: topItem.priorityLabel,
     headline: `${topVerb} ${topItem.label}：${topItem.mainQuestion}`,
+    readingStrategy:
+      remainingCount > 0
+        ? `只展开 ${topItem.label} 的诊断链路；其余 ${remainingCount} 个 Parent ASIN 先按分诊桶观察，除非出现到期复盘或高优先信号，不逐个打开完整报表。`
+        : `只展开 ${topItem.label} 的诊断链路；没有第二个 Parent ASIN 时，也不额外堆销售、广告组和明细报表。`,
     rankReason: topItem.rankReason,
     scaleText: `待处理规模：${items.length} 个 Parent ASIN / 高优先 ${urgentCount} 个 / 待复盘 ${reviewCount} 个 / 到期复盘 ${dueReviewTodoCount} 条 / AI 信号 ${signalCount} 条`,
     triageBuckets: buildProductScopePriorityDecisionBuckets(items),
@@ -3869,6 +3875,7 @@ function ProductScopePriorityDecisionSummaryPanel({
           </article>
         ))}
       </div>
+      <p>阅读策略：{summary.readingStrategy}</p>
       <p>排序依据：{summary.rankReason}</p>
       <p>人工下一步：{summary.nextManualStep}</p>
       <small>{summary.boundary}</small>

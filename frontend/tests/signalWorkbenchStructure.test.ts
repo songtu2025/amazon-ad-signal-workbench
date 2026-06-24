@@ -576,6 +576,9 @@ assertNotIncludes(workbenchSource, "const nextActiveProductScopeId = resolveProd
 assertIncludes(workbenchSource, "ProductScopePriorityDecisionSummaryPanel");
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 首页分诊摘要"');
 assertIncludes(workbenchSource, "今日先看什么");
+assertIncludes(workbenchSource, "readingStrategy");
+assertIncludes(workbenchSource, "阅读策略：{summary.readingStrategy}");
+assertIncludes(workbenchSource, "不逐个打开完整报表");
 assertIncludes(workbenchSource, "buildProductScopePriorityDecisionBuckets(items)");
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 分诊桶"');
 assertIncludes(workbenchSource, "productScopePriorityDecisionBucket");
