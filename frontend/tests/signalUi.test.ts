@@ -4302,7 +4302,7 @@ const parentScopeQueueHeader = buildProductScopeQueueHeader(
   2,
 );
 
-assertEqual(parentScopeQueueHeader.title, "Parent ASIN 广告分诊");
+assertEqual(parentScopeQueueHeader.title, "Parent ASIN 广告证据信号");
 assertEqual(parentScopeQueueHeader.countText, "2 条");
 assertIncludes(parentScopeQueueHeader.description, "Parent ASIN");
 assertIncludes(parentScopeQueueHeader.description, "有广告证据");
@@ -4349,20 +4349,21 @@ if (!parentScopeSparseExplanation) {
   throw new Error("Parent ASIN 少信号时应显示解释");
 }
 
-assertEqual(parentScopeSparseExplanation.title, "当前商品组暂无需处理信号");
+assertEqual(parentScopeSparseExplanation.title, "当前 Parent ASIN 暂无可处理广告信号");
 assertIncludes(parentScopeSparseExplanation.description, "不等于系统没读到数据");
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "策略压制");
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "主推款");
+assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "Parent ASIN 广告口径");
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "销售表现识别 2 个子 ASIN");
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "其中 1 个有当前投放广告证据");
-assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "未投放子 ASIN 不进入广告信号队列");
+assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "未投放子 ASIN 只作经营背景");
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "广告承接口径");
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "花费 $25.00");
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "广告订单 2");
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "广告销售 $40.00");
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "没有命中人工处理队列准入门槛");
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "范围外辅助排查");
-assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "不属于当前商品组广告诊断");
+assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "不属于当前 Parent ASIN 广告证据范围");
 assertIncludes(parentScopeSparseExplanation.reasons.join(" / "), "数据质量层还有 2 条");
 
 const parentScopeDrilldownExplanation = buildProductScopeSignalExplanation(
@@ -4434,7 +4435,7 @@ if (!parentScopeDrilldownExplanation) {
 }
 
 const parentScopeDrilldownText = parentScopeDrilldownExplanation.reasons.join(" / ");
-assertEqual(parentScopeDrilldownExplanation.title, "当前商品组暂无可行动候选");
+assertEqual(parentScopeDrilldownExplanation.title, "当前 Parent ASIN 暂无可行动候选");
 assertIncludes(parentScopeDrilldownText, "可行动准入");
 assertIncludes(parentScopeDrilldownText, "只能作为诊断视图");
 assertIncludes(parentScopeDrilldownText, "广告下钻");

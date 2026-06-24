@@ -6651,7 +6651,7 @@ export function buildProductScopeQueueHeader(selectedScope: ProductScopeFilterOp
 
   if (selectedScope.scope_type === "parent_asin" || selectedScope.scope_id.startsWith("parent_asin:")) {
     return {
-      title: "Parent ASIN 广告分诊",
+      title: "Parent ASIN 广告证据信号",
       countText,
       description: "从 Parent ASIN 经营盘子下钻，只展示当前范围内有广告证据的广告 ASIN、广告组、投放词和搜索词问题；未投放子 ASIN 不直接进入广告诊断，搜索词和广告位仍按上下文解释。",
     };
@@ -6684,17 +6684,15 @@ export function buildProductScopeSignalExplanation(
 
   const isParentScope = selectedScope.scope_type === "parent_asin" || selectedScope.scope_id.startsWith("parent_asin:");
   const isAsinScope = selectedScope.scope_type === "advertised_asin" || selectedScope.scope_type === "sales_asin";
-  const label = isParentScope ? "商品组" : isAsinScope ? "ASIN" : "当前范围";
-  const titlePrefix = isAsinScope ? `当前 ${label}` : `当前${label}`;
-  const titleJoiner = isAsinScope ? " " : "";
   const noActionableMessage = summaryHasNoActionableCandidate(input.signalTriageSummary)
     ? input.signalTriageSummary?.actionability_status?.message ?? "当前经营对象暂无可行动候选，只能作为诊断视图，不能写人工动作。"
     : null;
-  const title = noActionableMessage
-    ? `${titlePrefix}${titleJoiner}暂无可行动候选`
-    : input.scopeSignalCount === 0
-      ? `${titlePrefix}${titleJoiner}暂无需处理信号`
-      : `${titlePrefix}${titleJoiner}仅有 ${input.scopeSignalCount} 条信号`;
+  const title = productScopeSignalExplanationTitle({
+    isParentScope,
+    isAsinScope,
+    noActionable: Boolean(noActionableMessage),
+    scopeSignalCount: input.scopeSignalCount,
+  });
   const reasons: string[] = [];
   const strategyNotes = selectedScope.strategy_notes ?? [];
 
@@ -6711,7 +6709,7 @@ export function buildProductScopeSignalExplanation(
     const advertisedAsinCount = input.advertisedAsinCount ?? 0;
     if (childAsinCount > 0) {
       reasons.push(
-        `商品组口径：销售表现识别 ${childAsinCount} 个子 ASIN，其中 ${advertisedAsinCount} 个有当前投放广告证据；未投放子 ASIN 不进入广告信号队列。`,
+        `Parent ASIN 广告口径：销售表现识别 ${childAsinCount} 个子 ASIN，其中 ${advertisedAsinCount} 个有当前投放广告证据；未投放子 ASIN 只作经营背景，不进入广告信号队列。`,
       );
     }
     const adSpend = scopeAdSpend(selectedScope);
@@ -6752,7 +6750,8 @@ export function buildProductScopeSignalExplanation(
 
   const outsideSignalCount = Math.max(input.allSignalCount - input.scopeSignalCount, 0);
   if (outsideSignalCount > 0) {
-    reasons.push(`范围外辅助排查：还有 ${outsideSignalCount} 条不属于当前${label}广告诊断的信号，只用于查看未归因广告数据或数据质量事项。`);
+    const outsideLabel = isParentScope ? "Parent ASIN 广告证据范围" : isAsinScope ? "ASIN 广告证据范围" : "当前诊断范围";
+    reasons.push(`范围外辅助排查：还有 ${outsideSignalCount} 条不属于当前 ${outsideLabel}的信号，只用于查看未归因广告数据或数据质量事项。`);
   }
 
   if ((input.dataQualityCount ?? 0) > 0) {
@@ -6765,6 +6764,26 @@ export function buildProductScopeSignalExplanation(
     reasons,
     tone: strategyNotes.length > 0 ? "strategy" : reasons.some((reason) => reason.startsWith("数据不足") || reason.startsWith("复盘输入证据缺口")) ? "data" : "neutral",
   };
+}
+
+function productScopeSignalExplanationTitle(input: {
+  isParentScope: boolean;
+  isAsinScope: boolean;
+  noActionable: boolean;
+  scopeSignalCount: number;
+}): string {
+  if (input.isParentScope) {
+    if (input.noActionable) return "当前 Parent ASIN 暂无可行动候选";
+    if (input.scopeSignalCount === 0) return "当前 Parent ASIN 暂无可处理广告信号";
+    return `当前 Parent ASIN 仅有 ${input.scopeSignalCount} 条广告信号`;
+  }
+  if (input.isAsinScope) {
+    if (input.noActionable) return "当前 ASIN 暂无可行动候选";
+    if (input.scopeSignalCount === 0) return "当前 ASIN 暂无需处理信号";
+    return `当前 ASIN 仅有 ${input.scopeSignalCount} 条信号`;
+  }
+  if (input.noActionable) return "当前范围暂无可行动候选";
+  return input.scopeSignalCount === 0 ? "当前范围暂无需处理信号" : `当前范围仅有 ${input.scopeSignalCount} 条信号`;
 }
 
 function productScopeDrilldownText(summary: SignalTriageSummaryForUi | null | undefined): string | null {
