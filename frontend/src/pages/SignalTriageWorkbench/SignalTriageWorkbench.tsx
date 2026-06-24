@@ -338,6 +338,7 @@ export function SignalTriageWorkbench() {
   const [marketOptions, setMarketOptions] = useState<MarketOption[]>([]);
   const [productScope, setProductScope] = useState<ProductScopeSummary | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedAdGroupDiagnosisId, setSelectedAdGroupDiagnosisId] = useState<string | null>(null);
   const [filter, setFilter] = useState<QueueFilter>("all");
   const [loading, setLoading] = useState(true);
   const [creatingSnapshot, setCreatingSnapshot] = useState(false);
@@ -556,6 +557,13 @@ export function SignalTriageWorkbench() {
   const nextUnhandledTriageBusinessEvidenceItems = useMemo(() => signalTriageBusinessEvidenceItems(signalTriageSummary, "next_unhandled"), [signalTriageSummary]);
   const productScopeDrilldownEvidence = useMemo(() => productScopeDrilldownEvidenceItems(signalTriageSummary), [signalTriageSummary]);
   const productScopeAdGroupDiagnosis = useMemo(() => productScopeAdGroupDiagnosisRows(signalTriageSummary), [signalTriageSummary]);
+  const selectedAdGroupDiagnosis = useMemo(
+    () =>
+      productScopeAdGroupDiagnosis.find((row) => row.id === selectedAdGroupDiagnosisId) ??
+      productScopeAdGroupDiagnosis[0] ??
+      null,
+    [productScopeAdGroupDiagnosis, selectedAdGroupDiagnosisId],
+  );
   const productScopeAdmissionCard = useMemo(() => buildProductScopeAdmissionCard(signalTriageSummary), [signalTriageSummary]);
   const noActionableManualGate = useMemo(() => buildNoActionableManualGate(signalTriageSummary), [signalTriageSummary]);
   const searchIntentReviewCards = useMemo(() => buildSearchIntentReviewCards(searchIntents), [searchIntents]);
@@ -2325,8 +2333,15 @@ export function SignalTriageWorkbench() {
 
         <section className="diagnosisPanel">
           {productScopeDiagnosisBrief && <ProductScopeDiagnosisBriefPanel brief={productScopeDiagnosisBrief} />}
+          {productScopeAdGroupDiagnosis.length > 0 && (
+            <ProductScopeAdGroupDiagnosisPanel
+              rows={productScopeAdGroupDiagnosis}
+              selectedId={selectedAdGroupDiagnosis?.id ?? null}
+              onSelect={setSelectedAdGroupDiagnosisId}
+            />
+          )}
+          {selectedAdGroupDiagnosis && <ProductScopeAdGroupFocusPanel row={selectedAdGroupDiagnosis} />}
           {productScopeEvidenceRouteGuide && <ProductScopeEvidenceRouteGuidePanel guide={productScopeEvidenceRouteGuide} />}
-          {productScopeAdGroupDiagnosis.length > 0 && <ProductScopeAdGroupDiagnosisPanel rows={productScopeAdGroupDiagnosis} />}
           {productScopeCandidateGapExplanation && (
             <ProductScopeCandidateGapExplanationPanel explanation={productScopeCandidateGapExplanation} />
           )}
@@ -3773,179 +3788,220 @@ function ProductScopeEvidenceRouteGuidePanel({ guide }: { guide: ProductScopeEvi
   );
 }
 
-function ProductScopeAdGroupDiagnosisPanel({ rows }: { rows: ProductScopeAdGroupDiagnosisRow[] }) {
+function ProductScopeAdGroupDiagnosisPanel({
+  rows,
+  selectedId,
+  onSelect,
+}: {
+  rows: ProductScopeAdGroupDiagnosisRow[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
   return (
     <section className="productScopeAdGroupDiagnosis diagnosisStep stepEvidence" aria-label="广告组问题定位">
       <div className="detailSectionHeader">
         <h3>广告组问题定位</h3>
-        <span>{rows.length} 个广告组</span>
+        <span>{rows.length} 个广告组，点击聚焦</span>
       </div>
       <div className="productScopeAdGroupDiagnosisRows">
-        {rows.map((row) => (
-          <article className={`productScopeAdGroupDiagnosisRow ${row.statusTone}`} key={row.id}>
-            <div className="productScopeAdGroupDiagnosisHeader">
-              <div>
-                <span>{row.problemType}</span>
-                <strong>{row.title}</strong>
+        {rows.map((row) => {
+          const isSelected = row.id === selectedId;
+          return (
+            <button
+              className={`productScopeAdGroupDiagnosisRow ${row.statusTone} ${isSelected ? "active" : ""}`}
+              key={row.id}
+              type="button"
+              onClick={() => onSelect(row.id)}
+              aria-pressed={isSelected}
+            >
+              <div className="productScopeAdGroupDiagnosisHeader">
+                <div>
+                  <span>{row.problemType}</span>
+                  <strong>{row.title}</strong>
+                </div>
+                <b>{row.statusLabel}</b>
               </div>
-              <b>{row.statusLabel}</b>
-            </div>
-            <div className="productScopeAdGroupDiagnosisMetrics">
-              <span>{row.metrics}</span>
-              <span>{row.trafficContext}</span>
-            </div>
-            <small>{row.trafficContextBoundary}</small>
-            {row.advertisedProductPerformance.length > 0 && (
-              <div className="productScopeAdGroupAdvertisedProducts" aria-label="广告组内投放商品表现">
-                <strong>广告组内投放商品表现</strong>
-                <ul>
-                  {row.advertisedProductPerformance.map((product) => (
-                    <li key={product.key}>
-                      <b>{product.asin}</b>
-                      <span>
-                        {product.msku ? `${product.msku} / ` : ""}
-                        {product.metrics}
-                        {product.sampleBoundary ? `；${product.sampleBoundary}` : ""}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+              <div className="productScopeAdGroupDiagnosisMetrics">
+                <span>{row.metrics}</span>
+                <span>{row.trafficContext}</span>
               </div>
-            )}
-            <div className="productScopeAdGroupOwnership" aria-label="广告组问题归属判定">
-              <div>
-                <strong>{row.ownershipDecision.title}</strong>
-                <span>{row.ownershipDecision.statusLabel}</span>
-              </div>
-              <p>{row.ownershipDecision.businessQuestion}</p>
-              <ul>
-                <li>
-                  <b>当前判断</b>
-                  <span>{row.ownershipDecision.currentJudgement}</span>
-                </li>
-                <li>
-                  <b>归属结论</b>
-                  <span>{row.ownershipDecision.issueOwner}</span>
-                </li>
-                <li>
-                  <b>证据路径</b>
-                  <span>{row.ownershipDecision.evidencePath}</span>
-                </li>
-                <li>
-                  <b>不能证明</b>
-                  <span>{row.ownershipDecision.doesNotProve}</span>
-                </li>
-                <li>
-                  <b>人工下一步</b>
-                  <span>{row.ownershipDecision.nextManualStep}</span>
-                </li>
-              </ul>
-            </div>
-            <div className="productScopeAdGroupProblemLocator" aria-label="广告组问题落点">
-              <strong>{row.problemLocator.title}</strong>
-              <p>{row.problemLocator.businessQuestion}</p>
-              <ul>
-                <li>
-                  <b>当前判断</b>
-                  <span>{row.problemLocator.currentJudgement}</span>
-                </li>
-                <li>
-                  <b>问题落点</b>
-                  <span>{row.problemLocator.problemLocation}</span>
-                </li>
-                <li>
-                  <b>为何拆开看</b>
-                  <span>{row.problemLocator.splitReason}</span>
-                </li>
-                <li>
-                  <b>不能证明</b>
-                  <span>{row.problemLocator.doesNotProve}</span>
-                </li>
-                <li>
-                  <b>人工下一步</b>
-                  <span>{row.problemLocator.nextManualStep}</span>
-                </li>
-              </ul>
-            </div>
-            <div className={`productScopeAdGroupEvidenceSynthesis ${row.evidenceSynthesis.tone}`} aria-label="广告组证据合流判断">
-              <div>
-                <strong>{row.evidenceSynthesis.title}</strong>
-                <span>{row.evidenceSynthesis.statusLabel}</span>
-              </div>
-              <p>{row.evidenceSynthesis.businessQuestion}</p>
-              <ul>
-                <li>
-                  <b>当前判断</b>
-                  <span>{row.evidenceSynthesis.currentJudgement}</span>
-                </li>
-                <li>
-                  <b>证据链</b>
-                  <span>{row.evidenceSynthesis.evidenceChain}</span>
-                </li>
-                <li>
-                  <b>能证明</b>
-                  <span>{row.evidenceSynthesis.proves}</span>
-                </li>
-                <li>
-                  <b>不能证明</b>
-                  <span>{row.evidenceSynthesis.doesNotProve}</span>
-                </li>
-                <li>
-                  <b>证据缺口</b>
-                  <span>{row.evidenceSynthesis.evidenceGap}</span>
-                </li>
-                <li>
-                  <b>人工下一步</b>
-                  <span>{row.evidenceSynthesis.nextManualStep}</span>
-                </li>
-              </ul>
-            </div>
-            <div className="productScopeAdGroupActionability" aria-label="广告组人工复核判断">
-              <strong>{row.actionableReview.title}</strong>
-              <span>{row.actionableReview.evidence}</span>
-              <p>{row.actionableReview.decision}</p>
-              <small>{row.actionableReview.manualGate}</small>
-            </div>
-            <p>{row.reason}</p>
-            <small>{row.nextReviewFocus}</small>
-            <small>{row.boundary}</small>
-            {row.searchTermDiagnosis && <ProductScopeSearchTermDiagnosisPanel rowId={row.id} diagnosis={row.searchTermDiagnosis} />}
-            <div className="productScopePlacementEvidenceDecision" aria-label="广告位证据判断">
-              <strong>{row.placementDecision.title}</strong>
-              <p>{row.placementDecision.businessQuestion}</p>
-              <ul>
-                <li>
-                  <b>当前判断</b>
-                  <span>{row.placementDecision.currentJudgement}</span>
-                </li>
-                <li>
-                  <b>证据层级</b>
-                  <span>{row.placementDecision.evidenceLevel}</span>
-                </li>
-                <li>
-                  <b>能证明</b>
-                  <span>{row.placementDecision.proves}</span>
-                </li>
-                <li>
-                  <b>不能证明</b>
-                  <span>{row.placementDecision.doesNotProve}</span>
-                </li>
-                <li>
-                  <b>证据缺口</b>
-                  <span>{row.placementDecision.evidenceGap}</span>
-                </li>
-                <li>
-                  <b>人工下一步</b>
-                  <span>{row.placementDecision.nextManualStep}</span>
-                </li>
-              </ul>
-            </div>
-            <div className="productScopeAdGroupDiagnosisForbidden" aria-label="禁止的自动广告动作">
-              {row.forbiddenActions.map((action) => (
-                <span key={`${row.id}-${action}`}>{action}</span>
-              ))}
-            </div>
-          </article>
+              <small>{row.trafficContextBoundary}</small>
+              <small>{row.nextReviewFocus}</small>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
+  return (
+    <section className={`productScopeAdGroupFocus diagnosisStep stepEvidence ${row.statusTone}`} aria-label="当前广告组具体数据">
+      <div className="detailSectionHeader">
+        <h3>当前广告组具体数据</h3>
+        <span>{row.statusLabel}</span>
+      </div>
+      <div className="productScopeAdGroupDiagnosisHeader">
+        <div>
+          <span>{row.problemType}</span>
+          <strong>{row.title}</strong>
+        </div>
+        <b>{row.statusLabel}</b>
+      </div>
+      <div className="productScopeAdGroupDiagnosisMetrics">
+        <span>{row.metrics}</span>
+        <span>{row.trafficContext}</span>
+      </div>
+      <small>{row.trafficContextBoundary}</small>
+      {row.advertisedProductPerformance.length > 0 && (
+        <div className="productScopeAdGroupAdvertisedProducts" aria-label="广告组内投放商品表现">
+          <strong>广告组内投放商品表现</strong>
+          <ul>
+            {row.advertisedProductPerformance.map((product) => (
+              <li key={product.key}>
+                <b>{product.asin}</b>
+                <span>
+                  {product.msku ? `${product.msku} / ` : ""}
+                  {product.metrics}
+                  {product.sampleBoundary ? `；${product.sampleBoundary}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div className="productScopeAdGroupOwnership" aria-label="广告组问题归属判定">
+        <div>
+          <strong>{row.ownershipDecision.title}</strong>
+          <span>{row.ownershipDecision.statusLabel}</span>
+        </div>
+        <p>{row.ownershipDecision.businessQuestion}</p>
+        <ul>
+          <li>
+            <b>当前判断</b>
+            <span>{row.ownershipDecision.currentJudgement}</span>
+          </li>
+          <li>
+            <b>归属结论</b>
+            <span>{row.ownershipDecision.issueOwner}</span>
+          </li>
+          <li>
+            <b>证据路径</b>
+            <span>{row.ownershipDecision.evidencePath}</span>
+          </li>
+          <li>
+            <b>不能证明</b>
+            <span>{row.ownershipDecision.doesNotProve}</span>
+          </li>
+          <li>
+            <b>人工下一步</b>
+            <span>{row.ownershipDecision.nextManualStep}</span>
+          </li>
+        </ul>
+      </div>
+      <div className="productScopeAdGroupProblemLocator" aria-label="广告组问题落点">
+        <strong>{row.problemLocator.title}</strong>
+        <p>{row.problemLocator.businessQuestion}</p>
+        <ul>
+          <li>
+            <b>当前判断</b>
+            <span>{row.problemLocator.currentJudgement}</span>
+          </li>
+          <li>
+            <b>问题落点</b>
+            <span>{row.problemLocator.problemLocation}</span>
+          </li>
+          <li>
+            <b>为何拆开看</b>
+            <span>{row.problemLocator.splitReason}</span>
+          </li>
+          <li>
+            <b>不能证明</b>
+            <span>{row.problemLocator.doesNotProve}</span>
+          </li>
+          <li>
+            <b>人工下一步</b>
+            <span>{row.problemLocator.nextManualStep}</span>
+          </li>
+        </ul>
+      </div>
+      <div className={`productScopeAdGroupEvidenceSynthesis ${row.evidenceSynthesis.tone}`} aria-label="广告组证据合流判断">
+        <div>
+          <strong>{row.evidenceSynthesis.title}</strong>
+          <span>{row.evidenceSynthesis.statusLabel}</span>
+        </div>
+        <p>{row.evidenceSynthesis.businessQuestion}</p>
+        <ul>
+          <li>
+            <b>当前判断</b>
+            <span>{row.evidenceSynthesis.currentJudgement}</span>
+          </li>
+          <li>
+            <b>证据链</b>
+            <span>{row.evidenceSynthesis.evidenceChain}</span>
+          </li>
+          <li>
+            <b>能证明</b>
+            <span>{row.evidenceSynthesis.proves}</span>
+          </li>
+          <li>
+            <b>不能证明</b>
+            <span>{row.evidenceSynthesis.doesNotProve}</span>
+          </li>
+          <li>
+            <b>证据缺口</b>
+            <span>{row.evidenceSynthesis.evidenceGap}</span>
+          </li>
+          <li>
+            <b>人工下一步</b>
+            <span>{row.evidenceSynthesis.nextManualStep}</span>
+          </li>
+        </ul>
+      </div>
+      <div className="productScopeAdGroupActionability" aria-label="广告组人工复核判断">
+        <strong>{row.actionableReview.title}</strong>
+        <span>{row.actionableReview.evidence}</span>
+        <p>{row.actionableReview.decision}</p>
+        <small>{row.actionableReview.manualGate}</small>
+      </div>
+      <p>{row.reason}</p>
+      <small>{row.nextReviewFocus}</small>
+      <small>{row.boundary}</small>
+      {row.searchTermDiagnosis && <ProductScopeSearchTermDiagnosisPanel rowId={row.id} diagnosis={row.searchTermDiagnosis} />}
+      <div className="productScopePlacementEvidenceDecision" aria-label="广告位证据判断">
+        <strong>{row.placementDecision.title}</strong>
+        <p>{row.placementDecision.businessQuestion}</p>
+        <ul>
+          <li>
+            <b>当前判断</b>
+            <span>{row.placementDecision.currentJudgement}</span>
+          </li>
+          <li>
+            <b>证据层级</b>
+            <span>{row.placementDecision.evidenceLevel}</span>
+          </li>
+          <li>
+            <b>能证明</b>
+            <span>{row.placementDecision.proves}</span>
+          </li>
+          <li>
+            <b>不能证明</b>
+            <span>{row.placementDecision.doesNotProve}</span>
+          </li>
+          <li>
+            <b>证据缺口</b>
+            <span>{row.placementDecision.evidenceGap}</span>
+          </li>
+          <li>
+            <b>人工下一步</b>
+            <span>{row.placementDecision.nextManualStep}</span>
+          </li>
+        </ul>
+      </div>
+      <div className="productScopeAdGroupDiagnosisForbidden" aria-label="禁止的自动广告动作">
+        {row.forbiddenActions.map((action) => (
+          <span key={`${row.id}-${action}`}>{action}</span>
         ))}
       </div>
     </section>

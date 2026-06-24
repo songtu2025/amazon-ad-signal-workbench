@@ -2019,7 +2019,7 @@ h3 {
   gap: 10px;
   padding: 14px 0 14px 46px;
   border-top: 1px solid #dce9f5;
-  order: 3;
+  order: 5;
 }
 
 .productScopeEvidenceRouteGuideSummary,
@@ -2275,7 +2275,16 @@ h3 {
   gap: 12px;
   padding: 14px 0 16px 46px;
   border-top: 1px solid #dce9f5;
-  order: 5;
+  order: 3;
+}
+
+.productScopeAdGroupFocus {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding: 14px 0 16px 46px;
+  border-top: 1px solid #dce9f5;
+  order: 4;
 }
 
 .productScopeAdGroupDiagnosisRows {
@@ -2284,6 +2293,8 @@ h3 {
 }
 
 .productScopeAdGroupDiagnosisRow {
+  width: 100%;
+  appearance: none;
   display: grid;
   gap: 8px;
   padding: 12px;
@@ -2291,7 +2302,23 @@ h3 {
   border-radius: 8px;
   background: #fbfdff;
   color: #4f637a;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   overflow-wrap: anywhere;
+}
+
+.productScopeAdGroupDiagnosisRow:hover,
+.productScopeAdGroupDiagnosisRow:focus-visible {
+  border-color: #9fc4e8;
+  box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.12);
+  outline: none;
+}
+
+.productScopeAdGroupDiagnosisRow.active {
+  border-color: #1f6feb;
+  background: #f5f9ff;
+  box-shadow: inset 3px 0 0 #1f6feb;
 }
 
 .productScopeAdGroupDiagnosisRow.healthy {
@@ -2312,6 +2339,14 @@ h3 {
 .productScopeAdGroupDiagnosisRow.gap {
   border-color: #e1d6b8;
   background: #fffaf0;
+}
+
+.productScopeAdGroupDiagnosisRow.healthy.active,
+.productScopeAdGroupDiagnosisRow.observe.active,
+.productScopeAdGroupDiagnosisRow.risk.active,
+.productScopeAdGroupDiagnosisRow.gap.active {
+  border-color: #1f6feb;
+  background: #f5f9ff;
 }
 
 .productScopeAdGroupDiagnosisHeader {
@@ -2512,7 +2547,9 @@ h3 {
 }
 
 .productScopeAdGroupDiagnosisRow p,
-.productScopeAdGroupDiagnosisRow small {
+.productScopeAdGroupDiagnosisRow small,
+.productScopeAdGroupFocus p,
+.productScopeAdGroupFocus small {
   margin: 0;
   color: #63778c;
   font-size: 12px;
@@ -7613,6 +7650,7 @@ button.reviewTodoQueueNext:focus-visible {
   .diagnosisPathPanel.diagnosisStep,
   .productScopeEvidenceMatrix,
   .productScopeAdGroupDiagnosis,
+  .productScopeAdGroupFocus,
   .evidenceWorkbench {
     padding-left: 0;
   }
@@ -7636,6 +7674,7 @@ button.reviewTodoQueueNext:focus-visible {
 
   .productScopeEvidenceMatrix,
   .productScopeAdGroupDiagnosis,
+  .productScopeAdGroupFocus,
   .evidenceWorkbench {
     padding: 42px 0 15px;
   }

@@ -41,16 +41,25 @@ assertIncludes(workbenchSource, "NoActionableManualGate");
 assertIncludes(workbenchSource, "const productScopeEvidenceMatrix = useMemo");
 assertIncludes(workbenchSource, "const productScopeEvidenceRouteGuide = useMemo");
 assertIncludes(workbenchSource, "const productScopeAdGroupDiagnosis = useMemo");
+assertIncludes(workbenchSource, "const [selectedAdGroupDiagnosisId, setSelectedAdGroupDiagnosisId] = useState<string | null>(null);");
+assertIncludes(workbenchSource, "const selectedAdGroupDiagnosis = useMemo");
 assertIncludes(workbenchSource, "const productScopeDiagnosisBrief = useMemo");
 assertIncludes(workbenchSource, "const noActionableManualGate = useMemo");
 assertIncludes(workbenchSource, "const productScopeCandidateGapExplanation = useMemo");
 assertIncludes(workbenchSource, "matrix={productScopeEvidenceMatrix}");
-assertIncludes(workbenchSource, "ProductScopeAdGroupDiagnosisPanel rows={productScopeAdGroupDiagnosis}");
+assertIncludes(workbenchSource, "rows={productScopeAdGroupDiagnosis}");
+assertIncludes(workbenchSource, "selectedId={selectedAdGroupDiagnosis?.id ?? null}");
+assertIncludes(workbenchSource, "onSelect={setSelectedAdGroupDiagnosisId}");
+assertIncludes(workbenchSource, "ProductScopeAdGroupFocusPanel row={selectedAdGroupDiagnosis}");
 assertIncludes(workbenchSource, "ProductScopeDiagnosisBriefPanel brief={productScopeDiagnosisBrief}");
 assertIncludes(workbenchSource, "function ProductScopeDiagnosisBriefPanel");
 assertIncludes(workbenchSource, "function ProductScopeEvidenceMatrixPanel");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupDiagnosisPanel");
+assertIncludes(workbenchSource, "function ProductScopeAdGroupFocusPanel");
 assertIncludes(workbenchSource, 'aria-label="广告组内投放商品表现"');
+assertIncludes(workbenchSource, 'aria-label="当前广告组具体数据"');
+assertIncludes(workbenchSource, "aria-pressed={isSelected}");
+assertIncludes(workbenchSource, "onClick={() => onSelect(row.id)}");
 assertIncludes(workbenchSource, "row.advertisedProductPerformance");
 assertIncludes(workbenchSource, "function ProductScopeEvidenceRouteGuidePanel");
 assertIncludes(workbenchSource, "function ProductScopeCandidateGapExplanationPanel");
@@ -89,8 +98,9 @@ const diagnosisBriefRenderIndex = workbenchSource.indexOf(
 const routeGuideRenderIndex = workbenchSource.indexOf(
   "{productScopeEvidenceRouteGuide && <ProductScopeEvidenceRouteGuidePanel guide={productScopeEvidenceRouteGuide} />}",
 );
-const adGroupDiagnosisRenderIndex = workbenchSource.indexOf(
-  "{productScopeAdGroupDiagnosis.length > 0 && <ProductScopeAdGroupDiagnosisPanel rows={productScopeAdGroupDiagnosis} />}",
+const adGroupDiagnosisRenderIndex = workbenchSource.indexOf("<ProductScopeAdGroupDiagnosisPanel");
+const selectedAdGroupFocusRenderIndex = workbenchSource.indexOf(
+  "{selectedAdGroupDiagnosis && <ProductScopeAdGroupFocusPanel row={selectedAdGroupDiagnosis} />}",
 );
 const selectedSignalBranchIndex = workbenchSource.indexOf("{selectedSignal ? (");
 const selectedSignalScopeContextRenderIndex = workbenchSource.indexOf(
@@ -123,11 +133,14 @@ const reviewRecordPreflightChecklistIndex = workbenchSource.indexOf('aria-label=
 const saveReviewRecordButtonIndex = workbenchSource.indexOf('<button className="secondaryButton" onClick={handleSaveReviewRecord}');
 assert(diagnosisPanelIndex >= 0, "诊断区必须存在");
 assert(diagnosisBriefRenderIndex > diagnosisPanelIndex, "Parent ASIN 诊断详情摘要必须渲染在诊断区内");
-assert(diagnosisBriefRenderIndex < routeGuideRenderIndex, "Parent ASIN 诊断详情摘要必须先于广告证据链导览");
+assert(diagnosisBriefRenderIndex < adGroupDiagnosisRenderIndex, "Parent ASIN 诊断详情摘要必须先于广告组优先级列表");
 assert(diagnosisBriefRenderIndex < selectedSignalBranchIndex, "Parent ASIN 诊断详情摘要不能被单条信号选中状态挡住");
+assert(adGroupDiagnosisRenderIndex > diagnosisPanelIndex, "广告组问题定位必须渲染在诊断区内");
+assert(adGroupDiagnosisRenderIndex < selectedAdGroupFocusRenderIndex, "广告组问题定位必须先于当前广告组具体数据");
+assert(selectedAdGroupFocusRenderIndex > diagnosisPanelIndex, "当前广告组具体数据必须渲染在诊断区内");
+assert(selectedAdGroupFocusRenderIndex < routeGuideRenderIndex, "当前广告组具体数据必须先于广告证据链导览");
 assert(routeGuideRenderIndex > diagnosisPanelIndex, "广告证据链导览必须渲染在诊断区内");
 assert(routeGuideRenderIndex < selectedSignalBranchIndex, "广告证据链导览不能被单条信号选中状态挡住");
-assert(adGroupDiagnosisRenderIndex > diagnosisPanelIndex, "广告组问题定位必须渲染在诊断区内");
 assert(adGroupDiagnosisRenderIndex < selectedSignalBranchIndex, "广告组问题定位不能被单条信号选中状态挡住");
 assertIncludes(workbenchSource, "buildSelectedSignalScopeContext");
 assertIncludes(workbenchSource, "selectedSignalScopeContext");
