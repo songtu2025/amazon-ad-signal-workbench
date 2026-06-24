@@ -3787,23 +3787,25 @@ function ProductScopePriorityEntryBridgePanel({
   return (
     <section className={`productScopePriorityEntryBridge diagnosisStep ${item.tone}`} aria-label="当前 Parent ASIN 进入理由">
       <div className="detailSectionHeader">
-        <h3>当前 Parent ASIN 进入理由</h3>
+        <h3>当前 Parent ASIN 证据路径承接</h3>
         <span>{item.priorityLabel}</span>
       </div>
       <p>
-        从左侧优先处理清单进入此诊断范围：先确认为什么看，再沿 Parent ASIN、广告 ASIN、广告组、投放词、搜索词和广告位下钻。
+        首页摘要已回答先看谁；本区只承接证据路径，避免重复排序解释。
       </p>
       <ul>
         <li>
-          <b>排序依据</b>
-          <span>{item.rankReason}</span>
+          <b>首页摘要读回</b>
+          <span>
+            {item.label} / {item.priorityLabel}
+          </span>
         </li>
         <li>
-          <b>主问题</b>
-          <span>{item.mainQuestion}</span>
+          <b>证据路径</b>
+          <span>Parent ASIN 经营盘 → 有广告数据的广告 ASIN → 广告组 → 投放商品 / 投放词 / 搜索词 / 广告位</span>
         </li>
         <li>
-          <b>当前证据</b>
+          <b>广告证据</b>
           <span>{item.evidenceSummary}</span>
         </li>
         <li>
@@ -3815,7 +3817,7 @@ function ProductScopePriorityEntryBridgePanel({
           <span>{adGroupFocusReason}</span>
         </li>
         <li>
-          <b>人工下一步</b>
+          <b>进入右侧前核对</b>
           <span>{item.nextManualStep}</span>
         </li>
       </ul>
