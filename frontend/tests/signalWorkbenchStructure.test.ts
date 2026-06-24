@@ -165,12 +165,14 @@ assertIncludes(signalUiSource, "Parent ASIN 销售表现入口");
 assertIncludes(signalUiSource, "是否值得进入广告诊断");
 assertIncludes(signalUiSource, "不把全部销售子 ASIN 当广告对象");
 assertIncludes(signalUiSource, "不把未投放变体拉进广告分析");
-assertIncludes(signalUiSource, "AI 广告诊断摘要");
-assertIncludes(signalUiSource, "不让运营先读完整广告报表");
+assertIncludes(signalUiSource, "AI 人工动作判断");
+assertIncludes(signalUiSource, "最后由 AI 汇总");
+assertIncludes(signalUiSource, "在销售入口、广告组排序和广告组下证据都读完后");
 assertIncludes(signalUiSource, "广告组优先排序");
 assertIncludes(signalUiSource, "当前广告组复核路径");
 assertIncludes(signalUiSource, "先确认问题落点、证据缺口和人工下一步");
 assertNotIncludes(signalUiSource, 'title: "AI 诊断摘要"');
+assertNotIncludes(signalUiSource, 'title: "AI 广告诊断摘要"');
 assertIncludes(signalUiSource, "不是四块报表纵向堆叠");
 assertIncludes(signalUiSource, "只输出可人工确认的下一步");
 assertIncludes(signalUiSource, "哪些广告对象真的有广告数据");
@@ -184,11 +186,14 @@ assertIncludes(signalUiSource, 'layerId: "review"');
 assertIncludes(signalUiSource, "复盘门槛：先有人工留痕和 7d / 14d ReviewTodo");
 
 const diagnosisBriefSalesIndex = signalUiSource.indexOf('title: "Parent ASIN 销售表现入口"');
-const diagnosisBriefAiIndex = signalUiSource.indexOf('title: "AI 广告诊断摘要"');
 const diagnosisBriefAdGroupIndex = signalUiSource.indexOf('title: "广告组优先排序"');
+const diagnosisBriefAdGroupDetailIndex = signalUiSource.indexOf('title: "当前广告组复核路径"');
+const diagnosisBriefAiIndex = signalUiSource.indexOf('title: "AI 人工动作判断"');
 assert(
-  diagnosisBriefSalesIndex < diagnosisBriefAiIndex && diagnosisBriefAiIndex < diagnosisBriefAdGroupIndex,
-  "Parent ASIN 运营诊断路径必须先看销售入口，再由 AI 缩小范围，最后进入广告组排序",
+  diagnosisBriefSalesIndex < diagnosisBriefAdGroupIndex &&
+    diagnosisBriefAdGroupIndex < diagnosisBriefAdGroupDetailIndex &&
+    diagnosisBriefAdGroupDetailIndex < diagnosisBriefAiIndex,
+  "Parent ASIN 运营诊断路径必须先看销售入口，再看广告组排序和具体证据，最后由 AI 汇总成人工动作判断",
 );
 
 const diagnosisPanelIndex = workbenchSource.indexOf('<section className="diagnosisPanel">');

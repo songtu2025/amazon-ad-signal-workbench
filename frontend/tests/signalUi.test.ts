@@ -5177,6 +5177,7 @@ if (!productScopeDiagnosisBrief) {
 }
 assertEqual(productScopeDiagnosisBrief.title, "Parent ASIN 运营诊断路径");
 assertIncludes(productScopeDiagnosisBrief.summary, "不是四块报表纵向堆叠");
+assertIncludes(productScopeDiagnosisBrief.summary, "最后由 AI 汇总");
 assertIncludes(productScopeDiagnosisBrief.summary, "只输出可人工确认的下一步");
 assertEqual(productScopeDiagnosisBrief.statusLabel, "人工留痕 MVP");
 assertEqual(productScopeDiagnosisBrief.sections.length, 4);
@@ -5189,16 +5190,17 @@ assertIncludes(productScopeDiagnosisBrief.sections[0].purpose, "不把未投放�
 assertIncludes(productScopeDiagnosisBrief.sections[0].proves, "哪些广告 ASIN 有 advertised_products 证据");
 assertIncludes(productScopeDiagnosisBrief.sections[0].doesNotProve, "所有子 ASIN 都有广告数据");
 assertIncludes(productScopeDiagnosisBrief.sections[0].nextManualStep, "下一步进入广告组排序");
-assertEqual(productScopeDiagnosisBrief.sections[1].title, "AI 广告诊断摘要");
-assertIncludes(productScopeDiagnosisBrief.sections[1].purpose, "不让运营先读完整广告报表");
-assertIncludes(productScopeDiagnosisBrief.sections[1].doesNotProve, "不代表系统可以自动加词");
-assertEqual(productScopeDiagnosisBrief.sections[2].title, "广告组优先排序");
-assertIncludes(productScopeDiagnosisBrief.sections[2].purpose, "避免运营逐个广告组读报表");
-assertIncludes(productScopeDiagnosisBrief.sections[2].currentJudgement, "花费");
-assertEqual(productScopeDiagnosisBrief.sections[3].title, "当前广告组复核路径");
-assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "先确认问题落点、证据缺口和人工下一步");
-assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "投放商品、投放词、搜索词和广告位");
-assertIncludes(productScopeDiagnosisBrief.sections[3].currentJudgement, "7 层证据");
+assertEqual(productScopeDiagnosisBrief.sections[1].title, "广告组优先排序");
+assertIncludes(productScopeDiagnosisBrief.sections[1].purpose, "避免运营逐个广告组读报表");
+assertIncludes(productScopeDiagnosisBrief.sections[1].currentJudgement, "花费");
+assertEqual(productScopeDiagnosisBrief.sections[2].title, "当前广告组复核路径");
+assertIncludes(productScopeDiagnosisBrief.sections[2].purpose, "先确认问题落点、证据缺口和人工下一步");
+assertIncludes(productScopeDiagnosisBrief.sections[2].purpose, "投放商品、投放词、搜索词和广告位");
+assertIncludes(productScopeDiagnosisBrief.sections[2].currentJudgement, "7 层证据");
+assertEqual(productScopeDiagnosisBrief.sections[3].title, "AI 人工动作判断");
+assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "在销售入口、广告组排序和广告组下证据都读完后");
+assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "记录观察、标记已处理、加入复盘或忽略本次");
+assertIncludes(productScopeDiagnosisBrief.sections[3].doesNotProve, "不代表系统可以自动加词");
 assertIncludes(productScopeDiagnosisBrief.manualActions.join(" / "), "记录观察");
 assertIncludes(productScopeDiagnosisBrief.manualActions.join(" / "), "加入复盘");
 assertIncludes(productScopeDiagnosisBrief.boundary, "搜索词和广告位不能直接归因");
