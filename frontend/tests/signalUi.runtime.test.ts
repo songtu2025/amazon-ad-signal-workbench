@@ -5,6 +5,10 @@ declare const process: {
 
 import {
   buildManualConfirmationEvidenceItems,
+  buildDiagnosisContextSummary,
+  buildProductScopeAnalysisPath,
+  buildProductScopeFirstScreenSummary,
+  buildProductScopeGroupOverview,
   buildSearchIntentPanelContext,
   buildSearchIntentReviewCards,
   buildNextUnhandledManualActionCandidate,
@@ -129,6 +133,7 @@ async function main() {
   const rawSignals = await fetchJson(`/api/signals?market_id=${marketId}`);
   const repair = await fetchJson(`/api/review-evidence-repair?market_id=${marketId}&top=5&product_scope_id=${scope}`);
   const searchIntents = await fetchJson(`/api/search-intents?market_id=${marketId}&product_scope_id=${scope}`);
+  const productScope = await fetchJson("/api/product-scope");
 
   const recommendedLabel =
     triage.recommended_manual_status?.object_label ||
@@ -211,6 +216,43 @@ async function main() {
   assertIncludes(productScopeText, "广告位");
   assertIncludes(productScopeText, "不能自动归因");
   assertIncludes(productScopeText, "不能自动执行广告动作");
+  const productScopeOptions = productScope?.options ?? [];
+  const selectedProductScopeOption = productScopeOptions.find((option: any) => option.scope_id === productScopeId) ?? null;
+  assert(selectedProductScopeOption?.scope_type === "parent_asin", "运行态必须用 Parent ASIN 作为当前经营诊断入口。");
+  const productScopeGroupOverview = buildProductScopeGroupOverview(selectedProductScopeOption, productScopeOptions, productScope?.coverage);
+  const firstScreenSummary = buildProductScopeFirstScreenSummary(productScopeGroupOverview, triage);
+  assert(firstScreenSummary !== null, "Parent ASIN 入口必须生成首屏经营路径摘要。");
+  assertIncludes(firstScreenSummary.pathSummary, "Parent ASIN 经营销售入口");
+  assertIncludes(firstScreenSummary.pathSummary, "广告 ASIN");
+  assertIncludes(firstScreenSummary.pathSummary, "广告组");
+  assertIncludes(firstScreenSummary.pathSummary, "投放词 / 搜索词 / 广告位");
+  assertIncludes(firstScreenSummary.pathSummary, "AI 信号诊断 -> 人工确认 -> 7/14 天复盘");
+  const firstScreenPathText = asText(firstScreenSummary.pathSteps);
+  assertIncludes(firstScreenPathText, "Parent ASIN 经营销售盘");
+  assertIncludes(firstScreenPathText, "广告 ASIN 覆盖");
+  assertIncludes(firstScreenPathText, "广告组是投放容器，不是产品");
+  assertIncludes(firstScreenPathText, "流量上下文证据");
+  assertIncludes(firstScreenPathText, "只允许记录观察、标记已处理、加入复盘、忽略本次");
+  assertIncludes(firstScreenPathText, "ReviewRecord");
+  assertIncludes(asText(firstScreenSummary.landingGates), "经营口径");
+  assertIncludes(asText(firstScreenSummary.landingGates), "广告证据");
+  assertIncludes(asText(firstScreenSummary.landingGates), "AI 准入");
+  assertIncludes(asText(firstScreenSummary.landingGates), "复盘门槛");
+  assertIncludes(firstScreenSummary.boundary, "未投放子 ASIN 不进入广告诊断");
+  assertIncludes(firstScreenSummary.boundary, "搜索词和广告位不能直接归因");
+  const analysisPath = buildProductScopeAnalysisPath(selectedProductScopeOption);
+  assertIncludes(asText(analysisPath.steps), "Parent ASIN 销售盘");
+  assertIncludes(asText(analysisPath.steps), "广告 ASIN 覆盖");
+  assertIncludes(asText(analysisPath.steps), "人工确认 / 7-14 天复盘");
+  assertIncludes(analysisPath.boundary, "未投放子 ASIN 不进入广告信号队列");
+  assertIncludes(analysisPath.boundary, "AI 信号必须进入人工确认和 7/14 天复盘");
+  const diagnosisContextSummary = buildDiagnosisContextSummary(selectedProductScopeOption, triage);
+  assert(diagnosisContextSummary !== null, "运行态必须生成当前诊断上下文读回。");
+  assertIncludes(asText(diagnosisContextSummary.items), "经营入口");
+  assertIncludes(asText(diagnosisContextSummary.items), "广告覆盖");
+  assertIncludes(asText(diagnosisContextSummary.items), "准入状态");
+  assertIncludes(asText(diagnosisContextSummary.items), "可处理候选");
+  assertIncludes(diagnosisContextSummary.boundary, "不能自动归因");
 
   assert(Array.isArray(searchIntents) && searchIntents.length > 0, "Parent ASIN 入口应返回广告搜索词表现聚合。");
   assert(
