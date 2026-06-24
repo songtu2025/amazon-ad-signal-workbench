@@ -2433,6 +2433,55 @@ h3 {
   gap: 10px;
 }
 
+.productScopeAdGroupPriorityGate {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #cfe1f1;
+  border-radius: 8px;
+  background: #f6faff;
+  color: #4f637a;
+  overflow-wrap: anywhere;
+}
+
+.productScopeAdGroupPriorityGate p {
+  margin: 0;
+  color: #2d455f;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.productScopeAdGroupPriorityGate ul {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.productScopeAdGroupPriorityGate li {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #d7e6f4;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.productScopeAdGroupPriorityGate li b {
+  color: #254864;
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.productScopeAdGroupPriorityGate li span {
+  color: #5d7287;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .productScopeAdGroupDiagnosisRow {
   width: 100%;
   appearance: none;
@@ -8218,6 +8267,10 @@ button.reviewTodoQueueNext:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .productScopeAdGroupPriorityGate ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .productScopeSearchTermColumns {
     grid-template-columns: 1fr;
   }
@@ -8316,6 +8369,10 @@ button.reviewTodoQueueNext:focus-visible {
   }
 
   .productScopeAdGroupDiagnosisDecision {
+    grid-template-columns: 1fr;
+  }
+
+  .productScopeAdGroupPriorityGate ul {
     grid-template-columns: 1fr;
   }
 

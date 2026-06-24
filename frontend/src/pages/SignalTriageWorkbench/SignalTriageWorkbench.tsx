@@ -3938,12 +3938,44 @@ function ProductScopeAdGroupDiagnosisPanel({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const priorityRow = rows[0];
+
   return (
     <section className="productScopeAdGroupDiagnosis diagnosisStep stepEvidence" aria-label="广告组问题定位">
       <div className="detailSectionHeader">
         <h3>广告组问题定位</h3>
         <span>{rows.length} 个广告组，点击聚焦</span>
       </div>
+      {priorityRow && (
+        <div className="productScopeAdGroupPriorityGate" aria-label="广告组优先判断">
+          <div className="productScopeAdGroupDiagnosisHeader">
+            <div>
+              <span>优先广告组</span>
+              <strong>{priorityRow.title}</strong>
+            </div>
+            <b>{priorityRow.statusLabel}</b>
+          </div>
+          <p>{priorityRow.problemLocator.problemLocation}</p>
+          <ul>
+            <li>
+              <b>为什么先看</b>
+              <span>{priorityRow.evidenceSynthesis.statusLabel}</span>
+            </li>
+            <li>
+              <b>能证明</b>
+              <span>{priorityRow.evidenceSynthesis.proves}</span>
+            </li>
+            <li>
+              <b>不能证明</b>
+              <span>{priorityRow.evidenceSynthesis.doesNotProve}</span>
+            </li>
+            <li>
+              <b>人工下一步</b>
+              <span>{priorityRow.problemLocator.nextManualStep}</span>
+            </li>
+          </ul>
+        </div>
+      )}
       <div className="productScopeAdGroupDiagnosisRows">
         {rows.map((row) => {
           const isSelected = row.id === selectedId;

@@ -599,6 +599,13 @@ assertIncludes(workbenchSource, 'scope_id: "loading_product_scope"');
 assertIncludes(workbenchSource, "正在读取诊断入口");
 assertIncludes(workbenchSource, "disabled={productScope === null || loading}");
 assertIncludes(workbenchSource, 'aria-label="广告组问题定位"');
+assertIncludes(workbenchSource, 'const priorityRow = rows[0]');
+assertIncludes(workbenchSource, 'aria-label="广告组优先判断"');
+assertIncludes(workbenchSource, "<span>优先广告组</span>");
+assertIncludes(workbenchSource, "<b>为什么先看</b>");
+assertIncludes(workbenchSource, "priorityRow.evidenceSynthesis.proves");
+assertIncludes(workbenchSource, "priorityRow.evidenceSynthesis.doesNotProve");
+assertIncludes(workbenchSource, "priorityRow.problemLocator.nextManualStep");
 assertIncludes(workbenchSource, 'className="productScopeAdGroupDiagnosisDecision"');
 assertIncludes(workbenchSource, 'aria-label="广告组业务判断"');
 assertIncludes(workbenchSource, "<b>问题落点</b>");
@@ -625,10 +632,16 @@ assertIncludes(signalUiSource, "不能证明应自动拆广告组");
 const adGroupDiagnosisMetricsIndex = workbenchSource.indexOf('className="productScopeAdGroupDiagnosisMetrics"');
 const adGroupDiagnosisDecisionIndex = workbenchSource.indexOf('aria-label="广告组业务判断"');
 const adGroupTrafficBoundaryIndex = workbenchSource.indexOf("{row.trafficContextBoundary}");
+const adGroupPriorityGateIndex = workbenchSource.indexOf('aria-label="广告组优先判断"');
+const adGroupRowsIndex = workbenchSource.indexOf('className="productScopeAdGroupDiagnosisRows"');
 assert(
   adGroupDiagnosisMetricsIndex < adGroupDiagnosisDecisionIndex &&
     adGroupDiagnosisDecisionIndex < adGroupTrafficBoundaryIndex,
   "广告组列表行必须先给指标，再前置业务判断，最后补上下文边界，避免用户只读裸指标。",
+);
+assert(
+  adGroupPriorityGateIndex < adGroupRowsIndex,
+  "广告组数据区必须先给优先判断，再展示可点击广告组列表，避免用户从多行报表里自己找重点。",
 );
 assertIncludes(workbenchSource, 'aria-label="广告组证据合流判断"');
 assertIncludes(workbenchSource, "row.evidenceSynthesis.statusLabel");
