@@ -3462,6 +3462,15 @@ function SearchIntentSelectedTermReasonPanel({ summary }: { summary: SearchInten
           </div>
         ))}
       </dl>
+      <div className="searchIntentExecutionPath" aria-label="SearchTerm 复核执行路径">
+        {summary.executionSteps.map((step) => (
+          <span key={step.label}>
+            <b>{step.label}</b>
+            <strong>{step.value}</strong>
+            <small>{step.detail}</small>
+          </span>
+        ))}
+      </div>
       <small>{summary.boundary}</small>
     </div>
   );

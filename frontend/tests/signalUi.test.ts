@@ -5160,6 +5160,18 @@ assertIncludes(selectedSearchIntentTermReasonSummary.rows[3]?.detail ?? "", "广
 assertEqual(selectedSearchIntentTermReasonSummary.rows[4]?.label, "人工下一步");
 assertIncludes(selectedSearchIntentTermReasonSummary.rows[4]?.value ?? "", "打开具体 SearchTerm 后人工复核");
 assertIncludes(selectedSearchIntentTermReasonSummary.rows[4]?.detail ?? "", "不能自动加词、否词、调价或暂停广告");
+assertEqual(selectedSearchIntentTermReasonSummary.executionSteps.length, 4);
+assertEqual(selectedSearchIntentTermReasonSummary.executionSteps[0]?.label, "1. 锁定入口");
+assertIncludes(selectedSearchIntentTermReasonSummary.executionSteps[0]?.detail ?? "", "不切换经营诊断入口");
+assertEqual(selectedSearchIntentTermReasonSummary.executionSteps[1]?.label, "2. 锁定 SearchTerm");
+assertIncludes(selectedSearchIntentTermReasonSummary.executionSteps[1]?.value ?? "", "beach essentials");
+assertIncludes(selectedSearchIntentTermReasonSummary.executionSteps[1]?.detail ?? "", "已命中优先复核 SearchTerm");
+assertEqual(selectedSearchIntentTermReasonSummary.executionSteps[2]?.label, "3. 核对广告承接");
+assertIncludes(selectedSearchIntentTermReasonSummary.executionSteps[2]?.value ?? "", "广告 ASIN / 广告组 / 投放词 / 广告位");
+assertIncludes(selectedSearchIntentTermReasonSummary.executionSteps[2]?.detail ?? "", "不能把搜索词自动归因到单个 ASIN");
+assertEqual(selectedSearchIntentTermReasonSummary.executionSteps[3]?.label, "4. 选择人工动作");
+assertIncludes(selectedSearchIntentTermReasonSummary.executionSteps[3]?.value ?? "", "打开具体 SearchTerm 后人工复核");
+assertIncludes(selectedSearchIntentTermReasonSummary.executionSteps[3]?.detail ?? "", "7/14 天后再读指标复盘");
 assertIncludes(selectedSearchIntentTermReasonSummary.boundary, "从当前 Parent ASIN 的广告搜索词表现聚合进入具体 SearchTerm");
 assertIncludes(selectedSearchIntentTermReasonSummary.boundary, "不能证明单个 ASIN 归因");
 assertIncludes(selectedSearchIntentTermReasonSummary.boundary, "不会自动执行任何广告动作");

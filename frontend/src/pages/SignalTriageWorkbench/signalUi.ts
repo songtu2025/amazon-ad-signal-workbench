@@ -128,6 +128,7 @@ export interface SearchIntentSelectedTermReasonSummary {
   title: string;
   tone: SearchIntentSelectedTermReasonTone;
   rows: { label: string; value: string; detail: string }[];
+  executionSteps: { label: string; value: string; detail: string }[];
   boundary: string;
 }
 
@@ -7540,6 +7541,7 @@ export function buildSearchIntentSelectedTermReasonSummary(
     : matchedPrimarySearchTerm
       ? "当前中间诊断已经落到该聚合分组下优先复核的 SearchTerm；继续看广告组、投放词、广告 ASIN 和广告位证据。"
       : "当前选中 SearchTerm 与聚合卡片的优先项不一致；这通常表示用户手动切换了信号，需要按当前信号证据复核。";
+  const reviewTarget = selectedSearchTerm || primarySearchTerm || "等待具体 SearchTerm";
 
   return {
     title: "具体 SearchTerm 复核理由",
@@ -7571,6 +7573,30 @@ export function buildSearchIntentSelectedTermReasonSummary(
         label: "人工下一步",
         value: decisionCard?.nextManualStep ?? "打开具体 SearchTerm 后人工复核广告组、投放词、广告 ASIN 和广告位证据。",
         detail: "页面只支持记录观察、标记已处理、加入复盘或忽略本次；不能自动加词、否词、调价或暂停广告。",
+      },
+    ],
+    executionSteps: [
+      {
+        label: "1. 锁定入口",
+        value: focusLabel,
+        detail: "确认仍在当前 Parent ASIN 广告上下文内复核，不切换经营诊断入口。",
+      },
+      {
+        label: "2. 锁定 SearchTerm",
+        value: `SearchTerm：${reviewTarget}`,
+        detail: matchedPrimarySearchTerm
+          ? "当前中间诊断已命中优先复核 SearchTerm。"
+          : "先确认当前选中 SearchTerm 是否就是本次要复核的具体搜索词。",
+      },
+      {
+        label: "3. 核对广告承接",
+        value: "广告 ASIN / 广告组 / 投放词 / 广告位",
+        detail: "按中间诊断链逐层核对承接关系和证据缺口，不能把搜索词自动归因到单个 ASIN。",
+      },
+      {
+        label: "4. 选择人工动作",
+        value: decisionCard?.nextManualStep ?? "记录观察或加入复盘前，先等待后端预检确认稳定对象。",
+        detail: "右侧只能记录观察、标记已处理、加入复盘或忽略本次；7/14 天后再读指标复盘。",
       },
     ],
     boundary:
