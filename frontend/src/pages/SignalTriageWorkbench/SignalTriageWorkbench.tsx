@@ -233,6 +233,7 @@ import {
   mergeBackendTriageSignals,
   isActionableProductScope,
   preferredProductScopeId,
+  resolveProductScopePrioritySelectionId,
   resolveProductScopeSelectionId,
   productScopeOptionLabel,
   productScopeAdGroupDiagnosisRows,
@@ -394,7 +395,12 @@ export function SignalTriageWorkbench() {
         fetchReviewTodos(selectedMarketId),
       ]);
       const nextProductScopeOptions = nextProductScope.options;
-      const nextActiveProductScopeId = resolveProductScopeSelectionId(selectedProductScopeId, nextProductScopeOptions);
+      const nextActiveProductScopeId = resolveProductScopePrioritySelectionId(
+        selectedProductScopeId,
+        nextProductScopeOptions,
+        nextSignals,
+        nextReviewTodos,
+      );
       const nextProductScopedSignals = filterSignalsByProductScope(nextSignals, nextActiveProductScopeId, nextProductScopeOptions);
       const [nextSignalTriageSummary, nextReviewEvidenceRepair, nextSearchIntents] = await Promise.all([
         fetchSignalTriageSummary(selectedMarketId, 5, nextActiveProductScopeId),

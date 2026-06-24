@@ -408,7 +408,7 @@ assertIncludes(workbenchSource, "activeSearchIntentLabel");
 assertIncludes(workbenchSource, "function clearSearchIntentFocus");
 assertIncludes(workbenchSource, "setSelectedSearchIntentScopeId(null);");
 assertIncludes(workbenchSource, "resolveSearchIntentFocusSelection(");
-assertIncludes(workbenchSource, "resolveProductScopeSelectionId(selectedProductScopeId, nextProductScopeOptions)");
+assertIncludes(workbenchSource, "resolveProductScopePrioritySelectionId(");
 assertIncludes(workbenchSource, "activeProductScopeId,");
 assertIncludes(workbenchSource, "setSelectedProductScopeId(nextActiveProductScopeId);");
 assertIncludes(workbenchSource, "setSelectedSearchIntentLabel(nextFocus.intentLabel)");
@@ -526,6 +526,8 @@ assertIncludes(workbenchSource, "当前诊断入口下没有命中下一个候�
 assertIncludes(workbenchSource, "productScopePriorityQueueItems");
 assertIncludes(workbenchSource, "const productScopePriorityDecisionSummary = useMemo");
 assertIncludes(workbenchSource, "buildProductScopePriorityDecisionSummary(productScopePriorityQueueItems)");
+assertIncludes(workbenchSource, "resolveProductScopePrioritySelectionId(");
+assertNotIncludes(workbenchSource, "const nextActiveProductScopeId = resolveProductScopeSelectionId(selectedProductScopeId, nextProductScopeOptions);");
 assertIncludes(workbenchSource, "ProductScopePriorityDecisionSummaryPanel");
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 首页分诊摘要"');
 assertIncludes(workbenchSource, "今日先看什么");

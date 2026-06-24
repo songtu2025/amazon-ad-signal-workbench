@@ -84,6 +84,7 @@ import {
   filterSignalsByProductScope,
   mergeBackendTriageSignals,
   preferredProductScopeId,
+  resolveProductScopePrioritySelectionId,
   resolveProductScopeSelectionId,
   productScopeOptionLabel,
   productScopeAdGroupDiagnosisRows,
@@ -672,6 +673,50 @@ assertEqual(productScopePriorityQueueItems[3].priorityLabel, "暂不展开");
 assertIncludes(productScopePriorityQueueItems[3].decisionBadge, "人工动作：暂不展开");
 assertIncludes(productScopePriorityQueueItems[3].decisionBadge, "复盘状态：无待办");
 assertIncludes(productScopePriorityQueueItems[3].evidenceSummary, "当前无投放广告证据");
+
+const prioritySelectionOptions = [
+  {
+    scope_id: "parent_asin:B0FIRST",
+    scope_type: "parent_asin",
+    label: "Parent ASIN B0FIRST",
+    parent_asin: "B0FIRST",
+    child_asins: ["B0FIRSTCHILD"],
+    ad_spend: 5,
+  },
+  {
+    scope_id: "parent_asin:B0DUE",
+    scope_type: "parent_asin",
+    label: "Parent ASIN B0DUE",
+    parent_asin: "B0DUE",
+    child_asins: ["B0DUECHILD"],
+    ad_spend: 20,
+  },
+] satisfies ProductScopeFilterOption[];
+const prioritySelectionSignals = [
+  {
+    ...searchTermSignal,
+    id: "sig-due-parent",
+    evidence: { source_rows: [{ source_table: "advertised_products", asin: "B0DUECHILD" }] },
+  },
+] satisfies ProductScopedSignalForUi[];
+assertEqual(
+  resolveProductScopePrioritySelectionId(null, prioritySelectionOptions, prioritySelectionSignals, [
+    { signal_id: "sig-due-parent", is_due: true },
+  ]),
+  "parent_asin:B0DUE",
+);
+assertEqual(
+  resolveProductScopePrioritySelectionId("parent_asin:B0FIRST", prioritySelectionOptions, prioritySelectionSignals, [
+    { signal_id: "sig-due-parent", is_due: true },
+  ]),
+  "parent_asin:B0FIRST",
+);
+assertEqual(
+  resolveProductScopePrioritySelectionId("missing-scope", prioritySelectionOptions, prioritySelectionSignals, [
+    { signal_id: "sig-due-parent", is_due: true },
+  ]),
+  "parent_asin:B0DUE",
+);
 
 const parentAsinOptions = [
   {

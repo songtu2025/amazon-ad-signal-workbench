@@ -6684,6 +6684,20 @@ export function resolveProductScopeSelectionId(
   return preferredProductScopeId(options);
 }
 
+export function resolveProductScopePrioritySelectionId(
+  currentSelectedScopeId: string | null | undefined,
+  options: ProductScopeFilterOption[],
+  signals: ProductScopedSignalForUi[],
+  reviewTodos: ProductScopePriorityQueueReviewTodo[] = [],
+): string {
+  if (currentSelectedScopeId && options.some((option) => option.scope_id === currentSelectedScopeId)) {
+    return currentSelectedScopeId;
+  }
+
+  const topPriorityScopeId = buildProductScopePriorityQueueItems(options, signals, reviewTodos, 1)[0]?.scopeId;
+  return resolveProductScopeSelectionId(topPriorityScopeId, options);
+}
+
 function hasProductScopeAdEvidence(option: ProductScopeFilterOption): boolean {
   return (option.ad_spend ?? option.spend ?? 0) > 0 || (option.ad_orders ?? option.orders ?? 0) > 0 || (option.ad_sales ?? option.sales ?? 0) > 0;
 }
