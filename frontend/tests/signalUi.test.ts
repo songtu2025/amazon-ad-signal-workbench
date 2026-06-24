@@ -5185,7 +5185,8 @@ assertIncludes(productScopeDiagnosisBrief.sections[1].doesNotProve, "不代表�
 assertEqual(productScopeDiagnosisBrief.sections[2].title, "广告组优先排序");
 assertIncludes(productScopeDiagnosisBrief.sections[2].purpose, "避免运营逐个广告组读报表");
 assertIncludes(productScopeDiagnosisBrief.sections[2].currentJudgement, "花费");
-assertEqual(productScopeDiagnosisBrief.sections[3].title, "广告组下具体广告数据");
+assertEqual(productScopeDiagnosisBrief.sections[3].title, "当前广告组复核路径");
+assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "先确认问题落点、证据缺口和人工下一步");
 assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "投放商品、投放词、搜索词和广告位");
 assertIncludes(productScopeDiagnosisBrief.sections[3].currentJudgement, "7 层证据");
 assertIncludes(productScopeDiagnosisBrief.manualActions.join(" / "), "记录观察");

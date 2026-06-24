@@ -72,7 +72,11 @@ assertIncludes(workbenchSource, 'aria-label="当前广告组复核顺序"');
 assertIncludes(workbenchSource, 'aria-label="当前广告组运营检查清单"');
 assertIncludes(workbenchSource, 'aria-label="当前广告组人工动作承接"');
 assertIncludes(workbenchSource, 'aria-label="广告组推理细节"');
-assertIncludes(workbenchSource, 'aria-label="当前广告组具体数据"');
+assertIncludes(workbenchSource, 'aria-label="当前广告组复核路径"');
+assertIncludes(workbenchSource, 'aria-label="当前广告组三段复核判断"');
+assertIncludes(workbenchSource, 'aria-label="当前广告组证据摘要"');
+assertIncludes(workbenchSource, "问题落点");
+assertIncludes(workbenchSource, "row.problemLocator.problemLocation");
 assertIncludes(workbenchSource, 'aria-label="当前 Parent ASIN 进入理由"');
 assertIncludes(workbenchSource, "当前 Parent ASIN 证据路径承接");
 assertIncludes(workbenchSource, "首页摘要已回答先看谁");
@@ -164,7 +168,8 @@ assertIncludes(signalUiSource, "不把未投放变体拉进广告分析");
 assertIncludes(signalUiSource, "AI 广告诊断摘要");
 assertIncludes(signalUiSource, "不让运营先读完整广告报表");
 assertIncludes(signalUiSource, "广告组优先排序");
-assertIncludes(signalUiSource, "广告组下具体广告数据");
+assertIncludes(signalUiSource, "当前广告组复核路径");
+assertIncludes(signalUiSource, "先确认问题落点、证据缺口和人工下一步");
 assertNotIncludes(signalUiSource, 'title: "AI 诊断摘要"');
 assertIncludes(signalUiSource, "不是四块报表纵向堆叠");
 assertIncludes(signalUiSource, "只输出可人工确认的下一步");
@@ -258,17 +263,22 @@ assert(
 );
 assert(
   productScopePriorityEntryBridgeRenderIndex < selectedAdGroupFocusRenderIndex,
-  "Parent ASIN 进入理由必须先于当前广告组具体数据，先说明默认聚焦广告组再展示明细",
+  "Parent ASIN 进入理由必须先于当前广告组复核路径，先说明默认聚焦广告组再展示复核对象",
 );
 assert(diagnosisBriefRenderIndex > diagnosisPanelIndex, "Parent ASIN 运营诊断路径必须渲染在诊断区内");
 assert(diagnosisBriefRenderIndex < adGroupDiagnosisRenderIndex, "Parent ASIN 运营诊断路径必须先于广告组优先级列表");
 assert(diagnosisBriefRenderIndex < selectedSignalBranchIndex, "Parent ASIN 运营诊断路径不能被单条信号选中状态挡住");
 assert(adGroupDiagnosisRenderIndex > diagnosisPanelIndex, "广告组问题定位必须渲染在诊断区内");
-assert(adGroupDiagnosisRenderIndex < selectedAdGroupFocusRenderIndex, "广告组问题定位必须先于当前广告组具体数据");
-assert(selectedAdGroupFocusRenderIndex > diagnosisPanelIndex, "当前广告组具体数据必须渲染在诊断区内");
-assert(selectedAdGroupFocusRenderIndex < routeGuideRenderIndex, "当前广告组具体数据必须先于广告证据链导览");
-assert(adGroupReviewOrderIndex < focusMetricsIndex, "当前广告组具体数据必须先给复核顺序，再展示广告组指标");
-assert(adGroupReviewOrderIndex < adGroupChecklistIndex, "当前广告组具体数据必须先给复核顺序，再展开运营检查清单");
+assert(adGroupDiagnosisRenderIndex < selectedAdGroupFocusRenderIndex, "广告组问题定位必须先于当前广告组复核路径");
+assert(selectedAdGroupFocusRenderIndex > diagnosisPanelIndex, "当前广告组复核路径必须渲染在诊断区内");
+assert(selectedAdGroupFocusRenderIndex < routeGuideRenderIndex, "当前广告组复核路径必须先于广告证据链导览");
+const adGroupFocusDecisionIndex = workbenchSource.indexOf(
+  'aria-label="当前广告组三段复核判断"',
+  workbenchSource.indexOf("function ProductScopeAdGroupFocusPanel"),
+);
+assert(adGroupFocusDecisionIndex < adGroupReviewOrderIndex, "当前广告组复核路径必须先给问题落点、证据缺口和人工下一步");
+assert(adGroupReviewOrderIndex < focusMetricsIndex, "当前广告组复核路径必须先给复核顺序，再展示广告组证据摘要");
+assert(adGroupReviewOrderIndex < adGroupChecklistIndex, "当前广告组复核路径必须先给复核顺序，再展开运营检查清单");
 assert(adGroupChecklistIndex < advertisedProductsInFocusIndex, "运营检查清单必须先于广告组证据明细");
 assert(advertisedProductsInFocusIndex < targetingEvidenceInFocusIndex, "投放词证据必须放在广告组内投放商品之后");
 assert(targetingEvidenceInFocusIndex < searchTermDiagnosisPanelIndex, "投放词证据必须先于搜索词问题定位");
@@ -309,6 +319,7 @@ assertIncludes(stylesSource, ".productScopeDiagnosisBriefPath");
 assertIncludes(stylesSource, ".productScopeDiagnosisBriefSection");
 assertIncludes(stylesSource, ".productScopeTargetingEvidence");
 assertIncludes(stylesSource, ".productScopeTargetingEvidenceHeader");
+assertIncludes(stylesSource, ".productScopeAdGroupFocusDecision");
 assertIncludes(stylesSource, ".productScopeAdGroupChecklist");
 assertIncludes(stylesSource, ".productScopeAdGroupChecklistProof");
 assertIncludes(stylesSource, ".productScopeAdGroupChecklistProof span");

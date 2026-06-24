@@ -4530,9 +4530,9 @@ function ProductScopeAdGroupReasoningDetails({ row }: { row: ProductScopeAdGroup
 
 function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
   return (
-    <section className={`productScopeAdGroupFocus diagnosisStep stepEvidence ${row.statusTone}`} aria-label="当前广告组具体数据">
+    <section className={`productScopeAdGroupFocus diagnosisStep stepEvidence ${row.statusTone}`} aria-label="当前广告组复核路径">
       <div className="detailSectionHeader">
-        <h3>当前广告组具体数据</h3>
+        <h3>当前广告组复核路径</h3>
         <span>{row.statusLabel}</span>
       </div>
       <div className="productScopeAdGroupDiagnosisHeader">
@@ -4542,8 +4542,22 @@ function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagno
         </div>
         <b>{row.statusLabel}</b>
       </div>
+      <div className="productScopeAdGroupFocusDecision" aria-label="当前广告组三段复核判断">
+        <span>
+          <b>问题落点</b>
+          <small>{row.problemLocator.problemLocation}</small>
+        </span>
+        <span>
+          <b>证据缺口</b>
+          <small>{row.evidenceSynthesis.evidenceGap}</small>
+        </span>
+        <span>
+          <b>人工下一步</b>
+          <small>{row.problemLocator.nextManualStep}</small>
+        </span>
+      </div>
       <ProductScopeAdGroupReviewOrderPanel row={row} />
-      <div className="productScopeAdGroupDiagnosisMetrics">
+      <div className="productScopeAdGroupDiagnosisMetrics" aria-label="当前广告组证据摘要">
         <span>{row.metrics}</span>
         <span>{row.trafficContext}</span>
       </div>

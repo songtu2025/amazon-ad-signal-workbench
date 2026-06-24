@@ -5090,8 +5090,8 @@ export function buildProductScopeDiagnosisBrief(
       {
         id: "ad_group_detail",
         label: "4",
-        title: "广告组下具体广告数据",
-        purpose: "把广告组拆成投放商品、投放词、搜索词和广告位四类证据，再判断问题落点。",
+        title: "当前广告组复核路径",
+        purpose: "先确认问题落点、证据缺口和人工下一步，再把广告组拆成投放商品、投放词、搜索词和广告位四类证据。",
         currentJudgement: routeStepText,
         proves: routeDecision?.proves ?? "能证明当前页面已经给出广告证据下钻路径。",
         doesNotProve:
