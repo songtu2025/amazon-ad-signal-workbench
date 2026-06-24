@@ -165,7 +165,7 @@ assertIncludes(workbenchSource, "fetchSearchIntents(selectedMarketId, nextActive
 assertIncludes(workbenchSource, "fetchSearchIntents(selectedMarketId, activeProductScopeId)");
 assertNotIncludes(workbenchSource, "fetchSearchIntents()");
 assertIncludes(workbenchSource, "Parent ASIN 广告搜索词表现复核");
-assertIncludes(workbenchSource, "从当前 Parent ASIN 视角，按标准化搜索词/语义标签聚合广告中的用户搜索词表现");
+assertIncludes(workbenchSource, "从当前 Parent ASIN 视角，聚合广告中实际产生表现的用户搜索词，帮助分析 SearchTerm 表现");
 assertIncludes(workbenchSource, 'aria-label="广告搜索词表现复核数据口径"');
 assertIncludes(workbenchSource, "searchIntentPanelContext.purpose");
 assertIncludes(workbenchSource, "searchIntentPanelContext.dataGrain");
