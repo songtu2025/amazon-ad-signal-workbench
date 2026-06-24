@@ -227,6 +227,24 @@ export interface SearchIntentReviewCard {
   topTerms: string[];
 }
 
+export interface SearchIntentReviewDecisionSummaryItem {
+  label: string;
+  value: string;
+  detail: string;
+  tone: SearchIntentReviewCard["operationDecisionTone"];
+}
+
+export interface SearchIntentReviewDecisionSummary {
+  headline: string;
+  topIntentLabel: string;
+  topDecisionLabel: string;
+  topSearchTermLabel: string;
+  distributionItems: SearchIntentReviewDecisionSummaryItem[];
+  evidenceGap: string;
+  nextManualStep: string;
+  boundary: string;
+}
+
 export interface SearchIntentMetricPurposeItem {
   label: string;
   value: string;
@@ -6499,6 +6517,48 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
       cards.length > 0
         ? `当前展示 ${cards.length} 组 Parent ASIN 广告搜索词表现复核，点击后只筛选当前诊断入口内的同类 SearchTerm 信号。`
         : "当前诊断入口下没有可关联的广告用户搜索词表现行；这不是系统故障，也不代表 Parent ASIN 没有自然搜索词，只代表当前广告上下文没有可复核的 SearchTerm 表现。",
+  };
+}
+
+export function buildSearchIntentReviewDecisionSummary(cards: SearchIntentReviewCard[]): SearchIntentReviewDecisionSummary | null {
+  const firstCard = cards[0];
+  if (!firstCard) return null;
+
+  const scaleCount = cards.filter((card) => card.operationDecisionTone === "scale").length;
+  const wasteCount = cards.filter((card) => card.operationDecisionTone === "waste").length;
+  const observeCount = cards.filter((card) => card.operationDecisionTone === "observe").length;
+  const topSearchTermLabel = firstCard.primarySearchTerm
+    ? `优先打开 SearchTerm：${firstCard.primarySearchTerm}；${firstCard.primarySearchTermReason}`
+    : `优先打开聚合：${firstCard.intentLabel}；等待具体 SearchTerm 证据补齐。`;
+
+  return {
+    headline: `先看 ${firstCard.intentLabel}：${firstCard.operationDecisionLabel}。当前 ${cards.length} 组搜索词中，有效词扩量 ${scaleCount} 组 / 浪费词止损 ${wasteCount} 组 / 证据缺口观察 ${observeCount} 组。`,
+    topIntentLabel: firstCard.intentLabel,
+    topDecisionLabel: firstCard.operationDecisionLabel,
+    topSearchTermLabel,
+    distributionItems: [
+      {
+        label: "有效词扩量",
+        value: `${scaleCount} 组`,
+        detail: "先看有订单、ACOS 可接受且能落到具体 SearchTerm 的聚合组。",
+        tone: "scale",
+      },
+      {
+        label: "浪费词止损",
+        value: `${wasteCount} 组`,
+        detail: "先看无订单消耗、点击或花费集中但承接不足的聚合组。",
+        tone: "waste",
+      },
+      {
+        label: "证据缺口观察",
+        value: `${observeCount} 组`,
+        detail: "样本、投放词、广告组商品清单或广告位证据不足时，只观察和补证。",
+        tone: "observe",
+      },
+    ],
+    evidenceGap: firstCard.evidenceGap,
+    nextManualStep: firstCard.nextManualStep,
+    boundary: "本摘要只做搜索词复核排序，不改变 Parent ASIN 诊断入口，不把搜索词表现分组当作人工动作对象，也不生成自动加词、否词、调价或暂停广告动作。",
   };
 }
 

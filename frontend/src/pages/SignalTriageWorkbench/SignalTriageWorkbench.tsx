@@ -164,6 +164,7 @@ import {
   buildDiagnosisPathSummary,
   buildSearchIntentPanelContext,
   buildSearchIntentReviewCards,
+  buildSearchIntentReviewDecisionSummary,
   buildSearchIntentEntryLockSummary,
   buildSearchIntentFocusContext,
   buildSearchIntentSelectedTermReasonSummary,
@@ -226,6 +227,7 @@ import {
   ProductScopeManualActionTargetAlignment,
   SelectedSignalScopeContext,
   SearchIntentPanelContext,
+  SearchIntentReviewDecisionSummary,
   SearchIntentFocusContext,
   SearchIntentSelectedTermReasonSummary,
   triggerEvidenceCountText,
@@ -578,6 +580,10 @@ export function SignalTriageWorkbench() {
   const searchIntentReviewCards = useMemo(() => buildSearchIntentReviewCards(searchIntents), [searchIntents]);
   const searchIntentPanelContext: SearchIntentPanelContext = useMemo(
     () => buildSearchIntentPanelContext(searchIntentReviewCards),
+    [searchIntentReviewCards],
+  );
+  const searchIntentReviewDecisionSummary = useMemo(
+    () => buildSearchIntentReviewDecisionSummary(searchIntentReviewCards),
     [searchIntentReviewCards],
   );
   const activeSearchIntentReviewCard = useMemo(
@@ -2109,6 +2115,7 @@ export function SignalTriageWorkbench() {
               </span>
             </div>
             <small className="searchIntentReviewBoundary">{searchIntentPanelContext.boundary}</small>
+            {searchIntentReviewDecisionSummary && <SearchIntentReviewDecisionSummaryPanel summary={searchIntentReviewDecisionSummary} />}
             {activeSearchIntentLabel && (
               <div className="searchIntentActiveFilter" aria-label="当前广告搜索词表现复核筛选">
                 <span>
@@ -3622,6 +3629,43 @@ function SearchIntentSelectedTermReasonPanel({ summary }: { summary: SearchInten
             <small>{step.detail}</small>
           </span>
         ))}
+      </div>
+      <small>{summary.boundary}</small>
+    </div>
+  );
+}
+
+function SearchIntentReviewDecisionSummaryPanel({ summary }: { summary: SearchIntentReviewDecisionSummary }) {
+  return (
+    <div className="searchIntentReviewDecisionSummary" aria-label="广告搜索词表现复核判断摘要">
+      <div className="searchIntentReviewDecisionHeader">
+        <strong>{summary.headline}</strong>
+        <span>{summary.topDecisionLabel}</span>
+      </div>
+      <dl className="searchIntentReviewDecisionDistribution" aria-label="有效词、浪费词和证据缺口分布">
+        {summary.distributionItems.map((item) => (
+          <div className={item.tone} key={item.label}>
+            <dt>{item.label}</dt>
+            <dd>
+              <b>{item.value}</b>
+              <small>{item.detail}</small>
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <div className="searchIntentReviewDecisionNext" aria-label="搜索词复核下一步">
+        <span>
+          <b>优先对象</b>
+          <small>{summary.topSearchTermLabel}</small>
+        </span>
+        <span>
+          <b>证据缺口</b>
+          <small>{summary.evidenceGap}</small>
+        </span>
+        <span>
+          <b>人工下一步</b>
+          <small>{summary.nextManualStep}</small>
+        </span>
       </div>
       <small>{summary.boundary}</small>
     </div>

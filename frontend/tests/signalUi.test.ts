@@ -44,6 +44,7 @@ import {
   buildSearchIntentFocusContext,
   buildSearchIntentSelectedTermReasonSummary,
   buildSearchIntentPanelContext,
+  buildSearchIntentReviewDecisionSummary,
   buildSignalLayerOverview,
   buildSignalQueueMeta,
   buildSignalQueueObjectStatus,
@@ -6020,6 +6021,29 @@ assertIncludes(emptySearchIntentPanelContext.doesNotProve, "不能证明 Parent 
 assertIncludes(emptySearchIntentPanelContext.nextManualStep, "不把搜索词聚合包装成可执行动作");
 assertIncludes(emptySearchIntentPanelContext.boundary, "不改变诊断入口");
 assertIncludes(emptySearchIntentPanelContext.emptyText, "不代表 Parent ASIN 没有自然搜索词");
+
+const searchIntentReviewDecisionSummary = buildSearchIntentReviewDecisionSummary(searchIntentReviewCards);
+if (!searchIntentReviewDecisionSummary) {
+  throw new Error("有搜索词表现复核卡片时应返回复核判断摘要");
+}
+assertIncludes(searchIntentReviewDecisionSummary.headline, "有效词扩量 1 组");
+assertIncludes(searchIntentReviewDecisionSummary.headline, "浪费词止损 0 组");
+assertIncludes(searchIntentReviewDecisionSummary.headline, "证据缺口观察 0 组");
+assertEqual(searchIntentReviewDecisionSummary.topIntentLabel, "规则语义：儿童太阳镜");
+assertEqual(searchIntentReviewDecisionSummary.topDecisionLabel, "扩量复核");
+assertIncludes(searchIntentReviewDecisionSummary.topSearchTermLabel, "SearchTerm：baby sunglasses");
+assertEqual(searchIntentReviewDecisionSummary.distributionItems[0].label, "有效词扩量");
+assertEqual(searchIntentReviewDecisionSummary.distributionItems[1].label, "浪费词止损");
+assertEqual(searchIntentReviewDecisionSummary.distributionItems[2].label, "证据缺口观察");
+assertIncludes(searchIntentReviewDecisionSummary.distributionItems[0].detail, "有订单");
+assertIncludes(searchIntentReviewDecisionSummary.distributionItems[1].detail, "无订单消耗");
+assertIncludes(searchIntentReviewDecisionSummary.distributionItems[2].detail, "投放词");
+assertIncludes(searchIntentReviewDecisionSummary.evidenceGap, "广告位影响需要继续打开广告位证据核对");
+assertIncludes(searchIntentReviewDecisionSummary.nextManualStep, "具体 SearchTerm 信号");
+assertIncludes(searchIntentReviewDecisionSummary.boundary, "不改变 Parent ASIN 诊断入口");
+assertIncludes(searchIntentReviewDecisionSummary.boundary, "不把搜索词表现分组当作人工动作对象");
+assertIncludes(searchIntentReviewDecisionSummary.boundary, "不生成自动加词、否词、调价或暂停广告动作");
+assertEqual(buildSearchIntentReviewDecisionSummary([]), null);
 
 const wasteSearchIntentReviewCards = buildSearchIntentReviewCards([
   {
