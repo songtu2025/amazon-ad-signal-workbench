@@ -1917,7 +1917,7 @@ export function SignalTriageWorkbench() {
           <section className="searchIntentReviewPanel" aria-label="Parent ASIN 广告搜索词表现复核">
             <div className="searchIntentReviewHeader">
               <strong>Parent ASIN 广告搜索词表现复核</strong>
-              <span>从当前 Parent ASIN 视角，聚合广告中实际产生表现的用户搜索词</span>
+              <span>从当前 Parent ASIN 视角，按标准化搜索词/语义标签聚合广告中的用户搜索词表现</span>
             </div>
             <div className="searchIntentReviewScope" aria-label="广告搜索词表现复核数据口径">
               <span>

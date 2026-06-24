@@ -106,7 +106,7 @@ assertIncludes(signalUiSource, "buildSearchIntentFocusContext");
 assertIncludes(signalUiSource, "当前诊断入口仍是");
 assertIncludes(signalUiSource, "选中信号只决定中间证据和右侧人工确认对象");
 assertIncludes(signalUiSource, "不能自动归因");
-assertIncludes(signalUiSource, "视角聚合广告中实际产生表现的用户搜索词行");
+assertIncludes(signalUiSource, "视角按标准化搜索词/语义标签聚合广告中实际产生表现的用户搜索词行");
 assertIncludes(signalUiSource, "Parent ASIN 广告搜索词表现复核「${focusLabel}」只是分析分组");
 assertIncludes(signalUiSource, "Parent ASIN 广告搜索词表现复核用于聚合同类广告搜索词表现");
 assertIncludes(signalUiSource, "经营诊断入口");
@@ -165,7 +165,7 @@ assertIncludes(workbenchSource, "fetchSearchIntents(selectedMarketId, nextActive
 assertIncludes(workbenchSource, "fetchSearchIntents(selectedMarketId, activeProductScopeId)");
 assertNotIncludes(workbenchSource, "fetchSearchIntents()");
 assertIncludes(workbenchSource, "Parent ASIN 广告搜索词表现复核");
-assertIncludes(workbenchSource, "从当前 Parent ASIN 视角，聚合广告中实际产生表现的用户搜索词");
+assertIncludes(workbenchSource, "从当前 Parent ASIN 视角，按标准化搜索词/语义标签聚合广告中的用户搜索词表现");
 assertIncludes(workbenchSource, 'aria-label="广告搜索词表现复核数据口径"');
 assertIncludes(workbenchSource, "searchIntentPanelContext.purpose");
 assertIncludes(workbenchSource, "searchIntentPanelContext.dataGrain");

@@ -6118,11 +6118,13 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
         searchIntentDisplayText(summary.evidence_gap) ||
         "证据缺口：需要继续核对投放词、广告组商品清单和广告位表现，才能转成具体人工动作。",
       signalMetricBoundary:
-        "与具体信号关系：本卡片指标覆盖当前 Parent ASIN 广告上下文中的全部同类搜索词表现行；点开后的 AI 信号只展示通过规则准入或合并后的可行动证据子集，因此行数和合计指标可能小于卡片。",
-      purpose: "用途：从当前 Parent ASIN 视角，聚合广告中实际产生表现的用户搜索词，按搜索词表现分组汇总同类 SearchTerm，帮助运营判断搜索词表现、机会和异常。",
+        "与具体信号关系：本卡片指标覆盖当前 Parent ASIN 广告上下文中按标准化搜索词/语义标签聚合后的同类搜索词表现行；点开后的 AI 信号只展示通过规则准入或合并后的可行动证据子集，因此行数和合计指标可能小于卡片。",
+      purpose: "用途：从当前 Parent ASIN 视角，按标准化搜索词/语义标签聚合广告中实际产生表现的用户搜索词，帮助运营判断同类 SearchTerm 表现、机会和异常。",
       boundary: "边界：只复核广告用户搜索词表现；不改变诊断入口，不把搜索词表现分组当作人工动作对象，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
-      dataGrain: searchIntentDisplayText(summary.data_grain) || "当前 Parent ASIN 关联广告上下文中实际产生表现的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索词表现分组聚合。",
-      proves: searchIntentDisplayText(summary.proves) || "能证明同类广告搜索词在当前广告上下文内的花费、点击、订单和 ABA 背景。",
+      dataGrain: searchIntentDisplayText(summary.data_grain) || "当前 Parent ASIN 关联广告上下文中实际产生表现的 ad_search_term_daily_metrics 用户搜索词表现行，按标准化搜索词/语义标签聚合。",
+      proves:
+        searchIntentDisplayText(summary.proves) ||
+        "能证明当前广告上下文内按标准化搜索词/语义标签聚合后的同类广告搜索词花费、点击、订单和 ABA 背景。",
       doesNotProve:
         searchIntentDisplayText(summary.does_not_prove) || "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个 ASIN 归因，也不能把搜索词表现分组当作人工动作对象。",
       nextManualStep: searchIntentDisplayText(summary.next_manual_step) || "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组、广告位和证据缺口后再记录观察或加入复盘。",
@@ -6147,8 +6149,8 @@ function searchIntentDisplayText(text?: string | null): string {
     .replace(/不把搜索意图分组当作人工动作对象/g, "不把搜索词表现分组当作人工动作对象")
     .replace(/把搜索意图分组当作人工动作对象/g, "把搜索词表现分组当作人工动作对象")
     .replace(/搜索意图分组/g, "搜索词表现分组")
-    .replace(/按搜索意图聚合/g, "按搜索词表现分组聚合")
-    .replace(/按搜索意图汇总/g, "按搜索词表现分组汇总")
+    .replace(/按搜索意图聚合/g, "按标准化搜索词/语义标签聚合")
+    .replace(/按搜索意图汇总/g, "按标准化搜索词/语义标签汇总")
     .replace(/该语义类目/g, "这组广告搜索词")
     .replace(/语义类目/g, "这组广告搜索词")
     .replace(/Parent ASIN 下全部搜索词表现/g, "Parent ASIN 下全部自然搜索或市场搜索表现");
@@ -6159,11 +6161,11 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
   return {
     purpose:
       firstCard?.purpose ??
-      "用途：从当前 Parent ASIN 视角聚合广告中实际产生表现的用户搜索词，帮助运营按搜索词表现分组复核同类 SearchTerm 表现；它不是经营商品入口、广告组入口或人工动作对象。",
-    dataGrain: firstCard?.dataGrain ?? "当前 Parent ASIN 关联广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索词表现分组聚合。",
+      "用途：从当前 Parent ASIN 视角按标准化搜索词/语义标签聚合广告中实际产生表现的用户搜索词，帮助运营复核同类 SearchTerm 表现；它不是经营商品入口、广告组入口或人工动作对象。",
+    dataGrain: firstCard?.dataGrain ?? "当前 Parent ASIN 关联广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按标准化搜索词/语义标签聚合。",
     interactionBoundary:
       "点击后只改变左侧信号队列筛选和中间选中 SearchTerm，不改变顶部诊断入口筛选器，也不切换 Parent ASIN / 广告 ASIN / 广告组。",
-    proves: firstCard?.proves ?? "能证明当前诊断入口内同类广告搜索词的花费、点击、订单、ACOS 和 ABA 站点级背景。",
+    proves: firstCard?.proves ?? "能证明当前诊断入口内按标准化搜索词/语义标签聚合后的同类广告搜索词花费、点击、订单、ACOS 和 ABA 站点级背景。",
     doesNotProve:
       firstCard?.doesNotProve ??
       "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，不能证明单个广告 ASIN 归因，也不能把搜索词表现分组当作人工动作对象。",
@@ -6172,7 +6174,7 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
       "有命中时逐条打开具体 SearchTerm 信号；无命中时先确认广告搜索词快照、广告组和投放词证据缺口，不把搜索词聚合包装成可执行动作。",
     signalMetricBoundary:
       firstCard?.signalMetricBoundary ??
-      "与具体信号关系：聚合卡片覆盖当前 Parent ASIN 广告上下文中的全部同类搜索词表现行；具体 AI 信号只展示通过规则准入或合并后的可行动证据子集。",
+      "与具体信号关系：聚合卡片覆盖当前 Parent ASIN 广告上下文中按标准化搜索词/语义标签聚合后的同类搜索词表现行；具体 AI 信号只展示通过规则准入或合并后的可行动证据子集。",
     boundary:
       firstCard?.boundary ??
       "边界：只复核广告用户搜索词表现；不改变诊断入口，不把搜索词表现分组当作人工动作对象，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
@@ -7262,7 +7264,7 @@ export function buildSearchIntentFocusContext(
       { label: "搜索词表现分组", value: `${focusLabel}：当前 Parent ASIN 关联广告中的用户搜索词表现行` },
       { label: "当前诊断对象", value: signalObject },
     ],
-    relation: `这个搜索词表现分组用于从 ${scopeLabel} 视角聚合广告中实际产生表现的用户搜索词行；左侧只用它按表现分组缩小广告 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。`,
+    relation: `这个搜索词表现分组用于从 ${scopeLabel} 视角按标准化搜索词/语义标签聚合广告中实际产生表现的用户搜索词行；左侧只用它按表现分组缩小广告 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。`,
     boundary: `Parent ASIN 广告搜索词表现复核「${focusLabel}」只是分析分组，不是经营商品、广告组或人工动作对象；ABA 只作站点级背景，实际写入以后端 preflight evidence_snapshot_preview 为准。`,
     tone: "container",
   };

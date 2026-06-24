@@ -3300,7 +3300,7 @@ def search_intent_next_manual_step(metrics: MetricSnapshot) -> str:
 
 def search_intent_proves(data_grain: str) -> str:
     scope = "当前 Parent ASIN 关联广告上下文" if "Parent ASIN" in data_grain else "当前诊断入口关联广告上下文"
-    return f"能证明{scope}内同类广告搜索词的花费、点击、订单和 ABA 背景。"
+    return f"能证明{scope}内按标准化搜索词/语义标签聚合后的同类广告搜索词花费、点击、订单和 ABA 背景。"
 
 
 def search_intent_does_not_prove(data_grain: str) -> str:
@@ -3314,7 +3314,7 @@ def search_intent_summaries(
     *,
     aba_rows: list[dict] | None = None,
     context_rows: list[dict] | None = None,
-    data_grain: str = "当前诊断入口关联广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按搜索词表现分组聚合",
+    data_grain: str = "当前诊断入口关联广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按标准化搜索词/语义标签聚合",
 ) -> list[SearchIntentSummary]:
     groups: dict[str, list[dict]] = defaultdict(list)
     for row in rows if rows is not None else []:
