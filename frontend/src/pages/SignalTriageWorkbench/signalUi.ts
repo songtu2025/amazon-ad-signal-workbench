@@ -6111,24 +6111,24 @@ function searchIntentMetricPurposeItems(
   const gapText = searchIntentDisplayText(summary.evidence_gap).replace(/^证据缺口[:：]\s*/, "");
   const operationText =
     operationDecisionTone === "scale"
-      ? "当前更偏扩量复核，但仍必须落到具体 SearchTerm。"
+      ? "当前判断偏扩量：先找有订单且 ACOS 可接受的具体 SearchTerm，再核对投放词、广告组目的和广告位边界。"
       : operationDecisionTone === "waste"
-        ? "当前更偏止损复核，但只能进入人工判断。"
-        : "当前更偏观察复核，先补证再判断。";
+        ? "当前判断偏止损：先找无订单消耗最高的具体 SearchTerm，再人工判断是否记录观察、加入复盘或忽略。"
+        : "当前判断偏观察：样本或证据不足，先补广告组、投放词、广告位和同组 ASIN 证据。";
   return [
     {
-      label: "扩量机会指标",
-      value: `订单 ${metrics.orders} / CVR ${formatReviewPercent(metrics.cvr)} / ACOS ${formatReviewPercent(metrics.acos)} / 销售额 ${formatReviewNumber(metrics.sales)} 用于判断搜索词是否已有广告承接质量；${operationText}`,
+      label: "扩量判断",
+      value: `目标：判断是否存在可人工复核的扩量机会；证据：订单 ${metrics.orders} / CVR ${formatReviewPercent(metrics.cvr)} / ACOS ${formatReviewPercent(metrics.acos)} / 销售额 ${formatReviewNumber(metrics.sales)}，用于判断搜索词是否已有广告承接质量；${operationText}`,
       tone: "scale",
     },
     {
-      label: "浪费风险指标",
-      value: `花费 ${formatReviewNumber(metrics.cost)} / 点击 ${formatReviewNumber(metrics.clicks)} / 订单 ${metrics.orders} 用于判断是否存在消耗浪费；只能提示人工止损复核，不能自动否词、调价或暂停广告。`,
+      label: "止损判断",
+      value: `目标：判断是否存在需要人工止损复核的消耗浪费；证据：花费 ${formatReviewNumber(metrics.cost)} / 点击 ${formatReviewNumber(metrics.clicks)} / 订单 ${metrics.orders}，用于识别高消耗低承接；只能提示人工核对投放词和广告组，不能自动否词、调价或暂停广告。`,
       tone: "waste",
     },
     {
-      label: "证据缺口提示",
-      value: `${rowText} / ABA 命中 ${summary.aba_match_count ?? 0}；广告组、投放词、广告位、同组 ASIN 和 ABA 周期只用于判断证据是否足够。${gapText ? `当前缺口：${gapText}` : "缺失时只降低置信度或提示补证，不生成广告动作。"}`,
+      label: "观察门槛",
+      value: `目标：判断当前是否只能观察和补证；证据：${rowText} / ABA 命中 ${summary.aba_match_count ?? 0}；广告组、投放词、广告位、同组 ASIN 和 ABA 周期只用于判断证据是否足够。${gapText ? `当前缺口：${gapText}` : "缺失时只降低置信度或提示补证，不生成广告动作。"}`,
       tone: "gap",
     },
   ];
