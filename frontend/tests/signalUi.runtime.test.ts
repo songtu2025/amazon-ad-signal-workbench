@@ -270,11 +270,41 @@ async function main() {
   );
   let hasSeenScale = false;
   let hasSeenObserve = false;
+  const searchIntentSummaryByLabel = new Map<string, any>(searchIntents.map((item: any) => [String(item.intent_label), item]));
   for (const card of searchIntentReviewCards) {
+    const sourceSummary = searchIntentSummaryByLabel.get(card.intentLabel);
+    const sourceSearchTerms = new Set(
+      [
+        ...(Array.isArray(sourceSummary?.search_terms) ? sourceSummary.search_terms : []),
+        ...(Array.isArray(sourceSummary?.top_search_terms)
+          ? sourceSummary.top_search_terms.map((term: any) => term?.search_term)
+          : []),
+      ]
+        .filter(Boolean)
+        .map(String),
+    );
     if (card.operationDecisionTone === "scale") hasSeenScale = true;
     if (card.operationDecisionTone === "observe") hasSeenObserve = true;
     assert(!(card.operationDecisionTone === "waste" && hasSeenScale), "止损复核分组必须排在扩量复核分组前面。");
     assert(!(card.operationDecisionTone !== "observe" && hasSeenObserve), "观察复核分组不能排在止损或扩量分组前面。");
+    assert(card.primarySearchTerm !== null && card.primarySearchTerm.length > 0, "每个搜索词表现分组都必须给出具体可复核 SearchTerm。");
+    assert(
+      sourceSearchTerms.has(card.primarySearchTerm),
+      "搜索词表现分组点击对象必须来自当前 Parent ASIN 广告搜索词表现行，不能落到分组标签本身。",
+    );
+    assertIncludes(card.primarySearchTermReason, "具体 SearchTerm");
+    assertIncludes(card.businessQuestion, "当前 Parent ASIN");
+    assertIncludes(card.purpose, "聚合广告中实际产生表现的用户搜索词");
+    assertIncludes(card.boundary, "不改变诊断入口");
+    assertIncludes(card.boundary, "不把搜索词表现分组当作人工动作对象");
+    assertIncludes(card.signalMetricBoundary, "点开后的 AI 信号");
+    assert(card.metricPurposeItems.length >= 3, "搜索词表现分组必须拆开说明指标目的，不能只展示裸指标。");
+    const metricPurposeText = asText(card.metricPurposeItems);
+    assertIncludes(metricPurposeText, "花费");
+    assertIncludes(metricPurposeText, "订单");
+    assertIncludes(metricPurposeText, "表现行");
+    assertIncludes(card.nextManualStep, "具体 SearchTerm");
+    assertIncludes(card.nextManualStep, "人工");
   }
   const searchIntentPanelContext = buildSearchIntentPanelContext(searchIntentReviewCards);
   const searchIntentRuntimeText = asText([searchIntentReviewCards, searchIntentPanelContext]);
