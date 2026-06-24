@@ -6396,6 +6396,16 @@ export function preferredProductScopeId(options: ProductScopeFilterOption[]): st
   );
 }
 
+export function resolveProductScopeSelectionId(
+  currentSelectedScopeId: string | null | undefined,
+  options: ProductScopeFilterOption[],
+): string {
+  if (currentSelectedScopeId && options.some((option) => option.scope_id === currentSelectedScopeId)) {
+    return currentSelectedScopeId;
+  }
+  return preferredProductScopeId(options);
+}
+
 function hasProductScopeAdEvidence(option: ProductScopeFilterOption): boolean {
   return (option.ad_spend ?? option.spend ?? 0) > 0 || (option.ad_orders ?? option.orders ?? 0) > 0 || (option.ad_sales ?? option.sales ?? 0) > 0;
 }

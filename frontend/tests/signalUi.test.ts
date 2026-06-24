@@ -80,6 +80,7 @@ import {
   filterSignalsByProductScope,
   mergeBackendTriageSignals,
   preferredProductScopeId,
+  resolveProductScopeSelectionId,
   productScopeOptionLabel,
   productScopeAdGroupDiagnosisRows,
   productScopeDrilldownEvidenceItems,
@@ -546,6 +547,27 @@ assertEqual(
   ]),
   "all",
 );
+const productScopeSelectionOptions: ProductScopeFilterOption[] = [
+  { scope_id: "all", scope_type: "all" },
+  {
+    scope_id: "parent_asin:B0PARENT",
+    scope_type: "parent_asin",
+    label: "Parent ASIN B0PARENT",
+    parent_asin: "B0PARENT",
+    child_asins: ["B000TEST01"],
+    ad_spend: 12,
+  },
+  {
+    scope_id: "ad_asin:B000TEST01",
+    scope_type: "advertised_asin",
+    label: "广告 ASIN B000TEST01",
+    asin: "B000TEST01",
+    ad_spend: 8,
+  },
+];
+assertEqual(resolveProductScopeSelectionId(null, productScopeSelectionOptions), "parent_asin:B0PARENT");
+assertEqual(resolveProductScopeSelectionId("ad_asin:B000TEST01", productScopeSelectionOptions), "ad_asin:B000TEST01");
+assertEqual(resolveProductScopeSelectionId("missing-scope", productScopeSelectionOptions), "parent_asin:B0PARENT");
 
 assertEqual(productScopeOptionLabel({ scope_id: "all", scope_type: "all", label: "全量排查（商品 + 未归因 + 数据质量）" }), "辅助入口：全量排查（商品 + 未归因 + 数据质量）");
 assertEqual(productScopeOptionLabel({ scope_id: "unattributed", scope_type: "unattributed", label: "未归因广告数据" }), "辅助入口：未归因广告数据");

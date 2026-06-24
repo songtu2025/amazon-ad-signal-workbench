@@ -219,6 +219,7 @@ import {
   mergeBackendTriageSignals,
   isActionableProductScope,
   preferredProductScopeId,
+  resolveProductScopeSelectionId,
   productScopeOptionLabel,
   productScopeAdGroupDiagnosisRows,
   productScopeDrilldownEvidenceItems,
@@ -378,10 +379,7 @@ export function SignalTriageWorkbench() {
         fetchReviewTodos(selectedMarketId),
       ]);
       const nextProductScopeOptions = nextProductScope.options;
-      const nextActiveProductScopeId =
-        selectedProductScopeId !== null && nextProductScopeOptions.some((option) => option.scope_id === selectedProductScopeId)
-          ? selectedProductScopeId
-          : preferredProductScopeId(nextProductScopeOptions);
+      const nextActiveProductScopeId = resolveProductScopeSelectionId(selectedProductScopeId, nextProductScopeOptions);
       const nextProductScopedSignals = filterSignalsByProductScope(nextSignals, nextActiveProductScopeId, nextProductScopeOptions);
       const [nextSignalTriageSummary, nextReviewEvidenceRepair, nextSearchIntents] = await Promise.all([
         fetchSignalTriageSummary(selectedMarketId, 5, nextActiveProductScopeId),
@@ -404,12 +402,10 @@ export function SignalTriageWorkbench() {
       setSignalTriageSummary(nextSignalTriageSummary);
       setReviewEvidenceRepair(nextReviewEvidenceRepair);
       setReviewTodos(nextReviewTodos);
+      setSelectedProductScopeId(nextActiveProductScopeId);
       setSelectedId((current) => resolveSignalSelectionId(current, nextDisplayProductScopedSignals, nextSignalTriageSummary));
       if (nextMarketOptions.length > 0 && !nextMarketOptions.some((option) => option.market_id === selectedMarketId)) {
         setSelectedMarketId(nextMarketOptions[0].market_id);
-      }
-      if (selectedProductScopeId !== null && !nextProductScope.options.some((option) => option.scope_id === selectedProductScopeId)) {
-        setSelectedProductScopeId(null);
       }
     } catch {
       setError("后端服务未连接");
