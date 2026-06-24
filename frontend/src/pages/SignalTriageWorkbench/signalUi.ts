@@ -5048,17 +5048,17 @@ export function buildProductScopeDiagnosisBrief(
     : `${firstScreenSummary.adCoverageDecision.nextManualStep} 暂不看广告组排序，先补广告对象证据。`;
 
   return {
-    title: "Parent ASIN 诊断详情摘要",
+    title: "Parent ASIN 运营诊断路径",
     summary:
-      "选中 Parent ASIN 后先读这一段：先用经营销售盘确认入口，再由 AI 缩小人工复核范围，最后进入广告组排序和广告组下具体证据，形成一条决策漏斗，避免逐块读成长报表。",
+      "这不是四块报表纵向堆叠，而是一条运营决策路径：先用 Parent ASIN 销售表现确认入口，再由 AI 缩小人工复核范围，接着进入广告组排序和广告组下具体证据，最后只输出可人工确认的下一步。",
     statusLabel: firstScreenSummary.mvpStatus.statusLabel,
     statusTone: firstScreenSummary.mvpStatus.tone,
     sections: [
       {
         id: "sales_summary",
         label: "1",
-        title: "销售入口准入判断",
-        purpose: "先回答这个 Parent ASIN 是否值得进入广告诊断，并限定销售子 ASIN 只是经营背景。",
+        title: "Parent ASIN 销售表现入口",
+        purpose: "先回答这个 Parent ASIN 是否值得进入广告诊断，并限定销售子 ASIN 只是经营背景，不把未投放变体拉进广告分析。",
         currentJudgement: salesEntryCurrentJudgement,
         proves: "能证明当前 Parent ASIN 经营盘、销售子 ASIN 范围，以及哪些广告 ASIN 有 advertised_products 证据可进入下钻。",
         doesNotProve: "不能证明 Parent ASIN 下所有子 ASIN 都有广告数据，也不能直接生成广告动作对象。",
@@ -5068,7 +5068,7 @@ export function buildProductScopeDiagnosisBrief(
       {
         id: "ai_summary",
         label: "2",
-        title: "AI 优先诊断摘要",
+        title: "AI 广告诊断摘要",
         purpose: "先判断当前 Parent ASIN 能否进入人工留痕、等待复盘或继续诊断，不让运营先读完整广告报表。",
         currentJudgement: firstScreenSummary.mvpStatus.summary,
         proves: firstScreenSummary.mvpStatus.detail,
@@ -5079,7 +5079,7 @@ export function buildProductScopeDiagnosisBrief(
       {
         id: "ad_group_priority",
         label: "3",
-        title: "广告组问题排序",
+        title: "广告组优先排序",
         purpose: "在 AI 缩小范围后，找最值得人工复核的广告组，避免运营逐个广告组读报表。",
         currentJudgement: adGroupJudgement,
         proves: adGroupProves,
@@ -5090,7 +5090,7 @@ export function buildProductScopeDiagnosisBrief(
       {
         id: "ad_group_detail",
         label: "4",
-        title: "广告组下具体数据",
+        title: "广告组下具体广告数据",
         purpose: "把广告组拆成投放商品、投放词、搜索词和广告位四类证据，再判断问题落点。",
         currentJudgement: routeStepText,
         proves: routeDecision?.proves ?? "能证明当前页面已经给出广告证据下钻路径。",

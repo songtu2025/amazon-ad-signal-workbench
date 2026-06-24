@@ -5163,28 +5163,29 @@ const productScopeDiagnosisBrief = buildProductScopeDiagnosisBrief(
   adGroupDiagnosisRows,
 );
 if (!productScopeDiagnosisBrief) {
-  throw new Error("Parent ASIN 诊断详情摘要不能为空");
+  throw new Error("Parent ASIN 运营诊断路径不能为空");
 }
-assertEqual(productScopeDiagnosisBrief.title, "Parent ASIN 诊断详情摘要");
-assertIncludes(productScopeDiagnosisBrief.summary, "决策漏斗");
-assertIncludes(productScopeDiagnosisBrief.summary, "避免逐块读成长报表");
+assertEqual(productScopeDiagnosisBrief.title, "Parent ASIN 运营诊断路径");
+assertIncludes(productScopeDiagnosisBrief.summary, "不是四块报表纵向堆叠");
+assertIncludes(productScopeDiagnosisBrief.summary, "只输出可人工确认的下一步");
 assertEqual(productScopeDiagnosisBrief.statusLabel, "人工留痕 MVP");
 assertEqual(productScopeDiagnosisBrief.sections.length, 4);
-assertEqual(productScopeDiagnosisBrief.sections[0].title, "销售入口准入判断");
+assertEqual(productScopeDiagnosisBrief.sections[0].title, "Parent ASIN 销售表现入口");
 assertIncludes(productScopeDiagnosisBrief.sections[0].purpose, "是否值得进入广告诊断");
 assertIncludes(productScopeDiagnosisBrief.sections[0].currentJudgement, "可以进入广告诊断");
 assertIncludes(productScopeDiagnosisBrief.sections[0].currentJudgement, "不把全部销售子 ASIN 当广告对象");
 assertIncludes(productScopeDiagnosisBrief.sections[0].purpose, "限定销售子 ASIN 只是经营背景");
+assertIncludes(productScopeDiagnosisBrief.sections[0].purpose, "不把未投放变体拉进广告分析");
 assertIncludes(productScopeDiagnosisBrief.sections[0].proves, "哪些广告 ASIN 有 advertised_products 证据");
 assertIncludes(productScopeDiagnosisBrief.sections[0].doesNotProve, "所有子 ASIN 都有广告数据");
 assertIncludes(productScopeDiagnosisBrief.sections[0].nextManualStep, "下一步进入广告组排序");
-assertEqual(productScopeDiagnosisBrief.sections[1].title, "AI 优先诊断摘要");
+assertEqual(productScopeDiagnosisBrief.sections[1].title, "AI 广告诊断摘要");
 assertIncludes(productScopeDiagnosisBrief.sections[1].purpose, "不让运营先读完整广告报表");
 assertIncludes(productScopeDiagnosisBrief.sections[1].doesNotProve, "不代表系统可以自动加词");
-assertEqual(productScopeDiagnosisBrief.sections[2].title, "广告组问题排序");
+assertEqual(productScopeDiagnosisBrief.sections[2].title, "广告组优先排序");
 assertIncludes(productScopeDiagnosisBrief.sections[2].purpose, "避免运营逐个广告组读报表");
 assertIncludes(productScopeDiagnosisBrief.sections[2].currentJudgement, "花费");
-assertEqual(productScopeDiagnosisBrief.sections[3].title, "广告组下具体数据");
+assertEqual(productScopeDiagnosisBrief.sections[3].title, "广告组下具体广告数据");
 assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "投放商品、投放词、搜索词和广告位");
 assertIncludes(productScopeDiagnosisBrief.sections[3].currentJudgement, "7 层证据");
 assertIncludes(productScopeDiagnosisBrief.manualActions.join(" / "), "记录观察");

@@ -156,16 +156,18 @@ assertIncludes(workbenchSource, "guide.decision.doesNotProve");
 assertIncludes(workbenchSource, "guide.decision.nextManualStep");
 assertIncludes(signalUiSource, "buildProductScopeEvidenceRouteDecision");
 assertIncludes(signalUiSource, "buildProductScopeDiagnosisBrief");
-assertIncludes(signalUiSource, "Parent ASIN 诊断详情摘要");
-assertIncludes(signalUiSource, "销售入口准入判断");
+assertIncludes(signalUiSource, "Parent ASIN 运营诊断路径");
+assertIncludes(signalUiSource, "Parent ASIN 销售表现入口");
 assertIncludes(signalUiSource, "是否值得进入广告诊断");
 assertIncludes(signalUiSource, "不把全部销售子 ASIN 当广告对象");
-assertIncludes(signalUiSource, "AI 优先诊断摘要");
+assertIncludes(signalUiSource, "不把未投放变体拉进广告分析");
+assertIncludes(signalUiSource, "AI 广告诊断摘要");
 assertIncludes(signalUiSource, "不让运营先读完整广告报表");
-assertIncludes(signalUiSource, "广告组问题排序");
-assertIncludes(signalUiSource, "广告组下具体数据");
+assertIncludes(signalUiSource, "广告组优先排序");
+assertIncludes(signalUiSource, "广告组下具体广告数据");
 assertNotIncludes(signalUiSource, 'title: "AI 诊断摘要"');
-assertIncludes(signalUiSource, "避免逐块读成长报表");
+assertIncludes(signalUiSource, "不是四块报表纵向堆叠");
+assertIncludes(signalUiSource, "只输出可人工确认的下一步");
 assertIncludes(signalUiSource, "哪些广告对象真的有广告数据");
 assertIncludes(signalUiSource, "先看经营入口，再看广告 ASIN、广告组、投放词/搜索词/广告位");
 assertIncludes(signalUiSource, "AI 信号诊断、人工确认和 7/14 天复盘");
@@ -176,12 +178,12 @@ assertIncludes(signalUiSource, 'layerId: "manual_confirmation"');
 assertIncludes(signalUiSource, 'layerId: "review"');
 assertIncludes(signalUiSource, "复盘门槛：先有人工留痕和 7d / 14d ReviewTodo");
 
-const diagnosisBriefSalesIndex = signalUiSource.indexOf('title: "销售入口准入判断"');
-const diagnosisBriefAiIndex = signalUiSource.indexOf('title: "AI 优先诊断摘要"');
-const diagnosisBriefAdGroupIndex = signalUiSource.indexOf('title: "广告组问题排序"');
+const diagnosisBriefSalesIndex = signalUiSource.indexOf('title: "Parent ASIN 销售表现入口"');
+const diagnosisBriefAiIndex = signalUiSource.indexOf('title: "AI 广告诊断摘要"');
+const diagnosisBriefAdGroupIndex = signalUiSource.indexOf('title: "广告组优先排序"');
 assert(
   diagnosisBriefSalesIndex < diagnosisBriefAiIndex && diagnosisBriefAiIndex < diagnosisBriefAdGroupIndex,
-  "Parent ASIN 诊断摘要必须先看销售入口，再由 AI 缩小范围，最后进入广告组排序",
+  "Parent ASIN 运营诊断路径必须先看销售入口，再由 AI 缩小范围，最后进入广告组排序",
 );
 
 const diagnosisPanelIndex = workbenchSource.indexOf('<section className="diagnosisPanel">');
@@ -252,15 +254,15 @@ assert(diagnosisPanelIndex >= 0, "诊断区必须存在");
 assert(productScopePriorityEntryBridgeRenderIndex > diagnosisPanelIndex, "Parent ASIN 进入理由必须渲染在诊断区内");
 assert(
   productScopePriorityEntryBridgeRenderIndex < diagnosisBriefRenderIndex,
-  "Parent ASIN 进入理由必须先于诊断详情摘要，先解释为什么进入再展开纵向链路",
+  "Parent ASIN 进入理由必须先于运营诊断路径，先解释为什么进入再展开纵向链路",
 );
 assert(
   productScopePriorityEntryBridgeRenderIndex < selectedAdGroupFocusRenderIndex,
   "Parent ASIN 进入理由必须先于当前广告组具体数据，先说明默认聚焦广告组再展示明细",
 );
-assert(diagnosisBriefRenderIndex > diagnosisPanelIndex, "Parent ASIN 诊断详情摘要必须渲染在诊断区内");
-assert(diagnosisBriefRenderIndex < adGroupDiagnosisRenderIndex, "Parent ASIN 诊断详情摘要必须先于广告组优先级列表");
-assert(diagnosisBriefRenderIndex < selectedSignalBranchIndex, "Parent ASIN 诊断详情摘要不能被单条信号选中状态挡住");
+assert(diagnosisBriefRenderIndex > diagnosisPanelIndex, "Parent ASIN 运营诊断路径必须渲染在诊断区内");
+assert(diagnosisBriefRenderIndex < adGroupDiagnosisRenderIndex, "Parent ASIN 运营诊断路径必须先于广告组优先级列表");
+assert(diagnosisBriefRenderIndex < selectedSignalBranchIndex, "Parent ASIN 运营诊断路径不能被单条信号选中状态挡住");
 assert(adGroupDiagnosisRenderIndex > diagnosisPanelIndex, "广告组问题定位必须渲染在诊断区内");
 assert(adGroupDiagnosisRenderIndex < selectedAdGroupFocusRenderIndex, "广告组问题定位必须先于当前广告组具体数据");
 assert(selectedAdGroupFocusRenderIndex > diagnosisPanelIndex, "当前广告组具体数据必须渲染在诊断区内");
@@ -294,7 +296,8 @@ assertIncludes(workbenchSource, "function SearchIntentSelectedTermReasonPanel");
 assertIncludes(workbenchSource, 'aria-label="选中信号与当前诊断入口关系"');
 assertIncludes(workbenchSource, 'aria-label="广告搜索词表现复核与当前信号关系"');
 assertIncludes(workbenchSource, 'aria-label="具体 SearchTerm 复核理由"');
-assertIncludes(workbenchSource, 'aria-label="Parent ASIN 诊断详情摘要"');
+assertIncludes(workbenchSource, 'aria-label="Parent ASIN 运营诊断路径"');
+assertIncludes(workbenchSource, 'aria-label="运营诊断路径顺序"');
 assertIncludes(workbenchSource, 'aria-label="当前 Parent ASIN 进入理由"');
 assertIncludes(workbenchSource, 'aria-label="允许的人工动作"');
 assertIncludes(stylesSource, ".productScopePriorityEntryBridge");
@@ -302,6 +305,7 @@ assertIncludes(stylesSource, "order: 1;");
 assertIncludes(stylesSource, ".productScopePriorityDecisionSummary");
 assertIncludes(stylesSource, ".productScopePriorityDecisionHeader");
 assertIncludes(stylesSource, ".productScopeDiagnosisBrief");
+assertIncludes(stylesSource, ".productScopeDiagnosisBriefPath");
 assertIncludes(stylesSource, ".productScopeDiagnosisBriefSection");
 assertIncludes(stylesSource, ".productScopeTargetingEvidence");
 assertIncludes(stylesSource, ".productScopeTargetingEvidenceHeader");

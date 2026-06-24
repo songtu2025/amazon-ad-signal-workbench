@@ -3879,12 +3879,20 @@ function ProductScopePriorityEntryBridgePanel({
 
 function ProductScopeDiagnosisBriefPanel({ brief }: { brief: ProductScopeDiagnosisBrief }) {
   return (
-    <section className={`productScopeDiagnosisBrief diagnosisStep stepSummary ${brief.statusTone}`} aria-label="Parent ASIN 诊断详情摘要">
+    <section className={`productScopeDiagnosisBrief diagnosisStep stepSummary ${brief.statusTone}`} aria-label="Parent ASIN 运营诊断路径">
       <div className="detailSectionHeader">
         <h3>{brief.title}</h3>
         <span>{brief.statusLabel}</span>
       </div>
       <p className="productScopeDiagnosisBriefSummary">{brief.summary}</p>
+      <div className="productScopeDiagnosisBriefPath" aria-label="运营诊断路径顺序">
+        {brief.sections.map((section) => (
+          <span className={section.tone} key={section.id}>
+            {section.label}. {section.title}
+          </span>
+        ))}
+        <span className="manual">人工确认 / 7-14 天复盘</span>
+      </div>
       <div className="productScopeDiagnosisBriefSections">
         {brief.sections.map((section) => (
           <article className={`productScopeDiagnosisBriefSection ${section.tone}`} key={section.id}>
@@ -3901,16 +3909,16 @@ function ProductScopeDiagnosisBriefPanel({ brief }: { brief: ProductScopeDiagnos
                 <span>{section.currentJudgement}</span>
               </li>
               <li>
+                <b>人工下一步</b>
+                <span>{section.nextManualStep}</span>
+              </li>
+              <li>
                 <b>能证明</b>
                 <span>{section.proves}</span>
               </li>
               <li>
                 <b>不能证明</b>
                 <span>{section.doesNotProve}</span>
-              </li>
-              <li>
-                <b>人工下一步</b>
-                <span>{section.nextManualStep}</span>
               </li>
             </ul>
           </article>

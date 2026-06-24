@@ -2029,6 +2029,51 @@ h3 {
   line-height: 1.5;
 }
 
+.productScopeDiagnosisBriefPath {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.productScopeDiagnosisBriefPath span {
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid #cfdeeb;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #335573;
+  font-size: 12px;
+  font-weight: 740;
+  overflow-wrap: anywhere;
+}
+
+.productScopeDiagnosisBriefPath span::after {
+  content: " ->";
+  color: #8da1b4;
+}
+
+.productScopeDiagnosisBriefPath span:last-child::after {
+  content: "";
+}
+
+.productScopeDiagnosisBriefPath .scope,
+.productScopeDiagnosisBriefPath .context {
+  background: #f7fbff;
+  border-color: #c9ddef;
+}
+
+.productScopeDiagnosisBriefPath .ready,
+.productScopeDiagnosisBriefPath .manual {
+  background: #f7fbf8;
+  border-color: #bddcc9;
+}
+
+.productScopeDiagnosisBriefPath .blocked {
+  background: #fff8f6;
+  border-color: #efc8bd;
+}
+
 .productScopeDiagnosisBriefSections {
   display: grid;
   gap: 9px;
