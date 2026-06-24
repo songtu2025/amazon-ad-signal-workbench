@@ -1577,6 +1577,19 @@ def test_manual_action_preflight_post_write_review_todos_keep_search_term_ad_evi
     } == {"7d": len(complete_evidence), "14d": len(complete_evidence)}
     for label in ("同组投放商品表现", "逐投放上下文", "投放词证据", "搜索词边界", "广告位边界"):
         assert label in labels
+    decision_funnel_labels = [
+        "Parent ASIN入口",
+        "广告 ASIN承接",
+        "广告组合流判断",
+        "同组投放商品表现",
+        "逐投放上下文",
+        "投放词证据",
+        "搜索词边界",
+        "广告位边界",
+        "动作边界",
+    ]
+    decision_funnel_positions = [labels.index(label) for label in decision_funnel_labels]
+    assert decision_funnel_positions == sorted(decision_funnel_positions)
     assert labels.index("同组投放商品表现") < labels.index("逐投放上下文")
     assert labels.index("逐投放上下文") < labels.index("投放词证据")
     assert labels.index("投放词证据") < labels.index("搜索词边界")
