@@ -3106,7 +3106,7 @@ const triageReviewFeedbackSummary = {
             {
               group_id: "snapshot_review_chain",
               label: "复盘证据链覆盖",
-              value: "已覆盖 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景",
+              value: "已覆盖 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景",
             },
             {
               group_id: "attribution_boundary",
@@ -3206,6 +3206,7 @@ assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "广告组边界�
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "投放词上下文：1 个投放词 / 搜索词表现行 1 条");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "广告位边界：广告位上下文 0 条");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "复盘证据链覆盖：已覆盖 广告组合流判断");
+assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "逐投放上下文");
 assertIncludes(ruleFeedbackPrioritySummary?.records[0] ?? "", "归因边界：搜索词只能说明广告活动和广告组下的用户搜索表现");
 assertIncludes(ruleFeedbackPrioritySummary?.records[1] ?? "", "improved / opportunity / advertised_product / B016EXMW02 / 14d");
 assertIncludes(ruleFeedbackPrioritySummary?.records[1] ?? "", "保存快照：0 条");

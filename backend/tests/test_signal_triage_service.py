@@ -3429,6 +3429,12 @@ def test_review_readiness_summarizes_saved_review_records_as_rule_feedback(monke
                 ),
                 SimpleNamespace(label="广告组合流判断", value="同一广告组内搜索词表现优先人工复核", source="business_rule"),
                 SimpleNamespace(label="同组投放商品表现", value="同组广告 ASIN 2 个，需要人工判断承接差异", source="advertised_products"),
+                SimpleNamespace(
+                    label="逐投放上下文",
+                    value="优先复核广告组：RBK004-beach essentials-精准 / 投放词 beach essentials",
+                    detail="规则反馈只能回看当时逐投放复核顺序，不能自动加词、否词或调价。",
+                    source="ad_search_term_daily_metrics",
+                ),
                 SimpleNamespace(label="投放词证据", value="beach essentials / exact", source="ad_search_term_daily_metrics"),
                 SimpleNamespace(label="搜索词边界", value="12 month sunglasses 只说明当前广告组用户搜索表现", source="business_rule"),
                 SimpleNamespace(label="广告位边界", value="缺少广告位上下文，不能判断广告位影响", source="business_rule"),
@@ -3543,7 +3549,7 @@ def test_review_readiness_summarizes_saved_review_records_as_rule_feedback(monke
     assert feedback["records"][0]["metric_snapshot"]["after"]["spend"] == 31.2
     assert feedback["records"][0]["review_note"] == "建议没有改善"
     assert "排序依据：worse 优先" in feedback["records"][0]["sort_reason"]
-    assert feedback["records"][0]["evidence_snapshot_count"] == 8
+    assert feedback["records"][0]["evidence_snapshot_count"] == 9
     assert feedback["records"][0]["diagnosis_snapshot"]["label"] == "排查路径"
     assert feedback["records"][0]["ai_admission_snapshot"]["value"].startswith("可进入人工确认")
     assert feedback["records"][0]["ai_admission_snapshot"]["source"] == "actionability_status"
@@ -3570,9 +3576,15 @@ def test_review_readiness_summarizes_saved_review_records_as_rule_feedback(monke
     assert "广告活动 1 个 / 广告组 1 个" in feedback["records"][0]["evidence_groups"][1]["value"]
     assert "1 个投放词 / 搜索词表现行 1 条" in feedback["records"][0]["evidence_groups"][2]["value"]
     assert "广告位上下文 0 条" in feedback["records"][0]["evidence_groups"][3]["value"]
-    assert "已覆盖 广告组合流判断 / 同组投放商品表现 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景" in feedback["records"][0]["evidence_groups"][4]["value"]
+    assert "已覆盖 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景" in feedback["records"][0]["evidence_groups"][4]["value"]
     assert "不能自动归因" in feedback["records"][0]["evidence_groups"][5]["value"]
     assert feedback["records"][0]["diagnosis_path"]["path"].startswith("搜索词 -> 广告活动 / 广告组")
+    snapshot_without_ad_context = [
+        item
+        for item in feedback["records"][0]["evidence_snapshot"]
+        if item["label"] != "逐投放上下文"
+    ]
+    assert "缺口：逐投放上下文" in signal_triage._review_feedback_search_term_snapshot_coverage(snapshot_without_ad_context)
     diagnosis_steps = {step["step_id"]: step for step in feedback["records"][0]["diagnosis_path"]["steps"]}
     assert "search_term_metric_summary" in diagnosis_steps
     assert "search_term_context" in diagnosis_steps
