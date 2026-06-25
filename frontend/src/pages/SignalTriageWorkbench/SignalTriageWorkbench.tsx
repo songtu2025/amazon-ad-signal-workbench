@@ -5844,39 +5844,42 @@ function ProductScopeAdGroupActionBridgeCard({
         </small>
       </div>
       {defaultEvidenceItem && (
-        <div className="adGroupActionBridgeDefaultEvidence" aria-label="人工动作默认证据层">
+        <div className="adGroupActionBridgeDefaultEvidence" aria-label="人工动作保存准入">
           <div>
-            <strong>人工动作默认证据层</strong>
+            <strong>人工动作保存准入</strong>
             <span>{priority.focusLayer}</span>
           </div>
-          <p>{defaultEvidenceItem.purpose}</p>
+          <p>这里只确认当前点击会保存哪类人工证据，诊断细节以上方广告组证据为准。</p>
           <ul>
             <li>
-              <b>当前判断</b>
-              <small>{defaultEvidenceItem.judgement}</small>
+              <b>动作对象</b>
+              <small>{row.title} / {row.problemType}</small>
             </li>
             <li>
-              <b>能证明</b>
-              <small>{defaultEvidenceItem.proves}</small>
+              <b>留痕证据</b>
+              <small>{defaultEvidenceItem.title}：{defaultEvidenceItem.nextStep}</small>
             </li>
             <li>
-              <b>不能证明</b>
-              <small>{defaultEvidenceItem.doesNotProve}</small>
+              <b>复盘窗口</b>
+              <small>7/14 天复盘沿保存时 evidence_snapshot 回看，不用当前页面重新生成证据。</small>
             </li>
             <li>
-              <b>人工下一步</b>
-              <small>{defaultEvidenceItem.nextStep}</small>
+              <b>动作边界</b>
+              <small>不能替代中间诊断，也不执行广告动作。</small>
             </li>
           </ul>
           <small>{priority.boundary}</small>
         </div>
       )}
       {diagnosisBrief && (
-        <div className="adGroupActionBridgeParentProof" aria-label="Parent ASIN 单屏证明边界读回">
-          <div>
-            <strong>Parent ASIN 单屏判断读回</strong>
-            <span>{diagnosisBrief.statusLabel}</span>
-          </div>
+        <details className="adGroupActionBridgeParentProof" aria-label="Parent ASIN 单屏证明边界读回">
+          <summary>
+            <span>
+              <strong>Parent ASIN 来源读回</strong>
+              <small>{diagnosisBrief.decisionGuide.primaryDecision}</small>
+            </span>
+            <b>{diagnosisBrief.statusLabel}</b>
+          </summary>
           <p>{diagnosisBrief.decisionGuide.primaryDecision}</p>
           <ul>
             {parentProofSections.map((section) => (
@@ -5890,7 +5893,7 @@ function ProductScopeAdGroupActionBridgeCard({
             ))}
           </ul>
           <small>{diagnosisBrief.boundary}</small>
-        </div>
+        </details>
       )}
       <div className="adGroupActionBridgePreflightEvidence" aria-label="人工点击前证据读回">
         <span>

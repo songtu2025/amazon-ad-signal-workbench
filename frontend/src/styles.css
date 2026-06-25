@@ -8570,11 +8570,24 @@ button.reviewTodoQueueNext:focus-visible {
   background: #f8fbff;
 }
 
-.adGroupActionBridgeParentProof > div {
+.adGroupActionBridgeParentProof summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  cursor: pointer;
+  list-style: none;
+  outline: none;
+}
+
+.adGroupActionBridgeParentProof summary::-webkit-details-marker {
+  display: none;
+}
+
+.adGroupActionBridgeParentProof summary > span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
 }
 
 .adGroupActionBridgeParentProof strong {
@@ -8584,7 +8597,7 @@ button.reviewTodoQueueNext:focus-visible {
   line-height: 1.35;
 }
 
-.adGroupActionBridgeParentProof > div span {
+.adGroupActionBridgeParentProof summary > b {
   border: 1px solid #d7e7f4;
   border-radius: 999px;
   padding: 3px 7px;
@@ -8594,6 +8607,13 @@ button.reviewTodoQueueNext:focus-visible {
   font-weight: 820;
   line-height: 1.2;
   white-space: nowrap;
+}
+
+.adGroupActionBridgeParentProof summary small {
+  color: #5f7287;
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .adGroupActionBridgeParentProof ul {
