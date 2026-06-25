@@ -3992,7 +3992,7 @@ export interface ProductScopeEvidenceRouteGuide {
 }
 
 export interface ProductScopeDiagnosisBriefSection {
-  id: "sales_summary" | "ai_summary" | "ad_group_priority" | "ad_group_detail";
+  id: "scope_filter" | "sales_summary" | "ai_summary" | "ad_group_priority" | "ad_group_detail";
   label: string;
   title: string;
   businessQuestion: string;
@@ -5116,7 +5116,10 @@ export function buildProductScopeDiagnosisBrief(
     ? primaryAdGroup.problemLocator.nextManualStep
     : "先补齐广告组、投放商品、投放词、搜索词和广告位证据，再进入人工复核。";
   const adEvidenceGate = firstScreenSummary.landingGates.find((gate) => gate.label === "广告证据");
+  const scopeGate = firstScreenSummary.landingGates.find((gate) => gate.label === "经营口径");
   const hasAdvertisedAsin = firstScreenSummary.adAsinRows.length > 0;
+  const scopeLockJudgement = `${scopeGate?.value ?? firstScreenSummary.factItems[0]?.value ?? "当前 Parent ASIN 经营口径待确认"}；筛选器只锁定经营对象和周期，不把广告组、搜索词或广告位提升为商品入口。`;
+  const scopeLockNextManualStep = `${scopeGate?.detail ?? "先确认当前 Parent ASIN、店铺、站点和周期口径，再进入广告证据下钻。"} 若要处理广告问题，继续看有 advertised_products 证据的广告 ASIN。`;
   const salesEntryCurrentJudgement = hasAdvertisedAsin
     ? `可以进入广告诊断：${adEvidenceGate?.value ?? firstScreenSummary.adCoverageDecision.statusLabel}。${
         adEvidenceGate?.detail ?? firstScreenSummary.adCoverageDecision.summary
@@ -5184,12 +5187,24 @@ export function buildProductScopeDiagnosisBrief(
   return {
     title: "Parent ASIN 运营诊断路径",
     summary:
-      "这不是四块报表纵向堆叠，而是一条运营决策路径：先用 Parent ASIN 销售表现确认入口，再判断先看哪个广告组，接着下钻投放商品、投放词、搜索词和广告位，最后由 AI 汇总判断，只输出可人工确认的下一步。",
+      "这不是把筛选器、销售、广告组、明细和 AI 分析纵向堆叠成长报表，而是一条运营决策路径：先锁定 Parent ASIN 口径，再用销售表现确认入口，判断先看哪个广告组，接着下钻广告组下的投放商品、投放词、搜索词和广告位，最后由 AI 汇总判断，只输出可人工确认的下一步。",
     statusLabel: firstScreenSummary.mvpStatus.statusLabel,
     statusTone: firstScreenSummary.mvpStatus.tone,
     decisionGuide,
     verdictItems,
     sections: [
+      {
+        id: "scope_filter",
+        label: "0",
+        title: "筛选器与口径锁定",
+        businessQuestion: "当前页面到底在看哪个店铺、站点、Parent ASIN 和周期，哪些对象不能被混进来？",
+        purpose: "先把经营对象、站点、周期和数据来源锁住，避免后续把广告组、搜索词、广告位或 ABA 当成 Parent ASIN 商品口径。",
+        currentJudgement: scopeLockJudgement,
+        proves: "能证明当前诊断入口已经限定为一个 Parent ASIN 经营范围，并为广告 ASIN、广告组和搜索词下钻提供同一上下文。",
+        doesNotProve: "不能证明广告组就是产品，不能证明所有销售子 ASIN 都有广告数据，也不能把 ABA 当店铺专属数据。",
+        nextManualStep: scopeLockNextManualStep,
+        tone: "scope",
+      },
       {
         id: "sales_summary",
         label: "1",
@@ -5217,9 +5232,9 @@ export function buildProductScopeDiagnosisBrief(
       {
         id: "ad_group_detail",
         label: "3",
-        title: "当前广告组复核路径",
-        businessQuestion: "当前广告组的问题落在哪一层证据：投放商品、投放词、搜索词，还是广告位？",
-        purpose: "先确认问题落点、证据缺口和人工下一步，再把广告组拆成投放商品、投放词、搜索词和广告位四类证据。",
+        title: "广告组下具体数据",
+        businessQuestion: "当前广告组下的问题落在哪一层具体数据：投放商品、投放词、搜索词，还是广告位？",
+        purpose: "先确认问题落点、证据缺口和人工下一步，再把广告组下具体数据拆成投放商品、投放词、搜索词和广告位四类证据。",
         currentJudgement: routeStepText,
         proves: routeDecision?.proves ?? "能证明当前页面已经给出广告证据下钻路径。",
         doesNotProve:
@@ -5232,7 +5247,7 @@ export function buildProductScopeDiagnosisBrief(
         label: "4",
         title: "AI 人工动作判断",
         businessQuestion: "证据读完后，运营现在只能做哪一种人工动作，后续如何复盘？",
-        purpose: "在销售入口、广告组排序和广告组下证据都读完后，只把当前状态汇总为记录观察、标记已处理、加入复盘或忽略本次。",
+        purpose: "在筛选口径、销售入口、广告组排序和广告组下具体数据都读完后，只把当前状态汇总为记录观察、标记已处理、加入复盘或忽略本次。",
         currentJudgement: firstScreenSummary.mvpStatus.summary,
         proves: firstScreenSummary.mvpStatus.detail,
         doesNotProve: "不代表系统可以自动加词、否词、调价或暂停广告；也不代表没有 ready 复盘时已经证明建议有效。",

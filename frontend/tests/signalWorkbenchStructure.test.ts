@@ -185,19 +185,21 @@ assertIncludes(signalUiSource, "广告组、投放词、搜索词和广告位只
 assertIncludes(signalUiSource, "先有人工动作和 ReviewTodo");
 assertIncludes(signalUiSource, "buildProductScopeDiagnosisBrief");
 assertIncludes(signalUiSource, "Parent ASIN 运营诊断路径");
+assertIncludes(signalUiSource, "筛选器与口径锁定");
+assertIncludes(signalUiSource, "避免后续把广告组、搜索词、广告位或 ABA 当成 Parent ASIN 商品口径");
 assertIncludes(signalUiSource, "Parent ASIN 销售表现入口");
 assertIncludes(signalUiSource, "是否值得进入广告诊断");
 assertIncludes(signalUiSource, "不把全部销售子 ASIN 当广告对象");
 assertIncludes(signalUiSource, "不把未投放变体拉进广告分析");
 assertIncludes(signalUiSource, "AI 人工动作判断");
 assertIncludes(signalUiSource, "最后由 AI 汇总");
-assertIncludes(signalUiSource, "在销售入口、广告组排序和广告组下证据都读完后");
+assertIncludes(signalUiSource, "在筛选口径、销售入口、广告组排序和广告组下具体数据都读完后");
 assertIncludes(signalUiSource, "广告组优先排序");
-assertIncludes(signalUiSource, "当前广告组复核路径");
+assertIncludes(signalUiSource, "广告组下具体数据");
 assertIncludes(signalUiSource, "先确认问题落点、证据缺口和人工下一步");
 assertNotIncludes(signalUiSource, 'title: "AI 诊断摘要"');
 assertNotIncludes(signalUiSource, 'title: "AI 广告诊断摘要"');
-assertIncludes(signalUiSource, "不是四块报表纵向堆叠");
+assertIncludes(signalUiSource, "不是把筛选器、销售、广告组、明细和 AI 分析纵向堆叠成长报表");
 assertIncludes(signalUiSource, "只输出可人工确认的下一步");
 assertIncludes(signalUiSource, "哪些广告对象真的有广告数据");
 assertIncludes(signalUiSource, "先看经营入口，再看广告 ASIN、广告组、投放词/搜索词/广告位");
@@ -209,15 +211,17 @@ assertIncludes(signalUiSource, 'layerId: "manual_confirmation"');
 assertIncludes(signalUiSource, 'layerId: "review"');
 assertIncludes(signalUiSource, "复盘门槛：先有人工留痕和 7d / 14d ReviewTodo");
 
+const diagnosisBriefScopeIndex = signalUiSource.indexOf('title: "筛选器与口径锁定"');
 const diagnosisBriefSalesIndex = signalUiSource.indexOf('title: "Parent ASIN 销售表现入口"');
 const diagnosisBriefAdGroupIndex = signalUiSource.indexOf('title: "广告组优先排序"');
-const diagnosisBriefAdGroupDetailIndex = signalUiSource.indexOf('title: "当前广告组复核路径"');
+const diagnosisBriefAdGroupDetailIndex = signalUiSource.indexOf('title: "广告组下具体数据"');
 const diagnosisBriefAiIndex = signalUiSource.indexOf('title: "AI 人工动作判断"');
 assert(
-  diagnosisBriefSalesIndex < diagnosisBriefAdGroupIndex &&
+  diagnosisBriefScopeIndex < diagnosisBriefSalesIndex &&
+    diagnosisBriefSalesIndex < diagnosisBriefAdGroupIndex &&
     diagnosisBriefAdGroupIndex < diagnosisBriefAdGroupDetailIndex &&
     diagnosisBriefAdGroupDetailIndex < diagnosisBriefAiIndex,
-  "Parent ASIN 运营诊断路径必须先看销售入口，再看广告组排序和具体证据，最后由 AI 汇总成人工动作判断",
+  "Parent ASIN 运营诊断路径必须先锁定筛选口径，再看销售入口、广告组排序和具体数据，最后由 AI 汇总成人工动作判断",
 );
 
 const diagnosisPanelIndex = workbenchSource.indexOf('<section className="diagnosisPanel">');
@@ -834,11 +838,11 @@ assert(
 );
 assert(
   productScopeFrameworkIndex > productScopeVerdictIndex && productScopeFrameworkIndex < diagnosisBriefPathIndex,
-  "Parent ASIN 单屏诊断框架必须位于体检结论和明细路径之间，把草图四层先压缩成业务判断卡。",
+  "Parent ASIN 单屏诊断框架必须位于体检结论和明细路径之间，把草图路径先压缩成业务判断卡。",
 );
 assert(
   diagnosisBriefBusinessQuestionIndex > 0 && diagnosisBriefBusinessQuestionIndex < diagnosisBriefCurrentJudgementIndex,
-  "Parent ASIN 四段体检路径必须先展示业务问题，再展示当前判断，避免重新变成指标报表。",
+  "Parent ASIN 体检路径必须先展示业务问题，再展示当前判断，避免重新变成指标报表。",
 );
 assertIncludes(workbenchSource, "brief.verdictItems.map");
 assertIncludes(stylesSource, ".productScopeDiagnosisVerdict");

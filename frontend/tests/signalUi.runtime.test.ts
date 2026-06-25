@@ -266,14 +266,15 @@ async function main() {
     adGroupDiagnosisRows,
   );
   assert(productScopeDiagnosisBrief !== null, "Parent ASIN 运行态必须生成单屏诊断框架。");
-  assert(productScopeDiagnosisBrief?.sections.length === 4, "单屏诊断框架必须固定为销售入口、广告组、具体证据和 AI 判断四层。");
+  assert(productScopeDiagnosisBrief?.sections.length === 5, "单屏诊断框架必须固定为口径锁定、销售入口、广告组、具体数据和 AI 判断五层。");
   assertOrderedLabels(
     productScopeDiagnosisBrief?.sections.map((section: any) => section.title) ?? [],
-    ["Parent ASIN 销售表现入口", "广告组优先排序", "当前广告组复核路径", "AI 人工动作判断"],
+    ["筛选器与口径锁定", "Parent ASIN 销售表现入口", "广告组优先排序", "广告组下具体数据", "AI 人工动作判断"],
     "Parent ASIN 单屏诊断框架顺序",
   );
   const diagnosisBriefRuntimeText = asText(productScopeDiagnosisBrief);
-  assertIncludes(diagnosisBriefRuntimeText, "不是四块报表纵向堆叠");
+  assertIncludes(diagnosisBriefRuntimeText, "不是把筛选器、销售、广告组、明细和 AI 分析纵向堆叠成长报表");
+  assertIncludes(diagnosisBriefRuntimeText, "当前页面到底在看哪个店铺、站点、Parent ASIN 和周期");
   assertIncludes(diagnosisBriefRuntimeText, "不逐个读完整报表");
   assertIncludes(diagnosisBriefRuntimeText, "这个 Parent ASIN 是否有足够广告证据");
   assertIncludes(diagnosisBriefRuntimeText, "今天应该先看哪个广告组");
