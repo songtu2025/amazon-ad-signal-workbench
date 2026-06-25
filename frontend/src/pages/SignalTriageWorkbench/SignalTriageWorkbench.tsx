@@ -3795,6 +3795,24 @@ function SearchIntentReviewDecisionSummaryPanel({ summary }: { summary: SearchIn
         <strong>{summary.headline}</strong>
         <span>{summary.topDecisionLabel}</span>
       </div>
+      <div className="searchIntentReviewDecisionCommand" aria-label="广告搜索词复核作战条">
+        <span>
+          <b>业务问题</b>
+          <small>{summary.businessQuestion}</small>
+        </span>
+        <span>
+          <b>首要判断</b>
+          <small>{summary.topDecisionLabel}：{summary.topDecisionReason}</small>
+        </span>
+        <span>
+          <b>复核路径</b>
+          <small>{summary.manualReviewPath}</small>
+        </span>
+        <span>
+          <b>证明边界</b>
+          <small>{summary.proofBoundary}</small>
+        </span>
+      </div>
       <dl className="searchIntentReviewDecisionDistribution" aria-label="有效词、浪费词和证据缺口分布">
         {summary.distributionItems.map((item) => (
           <div className={item.tone} key={item.label}>

@@ -6170,9 +6170,15 @@ if (!searchIntentReviewDecisionSummary) {
 assertIncludes(searchIntentReviewDecisionSummary.headline, "有效词扩量 1 组");
 assertIncludes(searchIntentReviewDecisionSummary.headline, "浪费词止损 0 组");
 assertIncludes(searchIntentReviewDecisionSummary.headline, "证据缺口观察 0 组");
+assertIncludes(searchIntentReviewDecisionSummary.businessQuestion, "今天应先做扩量复核、止损复核，还是只观察补证");
 assertEqual(searchIntentReviewDecisionSummary.topIntentLabel, "规则语义：儿童太阳镜");
 assertEqual(searchIntentReviewDecisionSummary.topDecisionLabel, "扩量复核");
+assertIncludes(searchIntentReviewDecisionSummary.topDecisionReason, "订单 4");
 assertIncludes(searchIntentReviewDecisionSummary.topSearchTermLabel, "SearchTerm：baby sunglasses");
+assertIncludes(searchIntentReviewDecisionSummary.manualReviewPath, "打开具体 SearchTerm 信号");
+assertIncludes(searchIntentReviewDecisionSummary.manualReviewPath, "右侧只做人工留痕或加入 7/14 天复盘");
+assertIncludes(searchIntentReviewDecisionSummary.proofBoundary, "只证明当前 Parent ASIN 广告上下文中的搜索词表现优先级");
+assertIncludes(searchIntentReviewDecisionSummary.proofBoundary, "不覆盖自然搜索、未投放子 ASIN 或单个 ASIN 归因");
 assertEqual(searchIntentReviewDecisionSummary.distributionItems[0].label, "有效词扩量");
 assertEqual(searchIntentReviewDecisionSummary.distributionItems[1].label, "浪费词止损");
 assertEqual(searchIntentReviewDecisionSummary.distributionItems[2].label, "证据缺口观察");

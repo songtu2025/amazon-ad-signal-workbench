@@ -236,9 +236,13 @@ export interface SearchIntentReviewDecisionSummaryItem {
 
 export interface SearchIntentReviewDecisionSummary {
   headline: string;
+  businessQuestion: string;
   topIntentLabel: string;
   topDecisionLabel: string;
+  topDecisionReason: string;
   topSearchTermLabel: string;
+  manualReviewPath: string;
+  proofBoundary: string;
   distributionItems: SearchIntentReviewDecisionSummaryItem[];
   evidenceGap: string;
   nextManualStep: string;
@@ -6711,9 +6715,15 @@ export function buildSearchIntentReviewDecisionSummary(cards: SearchIntentReview
 
   return {
     headline: `先看 ${firstCard.intentLabel}：${firstCard.operationDecisionLabel}。当前 ${cards.length} 组搜索词中，有效词扩量 ${scaleCount} 组 / 浪费词止损 ${wasteCount} 组 / 证据缺口观察 ${observeCount} 组。`,
+    businessQuestion: "当前 Parent ASIN 下的广告用户搜索词，今天应先做扩量复核、止损复核，还是只观察补证？",
     topIntentLabel: firstCard.intentLabel,
     topDecisionLabel: firstCard.operationDecisionLabel,
+    topDecisionReason: firstCard.operationDecisionReason,
     topSearchTermLabel,
+    manualReviewPath:
+      "打开具体 SearchTerm 信号 -> 核对广告组、投放词、广告 ASIN 和广告位证据 -> 右侧只做人工留痕或加入 7/14 天复盘。",
+    proofBoundary:
+      "只证明当前 Parent ASIN 广告上下文中的搜索词表现优先级；不覆盖自然搜索、未投放子 ASIN 或单个 ASIN 归因。",
     distributionItems: [
       {
         label: "有效词扩量",

@@ -4314,6 +4314,35 @@ button.reviewTodoQueueNext:focus-visible {
   font-weight: 760;
 }
 
+.searchIntentReviewDecisionCommand {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.searchIntentReviewDecisionCommand span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid #dfe9f3;
+  border-radius: 8px;
+  padding: 7px;
+  background: #f9fbfd;
+}
+
+.searchIntentReviewDecisionCommand b {
+  color: #52647a;
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.searchIntentReviewDecisionCommand small {
+  color: #213047;
+  font-size: 11px;
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+}
+
 .searchIntentReviewDecisionDistribution,
 .searchIntentReviewDecisionNext {
   margin: 0;
@@ -9280,6 +9309,7 @@ button.reviewTodoQueueNext:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .searchIntentReviewDecisionCommand,
   .searchIntentReviewDecisionDistribution,
   .searchIntentReviewDecisionNext {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -9485,6 +9515,7 @@ button.reviewTodoQueueNext:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .searchIntentReviewDecisionCommand,
   .searchIntentReviewDecisionDistribution,
   .searchIntentReviewDecisionNext {
     grid-template-columns: 1fr;
