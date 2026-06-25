@@ -1165,6 +1165,49 @@ export function SignalTriageWorkbench() {
       }),
     [latestManualAction, selectedReviewRecords, selectedReviewTodos],
   );
+  const selectedManualActionPostWriteDecisionItems = useMemo(() => {
+    const manualActionEvidenceRow = selectedManualReviewEvidencePathReadback.rows[0];
+    const reviewTodoEvidenceRow = selectedManualReviewEvidencePathReadback.rows[1];
+    const nextStepValue =
+      selectedManualReviewEvidencePathReadback.tone === "blocked"
+        ? "先补齐证据路径"
+        : selectedManualReviewEvidencePathReadback.tone === "saved"
+          ? "查看复盘结论"
+          : selectedReviewTodos.length > 0
+            ? "等待复盘窗口"
+            : "等待人工动作";
+    const latestActionText = latestManualAction
+      ? `${manualActionLabel[latestManualAction.action_type]} / ${latestManualAction.object_label || latestManualAction.object_id}`
+      : "尚未写入";
+    return [
+      {
+        label: "写入了吗",
+        value: latestActionText,
+        detail: selectedManualActionReadbackCompact,
+      },
+      {
+        label: "证据留了吗",
+        value: manualActionEvidenceRow?.value ?? "等待证据快照",
+        detail: manualActionEvidenceRow?.detail ?? manualActionPostWriteExpectationSummaryText(),
+      },
+      {
+        label: "复盘待办生成了吗",
+        value: reviewTodoEvidenceRow?.value ?? "等待复盘待办",
+        detail: reviewTodoEvidenceRow?.detail ?? "只有人工动作进入复盘路径后，才会生成 7d / 14d 待办。",
+      },
+      {
+        label: "下一步做什么",
+        value: nextStepValue,
+        detail: selectedManualActionReadbackConsistency,
+      },
+    ];
+  }, [
+    latestManualAction,
+    selectedManualActionReadbackCompact,
+    selectedManualActionReadbackConsistency,
+    selectedManualReviewEvidencePathReadback,
+    selectedReviewTodos.length,
+  ]);
   const selectedManualReviewClosureLedger = useMemo(
     () =>
       buildManualReviewClosureLedger({
@@ -3188,41 +3231,59 @@ export function SignalTriageWorkbench() {
                   })}
                 </div>
                 <div className="manualActionReadbackStatusGroup">
-                  <div className="manualActionReadbackPath" aria-label="点击后读回路径">
-                    {selectedManualActionReadbackPathItems.map((item) => (
-                      <div key={item.label} className={`manualActionReadbackPathItem ${item.tone}`}>
-                        <span>{item.label}</span>
-                        <b>{item.value}</b>
-                        <p>{item.detail}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="manualActionReadbackStatusLine">{manualActionPostWriteExpectationSummaryText()}</p>
-                <p
-                  className="manualActionReadbackStatusLine"
-                  title={`${manualActionPostWriteExpectationSummaryText()} ${selectedManualActionReadbackConsistency}`}
-                >
-                  {selectedManualActionReadbackCompact}
-                </p>
-                  <div
-                    className={`manualReviewEvidencePathReadback ${selectedManualReviewEvidencePathReadback.tone}`}
-                    aria-label="人工留痕证据路径读回"
-                  >
+                  <div className="manualActionPostWriteSummary" aria-label="人工动作写后默认摘要">
                     <div>
-                      <strong>{selectedManualReviewEvidencePathReadback.title}</strong>
-                      <span>{selectedManualReviewEvidencePathReadback.summary}</span>
+                      <strong>写后先看这四件事</strong>
+                      <span>默认决策层</span>
                     </div>
                     <ul>
-                      {selectedManualReviewEvidencePathReadback.rows.map((row) => (
-                        <li key={row.label} className={row.tone}>
-                          <span>{row.label}</span>
-                          <b>{row.value}</b>
-                          <p>{row.detail}</p>
+                      {selectedManualActionPostWriteDecisionItems.map((item) => (
+                        <li key={item.label}>
+                          <span>{item.label}</span>
+                          <b>{item.value}</b>
+                          <p>{item.detail}</p>
                         </li>
                       ))}
                     </ul>
-                    <p>{selectedManualReviewEvidencePathReadback.boundary}</p>
                   </div>
+                  <details className="manualActionPostWriteDetails" aria-label="人工动作写后完整审计材料">
+                    <summary>展开点击后读回路径和证据账本</summary>
+                    <div className="manualActionReadbackPath" aria-label="点击后读回路径">
+                      {selectedManualActionReadbackPathItems.map((item) => (
+                        <div key={item.label} className={`manualActionReadbackPathItem ${item.tone}`}>
+                          <span>{item.label}</span>
+                          <b>{item.value}</b>
+                          <p>{item.detail}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="manualActionReadbackStatusLine">{manualActionPostWriteExpectationSummaryText()}</p>
+                    <p
+                      className="manualActionReadbackStatusLine"
+                      title={`${manualActionPostWriteExpectationSummaryText()} ${selectedManualActionReadbackConsistency}`}
+                    >
+                      {selectedManualActionReadbackCompact}
+                    </p>
+                    <div
+                      className={`manualReviewEvidencePathReadback ${selectedManualReviewEvidencePathReadback.tone}`}
+                      aria-label="人工留痕证据路径读回"
+                    >
+                      <div>
+                        <strong>{selectedManualReviewEvidencePathReadback.title}</strong>
+                        <span>{selectedManualReviewEvidencePathReadback.summary}</span>
+                      </div>
+                      <ul>
+                        {selectedManualReviewEvidencePathReadback.rows.map((row) => (
+                          <li key={row.label} className={row.tone}>
+                            <span>{row.label}</span>
+                            <b>{row.value}</b>
+                            <p>{row.detail}</p>
+                          </li>
+                        ))}
+                      </ul>
+                      <p>{selectedManualReviewEvidencePathReadback.boundary}</p>
+                    </div>
+                  </details>
                 </div>
               </section>
 
