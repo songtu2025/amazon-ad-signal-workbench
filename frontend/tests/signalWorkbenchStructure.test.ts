@@ -1219,6 +1219,22 @@ assertIncludes(workbenchSource, "人工下一步");
 assertIncludes(workbenchSource, "compactEvidenceDetails");
 assertIncludes(workbenchSource, "指标目的：");
 assertIncludes(workbenchSource, "当前判断：");
+assertIncludes(workbenchSource, "searchTermReviewDecisionSummary");
+assertIncludes(workbenchSource, 'aria-label="广告搜索词复核优先判断"');
+assertIncludes(workbenchSource, '<details className="searchTermReviewLayer"');
+assertIncludes(workbenchSource, '<details className="searchTermReviewEvidenceDetails"');
+assertIncludes(workbenchSource, "展开完整证据、证明边界和复核路径");
+assertIncludes(workbenchSource, '<details className="searchTermAdContextRows"');
+assertIncludes(workbenchSource, "展开逐投放上下文表现行");
+assertIncludes(stylesSource, ".searchTermReviewDecisionSummary");
+assertIncludes(stylesSource, ".searchTermReviewEvidenceDetails");
+assertIncludes(stylesSource, ".searchTermAdContextRows[open] summary");
+const searchTermDecisionIndex = workbenchSource.indexOf("searchTermReviewDecisionSummary");
+const searchTermEvidenceDetailsIndex = workbenchSource.indexOf("searchTermReviewEvidenceDetails");
+assert(
+  searchTermDecisionIndex >= 0 && searchTermDecisionIndex < searchTermEvidenceDetailsIndex,
+  "广告搜索词复核链必须先展示优先判断，再展开完整证据。",
+);
 assertIncludes(workbenchSource, 'aria-label="人工留痕动作"');
 assertIncludes(workbenchSource, "只保存人工留痕和复盘待办，不执行广告动作");
 assertIncludes(workbenchSource, "manualActionEmptyStateText(manualActionPreflight)");

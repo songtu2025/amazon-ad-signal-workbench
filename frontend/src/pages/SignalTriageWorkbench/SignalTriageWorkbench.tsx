@@ -3609,14 +3609,32 @@ function SearchTermOpportunityReviewChainPanel({
         <span>{chain.title}</span>
       </div>
       <p>{chain.businessQuestion}</p>
+      <div className="searchTermReviewDecisionSummary" aria-label="广告搜索词复核优先判断">
+        <span>
+          <b>当前判断</b>
+          <strong>{chain.currentJudgement}</strong>
+        </span>
+        <span>
+          <b>人工下一步</b>
+          <strong>{chain.nextManualStep}</strong>
+        </span>
+        <span>
+          <b>证据缺口</b>
+          <strong>{chain.evidenceGap}</strong>
+        </span>
+        <span>
+          <b>动作边界</b>
+          <strong>{chain.actionBoundary}</strong>
+        </span>
+      </div>
       {chain.reviewLayers.length > 0 && (
         <div className="searchTermReviewLayerGrid" aria-label="广告搜索词复核分层判断">
           {chain.reviewLayers.map((layer) => (
-            <article className="searchTermReviewLayer" key={layer.label}>
-              <div>
+            <details className="searchTermReviewLayer" key={layer.label}>
+              <summary>
                 <strong>{layer.label}</strong>
                 <span>{layer.purpose}</span>
-              </div>
+              </summary>
               <dl>
                 <dt>证据</dt>
                 <dd>{layer.evidence}</dd>
@@ -3627,82 +3645,69 @@ function SearchTermOpportunityReviewChainPanel({
                 <dt>人工下一步</dt>
                 <dd>{layer.nextManualStep}</dd>
               </dl>
-            </article>
+            </details>
           ))}
         </div>
       )}
-      <ul>
-        <li>
-          <b>对象粒度</b>
-          <span>{chain.objectGrain}</span>
-        </li>
-        <li>
-          <b>复核路径</b>
-          <span>{chain.reviewPath}</span>
-        </li>
-        <li>
-          <b>Parent ASIN 入口</b>
-          <span>{chain.parentScopeContext}</span>
-        </li>
-        <li>
-          <b>广告 ASIN 承接</b>
-          <span>{chain.adAsinCoverage}</span>
-        </li>
-        <li>
-          <b>广告组合流判断</b>
-          <span>{chain.adGroupSynthesis}</span>
-        </li>
-        <li>
-          <b>同组投放商品表现</b>
-          <span>{chain.adGroupProductPerformance}</span>
-        </li>
-        <li>
-          <b>投放词证据</b>
-          <span>{chain.targetingEvidence}</span>
-        </li>
-        <li>
-          <b>广告位边界</b>
-          <span>{chain.placementBoundary}</span>
-        </li>
-        <li>
-          <b>ABA 背景</b>
-          <span>{chain.marketContext}</span>
-        </li>
-        <li>
-          <b>当前判断</b>
-          <span>{chain.currentJudgement}</span>
-        </li>
-        <li>
-          <b>能证明</b>
-          <span>{chain.proves}</span>
-        </li>
-        <li>
-          <b>不能证明</b>
-          <span>{chain.doesNotProve}</span>
-        </li>
-        <li>
-          <b>证据缺口</b>
-          <span>{chain.evidenceGap}</span>
-        </li>
-        <li>
-          <b>需要补证</b>
-          <span>{chain.requiredEvidence}</span>
-        </li>
-        <li>
-          <b>人工下一步</b>
-          <span>{chain.nextManualStep}</span>
-        </li>
-        <li>
-          <b>动作边界</b>
-          <span>{chain.actionBoundary}</span>
-        </li>
-      </ul>
+      <details className="searchTermReviewEvidenceDetails" aria-label="完整搜索词复核证据">
+        <summary>展开完整证据、证明边界和复核路径</summary>
+        <ul>
+          <li>
+            <b>对象粒度</b>
+            <span>{chain.objectGrain}</span>
+          </li>
+          <li>
+            <b>复核路径</b>
+            <span>{chain.reviewPath}</span>
+          </li>
+          <li>
+            <b>Parent ASIN 入口</b>
+            <span>{chain.parentScopeContext}</span>
+          </li>
+          <li>
+            <b>广告 ASIN 承接</b>
+            <span>{chain.adAsinCoverage}</span>
+          </li>
+          <li>
+            <b>广告组合流判断</b>
+            <span>{chain.adGroupSynthesis}</span>
+          </li>
+          <li>
+            <b>同组投放商品表现</b>
+            <span>{chain.adGroupProductPerformance}</span>
+          </li>
+          <li>
+            <b>投放词证据</b>
+            <span>{chain.targetingEvidence}</span>
+          </li>
+          <li>
+            <b>广告位边界</b>
+            <span>{chain.placementBoundary}</span>
+          </li>
+          <li>
+            <b>ABA 背景</b>
+            <span>{chain.marketContext}</span>
+          </li>
+          <li>
+            <b>能证明</b>
+            <span>{chain.proves}</span>
+          </li>
+          <li>
+            <b>不能证明</b>
+            <span>{chain.doesNotProve}</span>
+          </li>
+          <li>
+            <b>需要补证</b>
+            <span>{chain.requiredEvidence}</span>
+          </li>
+        </ul>
+      </details>
       {adContextRows.length > 0 && (
-        <div className="searchTermAdContextRows" aria-label="逐投放上下文复核">
-          <div className="detailSectionHeader">
-            <h3>逐投放上下文复核</h3>
+        <details className="searchTermAdContextRows" aria-label="逐投放上下文复核">
+          <summary>
+            <strong>展开逐投放上下文表现行</strong>
             <span>{adContextRows.length} 条广告搜索词表现行</span>
-          </div>
+          </summary>
           <p>同一个 SearchTerm 可能跨广告活动、广告组和投放词出现；先逐行看承接，再决定是否记录观察或加入复盘。</p>
           <div className="searchTermAdContextGrid">
             {adContextRows.map((row) => (
@@ -3729,7 +3734,7 @@ function SearchTermOpportunityReviewChainPanel({
               </div>
             ))}
           </div>
-        </div>
+        </details>
       )}
     </section>
   );

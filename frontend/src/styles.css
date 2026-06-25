@@ -6273,10 +6273,40 @@ button.reviewTodoQueueNext:focus-visible {
   color: #40536a;
 }
 
+.searchTermReviewDecisionSummary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 8px;
+}
+
+.searchTermReviewDecisionSummary span {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #cfe1f1;
+  border-radius: 8px;
+  background: #f8fbff;
+  overflow-wrap: anywhere;
+}
+
+.searchTermReviewDecisionSummary b {
+  color: #1f4263;
+  font-size: 12px;
+}
+
+.searchTermReviewDecisionSummary strong {
+  min-width: 0;
+  color: #183b5b;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
 .searchTermReviewLayerGrid {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .searchTermReviewLayer {
@@ -6289,12 +6319,25 @@ button.reviewTodoQueueNext:focus-visible {
   background: #f8fbff;
 }
 
-.searchTermReviewLayer div,
+.searchTermReviewLayer summary,
 .searchTermReviewLayer dl {
   display: grid;
   gap: 5px;
   min-width: 0;
   margin: 0;
+}
+
+.searchTermReviewLayer summary {
+  cursor: pointer;
+}
+
+.searchTermReviewLayer summary::marker {
+  color: #6b8db0;
+}
+
+.searchTermReviewLayer[open] summary {
+  border-bottom: 1px solid #e1edf7;
+  padding-bottom: 7px;
 }
 
 .searchTermReviewLayer strong {
@@ -6318,10 +6361,66 @@ button.reviewTodoQueueNext:focus-visible {
   font-weight: 800;
 }
 
+.searchTermReviewEvidenceDetails {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #d7e6f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.searchTermReviewEvidenceDetails summary {
+  cursor: pointer;
+  color: #1f4f7a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.searchTermReviewEvidenceDetails summary::marker {
+  color: #6b8db0;
+}
+
+.searchTermReviewEvidenceDetails[open] summary {
+  border-bottom: 1px solid #e1edf7;
+  padding-bottom: 8px;
+}
+
 .searchTermAdContextRows {
   display: grid;
   gap: 8px;
-  padding-top: 4px;
+  padding: 10px;
+  border: 1px solid #d7e6f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.searchTermAdContextRows summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  color: #1f4263;
+}
+
+.searchTermAdContextRows summary::marker {
+  color: #6b8db0;
+}
+
+.searchTermAdContextRows summary strong {
+  font-size: 12px;
+}
+
+.searchTermAdContextRows summary span {
+  color: #60758c;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.searchTermAdContextRows[open] summary {
+  border-bottom: 1px solid #e1edf7;
+  padding-bottom: 8px;
 }
 
 .searchTermAdContextRows > p {
