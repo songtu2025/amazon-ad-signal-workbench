@@ -4375,7 +4375,9 @@ function ProductScopeDiagnosisBriefPanel({ brief }: { brief: ProductScopeDiagnos
               <span>{section.label}. {section.title}</span>
               <strong>{section.businessQuestion}</strong>
               <p>{section.currentJudgement}</p>
-              <div className="productScopeDiagnosisFrameworkEvidence" aria-label={`${section.title} 证明边界`}>
+              <small className="productScopeDiagnosisFrameworkNext">人工下一步：{section.nextManualStep}</small>
+              <details className="productScopeDiagnosisFrameworkEvidence" aria-label={`${section.title} 证明边界`}>
+                <summary>证明边界</summary>
                 <small>
                   <b>能证明</b>
                   {section.proves}
@@ -4384,13 +4386,11 @@ function ProductScopeDiagnosisBriefPanel({ brief }: { brief: ProductScopeDiagnos
                   <b>不能证明</b>
                   {section.doesNotProve}
                 </small>
-              </div>
-              <small>人工下一步：{section.nextManualStep}</small>
+              </details>
             </article>
           ))}
         </div>
       </div>
-      <p className="productScopeDiagnosisBriefSummary">{brief.summary}</p>
       <div className="productScopeDiagnosisBriefPath" aria-label="运营诊断路径顺序">
         {brief.sections.map((section) => (
           <span className={section.tone} key={section.id}>
@@ -4398,41 +4398,6 @@ function ProductScopeDiagnosisBriefPanel({ brief }: { brief: ProductScopeDiagnos
           </span>
         ))}
         <span className="manual">人工确认 / 7-14 天复盘</span>
-      </div>
-      <div className="productScopeDiagnosisBriefSections">
-        {brief.sections.map((section) => (
-          <article className={`productScopeDiagnosisBriefSection ${section.tone}`} key={section.id}>
-            <div className="productScopeDiagnosisBriefSectionHeader">
-              <span>{section.label}</span>
-              <div>
-                <strong>{section.title}</strong>
-                <p>{section.purpose}</p>
-              </div>
-            </div>
-            <ul>
-              <li>
-                <b>业务问题</b>
-                <span>{section.businessQuestion}</span>
-              </li>
-              <li>
-                <b>当前判断</b>
-                <span>{section.currentJudgement}</span>
-              </li>
-              <li>
-                <b>人工下一步</b>
-                <span>{section.nextManualStep}</span>
-              </li>
-              <li>
-                <b>能证明</b>
-                <span>{section.proves}</span>
-              </li>
-              <li>
-                <b>不能证明</b>
-                <span>{section.doesNotProve}</span>
-              </li>
-            </ul>
-          </article>
-        ))}
       </div>
       <div className="productScopeDiagnosisBriefActions" aria-label="允许的人工动作">
         {brief.manualActions.map((action) => (
