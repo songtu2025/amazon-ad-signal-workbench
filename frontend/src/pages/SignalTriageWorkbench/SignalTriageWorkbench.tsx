@@ -4901,6 +4901,76 @@ function ProductScopeAdGroupDataSummaryPanel({ row }: { row: ProductScopeAdGroup
   );
 }
 
+function ProductScopeAdGroupEvidenceSwitcherPanel({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
+  const items = buildProductScopeAdGroupChecklistItems(row);
+  const priority = buildProductScopeAdGroupReviewPriority(row, items);
+  const priorityItem = items.find((item) => priority.focusLayer.includes(item.title)) ?? items[0];
+  const priorityKey = priorityItem?.key ?? "advertised-products";
+  const [activeKey, setActiveKey] = useState(priorityKey);
+
+  useEffect(() => {
+    setActiveKey(priorityKey);
+  }, [priorityKey, row.id]);
+
+  const activeItem = items.find((item) => item.key === activeKey) ?? priorityItem ?? items[0];
+
+  return (
+    <div className="productScopeAdGroupEvidenceSwitcher" aria-label="当前广告组证据切换器">
+      <div className="productScopeAdGroupEvidenceSwitcherHeader">
+        <strong>广告组下具体数据切换</strong>
+        <span>默认聚焦：{priority.focusLayer}</span>
+      </div>
+      <p>先在四类证据之间切换，再决定是否展开完整清单；广告组仍只是投放容器，不是商品结论。</p>
+      <div className="productScopeAdGroupEvidenceTabs" role="tablist" aria-label="广告组证据层切换">
+        {items.map((item) => {
+          const isActive = item.key === activeItem?.key;
+          return (
+            <button
+              className={`productScopeAdGroupEvidenceTab ${isActive ? "active" : ""}`}
+              key={item.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveKey(item.key)}
+            >
+              <span>{item.label}</span>
+              <b>{item.title}</b>
+            </button>
+          );
+        })}
+      </div>
+      {activeItem && (
+        <article className="productScopeAdGroupEvidenceActive" role="tabpanel" aria-label={`当前证据层：${activeItem.title}`}>
+          <div>
+            <span>当前证据层</span>
+            <strong>{activeItem.title}</strong>
+          </div>
+          <p>{activeItem.purpose}</p>
+          <div className="productScopeAdGroupEvidenceActiveGrid">
+            <span>
+              <b>当前判断</b>
+              <small>{activeItem.judgement}</small>
+            </span>
+            <span>
+              <b>能证明</b>
+              <small>{activeItem.proves}</small>
+            </span>
+            <span>
+              <b>不能证明</b>
+              <small>{activeItem.doesNotProve}</small>
+            </span>
+            <span>
+              <b>人工下一步</b>
+              <small>{activeItem.nextStep}</small>
+            </span>
+          </div>
+          <small>{priority.boundary}</small>
+        </article>
+      )}
+    </div>
+  );
+}
+
 function ProductScopeAdGroupActionBridgeCard({
   row,
   priorityItem,
@@ -5137,6 +5207,7 @@ function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagno
         </span>
       </div>
       <ProductScopeAdGroupDataSummaryPanel row={row} />
+      <ProductScopeAdGroupEvidenceSwitcherPanel row={row} />
       <ProductScopeAdGroupReviewOrderPanel row={row} />
       <div className="productScopeAdGroupDiagnosisMetrics" aria-label="当前广告组证据摘要">
         <span>{row.metrics}</span>

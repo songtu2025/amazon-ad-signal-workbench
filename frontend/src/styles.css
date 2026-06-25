@@ -3263,6 +3263,151 @@ h3 {
   line-height: 1.35;
 }
 
+.productScopeAdGroupEvidenceSwitcher {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #c9ddf0;
+  border-radius: 8px;
+  background: #fbfdff;
+  color: #4f637a;
+  overflow-wrap: anywhere;
+}
+
+.productScopeAdGroupEvidenceSwitcherHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.productScopeAdGroupEvidenceSwitcherHeader strong {
+  color: #132942;
+  font-size: 13px;
+}
+
+.productScopeAdGroupEvidenceSwitcherHeader span,
+.productScopeAdGroupEvidenceSwitcher p,
+.productScopeAdGroupEvidenceSwitcher > small {
+  margin: 0;
+  color: #60758c;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.productScopeAdGroupEvidenceTabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.productScopeAdGroupEvidenceTab {
+  min-width: 0;
+  min-height: 54px;
+  border: 1px solid #d8e6f3;
+  border-radius: 7px;
+  background: #ffffff;
+  padding: 7px 8px;
+  display: grid;
+  gap: 3px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.productScopeAdGroupEvidenceTab:hover,
+.productScopeAdGroupEvidenceTab:focus-visible {
+  border-color: #adcce8;
+  background: #f6fbff;
+}
+
+.productScopeAdGroupEvidenceTab.active {
+  border-color: #8eb6dd;
+  background: #edf6ff;
+  box-shadow: inset 0 0 0 1px #cfe3f7;
+}
+
+.productScopeAdGroupEvidenceTab span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #eaf3ff;
+  color: #1f5d9d;
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.productScopeAdGroupEvidenceTab b {
+  color: #264967;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.productScopeAdGroupEvidenceActive {
+  display: grid;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid #d7e5f2;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.productScopeAdGroupEvidenceActive > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.productScopeAdGroupEvidenceActive > div:first-child span {
+  color: #60758c;
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.productScopeAdGroupEvidenceActive > div:first-child strong {
+  color: #132942;
+  font-size: 13px;
+}
+
+.productScopeAdGroupEvidenceActive p,
+.productScopeAdGroupEvidenceActive small {
+  margin: 0;
+  color: #5a7086;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.productScopeAdGroupEvidenceActiveGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.productScopeAdGroupEvidenceActiveGrid span {
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #dbe7f2;
+  border-radius: 7px;
+  background: #fbfdff;
+  display: grid;
+  gap: 3px;
+}
+
+.productScopeAdGroupEvidenceActiveGrid b {
+  color: #294b6a;
+  font-size: 11px;
+}
+
+.productScopeAdGroupEvidenceActiveGrid small {
+  color: #5f7287;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .productScopeAdGroupOwnership,
 .productScopeAdGroupAdvertisedProducts,
 .productScopeAdGroupChecklist,
@@ -9472,6 +9617,11 @@ button.reviewTodoQueueNext:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .productScopeAdGroupEvidenceTabs,
+  .productScopeAdGroupEvidenceActiveGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .productScopeAdGroupPriorityTriage {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -9608,6 +9758,16 @@ button.reviewTodoQueueNext:focus-visible {
   }
 
   .productScopeAdGroupDataSummaryItems {
+    grid-template-columns: 1fr;
+  }
+
+  .productScopeAdGroupEvidenceSwitcherHeader,
+  .productScopeAdGroupEvidenceActive > div:first-child {
+    display: grid;
+  }
+
+  .productScopeAdGroupEvidenceTabs,
+  .productScopeAdGroupEvidenceActiveGrid {
     grid-template-columns: 1fr;
   }
 
