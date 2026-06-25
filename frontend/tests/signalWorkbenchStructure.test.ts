@@ -307,6 +307,8 @@ const adGroupActionBridgeReviewEvidenceIndex = workbenchSource.indexOf(
   adGroupActionBridgeFunctionIndex,
 );
 const actionDecisionCardIndex = workbenchSource.indexOf('className="actionDecisionCard"');
+const actionReviewCommandIndex = workbenchSource.indexOf('aria-label="右侧人工处理承接中间诊断"');
+const actionBoundaryBarIndex = workbenchSource.indexOf('aria-label="建议处理边界"');
 const selectedSignalScopeContextRenderIndex = workbenchSource.indexOf(
   "<SelectedSignalScopeContextStrip context={selectedSignalScopeContext} />",
 );
@@ -391,9 +393,17 @@ assert(adGroupDiagnosisRenderIndex < selectedSignalBranchIndex, "广告组问题
 assert(actionPanelIndex >= 0, "右侧建议处理区必须存在");
 assert(adGroupActionBridgeRenderIndex > actionPanelIndex, "当前广告组人工动作承接必须渲染在右侧建议处理区内");
 assert(adGroupActionBridgeRenderIndex < actionDecisionCardIndex, "当前广告组人工动作承接必须先于建议动作摘要");
+assert(actionReviewCommandIndex > actionDecisionCardIndex, "右侧人工处理承接必须渲染在建议动作摘要内");
+assert(actionReviewCommandIndex < actionBoundaryBarIndex, "右侧建议处理必须先承接中间诊断的人工下一步，再展示通用动作边界");
 assert(adGroupActionBridgeDefaultEvidenceIndex > adGroupActionBridgeFunctionIndex, "右侧人工动作承接必须先给默认证据层");
 assert(adGroupActionBridgeDefaultEvidenceIndex < adGroupActionBridgeFullEvidenceIndex, "默认证据层必须先于完整四层证据");
 assert(adGroupActionBridgeFullEvidenceIndex < adGroupActionBridgeReviewEvidenceIndex, "完整四层证据必须先于复盘回读证据链");
+assertIncludes(workbenchSource, "actionReviewCommand");
+assertIncludes(workbenchSource, "selectedSearchTermOpportunityReviewChain.currentJudgement");
+assertIncludes(workbenchSource, "selectedSearchTermOpportunityReviewChain.nextManualStep");
+assertIncludes(workbenchSource, "selectedSearchTermOpportunityReviewChain.evidenceGap");
+assertIncludes(workbenchSource, "selectedSearchTermOpportunityReviewChain.actionBoundary");
+assertIncludes(stylesSource, ".actionReviewCommand");
 assertIncludes(workbenchSource, "buildSelectedSignalScopeContext");
 assertIncludes(workbenchSource, "selectedSignalScopeContext");
 assertIncludes(workbenchSource, "buildSearchIntentFocusContext");

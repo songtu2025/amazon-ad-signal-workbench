@@ -2648,6 +2648,29 @@ export function SignalTriageWorkbench() {
                   <strong>{selectedSignal.suggested_action.title}</strong>
                   <p>{selectedSignal.suggested_action.description}</p>
                 </div>
+                {selectedSearchTermOpportunityReviewChain && (
+                  <div className="actionReviewCommand" aria-label="右侧人工处理承接中间诊断">
+                    <strong>人工处理承接</strong>
+                    <ul>
+                      <li>
+                        <span>当前判断</span>
+                        <b>{selectedSearchTermOpportunityReviewChain.currentJudgement}</b>
+                      </li>
+                      <li>
+                        <span>人工下一步</span>
+                        <b>{selectedSearchTermOpportunityReviewChain.nextManualStep}</b>
+                      </li>
+                      <li>
+                        <span>证据缺口</span>
+                        <b>{selectedSearchTermOpportunityReviewChain.evidenceGap}</b>
+                      </li>
+                      <li>
+                        <span>动作边界</span>
+                        <b>{selectedSearchTermOpportunityReviewChain.actionBoundary}</b>
+                      </li>
+                    </ul>
+                  </div>
+                )}
                 <div className="actionBoundaryBar" aria-label="建议处理边界">
                   <span>
                     <ShieldCheck size={14} aria-hidden="true" />
