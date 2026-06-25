@@ -2883,6 +2883,24 @@ function searchIntentPreflightItemValue(preflight: ManualActionPreflightForUi, l
   return manualActionSnapshotItemValue(preflight.evidence_snapshot_preview?.items ?? [], labels);
 }
 
+const searchIntentRequiredPreflightEvidenceChecks = [
+  { label: "搜索词", aliases: ["搜索词", "SearchTerm"] },
+  {
+    label: "Parent ASIN 广告搜索词表现复核",
+    aliases: ["Parent ASIN 广告搜索词表现复核", "搜索词表现分组", "Parent ASIN 搜索词表现聚合", "语义组"],
+  },
+  { label: "搜索词表现判断", aliases: ["搜索词表现判断"] },
+  { label: "广告组合流判断", aliases: ["广告组合流判断"] },
+  { label: "同组投放商品表现", aliases: ["同组投放商品表现"] },
+  { label: "逐投放上下文", aliases: ["逐投放上下文"] },
+  { label: "投放词证据", aliases: ["投放词证据"] },
+  { label: "广告位边界", aliases: ["广告位边界"] },
+  { label: "ABA 背景", aliases: ["ABA 背景"] },
+  { label: "证据缺口", aliases: ["证据缺口"] },
+  { label: "需要补证", aliases: ["需要补证"] },
+  { label: "动作边界", aliases: ["动作边界"] },
+];
+
 export function buildSearchIntentManualActionPreflightConsistencySummary(
   input: SearchIntentManualActionPreflightConsistencyInput | null,
 ): SearchIntentManualActionPreflightConsistencySummary | null {
@@ -2922,10 +2940,9 @@ export function buildSearchIntentManualActionPreflightConsistencySummary(
   const preflightDecision = searchIntentPreflightItemValue(preflight, ["搜索词表现判断"]);
   const readbackSearchTerm = normalizedSearchIntentReadbackSearchTerm(searchIntentReadbackRowValue(readback, "复盘对象"));
   const readbackIntentLabel = searchIntentReadbackRowValue(readback, "入口上下文");
-  const missingLabels: string[] = [];
-  if (!preflightSearchTerm) missingLabels.push("搜索词");
-  if (!preflightIntentLabel) missingLabels.push("Parent ASIN 广告搜索词表现复核");
-  if (!preflightDecision) missingLabels.push("搜索词表现判断");
+  const missingLabels = searchIntentRequiredPreflightEvidenceChecks
+    .filter((check) => !searchIntentPreflightItemValue(preflight, check.aliases))
+    .map((check) => check.label);
 
   const mismatches: string[] = [];
   if (readbackSearchTerm && preflightSearchTerm && readbackSearchTerm !== normalizeManualActionSearchTerm(preflightSearchTerm)) {
@@ -2956,11 +2973,13 @@ export function buildSearchIntentManualActionPreflightConsistencySummary(
       },
       {
         label: "可保存证据",
-        value: blockers.length > 0 ? `待补齐：${blockers.join("；")}` : "SearchTerm / 分组 / 表现判断一致",
+        value: blockers.length > 0
+          ? `待补齐：${blockers.join("；")}`
+          : "SearchTerm / 广告组 / 投放词 / 广告位复核链一致",
         detail:
           blockers.length > 0
             ? "缺少这些证据时，保存后 7/14 天复盘不能完整回看为什么处理这条 SearchTerm。"
-            : "后端快照已包含搜索词、Parent ASIN 广告搜索词表现复核和搜索词表现判断。",
+            : "后端快照已包含搜索词、Parent ASIN 广告搜索词表现复核、搜索词表现判断、广告组合流、同组投放商品、逐投放上下文、投放词证据、广告位边界和补证边界。",
       },
       {
         label: "复盘判断",
@@ -2969,7 +2988,7 @@ export function buildSearchIntentManualActionPreflightConsistencySummary(
       },
     ],
     boundary:
-      "人工动作实际写入以后端 preflight evidence_snapshot_preview 为准；缺少搜索词、Parent ASIN 广告搜索词表现复核或搜索词表现判断时，不能把前端读回当成复盘证据。",
+      "人工动作实际写入以后端 preflight evidence_snapshot_preview 为准；缺少 SearchTerm、广告组、同组投放商品、逐投放上下文、投放词、广告位或补证边界时，不能把前端读回当成复盘证据。",
   };
 }
 

@@ -2879,12 +2879,20 @@ const searchIntentReadyPreflight = {
   evidence_snapshot_preview: {
     status: "ready",
     will_save_on_authorized_write: true,
-    item_count: 4,
+    item_count: 12,
     boundary: "授权写入后保存人工点击时证据快照。",
     items: [
       { label: "搜索词", value: "beach essentials", source: "ad_search_term_daily_metrics" },
       { label: "Parent ASIN 广告搜索词表现复核", value: "规则语义：海滩出行用品", source: "规则语义" },
       { label: "搜索词表现判断", value: "扩量复核：有订单且 ACOS 可控", source: "ad_search_term_daily_metrics" },
+      { label: "广告组合流判断", value: "同一 SearchTerm 覆盖 2 个广告组，需要对照承接差异", source: "ad_search_term_daily_metrics" },
+      { label: "同组投放商品表现", value: "B016EXMVZS 与 B016EXMW02 同组投放表现已回看", source: "ad_product_daily_metrics" },
+      { label: "逐投放上下文", value: "优先复核广告组 RBK004-beach essentials-精准 / 投放词 beach essentials", source: "ad_search_term_daily_metrics" },
+      { label: "投放词证据", value: "投放词 beach essentials / 点击 19 / 订单 13", source: "ad_search_term_daily_metrics" },
+      { label: "广告位边界", value: "广告组级广告位 0 条 / 同广告活动广告位 4 条", source: "ad_placement_daily_metrics + business_rule" },
+      { label: "ABA 背景", value: "ABA 只作站点级背景，不能当作店铺或广告归因", source: "ABA导出" },
+      { label: "证据缺口", value: "广告位只有活动级背景，不能证明广告位导致表现差异", source: "business_rule" },
+      { label: "需要补证", value: "需要补广告组级广告位表现后再判断广告位影响", source: "business_rule" },
       { label: "动作边界", value: "只允许人工留痕和复盘", source: "business_rule" },
     ],
   },
@@ -2895,10 +2903,13 @@ const searchIntentPreflightConsistency = buildSearchIntentManualActionPreflightC
 });
 assertEqual(searchIntentPreflightConsistency?.title, "后端预检一致性核对");
 assertEqual(searchIntentPreflightConsistency?.tone, "ready");
-assertIncludes(searchIntentPreflightConsistency?.rows[1]?.value ?? "", "4 条将保存证据");
-assertIncludes(searchIntentPreflightConsistency?.rows[2]?.value ?? "", "SearchTerm / 分组 / 表现判断一致");
+assertIncludes(searchIntentPreflightConsistency?.rows[1]?.value ?? "", "12 条将保存证据");
+assertIncludes(searchIntentPreflightConsistency?.rows[2]?.value ?? "", "SearchTerm / 广告组 / 投放词 / 广告位复核链一致");
+assertIncludes(searchIntentPreflightConsistency?.rows[2]?.detail ?? "", "广告组合流");
+assertIncludes(searchIntentPreflightConsistency?.rows[2]?.detail ?? "", "广告位边界");
 assertIncludes(searchIntentPreflightConsistency?.rows[3]?.value ?? "", "扩量复核");
 assertIncludes(searchIntentPreflightConsistency?.boundary ?? "", "以后端 preflight evidence_snapshot_preview 为准");
+assertIncludes(searchIntentPreflightConsistency?.boundary ?? "", "缺少 SearchTerm、广告组、同组投放商品、逐投放上下文、投放词、广告位或补证边界");
 const searchIntentMissingDecisionPreflight = {
   ...searchIntentReadyPreflight,
   evidence_snapshot_preview: {
@@ -2913,6 +2924,20 @@ const missingDecisionConsistency = buildSearchIntentManualActionPreflightConsist
 assertEqual(missingDecisionConsistency?.tone, "blocked");
 assertIncludes(missingDecisionConsistency?.rows[2]?.value ?? "", "缺少搜索词表现判断");
 assertIncludes(missingDecisionConsistency?.rows[2]?.detail ?? "", "不能完整回看为什么处理这条 SearchTerm");
+const searchIntentMissingPlacementPreflight = {
+  ...searchIntentReadyPreflight,
+  evidence_snapshot_preview: {
+    ...searchIntentReadyPreflight.evidence_snapshot_preview,
+    items: searchIntentReadyPreflight.evidence_snapshot_preview.items.filter((item) => item.label !== "广告位边界"),
+  },
+};
+const missingPlacementConsistency = buildSearchIntentManualActionPreflightConsistencySummary({
+  readback: searchIntentManualActionReadback,
+  preflight: searchIntentMissingPlacementPreflight,
+});
+assertEqual(missingPlacementConsistency?.tone, "blocked");
+assertIncludes(missingPlacementConsistency?.rows[2]?.value ?? "", "缺少广告位边界");
+assertIncludes(missingPlacementConsistency?.rows[2]?.detail ?? "", "7/14 天复盘不能完整回看");
 const waitingPreflightConsistency = buildSearchIntentManualActionPreflightConsistencySummary({
   readback: searchIntentManualActionReadback,
   preflight: null,
