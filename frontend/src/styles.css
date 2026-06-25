@@ -2439,6 +2439,25 @@ h3 {
   line-height: 1.45;
 }
 
+.productScopeDiagnosisFrameworkEvidence {
+  display: grid;
+  gap: 4px;
+  padding: 7px 8px;
+  border: 1px solid #e0eaf3;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.productScopeDiagnosisFrameworkEvidence small {
+  display: grid;
+  gap: 2px;
+}
+
+.productScopeDiagnosisFrameworkEvidence b {
+  color: #29445f;
+  font-size: 10px;
+}
+
 .productScopeDiagnosisFrameworkItem small {
   color: #607186;
   font-size: 11px;

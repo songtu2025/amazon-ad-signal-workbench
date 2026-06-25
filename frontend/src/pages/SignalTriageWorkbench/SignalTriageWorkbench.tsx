@@ -4273,6 +4273,16 @@ function ProductScopeDiagnosisBriefPanel({ brief }: { brief: ProductScopeDiagnos
               <span>{section.label}. {section.title}</span>
               <strong>{section.businessQuestion}</strong>
               <p>{section.currentJudgement}</p>
+              <div className="productScopeDiagnosisFrameworkEvidence" aria-label={`${section.title} 证明边界`}>
+                <small>
+                  <b>能证明</b>
+                  {section.proves}
+                </small>
+                <small>
+                  <b>不能证明</b>
+                  {section.doesNotProve}
+                </small>
+              </div>
               <small>人工下一步：{section.nextManualStep}</small>
             </article>
           ))}
