@@ -1330,14 +1330,18 @@ export function buildReviewRecordSaveGateSummary(
   }
 
   const checklistIds = new Set((checklist ?? []).map((check) => check.id));
-  const missingLabels = requiredReviewRecordPreflightCheckIdsForEffect(effect)
-    .filter((id) => !checklistIds.has(id))
-    .map((id) => requiredReviewRecordPreflightCheckLabels[id]);
+  const missingIds = requiredReviewRecordPreflightCheckIdsForEffect(effect).filter((id) => !checklistIds.has(id));
+  const missingLabels = missingIds.map((id) => requiredReviewRecordPreflightCheckLabels[id]);
   if (missingLabels.length > 0) {
+    const hasTodoEvidenceGateIssue =
+      missingIds.includes("todo_evidence_signature") || missingIds.includes("todo_object_reference");
+    const todoEvidenceGateText = hasTodoEvidenceGateIssue
+      ? "待办证据一致性和对象引用是历史 ReviewTodo 证据门禁，用来防止把其他 action、其他对象或当前重新计算证据错存成当前复盘。"
+      : "";
     return {
       tone: "blocked",
       title: "保存前检查未通过",
-      detail: `复盘效果已 ready，但保存前检查缺少：${missingLabels.join("、")}；不能用当前页面缓存或其他对象证据保存 ReviewRecord。`,
+      detail: `复盘效果已 ready，但保存前检查缺少：${missingLabels.join("、")}；不能用当前页面缓存或其他对象证据保存 ReviewRecord。${todoEvidenceGateText}`,
       canSave: false,
     };
   }

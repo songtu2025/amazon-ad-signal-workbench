@@ -1036,6 +1036,16 @@ assertEqual(reviewRecordPreflightChecklistWithObjectMismatch[17].id, "todo_objec
 assertIncludes(reviewRecordPreflightChecklistWithObjectMismatch[17].description, "证据快照未能回看 advertised_product / B016EXMW02");
 assertIncludes(reviewRecordPreflightChecklistWithObjectMismatch[17].description, "不能保存 ReviewRecord");
 assertEqual(canSaveReviewRecordWithPreflight(improvedEffect, reviewRecordPreflightChecklistWithObjectMismatch), false);
+const blockedAdProductObjectMismatchGate = buildReviewRecordSaveGateSummary(
+  dueTodo,
+  improvedEffect,
+  reviewRecordPreflightChecklistWithObjectMismatch,
+);
+assertEqual(blockedAdProductObjectMismatchGate.title, "保存前检查未通过");
+assertIncludes(blockedAdProductObjectMismatchGate.detail, "待办证据对象引用");
+assertIncludes(blockedAdProductObjectMismatchGate.detail, "历史 ReviewTodo 证据门禁");
+assertIncludes(blockedAdProductObjectMismatchGate.detail, "其他对象");
+assertIncludes(blockedAdProductObjectMismatchGate.detail, "错存成当前复盘");
 const reviewRecordPreflightChecklistWithoutDiagnosisPath = buildReviewRecordPreflightChecklist(
   {
     ...dueTodo,
@@ -1322,6 +1332,14 @@ assertIncludes(searchTermReviewRecordPreflightChecklist[13].description, "补齐
 assertEqual(searchTermReviewRecordPreflightChecklist[14].id, "manual_action_boundary");
 assertIncludes(searchTermReviewRecordPreflightChecklist[14].description, "不得自动加词");
 assertEqual(canSaveReviewRecordWithPreflight(searchTermReviewEffect, searchTermReviewRecordPreflightChecklist), true);
+const readySearchTermReviewRecordSaveGate = buildReviewRecordSaveGateSummary(
+  searchTermReviewTodoWithFullChain,
+  searchTermReviewEffect,
+  searchTermReviewRecordPreflightChecklist,
+);
+assertEqual(readySearchTermReviewRecordSaveGate.title, "可人工保存复盘记录");
+assertIncludes(readySearchTermReviewRecordSaveGate.detail, "点击只保存 ReviewRecord");
+assertIncludes(readySearchTermReviewRecordSaveGate.detail, "不自动改规则或执行广告动作");
 const searchTermSavedReviewRecord: ReviewRecordForUi = {
   ...searchTermReviewEffect,
   review_note: "SearchTerm 复盘已按广告结构回看",
@@ -1377,6 +1395,34 @@ for (const label of ["搜索词表现判断", "广告组合流判断", "同组�
   );
   assertEqual(canSaveReviewRecordWithPreflight(searchTermReviewEffect, checklist), false);
 }
+const searchTermReviewRecordPreflightChecklistWithObjectMismatch = buildReviewRecordPreflightChecklist(
+  {
+    ...searchTermReviewTodoWithFullChain,
+    evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot?.map((item) => ({
+      ...item,
+      value: String(item.value ?? "").replace(/beach essentials/g, "pool towels"),
+      detail: item.detail ? String(item.detail).replace(/beach essentials/g, "pool towels") : item.detail,
+    })),
+  },
+  searchTermReviewEffect,
+  null,
+);
+assertEqual(searchTermReviewRecordPreflightChecklistWithObjectMismatch[20].id, "todo_object_reference_missing");
+assertIncludes(
+  searchTermReviewRecordPreflightChecklistWithObjectMismatch[20].description,
+  "证据快照未能回看 search_term / search_term:1:beach essentials",
+);
+assertEqual(canSaveReviewRecordWithPreflight(searchTermReviewEffect, searchTermReviewRecordPreflightChecklistWithObjectMismatch), false);
+const blockedSearchTermObjectMismatchGate = buildReviewRecordSaveGateSummary(
+  searchTermReviewTodoWithFullChain,
+  searchTermReviewEffect,
+  searchTermReviewRecordPreflightChecklistWithObjectMismatch,
+);
+assertEqual(blockedSearchTermObjectMismatchGate.title, "保存前检查未通过");
+assertIncludes(blockedSearchTermObjectMismatchGate.detail, "待办证据对象引用");
+assertIncludes(blockedSearchTermObjectMismatchGate.detail, "历史 ReviewTodo 证据门禁");
+assertIncludes(blockedSearchTermObjectMismatchGate.detail, "当前重新计算证据");
+assertIncludes(blockedSearchTermObjectMismatchGate.detail, "错存成当前复盘");
 const placementReviewEffect: ReviewEffectForUi = {
   ...improvedEffect,
   signal_id: "sig-placement-gap:1:top-of-search",
