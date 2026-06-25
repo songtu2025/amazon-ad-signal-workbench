@@ -216,6 +216,7 @@ import {
   ProductScopeDiagnosisBrief,
   ProductScopeEvidenceMatrix,
   ProductScopeEvidenceRouteGuide,
+  ProductScopeFirstScreenSummary,
   NoActionableManualGate,
   ProductScopeCandidateGapExplanation,
   DiagnosisContextSummary,
@@ -1746,6 +1747,15 @@ export function SignalTriageWorkbench() {
             </div>
             <p>{productScopeAnalysisPath.boundary}</p>
           </div>
+          {productScopeFirstScreenSummary && (
+            <ProductScopeSingleScreenCommandCard
+              summary={productScopeFirstScreenSummary}
+              priorityItem={activeProductScopePriorityItem}
+              adGroup={selectedAdGroupDiagnosis}
+              searchIntentSummary={searchIntentReviewDecisionSummary}
+              onOpenEvidence={handleOpenProductScopeEvidenceDrilldown}
+            />
+          )}
           {productScopeFirstScreenSummary && (
             <details className="productScopeBusinessPreview" aria-label="Parent ASIN 首屏经营摘要">
               <summary className="productScopeBusinessPreviewSummary">
@@ -4059,6 +4069,78 @@ function ProductScopePriorityEntryBridgePanel({
       <small>
         {item.boundary} 下方“广告组问题定位”可切换当前广告组焦点；本区只解释进入理由，不写入人工动作，也不执行任何广告操作。
       </small>
+    </section>
+  );
+}
+
+function ProductScopeSingleScreenCommandCard({
+  summary,
+  priorityItem,
+  adGroup,
+  searchIntentSummary,
+  onOpenEvidence,
+}: {
+  summary: ProductScopeFirstScreenSummary;
+  priorityItem: ProductScopePriorityQueueItem | null;
+  adGroup: ProductScopeAdGroupDiagnosisRow | null;
+  searchIntentSummary: SearchIntentReviewDecisionSummary | null;
+  onOpenEvidence: () => void;
+}) {
+  const adEvidenceGate = summary.landingGates.find((item) => item.label === "广告证据") ?? summary.landingGates[1];
+  const aiGate = summary.landingGates.find((item) => item.label === "AI 准入") ?? summary.landingGates[2];
+  const reviewGate = summary.landingGates.find((item) => item.label === "复盘门槛") ?? summary.landingGates[3];
+  const adGroupText = adGroup
+    ? `${adGroup.title}：${adGroup.problemType} / ${adGroup.statusLabel}`
+    : "暂无可聚焦广告组，先补广告组、投放商品、投放词、搜索词和广告位证据。";
+  const searchIntentText = searchIntentSummary
+    ? `${searchIntentSummary.topIntentLabel} / ${searchIntentSummary.topDecisionLabel} / ${searchIntentSummary.topSearchTermLabel}`
+    : "暂无广告搜索词表现聚合，不能从搜索词层判断扩量或止损。";
+
+  return (
+    <section className="productScopeSingleScreenCommandCard" aria-label="Parent ASIN 单屏作战卡">
+      <div className="productScopeSingleScreenHeader">
+        <div>
+          <span>先判断，不先读报表</span>
+          <strong>{summary.mvpStatus.statusLabel}</strong>
+        </div>
+        <button type="button" className="secondaryButton" onClick={onOpenEvidence}>
+          进入广告证据下钻
+        </button>
+      </div>
+      <p>{summary.mvpStatus.summary}</p>
+      <div className="productScopeSingleScreenGrid" aria-label="Parent ASIN 单屏判断">
+        <span className={adEvidenceGate?.tone ?? "waiting"}>
+          <b>广告证据</b>
+          <strong>{adEvidenceGate?.value ?? "等待广告证据"}</strong>
+          <small>{adEvidenceGate?.detail ?? summary.adCoverageDecision.summary}</small>
+        </span>
+        <span className={priorityItem?.tone ?? "watch"}>
+          <b>今日处理优先级</b>
+          <strong>{priorityItem ? `${priorityItem.label} / ${priorityItem.priorityLabel}` : "等待 Parent ASIN 排序"}</strong>
+          <small>{priorityItem?.mainQuestion ?? "先按有广告证据的 Parent ASIN 排序，不逐个展开全部明细。"}</small>
+        </span>
+        <span className="ready">
+          <b>默认聚焦广告组</b>
+          <strong>{adGroupText}</strong>
+          <small>{adGroup?.nextReviewFocus ?? "没有广告组证据时，只能停留在经营背景，不能生成广告动作。"}</small>
+        </span>
+        <span className="scope">
+          <b>搜索词复核</b>
+          <strong>{searchIntentText}</strong>
+          <small>{searchIntentSummary?.nextManualStep ?? "搜索词复核只聚合当前 Parent ASIN 广告上下文，不改变经营诊断入口。"}</small>
+        </span>
+        <span className={aiGate?.tone ?? "waiting"}>
+          <b>AI 准入</b>
+          <strong>{aiGate?.value ?? "等待 AI 准入"}</strong>
+          <small>{aiGate?.detail ?? "只有通过对象、证据和动作门禁后，才允许人工留痕或加入复盘。"}</small>
+        </span>
+        <span className={reviewGate?.tone ?? "blocked"}>
+          <b>7/14 天复盘</b>
+          <strong>{reviewGate?.value ?? "暂无复盘结论"}</strong>
+          <small>{reviewGate?.detail ?? "未到复盘窗口前不能判断处理有效或无效。"}</small>
+        </span>
+      </div>
+      <small>{summary.boundary} 这张卡只做单屏分诊，不写入人工动作，也不执行广告操作。</small>
     </section>
   );
 }

@@ -47,6 +47,8 @@ assertIncludes(workbenchSource, "const productScopeDiagnosisBrief = useMemo");
 assertIncludes(workbenchSource, "const activeProductScopePriorityItem = useMemo");
 assertIncludes(workbenchSource, "const noActionableManualGate = useMemo");
 assertIncludes(workbenchSource, "const productScopeCandidateGapExplanation = useMemo");
+assertIncludes(workbenchSource, "ProductScopeSingleScreenCommandCard");
+assertIncludes(workbenchSource, "summary={productScopeFirstScreenSummary}");
 assertIncludes(workbenchSource, "matrix={productScopeEvidenceMatrix}");
 assertIncludes(workbenchSource, "rows={productScopeAdGroupDiagnosis}");
 assertIncludes(workbenchSource, "selectedId={selectedAdGroupDiagnosis?.id ?? null}");
@@ -55,6 +57,7 @@ assertIncludes(workbenchSource, "ProductScopePriorityEntryBridgePanel item={acti
 assertIncludes(workbenchSource, "ProductScopeAdGroupFocusPanel row={selectedAdGroupDiagnosis}");
 assertIncludes(workbenchSource, "ProductScopeDiagnosisBriefPanel brief={productScopeDiagnosisBrief}");
 assertIncludes(workbenchSource, "function ProductScopePriorityEntryBridgePanel");
+assertIncludes(workbenchSource, "function ProductScopeSingleScreenCommandCard");
 assertIncludes(workbenchSource, "function ProductScopeDiagnosisBriefPanel");
 assertIncludes(workbenchSource, "function ProductScopeEvidenceMatrixPanel");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupDiagnosisPanel");
@@ -82,6 +85,10 @@ assertIncludes(workbenchSource, 'aria-label="当前 Parent ASIN 进入理由"');
 assertIncludes(workbenchSource, "当前 Parent ASIN 证据路径承接");
 assertIncludes(workbenchSource, "首页摘要已回答先看谁");
 assertIncludes(workbenchSource, "本区只承接证据路径，避免重复排序解释");
+assertIncludes(workbenchSource, 'aria-label="Parent ASIN 单屏作战卡"');
+assertIncludes(workbenchSource, "先判断，不先读报表");
+assertIncludes(workbenchSource, "进入广告证据下钻");
+assertIncludes(workbenchSource, "这张卡只做单屏分诊，不写入人工动作，也不执行广告操作。");
 assertNotIncludes(workbenchSource, "从左侧优先处理清单进入此诊断范围");
 assertNotIncludes(workbenchSource, "先确认为什么看，再沿 Parent ASIN、广告 ASIN、广告组、投放词、搜索词和广告位下钻");
 assertIncludes(workbenchSource, "首页摘要读回");
@@ -203,6 +210,8 @@ assert(
 );
 
 const diagnosisPanelIndex = workbenchSource.indexOf('<section className="diagnosisPanel">');
+const productScopeSingleScreenRenderIndex = workbenchSource.indexOf("<ProductScopeSingleScreenCommandCard");
+const productScopeBusinessPreviewIndex = workbenchSource.indexOf('className="productScopeBusinessPreview"');
 const productScopePriorityEntryBridgeRenderIndex = workbenchSource.indexOf(
   "<ProductScopePriorityEntryBridgePanel item={activeProductScopePriorityItem} adGroup={selectedAdGroupDiagnosis} />",
 );
@@ -267,6 +276,11 @@ const reviewRecordSaveGateIndex = workbenchSource.indexOf('aria-label="复盘保
 const reviewMetricTableIndex = workbenchSource.indexOf('aria-label="复盘指标对比"');
 const reviewRecordPreflightChecklistIndex = workbenchSource.indexOf('aria-label="复盘保存前检查清单"');
 const saveReviewRecordButtonIndex = workbenchSource.indexOf('<button className="secondaryButton" onClick={handleSaveReviewRecord}');
+assert(productScopeSingleScreenRenderIndex >= 0, "Parent ASIN 单屏作战卡必须默认渲染");
+assert(
+  productScopeSingleScreenRenderIndex < productScopeBusinessPreviewIndex,
+  "Parent ASIN 单屏作战卡必须先于折叠详情，避免用户先读长报表",
+);
 assert(diagnosisPanelIndex >= 0, "诊断区必须存在");
 assert(productScopePriorityEntryBridgeRenderIndex > diagnosisPanelIndex, "Parent ASIN 进入理由必须渲染在诊断区内");
 assert(
@@ -938,6 +952,8 @@ assertIncludes(workbenchSource, "reviewRepairSampleList");
 assertIncludes(workbenchSource, "reviewRepairSampleSection");
 assertIncludes(workbenchSource, "<ReviewRepairSampleItem item={item} />");
 assertIncludes(workbenchSource, 'aria-label="历史待办治理下一步"');
+assertIncludes(stylesSource, ".productScopeSingleScreenCommandCard");
+assertIncludes(stylesSource, ".productScopeSingleScreenGrid");
 const reviewGateRenderIndex = workbenchSource.indexOf('aria-label="全局复盘可验证性"');
 const reviewEvidenceRepairRenderIndex = workbenchSource.indexOf("aria-label={reviewEvidenceRepairAriaLabel}");
 assert(

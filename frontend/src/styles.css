@@ -616,6 +616,114 @@ h3 {
   line-height: 1.45;
 }
 
+.productScopeSingleScreenCommandCard {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+  border: 1px solid #cbdced;
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+  box-shadow: inset 4px 0 0 #4177ad;
+}
+
+.productScopeSingleScreenHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.productScopeSingleScreenHeader > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.productScopeSingleScreenHeader span {
+  color: #58708a;
+  font-size: 12px;
+  font-weight: 780;
+}
+
+.productScopeSingleScreenHeader strong {
+  color: #14273e;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.productScopeSingleScreenCommandCard > p,
+.productScopeSingleScreenCommandCard > small {
+  margin: 0;
+  color: #5c6d80;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.productScopeSingleScreenGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.productScopeSingleScreenGrid span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid #d9e5f1;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #f8fbfe;
+}
+
+.productScopeSingleScreenGrid span.ready {
+  border-color: #bfdcc9;
+  background: #f6fbf8;
+}
+
+.productScopeSingleScreenGrid span.waiting,
+.productScopeSingleScreenGrid span.watch {
+  border-color: #dcd4b8;
+  background: #fffdf5;
+}
+
+.productScopeSingleScreenGrid span.blocked,
+.productScopeSingleScreenGrid span.quiet {
+  border-color: #e9c8c0;
+  background: #fff8f6;
+}
+
+.productScopeSingleScreenGrid span.review,
+.productScopeSingleScreenGrid span.urgent {
+  border-color: #c7d9ef;
+  background: #f7fbff;
+}
+
+.productScopeSingleScreenGrid b,
+.productScopeSingleScreenGrid strong,
+.productScopeSingleScreenGrid small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.productScopeSingleScreenGrid b {
+  color: #58708a;
+  font-size: 11px;
+}
+
+.productScopeSingleScreenGrid strong {
+  color: #172a42;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.productScopeSingleScreenGrid small {
+  color: #607186;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .productScopeBusinessPreview {
   grid-column: 1 / -1;
   border: 1px solid #cfdeec;
