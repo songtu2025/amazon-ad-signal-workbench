@@ -255,6 +255,7 @@ const searchIntentManualActionPreflightConsistencyIndex = workbenchSource.indexO
 const productScopeManualActionTargetAlignmentIndex = workbenchSource.indexOf(
   "<ProductScopeManualActionTargetAlignmentCard summary={selectedManualActionTargetAlignment} />",
 );
+const manualActionChoiceRecommendationIndex = workbenchSource.indexOf('aria-label="本次建议人工动作"');
 const manualActionChoiceGuideIndex = workbenchSource.indexOf('className="manualActionChoiceGuide"');
 const manualActionGridIndex = workbenchSource.indexOf('<div className="manualActionGrid" aria-label="人工动作按钮">');
 const reviewFlowTodoIndex = workbenchSource.indexOf('className="sideSection reviewFlowItem reviewFlowTodo"');
@@ -379,9 +380,13 @@ assertIncludes(workbenchSource, "summary.executionSteps.map");
 assertIncludes(workbenchSource, "searchIntentTermReason");
 assertIncludes(workbenchSource, "searchIntentExecutionPath");
 assertIncludes(workbenchSource, 'aria-label="人工动作选择依据"');
-assertIncludes(workbenchSource, "manualActionChoiceGuideItems().map");
+assertIncludes(workbenchSource, 'aria-label="本次建议人工动作"');
+assertIncludes(workbenchSource, "manualActionChoiceRecommendation({");
+assertIncludes(workbenchSource, "selectedManualActionChoiceGates");
+assertIncludes(workbenchSource, "manualActionChoiceGuides.map");
 assertIncludes(workbenchSource, "guideGate.disabled ? guideGate.compactReason");
 assertIncludes(workbenchSource, "guideGate.reason ?? guide.boundary");
+assertIncludes(stylesSource, ".manualActionChoiceRecommendation");
 assertNotIncludes(workbenchSource, "<b>聚合标签</b>");
 assertIncludes(signalUiSource, "以后端预检确认的 SearchTerm 稳定对象为准");
 assertNotIncludes(signalUiSource, "右侧人工动作也必须落到这条 SearchTerm 的稳定对象");
@@ -403,6 +408,9 @@ assert(
 );
 assert(productScopeManualActionTargetAlignmentIndex > manualActionSectionIndex, "人工动作对象链路读回必须渲染在人工确认区内");
 assert(productScopeManualActionTargetAlignmentIndex < manualActionGridIndex, "人工动作对象链路读回必须先于人工动作按钮");
+assert(manualActionChoiceRecommendationIndex > manualActionSectionIndex, "本次建议人工动作必须渲染在人工确认区内");
+assert(manualActionChoiceRecommendationIndex < manualActionChoiceGuideIndex, "本次建议人工动作必须先于四个动作选择依据展示");
+assert(manualActionChoiceRecommendationIndex < manualActionGridIndex, "本次建议人工动作必须先于人工动作按钮展示");
 assert(manualActionChoiceGuideIndex > manualActionSectionIndex, "人工动作选择依据必须渲染在人工确认区内");
 assert(manualActionChoiceGuideIndex < manualActionGridIndex, "人工动作选择依据必须先于人工动作按钮展示");
 assert(reviewFlowTodoIndex >= 0, "复盘待办区必须存在");

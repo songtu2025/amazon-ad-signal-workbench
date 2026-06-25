@@ -33,6 +33,7 @@ import {
   manualActionSavableEvidenceReasonText,
   manualActionIntentText,
   manualActionChoiceGuideItems,
+  manualActionChoiceRecommendation,
   manualActionButtonGate,
   manualActionButtonExpectationText,
   manualActionPreflightErrorForAction,
@@ -1915,6 +1916,41 @@ assertIncludes(manualActionChoiceGuide[1]?.whenToUse ?? "", "还不承诺已经�
 assertIncludes(manualActionChoiceGuide[2]?.whenToUse ?? "", "在线下完成处理动作");
 assertIncludes(manualActionChoiceGuide[3]?.writes ?? "", "不生成当前 7/14 天复盘待办");
 assertIncludes(manualActionChoiceGuide[3]?.boundary ?? "", "信号和证据保留");
+const readyManualActionChoiceRecommendation = manualActionChoiceRecommendation({
+  recommendedActionType: "add_to_review",
+  gatesByAction: {
+    add_to_review: { disabled: false, reason: null, compactReason: null },
+    observe: { disabled: false, reason: null, compactReason: null },
+  },
+});
+assertEqual(readyManualActionChoiceRecommendation.actionType, "add_to_review");
+assertEqual(readyManualActionChoiceRecommendation.label, "加入复盘");
+assertEqual(readyManualActionChoiceRecommendation.tone, "ready");
+assertIncludes(readyManualActionChoiceRecommendation.reason, "后端推荐动作可用");
+assertIncludes(readyManualActionChoiceRecommendation.reviewPlan, "生成 7d / 14d 复盘待办");
+assertIncludes(readyManualActionChoiceRecommendation.boundary, "不会自动调价");
+const fallbackManualActionChoiceRecommendation = manualActionChoiceRecommendation({
+  recommendedActionType: "add_to_review",
+  gatesByAction: {
+    add_to_review: { disabled: true, reason: "已有复盘待办，不能重复加入复盘。", compactReason: "等待复盘" },
+    observe: { disabled: false, reason: null, compactReason: null },
+  },
+});
+assertEqual(fallbackManualActionChoiceRecommendation.actionType, "observe");
+assertEqual(fallbackManualActionChoiceRecommendation.label, "记录观察");
+assertIncludes(fallbackManualActionChoiceRecommendation.reason, "后端推荐动作暂不可点");
+const blockedManualActionChoiceRecommendation = manualActionChoiceRecommendation({
+  recommendedActionType: "add_to_review",
+  gatesByAction: {
+    add_to_review: { disabled: true, reason: "对象不一致。", compactReason: "阻断" },
+    observe: { disabled: true, reason: "对象不一致。", compactReason: "阻断" },
+    handled: { disabled: true, reason: "对象不一致。", compactReason: "阻断" },
+    ignore: { disabled: true, reason: "对象不一致。", compactReason: "阻断" },
+  },
+});
+assertEqual(blockedManualActionChoiceRecommendation.tone, "blocked");
+assertIncludes(blockedManualActionChoiceRecommendation.reason, "当前没有可点击的人工动作");
+assertIncludes(blockedManualActionChoiceRecommendation.reviewPlan, "先补齐后端预检");
 assertEqual(
   manualActionPostWriteExpectationText("observe"),
   "写后预期：只写 1 条人工留痕，生成 7 天和 14 天复盘待办；不会保存复盘结论，不执行广告动作。",

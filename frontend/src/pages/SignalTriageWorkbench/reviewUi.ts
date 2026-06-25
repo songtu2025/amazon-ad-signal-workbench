@@ -340,6 +340,21 @@ export interface ManualActionChoiceGuideItem {
   boundary: string;
 }
 
+export interface ManualActionChoiceRecommendation {
+  actionType: ManualActionForUi["action_type"];
+  label: string;
+  tone: "ready" | "blocked";
+  title: string;
+  reason: string;
+  reviewPlan: string;
+  boundary: string;
+}
+
+export interface ManualActionChoiceRecommendationInput {
+  recommendedActionType?: ManualActionForUi["action_type"] | null;
+  gatesByAction: Partial<Record<ManualActionForUi["action_type"], ManualActionButtonGate>>;
+}
+
 export interface ManualActionExpectedTargetForUi {
   objectType?: string | null;
   objectId?: string | null;
@@ -3205,6 +3220,48 @@ export function manualActionChoiceGuideItems(): ManualActionChoiceGuideItem[] {
       boundary: manualActionIntentText("ignore"),
     },
   ];
+}
+
+export function manualActionChoiceRecommendation({
+  recommendedActionType,
+  gatesByAction,
+}: ManualActionChoiceRecommendationInput): ManualActionChoiceRecommendation {
+  const guides = manualActionChoiceGuideItems();
+  const guideByAction = new Map(guides.map((guide) => [guide.actionType, guide]));
+  const recommendedGuide = recommendedActionType ? guideByAction.get(recommendedActionType) ?? null : null;
+  const recommendedGate = recommendedActionType ? gatesByAction[recommendedActionType] ?? null : null;
+  const firstReadyGuide = guides.find((guide) => gatesByAction[guide.actionType]?.disabled === false) ?? null;
+  const selectedGuide =
+    recommendedGuide && recommendedGate?.disabled === false ? recommendedGuide : firstReadyGuide ?? recommendedGuide ?? guides[0];
+  const selectedGate = gatesByAction[selectedGuide.actionType] ?? null;
+  const isReady = selectedGate?.disabled === false;
+  const fallbackReason = selectedGate?.reason ?? selectedGate?.compactReason ?? "当前后端预检尚未给出可写入结果。";
+
+  if (!isReady) {
+    return {
+      actionType: selectedGuide.actionType,
+      label: selectedGuide.label,
+      tone: "blocked",
+      title: "本次建议选择",
+      reason: `当前没有可点击的人工动作：${fallbackReason}`,
+      reviewPlan: "先补齐后端预检、稳定对象或证据快照，再决定是否进入 7/14 天复盘。",
+      boundary: "不会自动调价、暂停广告、加词或否词。",
+    };
+  }
+
+  const reasonPrefix =
+    selectedGuide.actionType === recommendedActionType
+      ? "后端推荐动作可用"
+      : "后端推荐动作暂不可点，先选择当前第一个可用人工动作";
+  return {
+    actionType: selectedGuide.actionType,
+    label: selectedGuide.label,
+    tone: "ready",
+    title: "本次建议选择",
+    reason: `${reasonPrefix}：${selectedGuide.whenToUse}`,
+    reviewPlan: `${selectedGuide.writes} 点击后只形成留痕或排程，不保存改善结论。`,
+    boundary: "不会自动调价、暂停广告、加词或否词。",
+  };
 }
 
 export function manualActionButtonExpectationText(

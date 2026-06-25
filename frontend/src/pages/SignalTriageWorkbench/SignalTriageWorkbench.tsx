@@ -95,6 +95,7 @@ import {
   manualActionEvidenceSnapshotText,
   manualActionSavableEvidenceReasonText,
   manualActionChoiceGuideItems,
+  manualActionChoiceRecommendation,
   manualActionButtonExpectationText,
   manualActionIntentText,
   manualActionPostWriteExpectationSummaryText,
@@ -938,6 +939,46 @@ export function SignalTriageWorkbench() {
       selectedManualActionPreviewPreflightError,
       selectedSignal,
     ],
+  );
+  const manualActionChoiceGuides = useMemo(() => manualActionChoiceGuideItems(), []);
+  const selectedManualActionChoiceGates = useMemo(() => {
+    const gates: Partial<Record<ManualActionType, ReturnType<typeof manualActionButtonGate>>> = {};
+    manualActionChoiceGuides.forEach((guide) => {
+      const guidePreflight = manualActionPreflightForAction(
+        guide.actionType,
+        manualActionPreflightsByAction,
+        manualActionPreflight,
+      );
+      const guidePreflightError = manualActionPreflightErrorForAction(
+        guide.actionType,
+        manualActionPreflightErrorsByAction,
+        manualActionPreflightError,
+      );
+      gates[guide.actionType] = manualActionButtonGate(
+        guide.actionType,
+        guidePreflight,
+        guidePreflightError,
+        hasReviewTodoForSelectedObject,
+        manualActionExpectedTargetForSignal(selectedSignal, guide.actionType),
+      );
+    });
+    return gates;
+  }, [
+    hasReviewTodoForSelectedObject,
+    manualActionChoiceGuides,
+    manualActionPreflight,
+    manualActionPreflightError,
+    manualActionPreflightErrorsByAction,
+    manualActionPreflightsByAction,
+    selectedSignal,
+  ]);
+  const selectedManualActionChoiceRecommendation = useMemo(
+    () =>
+      manualActionChoiceRecommendation({
+        recommendedActionType: selectedBackendManualActionPreview?.actionType ?? null,
+        gatesByAction: selectedManualActionChoiceGates,
+      }),
+    [selectedBackendManualActionPreview?.actionType, selectedManualActionChoiceGates],
   );
   const selectedManualActionPathSteps = useMemo(
     () =>
@@ -2785,25 +2826,25 @@ export function SignalTriageWorkbench() {
                 <div className="manualActionButtonBoundary" aria-label="人工留痕动作">
                   只保存人工留痕和复盘待办，不执行广告动作
                 </div>
+                <div
+                  className={`manualActionChoiceRecommendation ${selectedManualActionChoiceRecommendation.tone}`}
+                  aria-label="本次建议人工动作"
+                >
+                  <div>
+                    <span>{selectedManualActionChoiceRecommendation.title}</span>
+                    <strong>{selectedManualActionChoiceRecommendation.label}</strong>
+                  </div>
+                  <p>{selectedManualActionChoiceRecommendation.reason}</p>
+                  <small>{selectedManualActionChoiceRecommendation.reviewPlan}</small>
+                  <small>{selectedManualActionChoiceRecommendation.boundary}</small>
+                </div>
                 <div className="manualActionChoiceGuide" aria-label="人工动作选择依据">
-                  {manualActionChoiceGuideItems().map((guide) => {
-                    const guidePreflight = manualActionPreflightForAction(
-                      guide.actionType,
-                      manualActionPreflightsByAction,
-                      manualActionPreflight,
-                    );
-                    const guidePreflightError = manualActionPreflightErrorForAction(
-                      guide.actionType,
-                      manualActionPreflightErrorsByAction,
-                      manualActionPreflightError,
-                    );
-                    const guideGate = manualActionButtonGate(
-                      guide.actionType,
-                      guidePreflight,
-                      guidePreflightError,
-                      hasReviewTodoForSelectedObject,
-                      manualActionExpectedTargetForSignal(selectedSignal, guide.actionType),
-                    );
+                  {manualActionChoiceGuides.map((guide) => {
+                    const guideGate = selectedManualActionChoiceGates[guide.actionType] ?? {
+                      disabled: true,
+                      reason: "当前后端预检尚未完成。",
+                      compactReason: "等待预检",
+                    };
                     return (
                       <div key={guide.actionType} className={`manualActionChoiceGuideItem ${guideGate.disabled ? "blocked" : "ready"}`}>
                         <span>{guide.label}</span>

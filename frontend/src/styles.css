@@ -8514,6 +8514,54 @@ button.reviewTodoQueueNext:focus-visible {
   gap: 7px;
 }
 
+.manualActionChoiceRecommendation {
+  display: grid;
+  gap: 5px;
+  border: 1px solid #cfe0f1;
+  border-radius: 8px;
+  padding: 8px 9px;
+  background: #f7fbff;
+}
+
+.manualActionChoiceRecommendation.ready {
+  border-color: #9fcae9;
+  background: #f3f9ff;
+}
+
+.manualActionChoiceRecommendation.blocked {
+  border-color: #efc6bb;
+  background: #fff8f6;
+}
+
+.manualActionChoiceRecommendation > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.manualActionChoiceRecommendation span {
+  color: #5a6e83;
+  font-size: 10.5px;
+  font-weight: 820;
+  line-height: 1.2;
+}
+
+.manualActionChoiceRecommendation strong {
+  color: #173857;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.manualActionChoiceRecommendation p,
+.manualActionChoiceRecommendation small {
+  margin: 0;
+  color: #4f6278;
+  font-size: 10.5px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .manualActionChoiceGuideItem {
   min-width: 0;
   display: grid;
