@@ -4988,11 +4988,12 @@ function ProductScopeTargetingEvidencePanel({ row }: { row: ProductScopeAdGroupD
   const decision = row.searchTermDiagnosis?.decision ?? null;
 
   return (
-    <div className="productScopeTargetingEvidence" aria-label="投放词证据独立复核">
-      <div className="productScopeTargetingEvidenceHeader">
-        <strong>投放词证据</strong>
+    <details className="productScopeTargetingEvidence" aria-label="投放词证据完整审计材料">
+      <summary className="productScopeTargetingEvidenceHeader">
+        <strong>展开投放词证据明细</strong>
         <span>{rows.length} 个投放上下文</span>
-      </div>
+      </summary>
+      <p>默认层已在搜索词业务判断和证据切换器中给出投放词判断；本区只回看 keyword_text / target_id 明细。</p>
       <p>当前广告组的搜索词表现来自哪些投放词或投放对象？</p>
       {decision && (
         <small>
@@ -5013,7 +5014,7 @@ function ProductScopeTargetingEvidencePanel({ row }: { row: ProductScopeAdGroupD
       <small>
         投放词证据来自搜索词表现行的 keyword_text / target_id；SP 关键词详情和商品定向详情第一阶段仍属暂缓同步，页面不能据此自动加词、否词或调价。
       </small>
-    </div>
+    </details>
   );
 }
 

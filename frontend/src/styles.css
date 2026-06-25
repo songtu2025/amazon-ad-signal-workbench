@@ -3540,6 +3540,7 @@ h3 {
 }
 
 .productScopeAdGroupChecklistHeader,
+.productScopeTargetingEvidenceHeader,
 .productScopeAdGroupReasoningDetails summary {
   display: flex;
   align-items: center;
@@ -3547,21 +3548,25 @@ h3 {
   gap: 8px;
 }
 
-.productScopeAdGroupChecklist summary {
+.productScopeAdGroupChecklist summary,
+.productScopeTargetingEvidence summary {
   cursor: pointer;
   list-style: none;
   outline: none;
 }
 
-.productScopeAdGroupChecklist summary::-webkit-details-marker {
+.productScopeAdGroupChecklist summary::-webkit-details-marker,
+.productScopeTargetingEvidence summary::-webkit-details-marker {
   display: none;
 }
 
-.productScopeAdGroupChecklist summary:focus-visible {
+.productScopeAdGroupChecklist summary:focus-visible,
+.productScopeTargetingEvidence summary:focus-visible {
   box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.18);
 }
 
 .productScopeAdGroupChecklistHeader strong,
+.productScopeTargetingEvidenceHeader strong,
 .productScopeAdGroupReasoningDetails summary span {
   color: #14273e;
   font-size: 13px;
@@ -3569,6 +3574,7 @@ h3 {
 }
 
 .productScopeAdGroupChecklistHeader span,
+.productScopeTargetingEvidenceHeader span,
 .productScopeAdGroupReasoningDetails summary strong {
   color: #31536f;
   font-size: 12px;
@@ -3785,17 +3791,8 @@ h3 {
   background: #f8fbff;
 }
 
-.productScopeTargetingEvidenceHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.productScopeTargetingEvidenceHeader span {
-  color: #31536f;
-  font-size: 12px;
-  font-weight: 820;
+.productScopeTargetingEvidence[open] {
+  background: #fbfdff;
 }
 
 .productScopeTargetingEvidence li {
