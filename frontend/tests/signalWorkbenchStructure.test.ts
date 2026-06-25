@@ -1450,16 +1450,32 @@ assertIncludes(workbenchSource, 'aria-label="广告搜索词复核优先判断"'
 assertIncludes(workbenchSource, '<details className="searchTermReviewLayer"');
 assertIncludes(workbenchSource, '<details className="searchTermReviewEvidenceDetails"');
 assertIncludes(workbenchSource, "展开完整证据、证明边界和复核路径");
+assertIncludes(workbenchSource, "buildSearchTermAdContextReviewSummary(adContextRows)");
+assertIncludes(workbenchSource, 'aria-label="逐投放上下文优先摘要"');
+assertIncludes(workbenchSource, "adContextReviewSummary.whyFirst");
+assertIncludes(workbenchSource, "adContextReviewSummary.proves");
+assertIncludes(workbenchSource, "adContextReviewSummary.doesNotProve");
+assertIncludes(workbenchSource, "adContextReviewSummary.nextManualStep");
 assertIncludes(workbenchSource, '<details className="searchTermAdContextRows"');
 assertIncludes(workbenchSource, "展开逐投放上下文表现行");
+assertIncludes(workbenchSource, "row.proves");
+assertIncludes(workbenchSource, "row.doesNotProve");
+assertIncludes(workbenchSource, "row.nextManualStep");
 assertIncludes(stylesSource, ".searchTermReviewDecisionSummary");
 assertIncludes(stylesSource, ".searchTermReviewEvidenceDetails");
+assertIncludes(stylesSource, ".searchTermAdContextReviewSummary");
 assertIncludes(stylesSource, ".searchTermAdContextRows[open] summary");
 const searchTermDecisionIndex = workbenchSource.indexOf("searchTermReviewDecisionSummary");
 const searchTermEvidenceDetailsIndex = workbenchSource.indexOf("searchTermReviewEvidenceDetails");
+const searchTermAdContextSummaryIndex = workbenchSource.indexOf('aria-label="逐投放上下文优先摘要"');
+const searchTermAdContextRowsIndex = workbenchSource.indexOf('<details className="searchTermAdContextRows"');
 assert(
   searchTermDecisionIndex >= 0 && searchTermDecisionIndex < searchTermEvidenceDetailsIndex,
   "广告搜索词复核链必须先展示优先判断，再展开完整证据。",
+);
+assert(
+  searchTermAdContextSummaryIndex > searchTermEvidenceDetailsIndex && searchTermAdContextSummaryIndex < searchTermAdContextRowsIndex,
+  "逐投放上下文必须先给优先摘要，再展开完整表现行。",
 );
 assertIncludes(workbenchSource, 'aria-label="人工留痕动作"');
 assertIncludes(workbenchSource, "只保存人工留痕和复盘待办，不执行广告动作");

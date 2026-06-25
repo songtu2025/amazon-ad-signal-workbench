@@ -6882,6 +6882,72 @@ button.reviewTodoQueueNext:focus-visible {
   padding-bottom: 8px;
 }
 
+.searchTermAdContextReviewSummary {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #cfe1f1;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.searchTermAdContextReviewSummary > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.searchTermAdContextReviewSummary strong {
+  color: #183b5b;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.searchTermAdContextReviewSummary > div span {
+  border: 1px solid #d7e6f0;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: #ffffff;
+  color: #315f8c;
+  font-size: 11px;
+  font-weight: 820;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.searchTermAdContextReviewSummary dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+  gap: 7px;
+  margin: 0;
+}
+
+.searchTermAdContextReviewSummary dl div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid #dbe8f2;
+  border-radius: 7px;
+  padding: 7px 8px;
+  background: #ffffff;
+}
+
+.searchTermAdContextReviewSummary dt {
+  color: #66758a;
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.searchTermAdContextReviewSummary dd,
+.searchTermAdContextReviewSummary small {
+  margin: 0;
+  color: #40536a;
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
 .searchTermAdContextRows {
   display: grid;
   gap: 8px;

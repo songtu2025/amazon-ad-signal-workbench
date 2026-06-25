@@ -19,6 +19,8 @@ import {
   buildReviewEvidenceRepairSummary,
   buildReviewReadinessGateSummary,
   buildSearchTermOpportunityReviewChain,
+  buildSearchTermAdContextRows,
+  buildSearchTermAdContextReviewSummary,
   buildSignalDiagnosisEvidenceSummary,
   buildSignalMetricDecisionItems,
   manualActionQueueTargetSwitchSummary,
@@ -412,7 +414,16 @@ async function main() {
     "选中的 SearchTerm 信号必须来自当前 Parent ASIN 广告搜索词表现分组。",
   );
   const benchmarkFocusedSignal = mergedRuntimeSignals.find((signal: any) => signal.id === benchmarkFocusSelection.signalId);
+  assert(benchmarkFocusedSignal !== undefined, "beach essentials 聚合卡片必须能找到对应 SearchTerm 信号。");
   assertIncludes(asText(benchmarkFocusedSignal?.evidence?.primary_object ?? {}).toLowerCase(), "beach essentials");
+  const benchmarkAdContextRows = buildSearchTermAdContextRows(benchmarkFocusedSignal);
+  const benchmarkAdContextSummary = buildSearchTermAdContextReviewSummary(benchmarkAdContextRows);
+  assert(benchmarkAdContextSummary !== null, "真实 SearchTerm 必须生成逐投放上下文优先摘要。");
+  const benchmarkAdContextSummaryText = asText(benchmarkAdContextSummary);
+  assertIncludes(benchmarkAdContextSummaryText, "逐投放表现");
+  assertIncludes(benchmarkAdContextSummaryText, "先看");
+  assertIncludes(benchmarkAdContextSummaryText, "人工");
+  assertIncludes(benchmarkAdContextSummaryText, "不能证明应自动加词");
   const benchmarkManualPreview = manualActionPreviewForSelectedSignal(benchmarkFocusSelection.signalId, triage, benchmarkFocusedSignal);
   assert(benchmarkManualPreview === null, "beach essentials 已留痕时，右侧人工预检不能静默切到下一未处理候选。");
   const benchmarkQueueSwitch = manualActionQueueTargetSwitchSummary(triage, benchmarkFocusSelection.signalId);

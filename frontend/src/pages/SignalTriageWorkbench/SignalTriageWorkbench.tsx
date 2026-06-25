@@ -190,6 +190,7 @@ import {
   buildSignalMetricDecisionItems,
   buildSearchTermOpportunityReviewChain,
   buildSearchTermAdContextRows,
+  buildSearchTermAdContextReviewSummary,
   recommendedManualStatusText,
   recommendedManualActionCardCopy,
   recommendedEvidenceDrilldownText,
@@ -4133,6 +4134,8 @@ function SearchTermOpportunityReviewChainPanel({
   chain: SearchTermOpportunityReviewChain;
   adContextRows: SearchTermAdContextRow[];
 }) {
+  const adContextReviewSummary = buildSearchTermAdContextReviewSummary(adContextRows);
+
   return (
     <section className="searchTermOpportunityReviewChain diagnosisStep stepEvidence" aria-label="广告搜索词表现复核链">
       <div className="detailSectionHeader">
@@ -4233,6 +4236,37 @@ function SearchTermOpportunityReviewChainPanel({
           </li>
         </ul>
       </details>
+      {adContextReviewSummary && (
+        <div className="searchTermAdContextReviewSummary" aria-label="逐投放上下文优先摘要">
+          <div>
+            <strong>{adContextReviewSummary.title}</strong>
+            <span>{adContextReviewSummary.statusLabel}</span>
+          </div>
+          <dl>
+            <div>
+              <dt>优先对象</dt>
+              <dd>{adContextReviewSummary.firstLine}</dd>
+            </div>
+            <div>
+              <dt>为什么先看</dt>
+              <dd>{adContextReviewSummary.whyFirst}</dd>
+            </div>
+            <div>
+              <dt>能证明</dt>
+              <dd>{adContextReviewSummary.proves}</dd>
+            </div>
+            <div>
+              <dt>不能证明</dt>
+              <dd>{adContextReviewSummary.doesNotProve}</dd>
+            </div>
+            <div>
+              <dt>人工下一步</dt>
+              <dd>{adContextReviewSummary.nextManualStep}</dd>
+            </div>
+          </dl>
+          <small>{adContextReviewSummary.boundary}</small>
+        </div>
+      )}
       {adContextRows.length > 0 && (
         <details className="searchTermAdContextRows" aria-label="逐投放上下文复核">
           <summary>
@@ -4261,6 +4295,9 @@ function SearchTermOpportunityReviewChainPanel({
                   <span>{row.efficiencyText}</span>
                 </div>
                 <p>{row.judgement}</p>
+                <small>能证明：{row.proves}</small>
+                <small>不能证明：{row.doesNotProve}</small>
+                <small>人工下一步：{row.nextManualStep}</small>
                 <small>{row.boundary}</small>
               </div>
             ))}

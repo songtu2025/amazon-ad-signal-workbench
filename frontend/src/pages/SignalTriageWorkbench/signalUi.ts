@@ -3833,6 +3833,9 @@ export interface SearchTermAdContextRow {
   targetingLabel: string;
   reviewPriority: string;
   reviewReason: string;
+  proves: string;
+  doesNotProve: string;
+  nextManualStep: string;
   metricsText: string;
   efficiencyText: string;
   periodText: string;
@@ -3840,7 +3843,21 @@ export interface SearchTermAdContextRow {
   boundary: string;
 }
 
-type SearchTermAdContextBaseRow = Omit<SearchTermAdContextRow, "reviewPriority" | "reviewReason">;
+export interface SearchTermAdContextReviewSummary {
+  title: string;
+  statusLabel: string;
+  firstLine: string;
+  whyFirst: string;
+  proves: string;
+  doesNotProve: string;
+  nextManualStep: string;
+  boundary: string;
+}
+
+type SearchTermAdContextBaseRow = Omit<
+  SearchTermAdContextRow,
+  "reviewPriority" | "reviewReason" | "proves" | "doesNotProve" | "nextManualStep"
+>;
 
 export interface SearchTermAdContextSignalForUi extends SignalForUi {
   evidence?: {
@@ -4503,10 +4520,12 @@ export function buildSearchTermAdContextRows(signal: SearchTermAdContextSignalFo
     .slice(0, limit)
     .map((row, index) => {
       const priority = searchTermAdContextReviewPriority(row, index);
+      const decision = searchTermAdContextRowDecision(row, priority);
       return {
         ...row,
         reviewPriority: priority.label,
         reviewReason: priority.reason,
+        ...decision,
       };
     });
 }
@@ -4549,6 +4568,42 @@ function searchTermAdContextReviewPriority(row: SearchTermAdContextBaseRow, inde
   return {
     label: "观察补证",
     reason: "当前样本不足以判断扩量或止损，先补齐投放词、广告组和复盘窗口证据。",
+  };
+}
+
+function searchTermAdContextRowDecision(
+  row: SearchTermAdContextBaseRow,
+  priority: { label: string; reason: string },
+): Pick<SearchTermAdContextRow, "proves" | "doesNotProve" | "nextManualStep"> {
+  const metrics = searchTermAdContextMetricValues(row);
+  const contextLabel = `${row.campaignName} / ${row.adGroupName} / ${row.targetingLabel}`;
+  const proves = `能证明该 SearchTerm 在 ${contextLabel} 下的逐投放表现：${row.metricsText}，用于比较同词在不同广告组、投放词和广告 ASIN 承接差异。`;
+  const doesNotProve =
+    "不能证明该表现应自动归因到单个 ASIN，也不能证明应自动加词、否词、调价、广告位加价或暂停广告。";
+  const nextManualStep =
+    metrics.orders > 0
+      ? `优先人工核对 ${row.adGroupName} 的广告组目的、投放词匹配、广告 ASIN 承接和广告位边界；${priority.reason}`
+      : metrics.spend > 0
+        ? `人工核对 ${row.adGroupName} 是否存在词相关性、匹配方式或商品承接问题；只能记录观察、加入复盘或忽略本次，不自动否词。`
+        : "当前样本较弱，先补投放词、广告组、广告 ASIN 和复盘窗口证据，再决定是否留痕。";
+  return { proves, doesNotProve, nextManualStep };
+}
+
+export function buildSearchTermAdContextReviewSummary(rows: SearchTermAdContextRow[]): SearchTermAdContextReviewSummary | null {
+  const firstRow = rows[0];
+  if (!firstRow) return null;
+  const adGroupCount = new Set(rows.map((row) => row.adGroupName).filter(Boolean)).size;
+  const targetingCount = new Set(rows.map((row) => row.targetingLabel).filter(Boolean)).size;
+  return {
+    title: `先看 ${firstRow.adGroupName}`,
+    statusLabel: `${rows.length} 条逐投放表现 / ${adGroupCount} 个广告组 / ${targetingCount} 个投放上下文`,
+    firstLine: `${firstRow.searchTerm} / ${firstRow.campaignName} / ${firstRow.targetingLabel}`,
+    whyFirst: `${firstRow.reviewPriority}：${firstRow.reviewReason}`,
+    proves: firstRow.proves,
+    doesNotProve: firstRow.doesNotProve,
+    nextManualStep: firstRow.nextManualStep,
+    boundary:
+      "逐投放上下文只说明同一个 SearchTerm 在不同广告活动、广告组和投放词下的表现顺序；不替代 Parent ASIN、广告 ASIN、广告组或广告位完整判断。",
   };
 }
 

@@ -61,6 +61,7 @@ import {
   buildSignalMetricDecisionItems,
   buildSearchTermOpportunityReviewChain,
   buildSearchTermAdContextRows,
+  buildSearchTermAdContextReviewSummary,
   buildManualConfirmationEvidenceItems,
   recommendedManualStatusText,
   recommendedEvidenceDrilldownText,
@@ -3916,9 +3917,29 @@ assertIncludes(searchTermAdContextRows[0].efficiencyText, "ACOS 15.5%");
 assertIncludes(searchTermAdContextRows[0].periodText, "2026-05-18 至 2026-06-16");
 assertIncludes(searchTermAdContextRows[0].judgement, "有订单承接");
 assertIncludes(searchTermAdContextRows[0].boundary, "不能自动归因到单个 ASIN");
+assertIncludes(searchTermAdContextRows[0].proves, "逐投放表现");
+assertIncludes(searchTermAdContextRows[0].proves, "不同广告组、投放词和广告 ASIN 承接差异");
+assertIncludes(searchTermAdContextRows[0].doesNotProve, "不能证明该表现应自动归因到单个 ASIN");
+assertIncludes(searchTermAdContextRows[0].doesNotProve, "不能证明应自动加词、否词、调价");
+assertIncludes(searchTermAdContextRows[0].nextManualStep, "优先人工核对");
+assertIncludes(searchTermAdContextRows[0].nextManualStep, "广告位边界");
 assertEqual(searchTermAdContextRows[1].adGroupName, "RBK004-扩展-beach essentials");
 assertEqual(searchTermAdContextRows[1].reviewPriority, "对照复核广告组");
 assertIncludes(searchTermAdContextRows[1].reviewReason, "不同广告组的承接差异");
+const searchTermAdContextReviewSummary = buildSearchTermAdContextReviewSummary(searchTermAdContextRows);
+if (!searchTermAdContextReviewSummary) {
+  throw new Error("有逐投放上下文时必须生成优先摘要");
+}
+assertEqual(searchTermAdContextReviewSummary.title, "先看 RBK004-beach essentials-精准");
+assertIncludes(searchTermAdContextReviewSummary.statusLabel, "2 条逐投放表现");
+assertIncludes(searchTermAdContextReviewSummary.statusLabel, "2 个广告组");
+assertIncludes(searchTermAdContextReviewSummary.firstLine, "beach essentials / RBK004-beach essentials-精准 / 关键词投放：beach essentials");
+assertIncludes(searchTermAdContextReviewSummary.whyFirst, "优先复核广告组");
+assertIncludes(searchTermAdContextReviewSummary.proves, "逐投放表现");
+assertIncludes(searchTermAdContextReviewSummary.doesNotProve, "自动归因到单个 ASIN");
+assertIncludes(searchTermAdContextReviewSummary.nextManualStep, "优先人工核对");
+assertIncludes(searchTermAdContextReviewSummary.boundary, "不替代 Parent ASIN、广告 ASIN、广告组或广告位完整判断");
+assertEqual(buildSearchTermAdContextReviewSummary([]), null);
 assertEqual(
   buildSearchTermAdContextRows({ ...opportunitySignal, signal_category: "ad_group_structure", object_type: "ad_group" }).length,
   0,
