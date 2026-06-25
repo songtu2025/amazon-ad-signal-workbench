@@ -347,6 +347,11 @@ const reviewRecordSaveGateIndex = workbenchSource.indexOf('aria-label="复盘保
 const reviewMetricTableIndex = workbenchSource.indexOf('aria-label="复盘指标对比"');
 const reviewRecordPreflightChecklistIndex = workbenchSource.indexOf('aria-label="复盘保存前检查清单"');
 const saveReviewRecordButtonIndex = workbenchSource.indexOf('<button className="secondaryButton" onClick={handleSaveReviewRecord}');
+const ruleImprovementSectionIndex = workbenchSource.indexOf('aria-label="规则改进门槛"');
+const ruleFeedbackDecisionSummaryIndex = workbenchSource.indexOf('aria-label="规则反馈默认摘要"');
+const ruleFeedbackDetailsIndex = workbenchSource.indexOf('aria-label="规则反馈完整审计材料"');
+const ruleFeedbackCandidateIndex = workbenchSource.indexOf('aria-label="规则反馈候选"');
+const ruleFeedbackPrioritySummaryIndex = workbenchSource.indexOf('aria-label="规则反馈候选汇总"');
 assert(productScopeSingleScreenRenderIndex >= 0, "Parent ASIN 单屏作战卡必须默认渲染");
 assert(
   productScopeSingleScreenRenderIndex < productScopeBusinessPreviewIndex,
@@ -568,6 +573,11 @@ assert(reviewEffectWindowLedgerIndex < reviewRecordSaveGateIndex, "处理前后�
 assert(reviewRecordSaveGateIndex < reviewMetricTableIndex, "保存门槛必须先于指标明细表");
 assert(reviewMetricTableIndex < reviewRecordPreflightChecklistIndex, "指标明细表必须先于保存前检查清单");
 assert(reviewRecordPreflightChecklistIndex < saveReviewRecordButtonIndex, "保存按钮必须在保存前检查清单之后");
+assert(ruleImprovementSectionIndex >= 0, "规则改进门槛区必须存在");
+assert(ruleFeedbackDecisionSummaryIndex > ruleImprovementSectionIndex, "规则反馈默认摘要必须渲染在规则改进区内");
+assert(ruleFeedbackDecisionSummaryIndex < ruleFeedbackDetailsIndex, "规则反馈必须先给默认业务判断，再展开完整审计材料");
+assert(ruleFeedbackDetailsIndex < ruleFeedbackCandidateIndex, "规则反馈候选必须保留在完整审计材料折叠区");
+assert(ruleFeedbackDetailsIndex < ruleFeedbackPrioritySummaryIndex, "规则反馈样本池必须保留在完整审计材料折叠区");
 
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 经营诊断路径"');
 assertIncludes(workbenchSource, 'aria-label="诊断入口路径说明"');
@@ -1200,9 +1210,21 @@ assertIncludes(workbenchSource, "现在能下结论吗");
 assertIncludes(workbenchSource, "下一步做什么");
 assertIncludes(workbenchSource, '<details className="reviewFlowStatusDetails" aria-label="复盘完整状态账本">');
 assertIncludes(workbenchSource, "展开复盘门禁、待办证据和保存细节");
+assertIncludes(workbenchSource, "selectedRuleFeedbackDecisionItems");
+assertIncludes(workbenchSource, 'aria-label="规则反馈默认摘要"');
+assertIncludes(workbenchSource, "规则反馈先看这四件事");
+assertIncludes(workbenchSource, "有没有复盘结论");
+assertIncludes(workbenchSource, "能不能反馈规则");
+assertIncludes(workbenchSource, "反馈依据是什么");
+assertIncludes(workbenchSource, "下一步人工动作");
+assertIncludes(workbenchSource, '<details className="ruleFeedbackDetails" aria-label="规则反馈完整审计材料">');
+assertIncludes(workbenchSource, "展开规则改进门槛、候选组和样本细节");
 assertIncludes(stylesSource, ".reviewFlowDecisionSummary");
 assertIncludes(stylesSource, ".reviewFlowStatusDetails");
 assertIncludes(stylesSource, ".reviewFlowStatusDetails[open] > summary");
+assertIncludes(stylesSource, ".ruleFeedbackDecisionSummary");
+assertIncludes(stylesSource, ".ruleFeedbackDetails");
+assertIncludes(stylesSource, ".ruleFeedbackDetails[open] > summary");
 assertIncludes(stylesSource, ".manualReviewEvidencePathReadback");
 assertIncludes(stylesSource, ".manualReviewEvidencePathReadback.ready");
 assertIncludes(stylesSource, ".manualReviewEvidencePathReadback.saved");

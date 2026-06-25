@@ -1345,6 +1345,44 @@ export function SignalTriageWorkbench() {
     () => buildRuleFeedbackPrioritySummary(signalTriageSummary),
     [signalTriageSummary],
   );
+  const selectedRuleFeedbackDecisionItems = useMemo(() => {
+    const feedbackReadinessText =
+      selectedRuleImprovementReadiness.tone === "saved"
+        ? "已有规则反馈样本"
+        : selectedRuleImprovementReadiness.tone === "ready"
+          ? "先保存复盘记录"
+          : "暂不能反馈规则";
+    const feedbackBasis =
+      selectedRuleFeedbackCandidate?.basis ??
+      ruleFeedbackPrioritySummary?.basis ??
+      selectedRuleImprovementReadiness.description;
+    const feedbackBoundary =
+      selectedRuleFeedbackCandidate?.boundary ??
+      ruleFeedbackPrioritySummary?.actionBoundary ??
+      "规则反馈只进入解释层和人工复核优先级，不自动改规则，不自动执行广告动作。";
+    return [
+      {
+        label: "有没有复盘结论",
+        value: latestReviewRecord ? "已有已保存复盘" : "暂无已保存复盘",
+        detail: reviewRecordStatusText(latestReviewRecord),
+      },
+      {
+        label: "能不能反馈规则",
+        value: feedbackReadinessText,
+        detail: selectedRuleImprovementReadiness.description,
+      },
+      {
+        label: "反馈依据是什么",
+        value: selectedRuleFeedbackCandidate?.title ?? ruleFeedbackPrioritySummary?.title ?? "等待复盘样本",
+        detail: feedbackBasis,
+      },
+      {
+        label: "下一步人工动作",
+        value: selectedRuleImprovementReadiness.nextStep,
+        detail: feedbackBoundary,
+      },
+    ];
+  }, [latestReviewRecord, ruleFeedbackPrioritySummary, selectedRuleFeedbackCandidate, selectedRuleImprovementReadiness]);
   const selectedBaseManualActionEvidenceSnapshot = useMemo(
     () => buildManualActionEvidenceSnapshot(selectedTriageBusinessEvidenceItems),
     [selectedTriageBusinessEvidenceItems],
@@ -3557,53 +3595,71 @@ export function SignalTriageWorkbench() {
 
                 <section className="sideSection reviewFlowItem ruleImprovementSection" aria-label="规则改进门槛">
                   <h3>规则改进门槛</h3>
-                  <p className={`ruleImprovementStatus ${selectedRuleImprovementReadiness.tone}`}>
-                    {selectedRuleImprovementReadiness.title}
-                  </p>
-                  <span>{selectedRuleImprovementReadiness.description}</span>
-                  <span>
-                    <b>下一步：</b>
-                    {selectedRuleImprovementReadiness.nextStep}
-                  </span>
-                  {selectedRuleFeedbackCandidate && (
-                    <div className="ruleFeedbackCandidate" aria-label="规则反馈候选">
-                      <strong>{selectedRuleFeedbackCandidate.title}</strong>
-                      <span>{selectedRuleFeedbackCandidate.basis}</span>
-                      <span>{selectedRuleFeedbackCandidate.recommendation}</span>
-                      <p>{selectedRuleFeedbackCandidate.boundary}</p>
+                  <div className="ruleFeedbackDecisionSummary" aria-label="规则反馈默认摘要">
+                    <div>
+                      <strong>规则反馈先看这四件事</strong>
+                      <span>默认决策层</span>
                     </div>
-                  )}
-                  {ruleFeedbackPrioritySummary && (
-                    <div className="ruleFeedbackCandidate" aria-label="规则反馈候选汇总">
-                      <strong>{ruleFeedbackPrioritySummary.title}</strong>
-                      <span>{ruleFeedbackPrioritySummary.basis}</span>
-                      <span>{ruleFeedbackPrioritySummary.priority}</span>
-                      <span>{ruleFeedbackPrioritySummary.sampleSort}</span>
-                      <span>{ruleFeedbackPrioritySummary.actionBoundary}</span>
-                      {ruleFeedbackPrioritySummary.candidateGroups.length > 0 && (
-                        <ul className="ruleFeedbackRecordList">
-                          {ruleFeedbackPrioritySummary.candidateGroups.map((group) => (
-                            <li key={group}>{group}</li>
-                          ))}
-                        </ul>
-                      )}
-                      {ruleFeedbackPrioritySummary.closureChecklist.length > 0 && (
-                        <ul className="ruleFeedbackRecordList">
-                          {ruleFeedbackPrioritySummary.closureChecklist.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
-                      )}
-                      {ruleFeedbackPrioritySummary.records.length > 0 && (
-                        <ul className="ruleFeedbackRecordList">
-                          {ruleFeedbackPrioritySummary.records.map((record) => (
-                            <li key={record}>{record}</li>
-                          ))}
-                        </ul>
-                      )}
-                      <p>{ruleFeedbackPrioritySummary.boundary}</p>
-                    </div>
-                  )}
+                    <ul>
+                      {selectedRuleFeedbackDecisionItems.map((item) => (
+                        <li key={item.label}>
+                          <span>{item.label}</span>
+                          <b>{item.value}</b>
+                          <p>{item.detail}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <details className="ruleFeedbackDetails" aria-label="规则反馈完整审计材料">
+                    <summary>展开规则改进门槛、候选组和样本细节</summary>
+                    <p className={`ruleImprovementStatus ${selectedRuleImprovementReadiness.tone}`}>
+                      {selectedRuleImprovementReadiness.title}
+                    </p>
+                    <span>{selectedRuleImprovementReadiness.description}</span>
+                    <span>
+                      <b>下一步：</b>
+                      {selectedRuleImprovementReadiness.nextStep}
+                    </span>
+                    {selectedRuleFeedbackCandidate && (
+                      <div className="ruleFeedbackCandidate" aria-label="规则反馈候选">
+                        <strong>{selectedRuleFeedbackCandidate.title}</strong>
+                        <span>{selectedRuleFeedbackCandidate.basis}</span>
+                        <span>{selectedRuleFeedbackCandidate.recommendation}</span>
+                        <p>{selectedRuleFeedbackCandidate.boundary}</p>
+                      </div>
+                    )}
+                    {ruleFeedbackPrioritySummary && (
+                      <div className="ruleFeedbackCandidate" aria-label="规则反馈候选汇总">
+                        <strong>{ruleFeedbackPrioritySummary.title}</strong>
+                        <span>{ruleFeedbackPrioritySummary.basis}</span>
+                        <span>{ruleFeedbackPrioritySummary.priority}</span>
+                        <span>{ruleFeedbackPrioritySummary.sampleSort}</span>
+                        <span>{ruleFeedbackPrioritySummary.actionBoundary}</span>
+                        {ruleFeedbackPrioritySummary.candidateGroups.length > 0 && (
+                          <ul className="ruleFeedbackRecordList">
+                            {ruleFeedbackPrioritySummary.candidateGroups.map((group) => (
+                              <li key={group}>{group}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {ruleFeedbackPrioritySummary.closureChecklist.length > 0 && (
+                          <ul className="ruleFeedbackRecordList">
+                            {ruleFeedbackPrioritySummary.closureChecklist.map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {ruleFeedbackPrioritySummary.records.length > 0 && (
+                          <ul className="ruleFeedbackRecordList">
+                            {ruleFeedbackPrioritySummary.records.map((record) => (
+                              <li key={record}>{record}</li>
+                            ))}
+                          </ul>
+                        )}
+                        <p>{ruleFeedbackPrioritySummary.boundary}</p>
+                      </div>
+                    )}
+                  </details>
                 </section>
               </section>
             </>

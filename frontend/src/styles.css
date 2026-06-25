@@ -5858,6 +5858,114 @@ button.reviewTodoQueueNext:focus-visible {
   color: #047857;
 }
 
+.ruleFeedbackDecisionSummary {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #c9dfef;
+  border-radius: 8px;
+  padding: 9px;
+  background: #f7fbff;
+}
+
+.ruleFeedbackDecisionSummary > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ruleFeedbackDecisionSummary strong {
+  color: #1f3147;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.ruleFeedbackDecisionSummary > div span {
+  border: 1px solid #d3e2f0;
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #ffffff;
+  color: #2b5c8a;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.ruleFeedbackDecisionSummary ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ruleFeedbackDecisionSummary li {
+  display: grid;
+  gap: 3px;
+  border: 1px solid #e0eaf3;
+  border-radius: 7px;
+  padding: 7px;
+  background: #ffffff;
+}
+
+.ruleFeedbackDecisionSummary li span {
+  color: #66758a;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.ruleFeedbackDecisionSummary li b {
+  color: #203246;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.ruleFeedbackDecisionSummary li p {
+  margin: 0;
+  color: #566b82;
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.ruleFeedbackDetails {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #dce8f4;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ruleFeedbackDetails > summary {
+  cursor: pointer;
+  padding: 8px 9px;
+  color: #2d4056;
+  background: #f8fbff;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
+.ruleFeedbackDetails[open] > summary {
+  border-bottom: 1px solid #e5eef7;
+}
+
+.ruleFeedbackDetails > :not(summary) {
+  margin-right: 8px;
+  margin-left: 8px;
+}
+
+.ruleFeedbackDetails > summary + * {
+  margin-top: 8px;
+}
+
+.ruleFeedbackDetails > :last-child {
+  margin-bottom: 8px;
+}
+
 .ruleFeedbackCandidate {
   display: grid;
   gap: 6px;
