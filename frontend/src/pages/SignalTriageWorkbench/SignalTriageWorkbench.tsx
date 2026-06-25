@@ -11,7 +11,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   AiSignal,
@@ -450,6 +450,7 @@ export function SignalTriageWorkbench() {
   const [selectedSearchIntentScopeId, setSelectedSearchIntentScopeId] = useState<string | null>(null);
   const [isEvidenceDrilldownFocused, setIsEvidenceDrilldownFocused] = useState(false);
   const workbenchGridRef = useRef<HTMLElement | null>(null);
+  const adGroupPriorityGateRef = useRef<HTMLDivElement | null>(null);
 
   async function loadSignals() {
     setLoading(true);
@@ -960,8 +961,9 @@ export function SignalTriageWorkbench() {
     setFilter("all");
     setIsEvidenceDrilldownFocused(true);
     window.requestAnimationFrame(() => {
-      workbenchGridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      workbenchGridRef.current?.focus();
+      const target = adGroupPriorityGateRef.current ?? workbenchGridRef.current;
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+      target?.focus();
     });
   }
 
@@ -2418,8 +2420,12 @@ export function SignalTriageWorkbench() {
       >
         {isEvidenceDrilldownFocused && (
           <div className="evidenceDrilldownFocusNotice" aria-label="广告证据下钻状态" aria-live="polite">
-            <strong>已进入广告诊断工作台</strong>
-            <span>按广告组、搜索词和广告位证据继续排查，右侧仍只允许人工确认，不执行广告调整。</span>
+            <strong>{selectedAdGroupDiagnosis ? "已定位默认广告组证据" : "已进入广告诊断工作台"}</strong>
+            <span>
+              {selectedAdGroupDiagnosis
+                ? `先看 ${selectedAdGroupDiagnosis.title} 的广告组优先判断，再核对投放商品、投放词、搜索词和广告位边界；右侧仍只允许人工确认，不执行广告调整。`
+                : "当前没有可聚焦广告组，先补广告组、投放商品、投放词、搜索词和广告位证据；右侧仍只允许人工确认，不执行广告调整。"}
+            </span>
           </div>
         )}
         <aside className="queuePanel">
@@ -2967,6 +2973,7 @@ export function SignalTriageWorkbench() {
               rows={productScopeAdGroupDiagnosis}
               selectedId={selectedAdGroupDiagnosis?.id ?? null}
               onSelect={setSelectedAdGroupDiagnosisId}
+              priorityGateRef={adGroupPriorityGateRef}
             />
           )}
           {selectedAdGroupDiagnosis && <ProductScopeAdGroupFocusPanel row={selectedAdGroupDiagnosis} />}
@@ -5207,10 +5214,12 @@ function ProductScopeAdGroupDiagnosisPanel({
   rows,
   selectedId,
   onSelect,
+  priorityGateRef,
 }: {
   rows: ProductScopeAdGroupDiagnosisRow[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  priorityGateRef?: RefObject<HTMLDivElement | null>;
 }) {
   const priorityRow = rows[0];
 
@@ -5221,7 +5230,7 @@ function ProductScopeAdGroupDiagnosisPanel({
         <span>{rows.length} 个广告组，点击聚焦</span>
       </div>
       {priorityRow && (
-        <div className="productScopeAdGroupPriorityGate" aria-label="广告组优先判断">
+        <div className="productScopeAdGroupPriorityGate" ref={priorityGateRef} tabIndex={-1} aria-label="广告组优先判断">
           <div className="productScopeAdGroupDiagnosisHeader">
             <div>
               <span>优先广告组</span>
