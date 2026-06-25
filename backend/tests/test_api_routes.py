@@ -37,6 +37,17 @@ def test_health_route_identifies_current_project() -> None:
     assert response.json() == {"status": "ok", "service": "ai-ads-signal-workbench"}
 
 
+def test_root_route_guides_to_frontend_workbench() -> None:
+    response = TestClient(app).get("/")
+
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "当前地址是后端 API，不是前端工作台页面" in response.text
+    assert "http://127.0.0.1:5175/" in response.text
+    assert "/health" in response.text
+    assert "/docs" in response.text
+
+
 def test_snapshot_readiness_route_returns_model(monkeypatch) -> None:
     monkeypatch.setattr(
         routes,

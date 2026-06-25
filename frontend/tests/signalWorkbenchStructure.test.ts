@@ -812,6 +812,7 @@ assertIncludes(stylesSource, ".productScopePriorityDecisionBucket.all");
 assertIncludes(stylesSource, ".productScopePriorityDecisionBucket.active");
 assertIncludes(stylesSource, ".productScopePriorityDecisionBucket:disabled");
 assertIncludes(stylesSource, ".productScopePriorityDecisionShortcuts");
+assertIncludes(stylesSource, "repeat(auto-fit, minmax(min(170px, 100%), 1fr))");
 assertIncludes(stylesSource, ".productScopePriorityQueueEmpty");
 assertIncludes(stylesSource, ".productScopePriorityEvidencePreview");
 assertIncludes(stylesSource, ".productScopePriorityEvidencePreview.ready");
