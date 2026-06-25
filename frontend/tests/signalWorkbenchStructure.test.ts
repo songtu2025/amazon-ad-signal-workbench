@@ -69,6 +69,7 @@ assertIncludes(workbenchSource, "function ProductScopeAdGroupReasoningDetails");
 assertIncludes(workbenchSource, 'aria-label="广告组内投放商品表现"');
 assertIncludes(workbenchSource, 'aria-label="投放词证据独立复核"');
 assertIncludes(workbenchSource, 'aria-label="当前广告组复核顺序"');
+assertIncludes(workbenchSource, 'aria-label="当前广告组优先查看证据层"');
 assertIncludes(workbenchSource, 'aria-label="当前广告组运营检查清单"');
 assertIncludes(workbenchSource, 'aria-label="当前广告组人工动作承接"');
 assertIncludes(workbenchSource, 'aria-label="广告组推理细节"');
@@ -112,6 +113,11 @@ assertIncludes(workbenchSource, "确认搜索词表现来自哪些 keyword_text 
 assertIncludes(workbenchSource, "判断用户真实搜索词在当前广告组里是扩量机会、花费浪费还是继续观察");
 assertIncludes(workbenchSource, "确认当前问题是否可能和 Top of Search");
 assertIncludes(workbenchSource, 'const reviewPath = items.map((item) => item.title).join(" → ")');
+assertIncludes(workbenchSource, "function buildProductScopeAdGroupReviewPriority");
+assertIncludes(workbenchSource, "本次优先证据层");
+assertIncludes(workbenchSource, "problemLocationText.includes(\"搜索词\")");
+assertIncludes(workbenchSource, "problemLocationText.includes(\"广告位\")");
+assertIncludes(workbenchSource, "本次优先证据层不能替代四层完整复核");
 assertIncludes(workbenchSource, "先按顺序复核");
 assertIncludes(workbenchSource, "这只是人工复核路径，不证明搜索词或广告位已归因到单个广告 ASIN");
 assertIncludes(workbenchSource, "先按中间检查清单复核，再选择右侧人工动作");
@@ -281,7 +287,12 @@ const adGroupFocusDecisionIndex = workbenchSource.indexOf(
   'aria-label="当前广告组三段复核判断"',
   workbenchSource.indexOf("function ProductScopeAdGroupFocusPanel"),
 );
+const adGroupReviewOrderFunctionIndex = workbenchSource.indexOf("function ProductScopeAdGroupReviewOrderPanel");
+const adGroupReviewPriorityIndex = workbenchSource.indexOf('aria-label="当前广告组优先查看证据层"', adGroupReviewOrderFunctionIndex);
+const adGroupReviewPathIndex = workbenchSource.indexOf("先按顺序复核", adGroupReviewOrderFunctionIndex);
 assert(adGroupFocusDecisionIndex < adGroupReviewOrderIndex, "当前广告组复核路径必须先给问题落点、证据缺口和人工下一步");
+assert(adGroupReviewPriorityIndex > adGroupReviewOrderFunctionIndex, "当前广告组复核顺序内必须有本次优先证据层");
+assert(adGroupReviewPriorityIndex < adGroupReviewPathIndex, "当前广告组复核顺序内必须先给本次优先证据层，再给四层完整路径");
 assert(adGroupReviewOrderIndex < focusMetricsIndex, "当前广告组复核路径必须先给复核顺序，再展示广告组证据摘要");
 assert(adGroupReviewOrderIndex < adGroupChecklistIndex, "当前广告组复核路径必须先给复核顺序，再展开运营检查清单");
 assert(adGroupChecklistIndex < advertisedProductsInFocusIndex, "运营检查清单必须先于广告组证据明细");

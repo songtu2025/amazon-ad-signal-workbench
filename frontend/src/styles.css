@@ -3049,6 +3049,22 @@ h3 {
   line-height: 1.35;
 }
 
+.productScopeAdGroupReviewPriority {
+  padding: 9px;
+  border: 1px solid #b9d4eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.productScopeAdGroupReviewPriority strong {
+  color: #123a5b;
+  font-size: 14px;
+}
+
+.productScopeAdGroupReviewPriority small:last-child {
+  color: #6b4a25;
+}
+
 .productScopeAdGroupReviewOrder p,
 .productScopeAdGroupReviewOrder small {
   margin: 0;

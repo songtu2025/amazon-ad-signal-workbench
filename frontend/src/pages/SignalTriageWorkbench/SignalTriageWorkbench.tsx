@@ -4367,6 +4367,13 @@ interface ProductScopeAdGroupChecklistItem {
   nextStep: string;
 }
 
+interface ProductScopeAdGroupReviewPriority {
+  focusLayer: string;
+  reason: string;
+  nextStep: string;
+  boundary: string;
+}
+
 function buildProductScopeAdGroupChecklistItems(row: ProductScopeAdGroupDiagnosisRow): ProductScopeAdGroupChecklistItem[] {
   const targetingRows = buildProductScopeTargetingEvidenceRows(row);
   const advertisedProductText =
@@ -4428,6 +4435,35 @@ function buildProductScopeAdGroupChecklistItems(row: ProductScopeAdGroupDiagnosi
   ];
 }
 
+function buildProductScopeAdGroupReviewPriority(
+  row: ProductScopeAdGroupDiagnosisRow,
+  items: ProductScopeAdGroupChecklistItem[],
+): ProductScopeAdGroupReviewPriority {
+  const problemLocationText = `${row.problemLocator.problemLocation} ${row.evidenceSynthesis.statusLabel} ${row.evidenceSynthesis.evidenceGap}`;
+  let focusKey = "advertised-products";
+
+  if (problemLocationText.includes("搜索词") || problemLocationText.includes("无订单") || problemLocationText.includes("有效词")) {
+    focusKey = "search-terms";
+  } else if (problemLocationText.includes("广告位")) {
+    focusKey = "placements";
+  } else if (problemLocationText.includes("投放词")) {
+    focusKey = "targeting";
+  } else if (problemLocationText.includes("广告 ASIN") || problemLocationText.includes("投放商品")) {
+    focusKey = "advertised-products";
+  }
+
+  const focusItem = items.find((item) => item.key === focusKey) ?? items[0];
+
+  return {
+    focusLayer: focusItem ? `${focusItem.label}. ${focusItem.title}` : "等待广告组证据",
+    reason: `${row.problemLocator.problemLocation}；${row.evidenceSynthesis.statusLabel}。`,
+    nextStep: focusItem?.nextStep ?? row.problemLocator.nextManualStep,
+    boundary: focusItem
+      ? `${focusItem.doesNotProve}；本次优先证据层不能替代四层完整复核，也不能自动执行广告动作。`
+      : "证据不足时只做观察，不自动执行广告动作。",
+  };
+}
+
 function ProductScopeAdGroupOperationalChecklistPanel({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
   const items = buildProductScopeAdGroupChecklistItems(row);
 
@@ -4466,10 +4502,18 @@ function ProductScopeAdGroupOperationalChecklistPanel({ row }: { row: ProductSco
 
 function ProductScopeAdGroupReviewOrderPanel({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
   const items = buildProductScopeAdGroupChecklistItems(row);
+  const priority = buildProductScopeAdGroupReviewPriority(row, items);
   const reviewPath = items.map((item) => item.title).join(" → ");
 
   return (
     <div className="productScopeAdGroupReviewOrder" aria-label="当前广告组复核顺序">
+      <div className="productScopeAdGroupReviewPriority" aria-label="当前广告组优先查看证据层">
+        <span>本次优先证据层</span>
+        <strong>{priority.focusLayer}</strong>
+        <p>{priority.reason}</p>
+        <small>{priority.nextStep}</small>
+        <small>{priority.boundary}</small>
+      </div>
       <div>
         <span>先按顺序复核</span>
         <strong>{reviewPath}</strong>
