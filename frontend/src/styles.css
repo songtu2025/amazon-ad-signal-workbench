@@ -2439,6 +2439,34 @@ h3 {
   background: #f8fbfe;
 }
 
+.productScopeDiagnosisFrameworkDetails {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #d8e6f1;
+  border-radius: 8px;
+  background: #f8fbfe;
+}
+
+.productScopeDiagnosisFrameworkDetails > summary {
+  color: #29445f;
+  font-size: 12px;
+  font-weight: 780;
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.productScopeDiagnosisFrameworkDetails[open] > summary {
+  padding-bottom: 7px;
+  border-bottom: 1px solid #dbe7f0;
+}
+
+.productScopeDiagnosisFrameworkDetails .productScopeDiagnosisFramework {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 .productScopeDiagnosisFrameworkHeader {
   display: flex;
   gap: 8px;

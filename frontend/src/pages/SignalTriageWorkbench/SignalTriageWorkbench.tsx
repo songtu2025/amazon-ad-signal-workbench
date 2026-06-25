@@ -4679,33 +4679,6 @@ function ProductScopeDiagnosisBriefPanel({ brief }: { brief: ProductScopeDiagnos
           </article>
         ))}
       </div>
-      <div className="productScopeDiagnosisFramework" aria-label="Parent ASIN 单屏诊断框架">
-        <div className="productScopeDiagnosisFrameworkHeader">
-          <strong>单屏诊断框架</strong>
-          <span>按运营阅读顺序压缩判断，不把销售、广告组、明细和 AI 分析堆成长报表。</span>
-        </div>
-        <div className="productScopeDiagnosisFrameworkItems">
-          {brief.sections.map((section) => (
-            <article className={`productScopeDiagnosisFrameworkItem ${section.tone}`} key={section.id}>
-              <span>{section.label}. {section.title}</span>
-              <strong>{section.businessQuestion}</strong>
-              <p>{section.currentJudgement}</p>
-              <small className="productScopeDiagnosisFrameworkNext">人工下一步：{section.nextManualStep}</small>
-              <details className="productScopeDiagnosisFrameworkEvidence" aria-label={`${section.title} 证明边界`}>
-                <summary>证明边界</summary>
-                <small>
-                  <b>能证明</b>
-                  {section.proves}
-                </small>
-                <small>
-                  <b>不能证明</b>
-                  {section.doesNotProve}
-                </small>
-              </details>
-            </article>
-          ))}
-        </div>
-      </div>
       <div className="productScopeDiagnosisBriefPath" aria-label="运营诊断路径顺序">
         {brief.sections.map((section) => (
           <span className={section.tone} key={section.id}>
@@ -4720,6 +4693,36 @@ function ProductScopeDiagnosisBriefPanel({ brief }: { brief: ProductScopeDiagnos
         ))}
       </div>
       <p className="productScopeDiagnosisBriefBoundary">{brief.boundary}</p>
+      <details className="productScopeDiagnosisFrameworkDetails" aria-label="Parent ASIN 完整诊断框架">
+        <summary>展开完整五段诊断框架</summary>
+        <div className="productScopeDiagnosisFramework" aria-label="Parent ASIN 单屏诊断框架">
+          <div className="productScopeDiagnosisFrameworkHeader">
+            <strong>完整诊断框架</strong>
+            <span>按运营阅读顺序压缩判断，不把销售、广告组、明细和 AI 分析堆成长报表；默认折叠，需要审计时再展开。</span>
+          </div>
+          <div className="productScopeDiagnosisFrameworkItems">
+            {brief.sections.map((section) => (
+              <article className={`productScopeDiagnosisFrameworkItem ${section.tone}`} key={section.id}>
+                <span>{section.label}. {section.title}</span>
+                <strong>{section.businessQuestion}</strong>
+                <p>{section.currentJudgement}</p>
+                <small className="productScopeDiagnosisFrameworkNext">人工下一步：{section.nextManualStep}</small>
+                <details className="productScopeDiagnosisFrameworkEvidence" aria-label={`${section.title} 证明边界`}>
+                  <summary>证明边界</summary>
+                  <small>
+                    <b>能证明</b>
+                    {section.proves}
+                  </small>
+                  <small>
+                    <b>不能证明</b>
+                    {section.doesNotProve}
+                  </small>
+                </details>
+              </article>
+            ))}
+          </div>
+        </div>
+      </details>
     </section>
   );
 }

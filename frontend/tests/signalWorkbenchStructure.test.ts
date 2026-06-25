@@ -939,9 +939,11 @@ assertIncludes(workbenchSource, "brief.decisionGuide.primaryDecision");
 assertIncludes(workbenchSource, "brief.decisionGuide.readPath");
 assertIncludes(workbenchSource, "brief.decisionGuide.expandFocus");
 assertIncludes(workbenchSource, "brief.decisionGuide.notToDo");
+assertIncludes(workbenchSource, '<details className="productScopeDiagnosisFrameworkDetails" aria-label="Parent ASIN 完整诊断框架">');
+assertIncludes(workbenchSource, "<summary>展开完整五段诊断框架</summary>");
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 单屏诊断框架"');
 assertIncludes(workbenchSource, "单屏诊断框架");
-assertIncludes(workbenchSource, "按运营阅读顺序压缩判断，不把销售、广告组、明细和 AI 分析堆成长报表。");
+assertIncludes(workbenchSource, "按运营阅读顺序压缩判断，不把销售、广告组、明细和 AI 分析堆成长报表；默认折叠，需要审计时再展开。");
 assertIncludes(workbenchSource, "section.businessQuestion");
 assertIncludes(workbenchSource, "section.currentJudgement");
 assertIncludes(workbenchSource, "人工下一步：{section.nextManualStep}");
@@ -949,6 +951,8 @@ assertIncludes(signalUiSource, "ProductScopeDecisionGuide");
 assertIncludes(signalUiSource, "不逐个读完整报表");
 assertIncludes(signalUiSource, "投放商品 -> 投放词 -> 搜索词 -> 广告位");
 assertIncludes(stylesSource, ".productScopeDecisionGuide");
+assertIncludes(stylesSource, ".productScopeDiagnosisFrameworkDetails");
+assertIncludes(stylesSource, ".productScopeDiagnosisFrameworkDetails[open] > summary");
 assertIncludes(stylesSource, ".productScopeDiagnosisFramework");
 assertIncludes(stylesSource, ".productScopeDiagnosisFrameworkItems");
 assertIncludes(stylesSource, ".productScopeDiagnosisFrameworkItem");
@@ -1012,6 +1016,7 @@ const adGroupPriorityTriageIndex = workbenchSource.indexOf('aria-label="优先�
 const adGroupRowsIndex = workbenchSource.indexOf('className="productScopeAdGroupDiagnosisRows"');
 const productScopeDecisionGuideIndex = workbenchSource.indexOf('aria-label="Parent ASIN 决策导览"');
 const productScopeVerdictIndex = workbenchSource.indexOf('aria-label="Parent ASIN 体检结论"');
+const productScopeFrameworkDetailsIndex = workbenchSource.indexOf('aria-label="Parent ASIN 完整诊断框架"');
 const productScopeFrameworkIndex = workbenchSource.indexOf('aria-label="Parent ASIN 单屏诊断框架"');
 const diagnosisBriefPathIndex = workbenchSource.indexOf('aria-label="运营诊断路径顺序"');
 const diagnosisBriefBusinessQuestionIndex = workbenchSource.indexOf("{section.businessQuestion}", productScopeFrameworkIndex);
@@ -1027,17 +1032,21 @@ assert(
   "Parent ASIN 体检结论必须位于决策导览和四段路径之间，先压缩结论再进入明细路径。",
 );
 assert(
-  productScopeFrameworkIndex > productScopeVerdictIndex && productScopeFrameworkIndex < diagnosisBriefPathIndex,
-  "Parent ASIN 单屏诊断框架必须位于体检结论和明细路径之间，把草图路径先压缩成业务判断卡。",
+  diagnosisBriefPathIndex > productScopeVerdictIndex && diagnosisBriefPathIndex < productScopeFrameworkDetailsIndex,
+  "Parent ASIN 默认层必须先展示路径顺序，再把完整框架放进折叠区，避免用户先读五段长说明。",
+);
+assert(
+  productScopeFrameworkDetailsIndex > diagnosisBriefPathIndex && productScopeFrameworkDetailsIndex < productScopeFrameworkIndex,
+  "Parent ASIN 完整诊断框架必须作为折叠审计材料存在，不能默认铺开五段判断。",
 );
 assert(
   diagnosisBriefBusinessQuestionIndex > 0 && diagnosisBriefBusinessQuestionIndex < diagnosisBriefCurrentJudgementIndex,
-  "Parent ASIN 单屏诊断框架必须先展示业务问题，再展示当前判断，避免重新变成指标报表。",
+  "Parent ASIN 完整诊断框架展开后必须先展示业务问题，再展示当前判断，避免重新变成指标报表。",
 );
 assert(
   diagnosisBriefCurrentJudgementIndex < diagnosisBriefNextStepIndex &&
     diagnosisBriefNextStepIndex < diagnosisBriefEvidenceDisclosureIndex,
-  "Parent ASIN 单屏诊断框架必须默认先给当前判断和人工下一步，再把证明边界收进可展开区，避免第一屏变成长报表。",
+  "Parent ASIN 完整诊断框架展开后必须先给当前判断和人工下一步，再把证明边界收进可展开区。",
 );
 assertIncludes(workbenchSource, "brief.verdictItems.map");
 assertIncludes(stylesSource, ".productScopeDiagnosisVerdict");
