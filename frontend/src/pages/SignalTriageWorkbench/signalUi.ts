@@ -3999,12 +3999,20 @@ export interface ProductScopeDecisionGuide {
   tone: "ready" | "waiting" | "blocked";
 }
 
+export interface ProductScopeDiagnosisVerdictItem {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "ready" | "waiting" | "blocked" | "manual";
+}
+
 export interface ProductScopeDiagnosisBrief {
   title: string;
   summary: string;
   statusLabel: string;
   statusTone: ProductScopeMvpStatus["tone"];
   decisionGuide: ProductScopeDecisionGuide;
+  verdictItems: ProductScopeDiagnosisVerdictItem[];
   sections: ProductScopeDiagnosisBriefSection[];
   manualActions: string[];
   boundary: string;
@@ -5129,6 +5137,34 @@ export function buildProductScopeDiagnosisBrief(
         nextManualStep: salesEntryNextManualStep,
         tone: "blocked",
       };
+  const verdictItems: ProductScopeDiagnosisVerdictItem[] = [
+    {
+      label: "准入结论",
+      value: hasAdvertisedAsin ? "进入广告诊断" : "暂不进入广告诊断",
+      detail: salesEntryCurrentJudgement,
+      tone: hasAdvertisedAsin ? "ready" : "blocked",
+    },
+    {
+      label: "今日焦点",
+      value: primaryAdGroup ? primaryAdGroup.title : "等待广告组证据",
+      detail: primaryAdGroup
+        ? `${primaryAdGroup.problemType}；${primaryAdGroup.problemLocator.problemLocation}`
+        : "缺少可排序广告组时，不展开广告组明细，也不生成广告动作。",
+      tone: primaryAdGroup ? "ready" : "waiting",
+    },
+    {
+      label: "证据下钻",
+      value: routeGuide ? `${routeGuide.steps.length} 层证据` : "证据路径待补齐",
+      detail: routeGuide?.summary ?? "等待广告 ASIN、广告组、投放词、搜索词和广告位形成可读证据链。",
+      tone: routeGuide ? "ready" : "waiting",
+    },
+    {
+      label: "人工边界",
+      value: "只做人工留痕",
+      detail: "允许记录观察、标记已处理、加入复盘或忽略本次；复盘窗口完整后再评价效果。",
+      tone: "manual",
+    },
+  ];
 
   return {
     title: "Parent ASIN 运营诊断路径",
@@ -5137,6 +5173,7 @@ export function buildProductScopeDiagnosisBrief(
     statusLabel: firstScreenSummary.mvpStatus.statusLabel,
     statusTone: firstScreenSummary.mvpStatus.tone,
     decisionGuide,
+    verdictItems,
     sections: [
       {
         id: "sales_summary",

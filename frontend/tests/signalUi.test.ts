@@ -5193,6 +5193,15 @@ assertIncludes(productScopeDiagnosisBrief.decisionGuide.expandFocus, "投放商�
 assertIncludes(productScopeDiagnosisBrief.decisionGuide.notToDo, "不要把销售子 ASIN 全量");
 assertIncludes(productScopeDiagnosisBrief.decisionGuide.notToDo, "自动加词");
 assertIncludes(productScopeDiagnosisBrief.decisionGuide.nextManualStep, "人工");
+assertEqual(productScopeDiagnosisBrief.verdictItems.length, 4);
+assertEqual(productScopeDiagnosisBrief.verdictItems[0].label, "准入结论");
+assertIncludes(productScopeDiagnosisBrief.verdictItems[0].value, "进入广告诊断");
+assertIncludes(productScopeDiagnosisBrief.verdictItems[1].label, "今日焦点");
+assertIncludes(productScopeDiagnosisBrief.verdictItems[1].detail, "投放结构失衡");
+assertIncludes(productScopeDiagnosisBrief.verdictItems[1].detail, "搜索词意图分化");
+assertIncludes(productScopeDiagnosisBrief.verdictItems[2].value, "7 层证据");
+assertIncludes(productScopeDiagnosisBrief.verdictItems[3].detail, "记录观察");
+assertIncludes(productScopeDiagnosisBrief.verdictItems[3].detail, "复盘窗口完整后再评价效果");
 assertEqual(productScopeDiagnosisBrief.sections.length, 4);
 assertEqual(productScopeDiagnosisBrief.sections[0].title, "Parent ASIN 销售表现入口");
 assertIncludes(productScopeDiagnosisBrief.sections[0].businessQuestion, "是否有足够广告证据");

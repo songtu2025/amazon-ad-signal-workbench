@@ -3996,6 +3996,15 @@ function ProductScopeDiagnosisBriefPanel({ brief }: { brief: ProductScopeDiagnos
           </li>
         </ul>
       </div>
+      <div className="productScopeDiagnosisVerdict" aria-label="Parent ASIN 体检结论">
+        {brief.verdictItems.map((item) => (
+          <article className={`productScopeDiagnosisVerdictItem ${item.tone}`} key={item.label}>
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
+            <small>{item.detail}</small>
+          </article>
+        ))}
+      </div>
       <p className="productScopeDiagnosisBriefSummary">{brief.summary}</p>
       <div className="productScopeDiagnosisBriefPath" aria-label="运营诊断路径顺序">
         {brief.sections.map((section) => (
