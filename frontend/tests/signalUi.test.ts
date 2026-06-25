@@ -4119,6 +4119,12 @@ const selectedSearchIntentDecisionCard = {
   operationDecisionLabel: "扩量复核",
   operationDecisionReason: "有订单且 ACOS 可控，优先人工复核是否存在可扩量机会。",
   operationDecisionTone: "scale" as const,
+  reviewStatus: {
+    label: "扩量复核",
+    reason: "订单 35、ACOS 23.42% 已形成可人工复核的扩量候选。",
+    nextStep: "打开 beach essentials 的具体 SearchTerm 信号，人工核对广告组目标、投放词和广告位后，只做记录观察或加入 7/14 天复盘。",
+    tone: "scale" as const,
+  },
   insight: "这组广告搜索词转化稳定。",
   businessQuestion: "这组同类广告用户搜索词是否存在可扩量机会？",
   currentJudgement: "当前进入扩量人工复核。",
@@ -6174,6 +6180,12 @@ assertEqual(searchIntentReviewCards[0].operationDecisionTone, "scale");
 assertIncludes(searchIntentReviewCards[0].operationDecisionReason, "订单 4");
 assertIncludes(searchIntentReviewCards[0].operationDecisionReason, "ACOS 12.86%");
 assertIncludes(searchIntentReviewCards[0].operationDecisionReason, "具体 SearchTerm");
+assertEqual(searchIntentReviewCards[0].reviewStatus.label, "扩量复核");
+assertEqual(searchIntentReviewCards[0].reviewStatus.tone, "scale");
+assertIncludes(searchIntentReviewCards[0].reviewStatus.reason, "订单 4");
+assertIncludes(searchIntentReviewCards[0].reviewStatus.reason, "广告组、投放词和广告位证据");
+assertIncludes(searchIntentReviewCards[0].reviewStatus.nextStep, "baby sunglasses");
+assertIncludes(searchIntentReviewCards[0].reviewStatus.nextStep, "7/14 天复盘");
 assertEqual(searchIntentReviewCards[0].metricPurposeItems.length, 3);
 assertEqual(searchIntentReviewCards[0].metricPurposeItems[0].label, "扩量判断");
 assertIncludes(searchIntentReviewCards[0].metricPurposeItems[0].value, "目标：判断是否存在可人工复核的扩量机会");
@@ -6322,6 +6334,11 @@ assertEqual(wasteSearchIntentReviewCards[0].operationDecisionLabel, "止损复�
 assertEqual(wasteSearchIntentReviewCards[0].operationDecisionTone, "waste");
 assertIncludes(wasteSearchIntentReviewCards[0].operationDecisionReason, "花费 36");
 assertIncludes(wasteSearchIntentReviewCards[0].operationDecisionReason, "订单 0");
+assertEqual(wasteSearchIntentReviewCards[0].reviewStatus.label, "止损复核");
+assertEqual(wasteSearchIntentReviewCards[0].reviewStatus.tone, "waste");
+assertIncludes(wasteSearchIntentReviewCards[0].reviewStatus.reason, "花费 36");
+assertIncludes(wasteSearchIntentReviewCards[0].reviewStatus.reason, "同一广告组、投放词或广告位");
+assertIncludes(wasteSearchIntentReviewCards[0].reviewStatus.nextStep, "不自动否词");
 assertIncludes(wasteSearchIntentReviewCards[0].metricPurposeItems[1].value, "人工止损复核");
 assertIncludes(wasteSearchIntentReviewCards[0].metricPurposeItems[1].value, "花费 36");
 assertIncludes(wasteSearchIntentReviewCards[0].metricPurposeItems[1].value, "订单 0");
@@ -6369,6 +6386,10 @@ const observeSearchIntentReviewCards = buildSearchIntentReviewCards([
 assertEqual(observeSearchIntentReviewCards[0].operationDecisionLabel, "观察复核");
 assertEqual(observeSearchIntentReviewCards[0].operationDecisionTone, "observe");
 assertIncludes(observeSearchIntentReviewCards[0].operationDecisionReason, "证据还不足");
+assertEqual(observeSearchIntentReviewCards[0].reviewStatus.label, "仅观察");
+assertEqual(observeSearchIntentReviewCards[0].reviewStatus.tone, "observe");
+assertIncludes(observeSearchIntentReviewCards[0].reviewStatus.reason, "尚不足以支撑扩量或止损");
+assertIncludes(observeSearchIntentReviewCards[0].reviewStatus.nextStep, "先补广告组、投放词、广告位和同组 ASIN 证据");
 assertIncludes(observeSearchIntentReviewCards[0].metricPurposeItems[0].value, "当前判断偏观察");
 assertIncludes(observeSearchIntentReviewCards[0].metricPurposeItems[2].value, "只能观察和补证");
 assertIncludes(observeSearchIntentReviewCards[0].metricPurposeItems[2].value, "表现行 4 条");

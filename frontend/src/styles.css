@@ -5224,6 +5224,41 @@ button.reviewTodoQueueNext:focus-visible {
   line-height: 1.4;
 }
 
+.searchIntentReviewStatus {
+  border: 1px solid #dbe6ef;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 6px 7px;
+  display: grid;
+  gap: 3px;
+}
+
+.searchIntentReviewStatus.scale {
+  border-color: #bddcc7;
+  background: #f4fbf6;
+}
+
+.searchIntentReviewStatus.waste {
+  border-color: #f2c3b8;
+  background: #fff7f5;
+}
+
+.searchIntentReviewStatus.observe {
+  border-color: #d5deea;
+  background: #f8fafc;
+}
+
+.searchIntentReviewStatus b {
+  color: #213047;
+  font-size: 12px;
+}
+
+.searchIntentReviewStatus small {
+  color: #52647a;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .searchIntentReviewCard p,
 .searchIntentReviewCard small,
 .searchIntentReviewCard li {

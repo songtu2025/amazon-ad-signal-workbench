@@ -208,6 +208,7 @@ export interface SearchIntentReviewCard {
   operationDecisionLabel: string;
   operationDecisionReason: string;
   operationDecisionTone: "scale" | "waste" | "observe";
+  reviewStatus: SearchIntentReviewStatus;
   insight: string;
   businessQuestion: string;
   currentJudgement: string;
@@ -225,6 +226,13 @@ export interface SearchIntentReviewCard {
   primarySearchTerm: string | null;
   primarySearchTermReason: string;
   topTerms: string[];
+}
+
+export interface SearchIntentReviewStatus {
+  label: string;
+  reason: string;
+  nextStep: string;
+  tone: "scale" | "waste" | "observe";
 }
 
 export interface SearchIntentReviewDecisionSummaryItem {
@@ -6678,6 +6686,45 @@ function searchIntentMetricPurposeItems(
   ];
 }
 
+function buildSearchIntentReviewStatus(
+  summary: SearchIntentSummaryForUi,
+  operationDecision: Pick<SearchIntentReviewCard, "operationDecisionLabel" | "operationDecisionReason" | "operationDecisionTone">,
+  primarySelection: Pick<SearchIntentReviewCard, "primarySearchTerm" | "primarySearchTermReason">,
+): SearchIntentReviewStatus {
+  const metrics = summary.metrics;
+  const rowCount = searchIntentSourceRowCount(summary);
+  const searchTermLabel = primarySelection.primarySearchTerm ?? "待补齐具体 SearchTerm";
+  const gapText = searchIntentDisplayText(summary.evidence_gap).replace(/^证据缺口[:：]\s*/, "");
+
+  if (operationDecision.operationDecisionTone === "scale") {
+    return {
+      label: "扩量复核",
+      tone: "scale",
+      reason: `订单 ${metrics.orders}、ACOS ${formatReviewPercent(metrics.acos)} 已形成可人工复核的扩量候选；先确认 ${searchTermLabel} 是否能被广告组、投放词和广告位证据解释。`,
+      nextStep: `打开 ${searchTermLabel} 的具体 SearchTerm 信号，人工核对广告组目标、投放词和广告位后，只做记录观察或加入 7/14 天复盘。`,
+    };
+  }
+
+  if (operationDecision.operationDecisionTone === "waste") {
+    return {
+      label: "止损复核",
+      tone: "waste",
+      reason: `花费 ${formatReviewNumber(metrics.cost)}、订单 ${metrics.orders} 指向消耗风险；先确认 ${searchTermLabel} 是否集中在同一广告组、投放词或广告位。`,
+      nextStep: `打开 ${searchTermLabel} 的具体 SearchTerm 信号，人工核对后再记录观察、标记已处理、加入复盘或忽略本次；不自动否词。`,
+    };
+  }
+
+  const isEvidenceGap = !primarySelection.primarySearchTerm || rowCount === 0 || Boolean(gapText);
+  return {
+    label: isEvidenceGap ? "证据补齐" : "仅观察",
+    tone: "observe",
+    reason: isEvidenceGap
+      ? `当前缺少足够落地证据：${gapText || primarySelection.primarySearchTermReason}；不能把聚合指标直接转成广告动作。`
+      : `表现行 ${rowCount} 条、订单 ${metrics.orders}、花费 ${formatReviewNumber(metrics.cost)} 尚不足以支撑扩量或止损，先保持观察。`,
+    nextStep: `先补广告组、投放词、广告位和同组 ASIN 证据，再决定是否进入人工留痕或 7/14 天复盘。`,
+  };
+}
+
 export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi[], limit = 8): SearchIntentReviewCard[] {
   return summaries
     .map((summary, index) => ({
@@ -6700,6 +6747,7 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       const abaMatchCount = summary.aba_match_count ?? 0;
       const primarySelection = selectPrimarySearchTermForOperationDecision(summary, operationDecision.operationDecisionTone);
       const metricPurposeItems = searchIntentMetricPurposeItems(summary, operationDecision.operationDecisionTone);
+      const reviewStatus = buildSearchIntentReviewStatus(summary, operationDecision, primarySelection);
       const topTerms = (summary.top_search_terms ?? []).slice(0, 3).map((term) => {
         const abaText = term.aba_rank ? ` / ABA ${term.aba_rank}` : "";
         const adGroupText = (term.ad_group_names ?? []).filter(Boolean).slice(0, 2).join("、") || "广告组待补齐";
@@ -6712,6 +6760,7 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
         summary: `${metrics.orders} 单 / 花费 ${formatReviewNumber(metrics.cost)} / ACOS ${formatReviewPercent(metrics.acos)} / ABA 命中 ${abaMatchCount}`,
         sourceLabel: summary.semantic_source || "未知来源",
         ...operationDecision,
+        reviewStatus,
         insight: searchIntentDisplayText(summary.insight),
         businessQuestion:
           searchIntentDisplayText(summary.business_question) ||

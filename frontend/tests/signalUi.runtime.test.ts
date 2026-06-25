@@ -359,6 +359,10 @@ async function main() {
     assertIncludes(card.boundary, "不改变诊断入口");
     assertIncludes(card.boundary, "不把搜索词表现分组当作人工动作对象");
     assertIncludes(card.signalMetricBoundary, "点开后的 AI 信号");
+    assert(card.reviewStatus.label.length > 0, "每个搜索词表现分组必须默认展示闭环状态。");
+    assert(card.reviewStatus.reason.length > 0, "每个搜索词表现分组必须说明闭环状态原因。");
+    assertIncludes(card.reviewStatus.nextStep, "人工");
+    assertNotIncludes(card.reviewStatus.nextStep, "自动");
     assert(card.metricPurposeItems.length >= 3, "搜索词表现分组必须拆开说明指标目的，不能只展示裸指标。");
     const metricPurposeText = asText(card.metricPurposeItems);
     assertIncludes(metricPurposeText, "花费");

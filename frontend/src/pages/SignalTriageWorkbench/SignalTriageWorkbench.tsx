@@ -2672,6 +2672,11 @@ export function SignalTriageWorkbench() {
                         <b>{card.operationDecisionLabel}</b>
                         <small>{card.operationDecisionReason}</small>
                       </div>
+                      <div className={`searchIntentReviewStatus ${card.reviewStatus.tone}`} aria-label="搜索词复核闭环状态">
+                        <b>{card.reviewStatus.label}</b>
+                        <small>{card.reviewStatus.reason}</small>
+                        <small>下一步：{card.reviewStatus.nextStep}</small>
+                      </div>
                       <div className="searchIntentReviewCardSnapshot" aria-label="搜索词复核默认摘要">
                         <span>
                           <b>核心指标</b>
@@ -2704,6 +2709,7 @@ export function SignalTriageWorkbench() {
                         </ul>
                         <small>{card.adContext}</small>
                         <small>{card.evidenceGap}</small>
+                        <small>闭环状态：{card.reviewStatus.label}；{card.reviewStatus.reason}；下一步：{card.reviewStatus.nextStep}</small>
                         <small>{card.signalMetricBoundary}</small>
                         <small>{card.purpose}</small>
                         <small>数据口径：{card.dataGrain}</small>
