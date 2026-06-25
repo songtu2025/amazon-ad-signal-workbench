@@ -724,6 +724,11 @@ assertNotIncludes(workbenchSource, "const nextActiveProductScopeId = resolveProd
 assertIncludes(workbenchSource, "ProductScopePriorityDecisionSummaryPanel");
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 首页分诊摘要"');
 assertIncludes(workbenchSource, "今日先看什么");
+assertIncludes(workbenchSource, "decisionShortcuts");
+assertIncludes(workbenchSource, 'aria-label="Parent ASIN 扫一眼决策卡"');
+assertIncludes(workbenchSource, "先看谁");
+assertIncludes(workbenchSource, "打开后看哪层");
+assertIncludes(workbenchSource, "不要逐个打开所有 Parent ASIN 报表");
 assertIncludes(workbenchSource, "readingStrategy");
 assertIncludes(workbenchSource, "阅读策略：{summary.readingStrategy}");
 assertIncludes(workbenchSource, "不逐个打开完整报表");
@@ -760,8 +765,15 @@ assertIncludes(workbenchSource, "handleSelectProductScopePriority(item.scopeId)"
 const productScopePriorityDecisionSummaryRenderIndex = workbenchSource.indexOf(
   "<ProductScopePriorityDecisionSummaryPanel",
 );
+const productScopePriorityShortcutIndex = workbenchSource.indexOf('aria-label="Parent ASIN 扫一眼决策卡"');
+const productScopePriorityBucketIndex = workbenchSource.indexOf('aria-label="Parent ASIN 分诊桶"');
 const productScopePriorityQueueIndex = workbenchSource.indexOf('className="productScopePriorityQueue"');
 assert(productScopePriorityDecisionSummaryRenderIndex > 0, "左侧必须有 Parent ASIN 首页分诊摘要");
+assert(
+  productScopePriorityShortcutIndex > productScopePriorityDecisionSummaryRenderIndex &&
+    productScopePriorityShortcutIndex < productScopePriorityBucketIndex,
+  "Parent ASIN 首页分诊摘要必须先给扫一眼决策卡，再展示分诊桶，避免用户先读列表。",
+);
 assert(
   productScopePriorityDecisionSummaryRenderIndex < productScopePriorityQueueIndex,
   "Parent ASIN 首页分诊摘要必须先于优先处理清单，先给结论再给列表",
@@ -799,6 +811,7 @@ assertIncludes(stylesSource, ".productScopePriorityDecisionBucket.urgent");
 assertIncludes(stylesSource, ".productScopePriorityDecisionBucket.all");
 assertIncludes(stylesSource, ".productScopePriorityDecisionBucket.active");
 assertIncludes(stylesSource, ".productScopePriorityDecisionBucket:disabled");
+assertIncludes(stylesSource, ".productScopePriorityDecisionShortcuts");
 assertIncludes(stylesSource, ".productScopePriorityQueueEmpty");
 assertIncludes(stylesSource, ".productScopePriorityEvidencePreview");
 assertIncludes(stylesSource, ".productScopePriorityEvidencePreview.ready");

@@ -4045,6 +4045,7 @@ interface ProductScopePriorityDecisionSummary {
   topLabel: string;
   topPriorityLabel: string;
   headline: string;
+  decisionShortcuts: { label: string; value: string; detail: string }[];
   readingStrategy: string;
   rankReason: string;
   scaleText: string;
@@ -4079,6 +4080,28 @@ function buildProductScopePriorityDecisionSummary(items: ProductScopePriorityQue
     topLabel: topItem.label,
     topPriorityLabel: topItem.priorityLabel,
     headline: `${topVerb} ${topItem.label}：${topItem.mainQuestion}`,
+    decisionShortcuts: [
+      {
+        label: "先看谁",
+        value: `${topItem.label} / ${topItem.priorityLabel}`,
+        detail: topItem.mainQuestion,
+      },
+      {
+        label: "为什么",
+        value: topItem.rankReason,
+        detail: "按复盘到期、高优先信号、广告花费和搜索词复核排序，不按 Parent ASIN 数量平铺。",
+      },
+      {
+        label: "打开后看哪层",
+        value: "广告组 -> 投放商品 / 投放词 / 搜索词 / 广告位",
+        detail: topItem.nextManualStep,
+      },
+      {
+        label: "不要做什么",
+        value: "不要逐个打开所有 Parent ASIN 报表",
+        detail: "没有人工确认，不自动加词、否词、调价或暂停广告。",
+      },
+    ],
     readingStrategy:
       remainingCount > 0
         ? `只展开 ${topItem.label} 的诊断链路；其余 ${remainingCount} 个 Parent ASIN 先按分诊桶观察，除非出现到期复盘或高优先信号，不逐个打开完整报表。`
@@ -4170,6 +4193,15 @@ function ProductScopePriorityDecisionSummaryPanel({
       </div>
       <b>{summary.headline}</b>
       <p>{summary.scaleText}</p>
+      <div className="productScopePriorityDecisionShortcuts" aria-label="Parent ASIN 扫一眼决策卡">
+        {summary.decisionShortcuts.map((item) => (
+          <span key={item.label}>
+            <b>{item.label}</b>
+            <strong>{item.value}</strong>
+            <small>{item.detail}</small>
+          </span>
+        ))}
+      </div>
       <div className="productScopePriorityDecisionBuckets" aria-label="Parent ASIN 分诊桶">
         <button
           type="button"
