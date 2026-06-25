@@ -206,11 +206,7 @@ def build_signal_triage_payload(
         if next_unhandled_candidate
         else None
     )
-    diagnosis_contract = (
-        next_unhandled_diagnosis_contract
-        if recommended_manual_status and recommended_manual_status.get("has_manual_action") and next_unhandled_diagnosis_contract
-        else recommended_diagnosis_contract or next_unhandled_diagnosis_contract
-    )
+    diagnosis_contract = recommended_diagnosis_contract or next_unhandled_diagnosis_contract
 
     return {
         "status": actionability_status["status"],

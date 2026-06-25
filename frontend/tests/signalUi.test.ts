@@ -4465,12 +4465,80 @@ const diagnosisPathItems = signalTriageDiagnosisPathItems(signalTriageBusinessEv
 
 assertEqual(
   diagnosisPathItems.map((item) => item.label).join(" / "),
-  "综合判断 / 广告组问题定位 / 投放词结构 / 搜索词市场背景 / 广告位证据缺口 / 上下文边界",
+  "综合判断 / 广告组问题定位 / 投放词结构 / 搜索词市场背景 / 广告位边界 / 对象边界",
 );
 assertEqual(diagnosisPathItems[0].step, 1);
 assertEqual(diagnosisPathItems[5].step, 6);
 assertIncludes(diagnosisPathItems[2].value, "词层分化复核");
 assertIncludes(diagnosisPathItems[5].detail ?? "", "不能自动归因");
+
+const currentApiDiagnosisPathEvidenceSummary = {
+  recommended_evidence_drilldown: {
+    object_label: "beach essentials",
+    business_evidence_blocks: [
+      {
+        block_id: "diagnosis_path",
+        label: "排查路径",
+        value: "搜索词 -> 广告活动 / 广告组 -> 投放词结构 -> 广告 ASIN 人工复核",
+        detail: "不能跳过人工确认直接加词、否词或调价。",
+        source: "business_rule",
+      },
+      {
+        block_id: "search_term_metric_summary",
+        label: "搜索词表现",
+        value: "花费 34.11 / 订单 21 / 销售额 193.20",
+        detail: "指标来自搜索词表现行。",
+        source: "ad_search_term_daily_metrics",
+      },
+      {
+        block_id: "search_term_context",
+        label: "投放上下文",
+        value: "广告活动 2 个 / 广告组 2 个 / 搜索词表现行 2 条",
+        detail: "用于人工定位该搜索词出现在哪些广告活动和广告组。",
+        source: "ad_search_term_daily_metrics",
+      },
+      {
+        block_id: "ad_group_product_performance",
+        label: "同组投放商品表现",
+        value: "同广告组广告 ASIN 3 个",
+        detail: "不能把 SearchTerm 自动归因到单个 ASIN。",
+        source: "advertised_products",
+      },
+      {
+        block_id: "targeting_context",
+        label: "投放词结构",
+        value: "1 个投放词 / 搜索词表现行 2 条",
+        detail: "不代表完整关键词库。",
+        source: "ad_search_term_daily_metrics",
+      },
+      {
+        block_id: "placement_context_gap",
+        label: "广告位证据缺口",
+        value: "缺少可直接配套的广告位上下文",
+        detail: "不能判断广告位是否造成表现差异。",
+        source: "business_rule",
+      },
+      {
+        block_id: "search_term_boundary",
+        label: "对象边界",
+        value: "搜索词是投放证据，不是广告商品本身",
+        detail: "不能自动归因到单个广告 ASIN。",
+        source: "business_rule",
+      },
+    ],
+  },
+};
+const currentApiDiagnosisPathItems = signalTriageDiagnosisPathItems(
+  signalTriageBusinessEvidenceItems(currentApiDiagnosisPathEvidenceSummary, "recommended"),
+);
+
+assertEqual(
+  currentApiDiagnosisPathItems.map((item) => item.label).join(" / "),
+  "综合判断 / 广告组问题定位 / 广告 ASIN 承接 / 投放词结构 / 广告位边界 / 对象边界",
+);
+assertIncludes(currentApiDiagnosisPathItems[1].value, "广告组 2 个");
+assertIncludes(currentApiDiagnosisPathItems[2].detail ?? "", "不能把 SearchTerm 自动归因");
+assertIncludes(currentApiDiagnosisPathItems[5].value, "搜索词是投放证据");
 
 const evidenceDrilldownTextWithBackendSummary = recommendedEvidenceDrilldownText({
   recommended_evidence_drilldown: {

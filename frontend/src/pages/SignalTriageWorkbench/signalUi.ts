@@ -3751,6 +3751,7 @@ const visibleBusinessEvidenceBlockOrder = [
   "placement_context_gap",
   "downstream_context_gap",
   "context_boundary",
+  "search_term_boundary",
   "parent_sibling_position",
 ];
 
@@ -4170,12 +4171,13 @@ export interface SignalTriageDiagnosisPathItem extends SignalTriageBusinessEvide
 type SignalTriageBusinessEvidenceTarget = "active" | "recommended" | "next_unhandled";
 
 const diagnosisPathBlockSlots = [
-  { blockIds: ["diagnosis_judgement"], labels: ["综合判断"] },
-  { blockIds: ["ad_group_problem_location"], labels: ["广告组问题定位"] },
-  { blockIds: ["targeting_context"], labels: ["投放词结构"] },
+  { blockIds: ["diagnosis_judgement", "diagnosis_path", "search_term_metric_summary"], labels: ["综合判断", "排查路径", "搜索词表现"], displayLabel: "综合判断" },
+  { blockIds: ["ad_group_problem_location", "search_term_context"], labels: ["广告组问题定位", "投放上下文"], displayLabel: "广告组问题定位" },
+  { blockIds: ["ad_group_product_performance"], labels: ["同组投放商品表现"], displayLabel: "广告 ASIN 承接" },
+  { blockIds: ["targeting_context"], labels: ["投放词结构"], displayLabel: "投放词结构" },
   { blockIds: ["search_term_market_context", "search_term_aba_context"], labels: ["搜索词市场背景", "ABA市场背景"] },
-  { blockIds: ["placement_context_gap", "downstream_context_gap"], labels: ["广告位证据缺口", "下游证据缺口"] },
-  { blockIds: ["context_boundary"], labels: ["上下文边界"] },
+  { blockIds: ["placement_context_gap", "downstream_context_gap"], labels: ["广告位证据缺口", "下游证据缺口"], displayLabel: "广告位边界" },
+  { blockIds: ["context_boundary", "search_term_boundary"], labels: ["上下文边界", "对象边界"], displayLabel: "对象边界" },
 ];
 
 export function signalTriageBusinessEvidenceItems(
@@ -4198,8 +4200,8 @@ export function signalTriageBusinessEvidenceItems(
   const fallback = blocks.filter((block) => !visibleBusinessEvidenceBlockOrder.includes(block.block_id ?? ""));
   const prioritized = [...ordered, ...fallback];
   const visible = prioritized.slice(0, 6);
-  const contextBoundary = prioritized.find((block) => block.block_id === "context_boundary");
-  if (contextBoundary && !visible.some((block) => block.block_id === "context_boundary")) {
+  const contextBoundary = prioritized.find((block) => block.block_id === "context_boundary" || block.block_id === "search_term_boundary");
+  if (contextBoundary && !visible.some((block) => block.block_id === contextBoundary.block_id)) {
     visible.push(contextBoundary);
   }
   return visible.map((block) => ({
@@ -6279,11 +6281,15 @@ function diagnosisBoundary(summary: SignalTriageSummaryForUi | null | undefined)
 
 export function signalTriageDiagnosisPathItems(items: SignalTriageBusinessEvidenceItem[]): SignalTriageDiagnosisPathItem[] {
   const pathItems = diagnosisPathBlockSlots
-    .map((slot) => items.find((item) => slot.blockIds.includes(item.blockId) || slot.labels.includes(item.label)))
-    .filter((item): item is SignalTriageBusinessEvidenceItem => Boolean(item));
+    .map((slot) => {
+      const item = items.find((evidenceItem) => slot.blockIds.includes(evidenceItem.blockId) || slot.labels.includes(evidenceItem.label));
+      return item ? { item, slot } : null;
+    })
+    .filter((entry): entry is { item: SignalTriageBusinessEvidenceItem; slot: (typeof diagnosisPathBlockSlots)[number] } => Boolean(entry));
 
-  return pathItems.map((item, index) => ({
+  return pathItems.map(({ item, slot }, index) => ({
     ...item,
+    label: slot.displayLabel ?? item.label,
     step: index + 1,
   }));
 }

@@ -2656,6 +2656,7 @@ def test_signal_triage_reports_recommended_manual_status_after_human_action(monk
 def test_signal_triage_points_to_next_unhandled_candidate_when_recommended_is_waiting(monkeypatch) -> None:
     handled = make_candidate()
     handled["signal_id"] = "sig-handled"
+    handled["object_id"] = "B016EXMW02"
     handled["object_label"] = "B016EXMW02"
     handled["asin"] = "B016EXMW02"
     unhandled = make_candidate()
@@ -2845,10 +2846,10 @@ def test_signal_triage_points_to_next_unhandled_candidate_when_recommended_is_wa
     assert payload["next_unhandled_evidence_drilldown"]["object_label"] == "RBK004-RBK004-2 深蓝"
     assert payload["recommended_diagnosis_contract"]["signal_id"] == "sig-handled"
     assert payload["next_unhandled_diagnosis_contract"]["signal_id"] == "sig-unhandled"
-    assert payload["diagnosis_contract"]["signal_id"] == "sig-unhandled"
-    assert payload["diagnosis_contract"]["object_id"] == "B06VW5SQ97"
-    assert payload["diagnosis_contract"]["object_label"] == "RBK004-RBK004-2 深蓝"
-    contract_sections = {section["section_id"]: section for section in payload["diagnosis_contract"]["sections"]}
+    assert payload["diagnosis_contract"]["signal_id"] == "sig-handled"
+    assert payload["diagnosis_contract"]["object_id"] == "B016EXMW02"
+    assert payload["diagnosis_contract"]["object_label"] == "B016EXMW02"
+    contract_sections = {section["section_id"]: section for section in payload["next_unhandled_diagnosis_contract"]["sections"]}
     assert "RBK004-RBK004-2 深蓝" in contract_sections["search_term_opportunity"]["current_judgement"]
     assert "251 单" in contract_sections["search_term_opportunity"]["current_judgement"]
     assert "自动" in contract_sections["search_term_opportunity"]["does_not_prove"]
