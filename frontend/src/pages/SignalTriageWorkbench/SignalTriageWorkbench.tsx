@@ -1161,6 +1161,66 @@ export function SignalTriageWorkbench() {
       ),
     [selectedReviewEffectWindowLedger, selectedReviewRecordSaveGate, selectedReviewTodoDecisionReadback],
   );
+  const selectedReviewRecordSaveDecisionPreview = useMemo(() => {
+    const tone =
+      selectedReviewRecordSaveGate.tone === "ready" || selectedReviewRecordSaveGate.tone === "saved"
+        ? "ready"
+        : "blocked";
+    const saveValue = selectedReviewRecordSaveGate.canSave
+      ? "可人工保存"
+      : selectedReviewRecordSaveGate.tone === "saved"
+        ? "已保存"
+        : "暂不能保存";
+    const evidenceValue = selectedReviewRecordSaveGate.canSave
+      ? `${selectedReviewMetricRows.length} 项指标 / ${selectedReviewRecordPreflightChecklist.length} 项检查`
+      : selectedReviewRecordSaveGate.tone === "saved"
+        ? "已保存记录可回读"
+        : selectedReviewEffectWindowLedger.metricCoverage;
+    const manualStepValue = selectedReviewRecordSaveGate.canSave
+      ? "保存 ReviewRecord"
+      : selectedReviewRecordSaveGate.tone === "saved"
+        ? "进入规则反馈观察"
+        : selectedReviewEffectWindowLedger.nextStep;
+
+    return {
+      title: "复盘保存业务判断",
+      tone,
+      summary: selectedReviewRecordSaveGate.canSave
+        ? "已具备 ready 指标窗口和保存前检查；保存前仍要确认结论只作用于当前复盘对象。"
+        : selectedReviewRecordSaveGate.tone === "saved"
+          ? "已保存匹配复盘记录；后续只能作为人工规则反馈样本，不自动改规则。"
+          : "当前还不能保存复盘结论；先回看缺口，不要用处理后指标反推当时原因。",
+      rows: [
+        {
+          label: "能不能保存",
+          value: saveValue,
+          detail: selectedReviewRecordSaveGate.detail,
+          tone,
+        },
+        {
+          label: "保存依据",
+          value: evidenceValue,
+          detail:
+            selectedReviewRecordSavePath?.boundary ??
+            "必须先有 ReviewTodo 证据快照、ready 复盘效果和保存前检查，才能人工保存 ReviewRecord。",
+          tone,
+        },
+        {
+          label: "下一步人工动作",
+          value: manualStepValue,
+          detail: "这里只允许人工保存复盘记录或继续等待补证，不自动改规则，也不执行广告动作。",
+          tone,
+        },
+      ],
+      boundary: "ReviewRecord 只保存人工复盘结论；它不是自动调价、加词、否词、暂停广告或自动改规则的触发器。",
+    };
+  }, [
+    selectedReviewEffectWindowLedger,
+    selectedReviewMetricRows.length,
+    selectedReviewRecordPreflightChecklist.length,
+    selectedReviewRecordSaveGate,
+    selectedReviewRecordSavePath,
+  ]);
   const selectedManualActionReadbackConsistency = manualActionReadbackConsistencyText(
     latestManualAction,
     selectedReviewTodos,
@@ -3410,6 +3470,26 @@ export function SignalTriageWorkbench() {
                       <small>{selectedReviewTodoPathReadbackPreview.boundary}</small>
                     </section>
                   )}
+                  <section
+                    className={`reviewRecordSaveDecisionPreview ${selectedReviewRecordSaveDecisionPreview.tone}`}
+                    aria-label="复盘保存业务判断"
+                  >
+                    <div>
+                      <strong>{selectedReviewRecordSaveDecisionPreview.title}</strong>
+                      <span>{selectedReviewRecordSaveDecisionPreview.tone === "ready" ? "可进入下一步" : "先补门槛"}</span>
+                    </div>
+                    <p>{selectedReviewRecordSaveDecisionPreview.summary}</p>
+                    <ul>
+                      {selectedReviewRecordSaveDecisionPreview.rows.map((row) => (
+                        <li key={row.label} className={row.tone}>
+                          <span>{row.label}</span>
+                          <b>{row.value}</b>
+                          <p>{row.detail}</p>
+                        </li>
+                      ))}
+                    </ul>
+                    <small>{selectedReviewRecordSaveDecisionPreview.boundary}</small>
+                  </section>
                 </div>
 
                 <details className="reviewFlowStatusDetails" aria-label="复盘完整状态账本">
