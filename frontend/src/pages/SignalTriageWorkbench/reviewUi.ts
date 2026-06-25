@@ -1463,6 +1463,7 @@ export function buildReviewTodoDecisionReadbackSummary(todo: ReviewTodoForUi | n
     isSearchTermTodo ? reviewRecordAdAsinCoverageLabels : reviewRecordAdProductCoverageLabels,
   );
   const adGroupSynthesisText = reviewTodoDecisionSnapshotText(snapshot, reviewRecordAdGroupSynthesisLabels);
+  const adContextRowsText = reviewTodoDecisionSnapshotText(snapshot, reviewRecordAdContextRowsLabels);
   const targetingEvidenceText = reviewTodoDecisionSnapshotText(snapshot, reviewRecordTargetingEvidenceLabels);
   const searchTermBoundaryText = reviewTodoDecisionSnapshotText(snapshot, reviewRecordSearchTermBoundaryLabels);
   const placementBoundaryText = reviewTodoDecisionSnapshotText(snapshot, reviewRecordPlacementBoundaryLabels);
@@ -1470,20 +1471,21 @@ export function buildReviewTodoDecisionReadbackSummary(todo: ReviewTodoForUi | n
     ? Boolean(diagnosisPathText && parentScopeText && adAsinCoverageText && adGroupSynthesisText)
     : Boolean(diagnosisPathText && adGroupSynthesisText);
   const hasEvidenceLayerReadback = isSearchTermTodo
-    ? Boolean(targetingEvidenceText && searchTermBoundaryText && placementBoundaryText)
+    ? Boolean(adContextRowsText && targetingEvidenceText && searchTermBoundaryText && placementBoundaryText)
     : Boolean(adAsinCoverageText || placementBoundaryText);
   const pathDetail = [diagnosisPathText, parentScopeText, adAsinCoverageText].filter(Boolean).join("；");
   const evidenceLayerDetail = isSearchTermTodo
-    ? [targetingEvidenceText, searchTermBoundaryText, placementBoundaryText].filter(Boolean).join("；")
+    ? [adContextRowsText, targetingEvidenceText, searchTermBoundaryText, placementBoundaryText].filter(Boolean).join("；")
     : [adAsinCoverageText, placementBoundaryText].filter(Boolean).join("；");
-  const hasCoreReadback = Boolean(decisionText && nextStepText && boundaryText && hasDecisionPathReadback);
+  const hasCoreEvidenceReadback = isSearchTermTodo ? hasEvidenceLayerReadback : true;
+  const hasCoreReadback = Boolean(decisionText && nextStepText && boundaryText && hasDecisionPathReadback && hasCoreEvidenceReadback);
   const tone: ReviewTodoDecisionReadbackSummary["tone"] = hasCoreReadback ? "ready" : hasSnapshot ? "blocked" : "waiting";
 
   return {
     title: isSearchTermTodo ? "复盘待办业务判断读回" : "复盘待办判断读回",
     tone,
     summary: hasCoreReadback
-      ? "已能第一眼回看当时为什么进入复盘、从哪个 Parent ASIN / 广告对象展开、默认看哪个广告组和动作边界；待办仍只表示排程，未到期不判断效果。"
+      ? "已能第一眼回看当时为什么进入复盘、从哪个 Parent ASIN / 广告对象展开、默认看哪个广告组、逐投放复核顺序和动作边界；待办仍只表示排程，未到期不判断效果。"
       : hasSnapshot
         ? "当前待办有证据快照，但缺少业务判断、原始诊断路径、人工下一步或动作边界；保存 ReviewRecord 前必须回到完整证据核对。"
         : "当前待办没有证据快照；只能看到排程，不能回看当时判断。",
@@ -1504,6 +1506,18 @@ export function buildReviewTodoDecisionReadbackSummary(todo: ReviewTodoForUi | n
           "缺少广告组合流判断，不能知道当时默认聚焦哪个广告组、同组广告 ASIN 或投放上下文。",
         tone: (adGroupSynthesisText ? "ready" : hasSnapshot ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
       },
+      ...(isSearchTermTodo
+        ? [
+            {
+              label: "逐投放复核顺序",
+              value: adContextRowsText ? "已回读" : hasSnapshot ? "缺少逐投放上下文" : "等待证据快照",
+              detail:
+                adContextRowsText ??
+                "缺少逐投放上下文，到期复盘不能知道当时先看哪个广告组、投放词和广告 ASIN 承接顺序。",
+              tone: (adContextRowsText ? "ready" : hasSnapshot ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
+            },
+          ]
+        : []),
       {
         label: "复核证据层",
         value: hasEvidenceLayerReadback ? "已回读" : hasSnapshot ? "缺少证据层" : "等待证据快照",

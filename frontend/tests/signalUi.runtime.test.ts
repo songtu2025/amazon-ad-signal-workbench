@@ -39,6 +39,7 @@ import {
   buildManualActionReadbackPathItems,
   buildReviewEffectWindowLedger,
   buildReviewRecordPreflightChecklist,
+  buildReviewTodoDecisionReadbackSummary,
   buildReviewTodoEvidenceReadbackSummary,
   canSaveReviewRecordWithPreflight,
   manualActionAuthorizationReadinessSummary,
@@ -815,6 +816,13 @@ async function main() {
       },
     ],
   };
+  const reviewTodoDecisionReadback = buildReviewTodoDecisionReadbackSummary(reviewTodoForObjectGate);
+  assert(reviewTodoDecisionReadback?.tone === "ready", "完整 ReviewTodo 默认业务读回必须包含逐投放复核顺序。");
+  const reviewTodoDecisionReadbackText = asText(reviewTodoDecisionReadback);
+  assertIncludes(reviewTodoDecisionReadbackText, "复盘待办业务判断读回");
+  assertIncludes(reviewTodoDecisionReadbackText, "逐投放复核顺序");
+  assertIncludes(reviewTodoDecisionReadbackText, "优先复核");
+  assertIncludes(reviewTodoDecisionReadbackText, "自动加词");
   const reviewTodoEvidenceReadback = buildReviewTodoEvidenceReadbackSummary(reviewTodoForObjectGate);
   assert(reviewTodoEvidenceReadback?.tone === "ready", "完整 ReviewTodo 广告搜索词表现复核链应允许进入到期后只读复盘。");
   const reviewTodoEvidenceReadbackText = asText(reviewTodoEvidenceReadback);
