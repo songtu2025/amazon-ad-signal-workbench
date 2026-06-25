@@ -4799,6 +4799,53 @@ function ProductScopeAdGroupReviewOrderPanel({ row }: { row: ProductScopeAdGroup
   );
 }
 
+function ProductScopeAdGroupDataSummaryPanel({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
+  const items = buildProductScopeAdGroupChecklistItems(row);
+  const priority = buildProductScopeAdGroupReviewPriority(row, items);
+  const focusItem = items.find((item) => priority.focusLayer.includes(item.title)) ?? items[0];
+  const summaryItems = [
+    {
+      label: "问题落点",
+      value: priority.focusLayer,
+      detail: row.problemLocator.problemLocation,
+    },
+    {
+      label: "证据强度",
+      value: row.evidenceSynthesis.statusLabel,
+      detail: focusItem?.proves ?? row.evidenceSynthesis.proves,
+    },
+    {
+      label: "不能证明",
+      value: focusItem?.title ?? "广告组证据边界",
+      detail: focusItem?.doesNotProve ?? row.evidenceSynthesis.doesNotProve,
+    },
+    {
+      label: "人工下一步",
+      value: "只做人工复核",
+      detail: priority.nextStep,
+    },
+  ];
+
+  return (
+    <div className="productScopeAdGroupDataSummary" aria-label="广告组下具体数据四要素摘要">
+      <div>
+        <strong>广告组下具体数据判断</strong>
+        <span>先回答四个问题，再展开投放商品、投放词、搜索词和广告位明细。</span>
+      </div>
+      <div className="productScopeAdGroupDataSummaryItems">
+        {summaryItems.map((item) => (
+          <span key={item.label}>
+            <b>{item.label}</b>
+            <strong>{item.value}</strong>
+            <small>{item.detail}</small>
+          </span>
+        ))}
+      </div>
+      <small>{priority.boundary}</small>
+    </div>
+  );
+}
+
 function ProductScopeAdGroupActionBridgeCard({
   row,
   priorityItem,
@@ -5007,6 +5054,7 @@ function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagno
           <small>{row.problemLocator.nextManualStep}</small>
         </span>
       </div>
+      <ProductScopeAdGroupDataSummaryPanel row={row} />
       <ProductScopeAdGroupReviewOrderPanel row={row} />
       <div className="productScopeAdGroupDiagnosisMetrics" aria-label="当前广告组证据摘要">
         <span>{row.metrics}</span>

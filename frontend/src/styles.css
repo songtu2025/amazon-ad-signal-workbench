@@ -3181,6 +3181,69 @@ h3 {
   line-height: 1.35;
 }
 
+.productScopeAdGroupDataSummary {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #bed8ef;
+  border-radius: 8px;
+  background: #f6fbff;
+  color: #425d78;
+  overflow-wrap: anywhere;
+}
+
+.productScopeAdGroupDataSummary > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.productScopeAdGroupDataSummary > div:first-child strong {
+  color: #132942;
+  font-size: 13px;
+}
+
+.productScopeAdGroupDataSummary > div:first-child span,
+.productScopeAdGroupDataSummary > small {
+  color: #60758c;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.productScopeAdGroupDataSummaryItems {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.productScopeAdGroupDataSummaryItems span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #d7e6f4;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.productScopeAdGroupDataSummaryItems b {
+  color: #254864;
+  font-size: 11px;
+}
+
+.productScopeAdGroupDataSummaryItems strong {
+  color: #132942;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.productScopeAdGroupDataSummaryItems small {
+  color: #4d667d;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .productScopeAdGroupOwnership,
 .productScopeAdGroupAdvertisedProducts,
 .productScopeAdGroupChecklist,
@@ -9223,6 +9286,10 @@ button.reviewTodoQueueNext:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .productScopeAdGroupDataSummaryItems {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .productScopeAdGroupPriorityTriage {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -9350,6 +9417,14 @@ button.reviewTodoQueueNext:focus-visible {
   }
 
   .productScopeAdGroupFocusDecision {
+    grid-template-columns: 1fr;
+  }
+
+  .productScopeAdGroupDataSummary > div:first-child {
+    display: grid;
+  }
+
+  .productScopeAdGroupDataSummaryItems {
     grid-template-columns: 1fr;
   }
 
