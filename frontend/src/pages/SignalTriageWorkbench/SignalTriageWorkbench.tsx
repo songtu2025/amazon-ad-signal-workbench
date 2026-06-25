@@ -4598,6 +4598,32 @@ function ProductScopeSingleScreenCommandCard({
   const searchIntentText = searchIntentSummary
     ? `${searchIntentSummary.topIntentLabel} / ${searchIntentSummary.topDecisionLabel} / ${searchIntentSummary.topSearchTermLabel}`
     : "暂无广告搜索词表现聚合，不能从搜索词层判断扩量或止损。";
+  const singleScreenPathItems = [
+    {
+      label: "1. 经营入口",
+      value: priorityItem ? `${priorityItem.label} / ${priorityItem.priorityLabel}` : "等待 Parent ASIN 排序",
+      detail: priorityItem?.mainQuestion ?? "先锁定有广告证据的 Parent ASIN，不展开全部销售子 ASIN。",
+      tone: priorityItem?.tone ?? "watch",
+    },
+    {
+      label: "2. 广告组定位",
+      value: adGroup ? adGroup.title : "等待广告组证据",
+      detail: adGroup?.problemLocator.problemLocation ?? "广告组是投放容器，缺证据时不能包装成商品问题。",
+      tone: adGroup ? adGroup.statusTone : "blocked",
+    },
+    {
+      label: "3. 搜索词证据",
+      value: searchIntentSummary ? searchIntentSummary.topSearchTermLabel : "等待搜索词聚合",
+      detail: searchIntentSummary?.nextManualStep ?? "搜索词只说明当前广告上下文，不能自动归因到单个广告 ASIN。",
+      tone: searchIntentSummary ? "ready" : "blocked",
+    },
+    {
+      label: "4. 人工动作 / 复盘",
+      value: `${aiGate?.value ?? "等待 AI 准入"} / ${reviewGate?.value ?? "暂无复盘结论"}`,
+      detail: "右侧只允许记录观察、标记已处理、加入复盘或忽略本次；7/14 天窗口到期前不下效果结论。",
+      tone: reviewGate?.tone ?? aiGate?.tone ?? "waiting",
+    },
+  ];
 
   return (
     <section className="productScopeSingleScreenCommandCard" aria-label="Parent ASIN 单屏作战卡">
@@ -4611,6 +4637,15 @@ function ProductScopeSingleScreenCommandCard({
         </button>
       </div>
       <p>{summary.mvpStatus.summary}</p>
+      <ol className="productScopeSingleScreenPath" aria-label="Parent ASIN 单屏诊断路径">
+        {singleScreenPathItems.map((item) => (
+          <li className={item.tone} key={item.label}>
+            <b>{item.label}</b>
+            <strong>{item.value}</strong>
+            <small>{item.detail}</small>
+          </li>
+        ))}
+      </ol>
       <div className="productScopeSingleScreenGrid" aria-label="Parent ASIN 单屏判断">
         <span className={adEvidenceGate?.tone ?? "waiting"}>
           <b>广告证据</b>

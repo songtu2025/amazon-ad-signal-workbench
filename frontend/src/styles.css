@@ -661,6 +661,77 @@ h3 {
   line-height: 1.5;
 }
 
+.productScopeSingleScreenPath {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.productScopeSingleScreenPath li {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  border: 1px solid #d6e2ee;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #f8fbfe;
+}
+
+.productScopeSingleScreenPath li.ready,
+.productScopeSingleScreenPath li.healthy {
+  border-color: #bfdcc9;
+  background: #f6fbf8;
+}
+
+.productScopeSingleScreenPath li.waiting,
+.productScopeSingleScreenPath li.pending,
+.productScopeSingleScreenPath li.watch,
+.productScopeSingleScreenPath li.observe,
+.productScopeSingleScreenPath li.gap {
+  border-color: #dcd4b8;
+  background: #fffdf5;
+}
+
+.productScopeSingleScreenPath li.blocked,
+.productScopeSingleScreenPath li.quiet,
+.productScopeSingleScreenPath li.risk {
+  border-color: #e9c8c0;
+  background: #fff8f6;
+}
+
+.productScopeSingleScreenPath li.review,
+.productScopeSingleScreenPath li.urgent {
+  border-color: #c7d9ef;
+  background: #f7fbff;
+}
+
+.productScopeSingleScreenPath b,
+.productScopeSingleScreenPath strong,
+.productScopeSingleScreenPath small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.productScopeSingleScreenPath b {
+  color: #58708a;
+  font-size: 11px;
+}
+
+.productScopeSingleScreenPath strong {
+  color: #172a42;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.productScopeSingleScreenPath small {
+  color: #607186;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .productScopeSingleScreenGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -10644,6 +10715,7 @@ button.reviewTodoQueueNext:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .productScopeSingleScreenPath,
   .productScopeSingleScreenSearchIntentPath li {
     grid-template-columns: 1fr;
   }
