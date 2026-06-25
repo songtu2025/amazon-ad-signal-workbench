@@ -2295,53 +2295,76 @@ export function SignalTriageWorkbench() {
             {searchIntentReviewCards.length > 0 ? (
               <div className="searchIntentReviewList">
                 {searchIntentReviewCards.map((card) => (
-                  <button
-                    type="button"
+                  <article
                     className={`searchIntentReviewCard ${activeSearchIntentLabel === card.intentLabel ? "active" : ""}`}
                     key={card.title}
-                    onClick={() => handleSelectSearchIntent(card.intentLabel, card.primarySearchTerm)}
-                    aria-pressed={activeSearchIntentLabel === card.intentLabel}
-                    aria-label={`打开 ${card.title} 聚合下的优先 SearchTerm 诊断`}
                   >
-                    <div>
-                      <strong>{card.title}</strong>
-                      <span>广告搜索词表现聚合 / {card.sourceLabel}</span>
-                    </div>
-                    <div className={`searchIntentDecision ${card.operationDecisionTone}`} aria-label="广告搜索词表现运营判断">
-                      <b>{card.operationDecisionLabel}</b>
-                      <small>{card.operationDecisionReason}</small>
-                    </div>
-                    <p>{card.summary}</p>
-                    <small>业务问题：{card.businessQuestion}</small>
-                    <small>{card.currentJudgement}</small>
-                    <small>{card.metricPurpose}</small>
-                    <ul className="searchIntentMetricPurposeList" aria-label="广告搜索词表现指标目的">
-                      {card.metricPurposeItems.map((item) => (
-                        <li className={item.tone} key={item.label}>
-                          <b>{item.label}</b>
-                          <span>{item.value}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <small>{card.adContext}</small>
-                    <small>{card.evidenceGap}</small>
-                    <small>{card.signalMetricBoundary}</small>
-                    <small>{card.purpose}</small>
-                    <small>数据口径：{card.dataGrain}</small>
-                    <small>能证明：{card.proves}</small>
-                    <small>不能证明：{card.doesNotProve}</small>
-                    <small>人工下一步：{card.nextManualStep}</small>
-                    <small>{card.insight}</small>
-                    <small>优先打开：{card.primarySearchTerm ?? "待补齐"}；{card.primarySearchTermReason}</small>
-                    <small>{card.boundary}</small>
-                    {card.topTerms.length > 0 && (
-                      <ul>
-                        {card.topTerms.map((term) => (
-                          <li key={term}>{term}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </button>
+                    <button
+                      type="button"
+                      className="searchIntentReviewCardPrimary"
+                      onClick={() => handleSelectSearchIntent(card.intentLabel, card.primarySearchTerm)}
+                      aria-pressed={activeSearchIntentLabel === card.intentLabel}
+                      aria-label={`打开 ${card.title} 聚合下的优先 SearchTerm 诊断`}
+                    >
+                      <div className="searchIntentReviewCardHeader">
+                        <strong>{card.title}</strong>
+                        <span>广告搜索词表现聚合 / {card.sourceLabel}</span>
+                      </div>
+                      <div className={`searchIntentDecision ${card.operationDecisionTone}`} aria-label="广告搜索词表现运营判断">
+                        <b>{card.operationDecisionLabel}</b>
+                        <small>{card.operationDecisionReason}</small>
+                      </div>
+                      <div className="searchIntentReviewCardSnapshot" aria-label="搜索词复核默认摘要">
+                        <span>
+                          <b>核心指标</b>
+                          <small>{card.summary}</small>
+                        </span>
+                        <span>
+                          <b>优先 SearchTerm</b>
+                          <small>{card.primarySearchTerm ?? "待补齐"}；{card.primarySearchTermReason}</small>
+                        </span>
+                        <span>
+                          <b>人工下一步</b>
+                          <small>{card.nextManualStep}</small>
+                        </span>
+                      </div>
+                    </button>
+                    <details className="searchIntentReviewCardEvidence">
+                      <summary>展开证据与边界</summary>
+                      <div className="searchIntentReviewCardEvidenceBody">
+                        <p>{card.summary}</p>
+                        <small>业务问题：{card.businessQuestion}</small>
+                        <small>{card.currentJudgement}</small>
+                        <small>{card.metricPurpose}</small>
+                        <ul className="searchIntentMetricPurposeList" aria-label="广告搜索词表现指标目的">
+                          {card.metricPurposeItems.map((item) => (
+                            <li className={item.tone} key={item.label}>
+                              <b>{item.label}</b>
+                              <span>{item.value}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <small>{card.adContext}</small>
+                        <small>{card.evidenceGap}</small>
+                        <small>{card.signalMetricBoundary}</small>
+                        <small>{card.purpose}</small>
+                        <small>数据口径：{card.dataGrain}</small>
+                        <small>能证明：{card.proves}</small>
+                        <small>不能证明：{card.doesNotProve}</small>
+                        <small>人工下一步：{card.nextManualStep}</small>
+                        <small>{card.insight}</small>
+                        <small>优先打开：{card.primarySearchTerm ?? "待补齐"}；{card.primarySearchTermReason}</small>
+                        <small>{card.boundary}</small>
+                        {card.topTerms.length > 0 && (
+                          <ul>
+                            {card.topTerms.map((term) => (
+                              <li key={term}>{term}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </details>
+                  </article>
                 ))}
               </div>
             ) : (
