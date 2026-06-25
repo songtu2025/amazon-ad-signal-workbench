@@ -985,6 +985,9 @@ export interface SignalTriageSummary {
         priority_result?: string | null;
         sample_review_record_ids?: string[];
         sample_action_ids?: string[];
+        sample_parent_scopes?: string[];
+        sample_search_terms?: string[];
+        sample_ad_contexts?: string[];
         recommendation?: string | null;
         action_boundary?: {
           result?: string | null;
@@ -992,6 +995,24 @@ export interface SignalTriageSummary {
           forbidden_actions?: string[];
           boundary?: string | null;
         } | null;
+        boundary?: string | null;
+      }[];
+      pending_source_candidates?: {
+        source_type?: string | null;
+        source_id?: string | null;
+        action_type?: string | null;
+        acted_at?: string | null;
+        object_type?: string | null;
+        object_id?: string | null;
+        object_label?: string | null;
+        group_label?: string | null;
+        aba_reference_term?: string | null;
+        aba_period?: string | null;
+        aba_match_boundary?: string | null;
+        sample_parent_scopes?: string[];
+        sample_search_terms?: string[];
+        sample_ad_contexts?: string[];
+        readiness?: string | null;
         boundary?: string | null;
       }[];
       summary?: string | null;

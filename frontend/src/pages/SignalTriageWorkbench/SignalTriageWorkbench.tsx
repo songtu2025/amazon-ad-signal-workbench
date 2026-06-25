@@ -1589,6 +1589,7 @@ export function SignalTriageWorkbench() {
       ruleFeedbackPrioritySummary?.actionBoundary ??
       selectedRuleFeedbackCandidate?.boundary ??
       "规则反馈只进入解释层和人工复核优先级，不自动改规则，不自动执行广告动作。";
+    const pendingSourceDetail = ruleFeedbackPrioritySummary?.pendingSources.join("；") ?? "";
 
     return {
       title: "规则反馈样本来源读回",
@@ -1605,6 +1606,16 @@ export function SignalTriageWorkbench() {
           detail: sourceDetail,
           tone,
         },
+        ...(pendingSourceDetail
+          ? [
+              {
+                label: "待复盘来源",
+                value: "未保存 ReviewRecord 前只读",
+                detail: pendingSourceDetail,
+                tone,
+              },
+            ]
+          : []),
         {
           label: "复核优先级",
           value: ruleFeedbackPrioritySummary?.title ?? selectedRuleImprovementReadiness.title,
@@ -3983,6 +3994,13 @@ export function SignalTriageWorkbench() {
                           <ul className="ruleFeedbackRecordList">
                             {ruleFeedbackPrioritySummary.candidateGroups.map((group) => (
                               <li key={group}>{group}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {ruleFeedbackPrioritySummary.pendingSources.length > 0 && (
+                          <ul className="ruleFeedbackRecordList" aria-label="待复盘来源">
+                            {ruleFeedbackPrioritySummary.pendingSources.map((source) => (
+                              <li key={source}>{source}</li>
                             ))}
                           </ul>
                         )}

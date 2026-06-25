@@ -479,6 +479,25 @@ export interface RuleFeedbackCandidateGroupForUi {
   boundary?: string | null;
 }
 
+export interface RuleFeedbackPendingSourceForUi {
+  source_type?: string | null;
+  source_id?: string | null;
+  action_type?: string | null;
+  acted_at?: string | null;
+  object_type?: string | null;
+  object_id?: string | null;
+  object_label?: string | null;
+  group_label?: string | null;
+  aba_reference_term?: string | null;
+  aba_period?: string | null;
+  aba_match_boundary?: string | null;
+  sample_parent_scopes?: string[];
+  sample_search_terms?: string[];
+  sample_ad_contexts?: string[];
+  readiness?: string | null;
+  boundary?: string | null;
+}
+
 export interface RuleFeedbackDiagnosisPathForUi {
   path?: string | null;
   steps?: {
@@ -1112,6 +1131,7 @@ export interface SignalTriageSummaryForUi {
       closure_checklist?: RuleFeedbackClosureCheckForUi[];
       records?: RuleFeedbackRecordForUi[];
       candidate_groups?: RuleFeedbackCandidateGroupForUi[];
+      pending_source_candidates?: RuleFeedbackPendingSourceForUi[];
       summary?: string | null;
       rule_feedback?: string | null;
     };
@@ -1313,6 +1333,7 @@ export interface RuleFeedbackPrioritySummary {
   closureChecklist: string[];
   records: string[];
   candidateGroups: string[];
+  pendingSources: string[];
   boundary: string;
 }
 
@@ -3499,6 +3520,7 @@ export function buildRuleFeedbackPrioritySummary(summary: SignalTriageSummaryFor
   const bySignalType = feedback.by_signal_type ?? {};
   const signalTypeText = formatOrderedCounts(bySignalType, ["opportunity", "anomaly", "unknown"]) || "信号类型维度待补齐";
   const byResult = feedback.by_result ?? {};
+  const pendingSources = (feedback.pending_source_candidates ?? []).slice(0, 5).map(ruleFeedbackPendingSourceText);
   if (savedRecordCount <= 0) {
     const readyReviewCount = summary?.review_status?.ready_count ?? 0;
     const actionBoundary =
@@ -3514,6 +3536,7 @@ export function buildRuleFeedbackPrioritySummary(summary: SignalTriageSummaryFor
       closureChecklist,
       records: [],
       candidateGroups: [],
+      pendingSources,
       boundary: "没有已保存 ReviewRecord 时，该区域只是门槛检查，不代表已有规则反馈样本池，不代表当前选中信号已 ready。",
     };
   }
@@ -3528,6 +3551,7 @@ export function buildRuleFeedbackPrioritySummary(summary: SignalTriageSummaryFor
     closureChecklist,
     records: (feedback.records ?? []).slice(0, 5).map(ruleFeedbackRecordText),
     candidateGroups: (feedback.candidate_groups ?? []).slice(0, 5).map(ruleFeedbackCandidateGroupText),
+    pendingSources,
     boundary: "该样本池只进入解释层和人工复核优先级，不代表当前选中信号已 ready，不自动改规则，不自动执行广告动作。",
   };
 }
@@ -3647,6 +3671,27 @@ function ruleFeedbackCandidateGroupSampleText(label: string, values?: string[]) 
     .slice(0, 3)
     .join(" / ");
   return text ? `；${label}：${text}` : "";
+}
+
+function ruleFeedbackPendingSourceText(source: RuleFeedbackPendingSourceForUi) {
+  const label = source.group_label || source.object_label || source.source_id || "待复盘来源待补充";
+  const objectText = source.object_label ? ` / 对象：${source.object_label}` : "";
+  const actionText = source.action_type ? ` / 人工动作：${source.action_type}` : "";
+  const parentScopeText = ruleFeedbackCandidateGroupSampleText("Parent ASIN来源", source.sample_parent_scopes);
+  const searchTermText = ruleFeedbackCandidateGroupSampleText("SearchTerm样本", source.sample_search_terms);
+  const adContextText = ruleFeedbackCandidateGroupSampleText("逐投放来源", source.sample_ad_contexts);
+  const abaText = source.aba_reference_term
+    ? `；ABA 站点级参考：${source.aba_reference_term}${source.aba_period ? ` / ${source.aba_period}` : ""}`
+    : "";
+  const abaBoundary = source.aba_match_boundary
+    ? `；ABA边界：${source.aba_match_boundary}`
+    : source.aba_reference_term
+      ? "；ABA边界：ABA 只作为站点级市场背景，不能当作店铺、广告组、商品或搜索词归因证据。"
+      : "";
+  const boundary =
+    source.boundary ||
+    "该来源只说明待复盘人工留痕；未保存 ReviewRecord 前不形成规则反馈候选，不自动改规则，不自动执行广告动作。";
+  return `待复盘来源：${label}${objectText}${actionText}${parentScopeText}${searchTermText}${adContextText}${abaText}${abaBoundary}；${boundary}`;
 }
 
 function ruleFeedbackActionBoundaryText(boundaries: Record<string, RuleFeedbackActionBoundaryForUi> | null | undefined) {

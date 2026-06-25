@@ -3714,10 +3714,33 @@ def test_review_readiness_shows_manual_action_context_coverage_without_saved_rev
                 id="manual-action-beach",
                 signal_id="sig-search-term",
                 action_type="add_to_review",
+                acted_at="2026-06-23T19:54:26+00:00",
+                evidence_snapshot=[
+                    SimpleNamespace(label="Parent ASIN入口", value="Parent ASIN B00K4W4AAA 下只复核有广告数据的搜索词表现。"),
+                    SimpleNamespace(label="语义组", value="规则语义：海滩出行用品"),
+                    SimpleNamespace(label="搜索词", value="beach essentials"),
+                    SimpleNamespace(label="逐投放上下文", value="广告组 RBK004-beach essentials-精准 / 投放词 beach essentials"),
+                    SimpleNamespace(label="ABA语义参考词", value="beach essentials"),
+                    SimpleNamespace(label="ABA周期", value="2026-05-10 到 2026-05-16"),
+                    SimpleNamespace(label="ABA匹配边界", value="ABA 是站点级，只按站点 + 周期 + 搜索词匹配。"),
+                ],
+                object_type="search_term",
+                object_id="search_term:1:beach essentials",
+                object_label="beach essentials",
+            ),
+            SimpleNamespace(
+                id="manual-action-beach-old",
+                signal_id="sig-search-term",
+                action_type="add_to_review",
+                acted_at="2026-06-23T19:52:18+00:00",
                 evidence_snapshot=[
                     SimpleNamespace(label="语义组", value="规则语义：海滩出行用品"),
-                    SimpleNamespace(label="ABA语义参考词", value="beach essentials"),
+                    SimpleNamespace(label="搜索词", value="beach essentials"),
+                    SimpleNamespace(label="逐投放上下文", value="旧广告组 / 投放词 beach essentials"),
                 ],
+                object_type="search_term",
+                object_id="search_term:1:beach essentials",
+                object_label="beach essentials",
             ),
         ],
     )
@@ -3742,17 +3765,28 @@ def test_review_readiness_shows_manual_action_context_coverage_without_saved_rev
 
     feedback = payload["review_feedback"]
     assert feedback["total"] == 0
+    assert feedback["candidate_groups"] == []
+    assert len(feedback["pending_source_candidates"]) == 1
+    assert feedback["pending_source_candidates"][0]["source_type"] == "manual_action"
+    assert feedback["pending_source_candidates"][0]["source_id"] == "manual-action-beach"
+    assert feedback["pending_source_candidates"][0]["object_label"] == "beach essentials"
+    assert feedback["pending_source_candidates"][0]["group_label"] == "规则语义：海滩出行用品"
+    assert feedback["pending_source_candidates"][0]["sample_parent_scopes"] == ["Parent ASIN B00K4W4AAA 下只复核有广告数据的搜索词表现。"]
+    assert feedback["pending_source_candidates"][0]["sample_search_terms"] == ["beach essentials"]
+    assert feedback["pending_source_candidates"][0]["sample_ad_contexts"] == ["广告组 RBK004-beach essentials-精准 / 投放词 beach essentials"]
+    assert feedback["pending_source_candidates"][0]["aba_reference_term"] == "beach essentials"
+    assert "未保存 ReviewRecord 前不形成规则反馈候选" in feedback["pending_source_candidates"][0]["boundary"]
     assert feedback["manual_action_context_coverage"] == {
-        "total": 2,
-        "with_evidence_snapshot": 1,
-        "with_search_intent": 1,
+        "total": 3,
+        "with_evidence_snapshot": 2,
+        "with_search_intent": 2,
         "with_aba_reference": 1,
     }
     checklist = {item["check_id"]: item for item in feedback["closure_checklist"]}
     assert checklist["manual_action_context"]["status"] == "partial"
-    assert "人工动作 2 条" in checklist["manual_action_context"]["evidence"]
-    assert "证据快照 1 条" in checklist["manual_action_context"]["evidence"]
-    assert "Parent ASIN 广告搜索词表现复核 1 条" in checklist["manual_action_context"]["evidence"]
+    assert "人工动作 3 条" in checklist["manual_action_context"]["evidence"]
+    assert "证据快照 2 条" in checklist["manual_action_context"]["evidence"]
+    assert "Parent ASIN 广告搜索词表现复核 2 条" in checklist["manual_action_context"]["evidence"]
     assert "ABA 站点级参考 1 条" in checklist["manual_action_context"]["evidence"]
 
 

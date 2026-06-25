@@ -5457,6 +5457,7 @@ def _review_feedback_summary(
     records = _review_feedback_record_items(review_records, signal_type_by_id, signal_by_id)
     candidate_groups = _review_feedback_candidate_groups(review_records, manual_action_by_id)
     manual_action_context_coverage = _manual_action_context_coverage(manual_actions or [])
+    pending_source_candidates = _pending_rule_feedback_source_candidates(manual_actions or [])
     if total == 0:
         return {
             "total": 0,
@@ -5467,6 +5468,7 @@ def _review_feedback_summary(
             "closure_checklist": _review_closure_checklist({}, [], manual_action_context_coverage),
             "records": [],
             "candidate_groups": [],
+            "pending_source_candidates": pending_source_candidates,
             "manual_action_context_coverage": manual_action_context_coverage,
             "summary": "暂无已保存复盘记录。",
             "rule_feedback": "暂无复盘结果：保留当前信号解释口径，不调整规则。",
@@ -5484,6 +5486,7 @@ def _review_feedback_summary(
         "closure_checklist": _review_closure_checklist(by_result, records, manual_action_context_coverage),
         "records": records,
         "candidate_groups": candidate_groups,
+        "pending_source_candidates": pending_source_candidates,
         "manual_action_context_coverage": manual_action_context_coverage,
         "summary": f"已保存 {total} 条复盘记录：{result_text}；信号类型：{signal_type_text}。",
         "rule_feedback": f"{feedback_text}；该反馈只进入解释层，不自动调整广告动作或规则。",
@@ -5613,6 +5616,67 @@ def _review_feedback_candidate_groups(
             str(group.get("group_label") or ""),
         ),
     )[:limit]
+
+
+def _pending_rule_feedback_source_candidates(manual_actions: list[Any], limit: int = 5) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+    for action in manual_actions:
+        action_type = str(_value(_get(action, "action_type")) or "").strip()
+        if action_type not in {"observe", "handled", "add_to_review"}:
+            continue
+        search_intent_label = next(
+            (value for label in SEARCH_INTENT_CONTEXT_LABELS if (value := _evidence_snapshot_value(action, label))),
+            None,
+        )
+        aba_reference_term = _evidence_snapshot_value(action, "ABA语义参考词")
+        if not (search_intent_label or aba_reference_term):
+            continue
+        sample_parent_scopes: list[str] = []
+        sample_search_terms: list[str] = []
+        sample_ad_contexts: list[str] = []
+        _append_evidence_snapshot_values(sample_parent_scopes, [action], ("Parent ASIN入口", "Parent ASIN 入口"))
+        object_type = str(_value(_get(action, "object_type")) or "").strip()
+        if object_type == "search_term":
+            _append_unique(
+                sample_search_terms,
+                str(_value(_get(action, "object_label")) or _value(_get(action, "object_id")) or "").strip(),
+            )
+        _append_evidence_snapshot_values(sample_search_terms, [action], ("搜索词",))
+        _append_evidence_snapshot_values(sample_ad_contexts, [action], ("逐投放上下文",))
+        candidates.append(
+            {
+                "source_type": "manual_action",
+                "source_id": str(_value(_get(action, "id")) or "").strip(),
+                "action_type": action_type,
+                "acted_at": str(_value(_get(action, "acted_at")) or "").strip(),
+                "object_type": object_type,
+                "object_id": str(_value(_get(action, "object_id")) or "").strip(),
+                "object_label": str(_value(_get(action, "object_label")) or "").strip(),
+                "group_label": search_intent_label or aba_reference_term,
+                "aba_reference_term": aba_reference_term,
+                "aba_period": _evidence_snapshot_value(action, "ABA周期"),
+                "aba_match_boundary": _evidence_snapshot_value(action, "ABA匹配边界"),
+                "sample_parent_scopes": sample_parent_scopes,
+                "sample_search_terms": sample_search_terms,
+                "sample_ad_contexts": sample_ad_contexts,
+                "readiness": "waiting_review_record",
+                "boundary": "该来源只说明待复盘人工留痕；未保存 ReviewRecord 前不形成规则反馈候选，不自动改规则，不自动执行广告动作。",
+            }
+        )
+    deduped: list[dict[str, Any]] = []
+    seen_keys: set[tuple[str, str]] = set()
+    for candidate in sorted(candidates, key=lambda item: str(item.get("acted_at") or ""), reverse=True):
+        key = (
+            str(candidate.get("object_id") or candidate.get("object_label") or ""),
+            str(candidate.get("group_label") or ""),
+        )
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        deduped.append(candidate)
+        if len(deduped) >= limit:
+            break
+    return deduped
 
 
 def _manual_action_evidence_value(action: Any, label: str) -> str | None:

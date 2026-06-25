@@ -3251,6 +3251,24 @@ const triageWithoutSavedReviewFeedback = {
         { check_id: "evidence_trace", label: "证据追溯", status: "blocked", evidence: "0 / 0 条样本带证据上下文" },
         { check_id: "action_boundary", label: "动作边界", status: "ready", evidence: "只允许人工复核；不自动改规则，不自动执行广告动作" },
       ],
+      pending_source_candidates: [
+        {
+          source_type: "manual_action",
+          source_id: "manual-action-beach",
+          action_type: "add_to_review",
+          object_type: "search_term",
+          object_id: "search_term:1:beach essentials",
+          object_label: "beach essentials",
+          group_label: "规则语义：海滩出行用品",
+          aba_reference_term: "beach essentials",
+          aba_period: "2026-05-10 到 2026-05-16",
+          aba_match_boundary: "ABA 是站点级，只按站点 + 周期 + 搜索词匹配，不能当作店铺数据或广告归因。",
+          sample_parent_scopes: ["Parent ASIN B00K4W4AAA 下只复核有广告数据的搜索词表现。"],
+          sample_search_terms: ["beach essentials"],
+          sample_ad_contexts: ["广告组 RBK004-beach essentials-精准 / 投放词 beach essentials"],
+          boundary: "该来源只说明待复盘人工留痕；未保存 ReviewRecord 前不形成规则反馈候选，不自动改规则，不自动执行广告动作。",
+        },
+      ],
       summary: "暂无已保存复盘记录。",
       rule_feedback: "暂无复盘结果：保留当前信号解释口径，不调整规则。",
     },
@@ -3275,6 +3293,12 @@ assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[3] ?? "", "�
 assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[3] ?? "", "0 / 0 条样本带证据上下文");
 assertEqual(blockedRuleFeedbackPrioritySummary?.records.length, 0);
 assertEqual(blockedRuleFeedbackPrioritySummary?.candidateGroups.length, 0);
+assertEqual(blockedRuleFeedbackPrioritySummary?.pendingSources.length, 1);
+assertIncludes(blockedRuleFeedbackPrioritySummary?.pendingSources[0] ?? "", "待复盘来源：规则语义：海滩出行用品");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.pendingSources[0] ?? "", "Parent ASIN来源：Parent ASIN B00K4W4AAA");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.pendingSources[0] ?? "", "SearchTerm样本：beach essentials");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.pendingSources[0] ?? "", "逐投放来源：广告组 RBK004-beach essentials-精准");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.pendingSources[0] ?? "", "未保存 ReviewRecord 前不形成规则反馈候选");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.boundary ?? "", "门槛检查");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.boundary ?? "", "不代表已有规则反馈样本池");
 
