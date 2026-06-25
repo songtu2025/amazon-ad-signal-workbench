@@ -2134,6 +2134,11 @@ assertIncludes(adGroupDiagnosisRows[0].actionableReview.manualGate, "只做诊�
 assertIncludes(adGroupDiagnosisRows[0].boundary, "不能自动归因");
 assertIncludes(adGroupDiagnosisRows[0].forbiddenActions.join(" / "), "自动调价");
 assertIncludes(adGroupDiagnosisRows[0].placementDecision.businessQuestion, "流量位置问题");
+assertEqual(adGroupDiagnosisRows[0].placementDecision.status.label, "只有活动背景");
+assertEqual(adGroupDiagnosisRows[0].placementDecision.status.tone, "observe");
+assertIncludes(adGroupDiagnosisRows[0].placementDecision.status.reason, "广告位样本 4 条");
+assertIncludes(adGroupDiagnosisRows[0].placementDecision.status.reason, "缺少当前广告组级广告位样本");
+assertIncludes(adGroupDiagnosisRows[0].placementDecision.status.nextStep, "不做广告位结论");
 assertIncludes(adGroupDiagnosisRows[0].placementDecision.currentJudgement, "广告组级广告位 0 条");
 assertIncludes(adGroupDiagnosisRows[0].placementDecision.currentJudgement, "活动级广告位 4 条");
 assertIncludes(adGroupDiagnosisRows[0].placementDecision.evidenceLevel, "只有广告活动级广告位背景");

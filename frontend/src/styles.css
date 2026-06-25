@@ -3344,6 +3344,46 @@ h3 {
   background: #f7fbf8;
 }
 
+.productScopePlacementEvidenceStatus {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid #d7e6f4;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.76);
+  color: #425d78;
+}
+
+.productScopePlacementEvidenceStatus strong {
+  color: #1f3047;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
+.productScopePlacementEvidenceStatus span,
+.productScopePlacementEvidenceStatus small {
+  color: #536a82;
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.productScopePlacementEvidenceStatus.healthy {
+  border-color: #bddcc9;
+  background: #f7fbf8;
+}
+
+.productScopePlacementEvidenceStatus.observe {
+  border-color: #cddced;
+  background: #f8fbff;
+}
+
+.productScopePlacementEvidenceStatus.gap {
+  border-color: #e1d6b8;
+  background: #fffaf0;
+}
+
 .productScopeAdGroupDiagnosisMetrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

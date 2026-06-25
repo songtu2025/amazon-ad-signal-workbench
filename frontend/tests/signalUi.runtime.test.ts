@@ -261,6 +261,13 @@ async function main() {
   const productScopeEvidenceMatrix = buildProductScopeEvidenceMatrix(selectedProductScopeOption, triage);
   const productScopeEvidenceRouteGuide = productScopeEvidenceMatrix ? buildProductScopeEvidenceRouteGuide(productScopeEvidenceMatrix) : null;
   const adGroupDiagnosisRows = productScopeAdGroupDiagnosisRows(triage);
+  assert(adGroupDiagnosisRows.length > 0, "Parent ASIN 运行态必须生成广告组诊断行。");
+  for (const row of adGroupDiagnosisRows) {
+    assert(row.placementDecision.status.label.length > 0, "每个广告组诊断行必须默认给出广告位证据状态。");
+    assert(row.placementDecision.status.reason.length > 0, "每个广告组诊断行必须说明广告位证据状态原因。");
+    assertIncludes(row.placementDecision.status.nextStep, "人工");
+    assertNotIncludes(row.placementDecision.status.nextStep, "自动");
+  }
   const productScopeDiagnosisBrief = buildProductScopeDiagnosisBrief(
     firstScreenSummary,
     productScopeEvidenceRouteGuide,

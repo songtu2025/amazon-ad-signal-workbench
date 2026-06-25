@@ -218,6 +218,7 @@ import {
   ProductScopeEvidenceMatrix,
   ProductScopeEvidenceRouteGuide,
   ProductScopeFirstScreenSummary,
+  ProductScopePlacementEvidenceDecision,
   NoActionableManualGate,
   ProductScopeCandidateGapExplanation,
   DiagnosisContextSummary,
@@ -315,6 +316,22 @@ function manualActionPreviewObjectLabel(preview: RecommendedManualActionPreview)
 
 function manualActionPreviewObjectTypeLabel(preview: RecommendedManualActionPreview) {
   return objectTypeLabel[preview.objectType] ?? preview.objectType ?? "复盘对象";
+}
+
+function ProductScopePlacementEvidenceStatusCard({
+  decision,
+  ariaLabel,
+}: {
+  decision: ProductScopePlacementEvidenceDecision;
+  ariaLabel: string;
+}) {
+  return (
+    <div className={`productScopePlacementEvidenceStatus ${decision.status.tone}`} aria-label={ariaLabel}>
+      <strong>{decision.status.label}</strong>
+      <span>{decision.status.reason}</span>
+      <small>下一步：{decision.status.nextStep}</small>
+    </div>
+  );
 }
 
 function ManualActionPreviewStrip({ preview, ariaLabel }: { preview: RecommendedManualActionPreview; ariaLabel: string }) {
@@ -5138,6 +5155,10 @@ function ProductScopeAdGroupDiagnosisPanel({
             <span>{priorityRow.diagnosisStatus.reason}</span>
             <small>下一步：{priorityRow.diagnosisStatus.nextStep}</small>
           </div>
+          <ProductScopePlacementEvidenceStatusCard
+            decision={priorityRow.placementDecision}
+            ariaLabel="优先广告组广告位证据状态"
+          />
           <div className="productScopeAdGroupPriorityTriage" aria-label="优先广告组三段判断">
             <span>
               <b>问题类型</b>
@@ -5196,6 +5217,10 @@ function ProductScopeAdGroupDiagnosisPanel({
                 <span>{row.diagnosisStatus.reason}</span>
                 <small>下一步：{row.diagnosisStatus.nextStep}</small>
               </div>
+              <ProductScopePlacementEvidenceStatusCard
+                decision={row.placementDecision}
+                ariaLabel="广告组广告位证据状态"
+              />
               <div className="productScopeAdGroupDiagnosisDecision" aria-label="广告组业务判断">
                 <span>
                   <b>问题类型</b>
@@ -5949,6 +5974,10 @@ function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagno
         <span>{row.diagnosisStatus.reason}</span>
         <small>下一步：{row.diagnosisStatus.nextStep}</small>
       </div>
+      <ProductScopePlacementEvidenceStatusCard
+        decision={row.placementDecision}
+        ariaLabel="当前广告组广告位证据状态"
+      />
       <div className="productScopeAdGroupFocusDecision" aria-label="当前广告组三段复核判断">
         <span>
           <b>问题落点</b>
@@ -5977,6 +6006,10 @@ function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagno
       {row.searchTermDiagnosis && <ProductScopeSearchTermDiagnosisPanel rowId={row.id} diagnosis={row.searchTermDiagnosis} />}
       <div className="productScopePlacementEvidenceDecision" aria-label="广告位证据判断">
         <strong>{row.placementDecision.title}</strong>
+        <ProductScopePlacementEvidenceStatusCard
+          decision={row.placementDecision}
+          ariaLabel="广告位证据闭环状态"
+        />
         <p>{row.placementDecision.businessQuestion}</p>
         <ul>
           <li>

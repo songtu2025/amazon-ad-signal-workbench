@@ -4098,6 +4098,7 @@ export interface ProductScopeAdGroupEvidenceSynthesis {
 
 export interface ProductScopePlacementEvidenceDecision {
   title: string;
+  status: ProductScopePlacementEvidenceStatus;
   businessQuestion: string;
   currentJudgement: string;
   evidenceLevel: string;
@@ -4105,6 +4106,13 @@ export interface ProductScopePlacementEvidenceDecision {
   doesNotProve: string;
   evidenceGap: string;
   nextManualStep: string;
+}
+
+export interface ProductScopePlacementEvidenceStatus {
+  label: string;
+  tone: "healthy" | "observe" | "gap";
+  reason: string;
+  nextStep: string;
 }
 
 export interface ManualActionCandidateAdGroupBridge {
@@ -5659,12 +5667,26 @@ function productScopePlacementEvidenceDecision(
   const campaignPlacementCount = row.campaign_placement_count ?? 0;
   const searchTermCount = row.search_term_count ?? 0;
   const adAsinCount = row.ad_group_advertised_asin_count ?? row.current_scope_advertised_asin_count ?? 0;
+  let status: ProductScopePlacementEvidenceStatus = {
+    label: "广告位缺口",
+    tone: "gap",
+    reason: "当前没有广告组级或活动级广告位样本，不能判断流量位置是否影响转化或 ACOS。",
+    nextStep: "先补齐 ad_placement_daily_metrics，再把广告位纳入人工复核。",
+  };
   let evidenceLevel = "广告位证据缺口：当前没有广告组级或活动级广告位样本。";
   let proves = "能证明当前广告组诊断缺少广告位维度，暂时不能判断流量位置是否影响转化或 ACOS。";
   let evidenceGap = "需要补齐 ad_placement_daily_metrics 中 campaign_id + ad_group_id 级别的广告位表现。";
   let nextManualStep = "先按广告 ASIN、投放词和搜索词只读复核；补齐广告位数据前，不判断广告位影响，也不写自动广告动作。";
 
   if (placementCount > 0) {
+    status = {
+      label: "广告位可复核",
+      tone: "healthy",
+      reason: `当前广告组有广告位样本 ${placementCount} 条，可以和搜索词、广告 ASIN 一起人工复核流量位置。`,
+      nextStep: canWriteManualAction
+        ? "对照广告位、有效词、无订单花费词和广告 ASIN 承接后，只在右侧人工记录观察或加入复盘。"
+        : "先只读对照广告位、有效词、无订单花费词和广告 ASIN 承接；未满足门禁前不写人工动作。",
+    };
     evidenceLevel = "广告组级广告位证据可用：可以和同广告组搜索词、广告 ASIN 一起人工复核流量位置。";
     proves = "能证明该广告组存在广告位上下文，可用于人工比较不同流量位置的花费、订单、ACOS 或 CVR。";
     evidenceGap = "仍缺少搜索词到广告位的直接链路，不能判断某个搜索词或单个 ASIN 一定由该广告位造成。";
@@ -5672,6 +5694,12 @@ function productScopePlacementEvidenceDecision(
       ? "先对照广告位、有效词、无订单花费词和广告 ASIN 承接，再在右侧人工记录观察或加入复盘。"
       : "先只读对照广告位、有效词、无订单花费词和广告 ASIN 承接；未满足门禁前不写人工动作。";
   } else if (campaignPlacementCount > 0) {
+    status = {
+      label: "只有活动背景",
+      tone: "observe",
+      reason: `同广告活动有广告位样本 ${campaignPlacementCount} 条，但缺少当前广告组级广告位样本。`,
+      nextStep: "先补广告组级广告位证据；当前只用广告 ASIN、投放词和搜索词人工复核，不做广告位结论。",
+    };
     evidenceLevel = "只有广告活动级广告位背景：可以说明活动层有广告位数据，但不能替代广告组级判断。";
     proves = "能证明同广告活动存在广告位背景，可提示补齐广告组级广告位证据。";
     evidenceGap = "缺少当前广告组级广告位样本，不能判断广告位是否造成该广告组、搜索词或广告 ASIN 的表现。";
@@ -5680,6 +5708,7 @@ function productScopePlacementEvidenceDecision(
 
   return {
     title: `广告位证据判断：${groupName}`,
+    status,
     businessQuestion: "当前广告位数据能否解释流量位置问题，还是只是证据缺口？",
     currentJudgement: `广告组级广告位 ${placementCount} 条 / 活动级广告位 ${campaignPlacementCount} 条 / 搜索词 ${searchTermCount} 条 / 广告 ASIN ${adAsinCount} 个。`,
     evidenceLevel,
