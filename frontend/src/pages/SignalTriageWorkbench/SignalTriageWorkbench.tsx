@@ -1540,6 +1540,14 @@ export function SignalTriageWorkbench() {
       selectedRuleFeedbackCandidate?.basis ??
       ruleFeedbackPrioritySummary?.basis ??
       selectedRuleImprovementReadiness.description;
+    const firstPendingSource = ruleFeedbackPrioritySummary?.pendingSources[0] ?? "";
+    const pendingSourceCount = ruleFeedbackPrioritySummary?.pendingSources.length ?? 0;
+    const feedbackBasisLabel = !latestReviewRecord && firstPendingSource ? "待复盘来源" : "反馈依据是什么";
+    const feedbackBasisValue =
+      !latestReviewRecord && firstPendingSource
+        ? `${pendingSourceCount} 条待复盘来源`
+        : selectedRuleFeedbackCandidate?.title ?? ruleFeedbackPrioritySummary?.title ?? "等待复盘样本";
+    const feedbackBasisDetail = !latestReviewRecord && firstPendingSource ? firstPendingSource : feedbackBasis;
     const feedbackBoundary =
       selectedRuleFeedbackCandidate?.boundary ??
       ruleFeedbackPrioritySummary?.actionBoundary ??
@@ -1556,9 +1564,9 @@ export function SignalTriageWorkbench() {
         detail: selectedRuleImprovementReadiness.description,
       },
       {
-        label: "反馈依据是什么",
-        value: selectedRuleFeedbackCandidate?.title ?? ruleFeedbackPrioritySummary?.title ?? "等待复盘样本",
-        detail: feedbackBasis,
+        label: feedbackBasisLabel,
+        value: feedbackBasisValue,
+        detail: feedbackBasisDetail,
       },
       {
         label: "下一步人工动作",
