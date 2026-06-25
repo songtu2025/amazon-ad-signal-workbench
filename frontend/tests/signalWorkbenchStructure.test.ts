@@ -170,6 +170,8 @@ assertIncludes(workbenchSource, "problemLocationText.includes(\"搜索词\")");
 assertIncludes(workbenchSource, "problemLocationText.includes(\"广告位\")");
 assertIncludes(workbenchSource, "本次优先证据层不能替代四层完整复核");
 assertIncludes(workbenchSource, "先按顺序复核");
+assertIncludes(workbenchSource, 'className="productScopeAdGroupReviewOrderDetails"');
+assertIncludes(workbenchSource, "展开四层复核步骤");
 assertIncludes(workbenchSource, "这只是人工复核路径，不证明搜索词或广告位已归因到单个广告 ASIN");
 assertIncludes(workbenchSource, "先按中间检查清单复核，再选择右侧人工动作");
 assertIncludes(workbenchSource, "复盘待办会按同一组证据回读");
@@ -411,6 +413,10 @@ const adGroupFocusDecisionIndex = workbenchSource.indexOf(
 const adGroupReviewOrderFunctionIndex = workbenchSource.indexOf("function ProductScopeAdGroupReviewOrderPanel");
 const adGroupReviewPriorityIndex = workbenchSource.indexOf('aria-label="当前广告组优先查看证据层"', adGroupReviewOrderFunctionIndex);
 const adGroupReviewPathIndex = workbenchSource.indexOf("先按顺序复核", adGroupReviewOrderFunctionIndex);
+const adGroupReviewDetailsIndex = workbenchSource.indexOf(
+  'className="productScopeAdGroupReviewOrderDetails"',
+  adGroupReviewOrderFunctionIndex,
+);
 assert(adGroupFocusDecisionIndex < adGroupReviewOrderIndex, "当前广告组复核路径必须先给问题落点、证据缺口和人工下一步");
 assert(adGroupFocusDecisionIndex < adGroupDataSummaryIndex, "当前广告组复核路径必须先给三段复核判断，再给广告组下具体数据摘要");
 assert(adGroupDataSummaryIndex < adGroupReviewOrderIndex, "广告组下具体数据摘要必须先于复核顺序，避免用户直接进入明细清单");
@@ -421,6 +427,7 @@ assert(adGroupDataSummaryIndex < focusMetricsIndex, "广告组下具体数据摘
 assert(adGroupDataSummaryIndex < adGroupChecklistIndex, "广告组下具体数据摘要必须先于完整运营检查清单");
 assert(adGroupReviewPriorityIndex > adGroupReviewOrderFunctionIndex, "当前广告组复核顺序内必须有本次优先证据层");
 assert(adGroupReviewPriorityIndex < adGroupReviewPathIndex, "当前广告组复核顺序内必须先给本次优先证据层，再给四层完整路径");
+assert(adGroupReviewPathIndex < adGroupReviewDetailsIndex, "当前广告组复核顺序默认层必须先给路径，再把四层步骤放进展开审计");
 assert(adGroupReviewOrderIndex < focusMetricsIndex, "当前广告组复核路径必须先给复核顺序，再展示广告组证据摘要");
 assert(adGroupReviewOrderIndex < adGroupChecklistIndex, "当前广告组复核路径必须先给复核顺序，再把完整运营检查清单作为折叠审计材料");
 assert(adGroupChecklistIndex < advertisedProductsInFocusIndex, "完整运营检查清单必须先于广告组证据明细，便于需要时审计回看");

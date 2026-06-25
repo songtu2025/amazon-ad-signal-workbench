@@ -5668,15 +5668,21 @@ function ProductScopeAdGroupReviewOrderPanel({ row }: { row: ProductScopeAdGroup
         <strong>{reviewPath}</strong>
       </div>
       <p>{row.problemLocator.problemLocation}</p>
-      <ol>
-        {items.map((item) => (
-          <li key={`${item.key}-review-order`}>
-            <span>{item.label}</span>
-            <b>{item.title}</b>
-            <small>{item.nextStep}</small>
-          </li>
-        ))}
-      </ol>
+      <details className="productScopeAdGroupReviewOrderDetails">
+        <summary>
+          <span>展开四层复核步骤</span>
+          <b>{items.length} 层</b>
+        </summary>
+        <ol>
+          {items.map((item) => (
+            <li key={`${item.key}-review-order`}>
+              <span>{item.label}</span>
+              <b>{item.title}</b>
+              <small>{item.nextStep}</small>
+            </li>
+          ))}
+        </ol>
+      </details>
       <small>这只是人工复核路径，不证明搜索词或广告位已归因到单个广告 ASIN，也不执行任何广告动作。</small>
     </div>
   );

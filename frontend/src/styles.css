@@ -3779,6 +3779,40 @@ h3 {
   color: #2d455f;
 }
 
+.productScopeAdGroupReviewOrderDetails {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border: 1px dashed #c9ddeb;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.productScopeAdGroupReviewOrderDetails summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+  outline: none;
+}
+
+.productScopeAdGroupReviewOrderDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.productScopeAdGroupReviewOrderDetails summary span {
+  color: #365b79;
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.productScopeAdGroupReviewOrderDetails summary b {
+  color: #60758c;
+  font-size: 12px;
+}
+
 .productScopeAdGroupReviewOrder ol {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
