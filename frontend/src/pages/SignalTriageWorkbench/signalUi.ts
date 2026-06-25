@@ -3975,10 +3975,18 @@ export interface ProductScopeEvidenceRouteDecision {
   nextManualStep: string;
 }
 
+export interface ProductScopeEvidenceRouteLayerSummaryItem {
+  label: string;
+  value: string;
+  description: string;
+  tone: ProductScopeEvidenceRouteDecision["statusTone"];
+}
+
 export interface ProductScopeEvidenceRouteGuide {
   title: string;
   summary: string;
   decision: ProductScopeEvidenceRouteDecision;
+  layerSummary: ProductScopeEvidenceRouteLayerSummaryItem[];
   steps: ProductScopeEvidenceRouteGuideStep[];
   boundary: string;
 }
@@ -6024,6 +6032,7 @@ export function buildProductScopeEvidenceRouteGuide(matrix: ProductScopeEvidence
     title: "广告证据链导览",
     summary: "先看经营入口，再看广告 ASIN、广告组、投放词/搜索词/广告位、AI 信号诊断、人工确认和 7/14 天复盘。",
     decision: buildProductScopeEvidenceRouteDecision(matrix),
+    layerSummary: buildProductScopeEvidenceRouteLayerSummary(matrix),
     steps: [
       routeStepFromRow(
         scopeRow,
@@ -6090,6 +6099,46 @@ export function buildProductScopeEvidenceRouteGuide(matrix: ProductScopeEvidence
     ],
     boundary: matrix.boundary,
   };
+}
+
+export function buildProductScopeEvidenceRouteLayerSummary(
+  matrix: ProductScopeEvidenceMatrix,
+): ProductScopeEvidenceRouteLayerSummaryItem[] {
+  const directLayerCount = matrix.rows.filter((row) => row.layerId === "scope" || row.layerId === "ad_asin").length;
+  const contextLayerCount = matrix.rows.filter((row) => row.layerId === "ad_group" || row.layerId === "traffic_context").length;
+  const admissionRow = matrix.rows.find((row) => row.layerId === "admission");
+  const isBlocked = admissionRow?.tone === "blocked" || admissionRow?.detail.includes("candidate_count=0");
+  const isReady = admissionRow?.tone === "ready";
+  const gateTone: ProductScopeEvidenceRouteDecision["statusTone"] = isReady ? "ready" : isBlocked ? "blocked" : "context";
+  const gateValue = isReady ? "可人工复核" : isBlocked ? "只能诊断" : "证据待补齐";
+  const reviewValue = isReady ? "动作后复盘" : "等待人工留痕";
+
+  return [
+    {
+      label: "直接证据",
+      value: `${directLayerCount} 层`,
+      description: "经营入口和广告 ASIN 分开读，未投放子 ASIN 不进入广告动作对象。",
+      tone: "ready",
+    },
+    {
+      label: "上下文证据",
+      value: `${contextLayerCount} 层`,
+      description: "广告组、投放词、搜索词和广告位只解释流量来源与归因边界。",
+      tone: "context",
+    },
+    {
+      label: "AI 准入",
+      value: gateValue,
+      description: admissionRow?.value ?? "先补齐广告 ASIN、广告组、搜索词和广告位证据。",
+      tone: gateTone,
+    },
+    {
+      label: "复盘路径",
+      value: reviewValue,
+      description: "先有人工动作和 ReviewTodo，到期后才人工保存 7/14 天 ReviewRecord。",
+      tone: isReady ? "ready" : "context",
+    },
+  ];
 }
 
 export function buildProductScopeEvidenceRouteDecision(matrix: ProductScopeEvidenceMatrix): ProductScopeEvidenceRouteDecision {

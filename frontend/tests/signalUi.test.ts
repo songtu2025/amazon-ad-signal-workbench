@@ -1999,6 +1999,15 @@ const productScopeEvidenceRouteGuide = buildProductScopeEvidenceRouteGuide(produ
 assertEqual(productScopeEvidenceRouteGuide.title, "广告证据链导览");
 assertIncludes(productScopeEvidenceRouteGuide.summary, "先看经营入口，再看广告 ASIN、广告组、投放词/搜索词/广告位");
 assertIncludes(productScopeEvidenceRouteGuide.summary, "AI 信号诊断、人工确认和 7/14 天复盘");
+assertEqual(productScopeEvidenceRouteGuide.layerSummary.length, 4);
+assertEqual(
+  productScopeEvidenceRouteGuide.layerSummary.map((item) => `${item.label}:${item.value}`).join(" / "),
+  "直接证据:2 层 / 上下文证据:2 层 / AI 准入:只能诊断 / 复盘路径:等待人工留痕",
+);
+assertIncludes(productScopeEvidenceRouteGuide.layerSummary[0].description, "未投放子 ASIN 不进入广告动作对象");
+assertIncludes(productScopeEvidenceRouteGuide.layerSummary[1].description, "广告组、投放词、搜索词和广告位只解释流量来源与归因边界");
+assertIncludes(productScopeEvidenceRouteGuide.layerSummary[2].description, "先按广告 ASIN、广告组、投放词、搜索词和广告位复核数据关系");
+assertIncludes(productScopeEvidenceRouteGuide.layerSummary[3].description, "ReviewTodo");
 const productScopeEvidenceRouteDecision = buildProductScopeEvidenceRouteDecision(productScopeEvidenceMatrix);
 assertEqual(productScopeEvidenceRouteDecision.title, "路径可落地判断");
 assertEqual(productScopeEvidenceRouteDecision.statusLabel, "只能诊断");

@@ -4340,6 +4340,15 @@ function ProductScopeEvidenceRouteGuidePanel({ guide }: { guide: ProductScopeEvi
         <span>{guide.steps.length} 层证据</span>
       </div>
       <p className="productScopeEvidenceRouteGuideSummary">{guide.summary}</p>
+      <div className="productScopeEvidenceRouteLayerSummary" aria-label="广告证据链层级摘要">
+        {guide.layerSummary.map((item) => (
+          <article className={`productScopeEvidenceRouteLayerSummaryItem ${item.tone}`} key={item.label}>
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
+            <p>{item.description}</p>
+          </article>
+        ))}
+      </div>
       <div className={`productScopeEvidenceRouteDecision ${guide.decision.statusTone}`} aria-label="广告路径可落地判断">
         <div>
           <span>{guide.decision.title}</span>

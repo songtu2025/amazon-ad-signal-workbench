@@ -2632,6 +2632,52 @@ h3 {
   line-height: 1.5;
 }
 
+.productScopeEvidenceRouteLayerSummary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.productScopeEvidenceRouteLayerSummaryItem {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 9px;
+  border: 1px solid #d5e1ec;
+  border-radius: 8px;
+  background: #fbfdff;
+  overflow-wrap: anywhere;
+}
+
+.productScopeEvidenceRouteLayerSummaryItem span,
+.productScopeEvidenceRouteLayerSummaryItem p {
+  margin: 0;
+  color: #607186;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.productScopeEvidenceRouteLayerSummaryItem strong {
+  color: #14273e;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.productScopeEvidenceRouteLayerSummaryItem.ready {
+  background: #f5fbf7;
+  border-color: #b9ddc6;
+}
+
+.productScopeEvidenceRouteLayerSummaryItem.blocked {
+  background: #fff8f6;
+  border-color: #f0c8bc;
+}
+
+.productScopeEvidenceRouteLayerSummaryItem.context {
+  background: #f7fbff;
+  border-color: #c6dbef;
+}
+
 .productScopeEvidenceRouteDecision {
   display: grid;
   gap: 8px;
