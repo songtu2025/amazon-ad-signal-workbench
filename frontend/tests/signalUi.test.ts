@@ -3254,6 +3254,19 @@ const triageWithoutSavedReviewFeedback = {
       pending_source_candidates: [
         {
           source_type: "manual_action",
+          source_id: "manual-action-generic",
+          action_type: "add_to_review",
+          object_type: "search_term",
+          object_id: "search_term:1:boys sunglasses",
+          object_label: "boys sunglasses",
+          group_label: "规则语义：ASIN 查询词",
+          sample_parent_scopes: ["Parent ASIN 经营入口待补：需要确认销售表现和当前广告数据只覆盖有投放的 ASIN。"],
+          sample_search_terms: ["boys sunglasses"],
+          sample_ad_contexts: ["逐投放来源待补充"],
+          boundary: "该来源只说明待复盘人工留痕；未保存 ReviewRecord 前不形成规则反馈候选，不自动改规则，不自动执行广告动作。",
+        },
+        {
+          source_type: "manual_action",
           source_id: "manual-action-beach",
           action_type: "add_to_review",
           object_type: "search_term",
@@ -3293,12 +3306,14 @@ assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[3] ?? "", "�
 assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[3] ?? "", "0 / 0 条样本带证据上下文");
 assertEqual(blockedRuleFeedbackPrioritySummary?.records.length, 0);
 assertEqual(blockedRuleFeedbackPrioritySummary?.candidateGroups.length, 0);
-assertEqual(blockedRuleFeedbackPrioritySummary?.pendingSources.length, 1);
-assertIncludes(blockedRuleFeedbackPrioritySummary?.pendingSources[0] ?? "", "待复盘来源：规则语义：海滩出行用品");
-assertIncludes(blockedRuleFeedbackPrioritySummary?.pendingSources[0] ?? "", "Parent ASIN来源：Parent ASIN B00K4W4AAA");
-assertIncludes(blockedRuleFeedbackPrioritySummary?.pendingSources[0] ?? "", "SearchTerm样本：beach essentials");
-assertIncludes(blockedRuleFeedbackPrioritySummary?.pendingSources[0] ?? "", "逐投放来源：广告组 RBK004-beach essentials-精准");
-assertIncludes(blockedRuleFeedbackPrioritySummary?.pendingSources[0] ?? "", "未保存 ReviewRecord 前不形成规则反馈候选");
+assertEqual(blockedRuleFeedbackPrioritySummary?.pendingSources.length, 2);
+assertIncludes(blockedRuleFeedbackPrioritySummary?.pendingSources[0] ?? "", "待复盘来源：规则语义：ASIN 查询词");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.pendingSources[0] ?? "", "经营入口待补");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.defaultPendingSource ?? "", "待复盘来源：规则语义：海滩出行用品");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.defaultPendingSource ?? "", "Parent ASIN来源：Parent ASIN B00K4W4AAA");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.defaultPendingSource ?? "", "SearchTerm样本：beach essentials");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.defaultPendingSource ?? "", "逐投放来源：广告组 RBK004-beach essentials-精准");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.defaultPendingSource ?? "", "未保存 ReviewRecord 前不形成规则反馈候选");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.boundary ?? "", "门槛检查");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.boundary ?? "", "不代表已有规则反馈样本池");
 

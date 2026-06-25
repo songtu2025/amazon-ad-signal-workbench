@@ -1363,6 +1363,7 @@ assertIncludes(workbenchSource, "有没有复盘结论");
 assertIncludes(workbenchSource, "能不能反馈规则");
 assertIncludes(workbenchSource, "feedbackBasisLabel");
 assertIncludes(workbenchSource, "pendingSourceCount");
+assertIncludes(workbenchSource, "defaultPendingSource");
 assertIncludes(workbenchSource, "条待复盘来源");
 assertIncludes(workbenchSource, "反馈依据是什么");
 assertIncludes(workbenchSource, "待复盘来源");

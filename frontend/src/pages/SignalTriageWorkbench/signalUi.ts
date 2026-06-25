@@ -1334,6 +1334,7 @@ export interface RuleFeedbackPrioritySummary {
   records: string[];
   candidateGroups: string[];
   pendingSources: string[];
+  defaultPendingSource: string | null;
   boundary: string;
 }
 
@@ -3521,6 +3522,7 @@ export function buildRuleFeedbackPrioritySummary(summary: SignalTriageSummaryFor
   const signalTypeText = formatOrderedCounts(bySignalType, ["opportunity", "anomaly", "unknown"]) || "信号类型维度待补齐";
   const byResult = feedback.by_result ?? {};
   const pendingSources = (feedback.pending_source_candidates ?? []).slice(0, 5).map(ruleFeedbackPendingSourceText);
+  const defaultPendingSource = selectDefaultRuleFeedbackPendingSource(pendingSources);
   if (savedRecordCount <= 0) {
     const readyReviewCount = summary?.review_status?.ready_count ?? 0;
     const actionBoundary =
@@ -3537,6 +3539,7 @@ export function buildRuleFeedbackPrioritySummary(summary: SignalTriageSummaryFor
       records: [],
       candidateGroups: [],
       pendingSources,
+      defaultPendingSource,
       boundary: "没有已保存 ReviewRecord 时，该区域只是门槛检查，不代表已有规则反馈样本池，不代表当前选中信号已 ready。",
     };
   }
@@ -3552,8 +3555,29 @@ export function buildRuleFeedbackPrioritySummary(summary: SignalTriageSummaryFor
     records: (feedback.records ?? []).slice(0, 5).map(ruleFeedbackRecordText),
     candidateGroups: (feedback.candidate_groups ?? []).slice(0, 5).map(ruleFeedbackCandidateGroupText),
     pendingSources,
+    defaultPendingSource,
     boundary: "该样本池只进入解释层和人工复核优先级，不代表当前选中信号已 ready，不自动改规则，不自动执行广告动作。",
   };
+}
+
+function ruleFeedbackPendingSourceScore(source: string) {
+  let score = 0;
+  if (source.includes("Parent ASIN来源：Parent ASIN B")) score += 4;
+  if (source.includes("当前商品范围广告 ASIN")) score += 4;
+  if (source.includes("经营入口待补")) score -= 6;
+  if (source.includes("逐投放来源：") && !source.includes("逐投放来源待补充")) score += 3;
+  if (source.includes("SearchTerm样本：") && !source.includes("SearchTerm样本待补充")) score += 2;
+  if (source.includes("优先复核广告组") || source.includes("广告组 ")) score += 2;
+  if (source.includes("未保存 ReviewRecord 前不形成规则反馈候选")) score += 1;
+  return score;
+}
+
+function selectDefaultRuleFeedbackPendingSource(pendingSources: string[]) {
+  if (pendingSources.length === 0) return null;
+  return pendingSources.reduce(
+    (best, source) => (ruleFeedbackPendingSourceScore(source) > ruleFeedbackPendingSourceScore(best) ? source : best),
+    pendingSources[0],
+  );
 }
 
 export function signalTriageCompactItems(summary: SignalTriageSummaryForUi | null | undefined): SignalTriageCompactItem[] {

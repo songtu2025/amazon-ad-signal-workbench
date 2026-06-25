@@ -1540,7 +1540,8 @@ export function SignalTriageWorkbench() {
       selectedRuleFeedbackCandidate?.basis ??
       ruleFeedbackPrioritySummary?.basis ??
       selectedRuleImprovementReadiness.description;
-    const firstPendingSource = ruleFeedbackPrioritySummary?.pendingSources[0] ?? "";
+    const firstPendingSource =
+      ruleFeedbackPrioritySummary?.defaultPendingSource ?? ruleFeedbackPrioritySummary?.pendingSources[0] ?? "";
     const pendingSourceCount = ruleFeedbackPrioritySummary?.pendingSources.length ?? 0;
     const feedbackBasisLabel = !latestReviewRecord && firstPendingSource ? "待复盘来源" : "反馈依据是什么";
     const feedbackBasisValue =
