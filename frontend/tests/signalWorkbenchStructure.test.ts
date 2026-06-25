@@ -337,6 +337,8 @@ const manualActionChoiceRecommendationIndex = workbenchSource.indexOf('aria-labe
 const manualActionChoiceGuideIndex = workbenchSource.indexOf('className="manualActionChoiceGuide"');
 const manualActionGridIndex = workbenchSource.indexOf('<div className="manualActionGrid" aria-label="人工动作按钮">');
 const reviewFlowTodoIndex = workbenchSource.indexOf('className="sideSection reviewFlowItem reviewFlowTodo"');
+const reviewFlowDecisionSummaryIndex = workbenchSource.indexOf('aria-label="复盘读回默认摘要"');
+const reviewFlowStatusDetailsIndex = workbenchSource.indexOf('aria-label="复盘完整状态账本"');
 const reviewTodoDecisionReadbackIndex = workbenchSource.indexOf('aria-label="复盘待办业务判断读回"');
 const reviewRecordSavePathIndex = workbenchSource.indexOf('aria-label="复盘保存顺序核对"');
 const reviewTodoEvidenceReadbackIndex = workbenchSource.indexOf('aria-label="复盘待办证据回读核对"');
@@ -558,6 +560,10 @@ assert(reviewRecordSavePathIndex > reviewTodoDecisionReadbackIndex, "复盘保�
 assert(reviewRecordSavePathIndex < reviewTodoEvidenceReadbackIndex, "保存顺序核对必须先于完整证据门禁");
 assert(reviewRecordSavePathIndex < reviewEffectWindowLedgerIndex, "保存顺序核对必须先于处理前后指标窗口详情");
 assert(reviewRecordSavePathIndex < reviewRecordSaveGateIndex, "保存顺序核对必须先于保存门槛");
+assert(reviewFlowDecisionSummaryIndex >= 0, "复盘状态必须先展示默认读回摘要");
+assert(reviewFlowDecisionSummaryIndex < reviewFlowStatusDetailsIndex, "复盘默认读回摘要必须先于完整状态账本");
+assert(reviewFlowDecisionSummaryIndex < reviewFlowTodoIndex, "复盘默认读回摘要必须先于复盘待办明细");
+assert(reviewFlowStatusDetailsIndex < reviewFlowTodoIndex, "复盘待办明细必须保留在完整状态账本里");
 assert(reviewEffectWindowLedgerIndex < reviewRecordSaveGateIndex, "处理前后指标窗口必须先于保存门槛");
 assert(reviewRecordSaveGateIndex < reviewMetricTableIndex, "保存门槛必须先于指标明细表");
 assert(reviewMetricTableIndex < reviewRecordPreflightChecklistIndex, "指标明细表必须先于保存前检查清单");
@@ -1185,6 +1191,18 @@ assert(
   "右侧必须先展示同一证据路径读回，再展示三层状态账本，避免用户只看到技术状态。",
 );
 assertIncludes(workbenchSource, "manualReviewClosureLedger");
+assertIncludes(workbenchSource, "selectedReviewReadbackDecisionItems");
+assertIncludes(workbenchSource, 'aria-label="复盘读回默认摘要"');
+assertIncludes(workbenchSource, "复盘先看这四件事");
+assertIncludes(workbenchSource, "已经记录了吗");
+assertIncludes(workbenchSource, "什么时候复盘");
+assertIncludes(workbenchSource, "现在能下结论吗");
+assertIncludes(workbenchSource, "下一步做什么");
+assertIncludes(workbenchSource, '<details className="reviewFlowStatusDetails" aria-label="复盘完整状态账本">');
+assertIncludes(workbenchSource, "展开复盘门禁、待办证据和保存细节");
+assertIncludes(stylesSource, ".reviewFlowDecisionSummary");
+assertIncludes(stylesSource, ".reviewFlowStatusDetails");
+assertIncludes(stylesSource, ".reviewFlowStatusDetails[open] > summary");
 assertIncludes(stylesSource, ".manualReviewEvidencePathReadback");
 assertIncludes(stylesSource, ".manualReviewEvidencePathReadback.ready");
 assertIncludes(stylesSource, ".manualReviewEvidencePathReadback.saved");

@@ -1182,6 +1182,45 @@ export function SignalTriageWorkbench() {
       selectedReviewTodos.length,
     ],
   );
+  const selectedReviewReadbackDecisionItems = useMemo(() => {
+    const latestActionText = latestManualAction
+      ? `${manualActionLabel[latestManualAction.action_type]} / ${
+          latestManualAction.acted_at ? new Date(latestManualAction.acted_at).toLocaleDateString() : "时间待补充"
+        }`
+      : "尚未留痕";
+    const nextReviewText = nextReviewTodo
+      ? `${manualActionReviewWindowLabel([nextReviewTodo.review_window])} / ${new Date(nextReviewTodo.due_at).toLocaleDateString()}`
+      : "暂无复盘待办";
+    return [
+      {
+        label: "已经记录了吗",
+        value: latestActionText,
+        detail: latestManualActionEvidenceText ?? "没有人工留痕时，不能进入复盘效果判断。",
+      },
+      {
+        label: "什么时候复盘",
+        value: nextReviewText,
+        detail: nextReviewTodo ? reviewCheckpointText(nextReviewTodo, selectedReviewEffect) : reviewTodoEmptyStateText(latestManualAction),
+      },
+      {
+        label: "现在能下结论吗",
+        value: selectedReviewRecordSaveGate.canSave ? "可人工保存" : "暂不能保存",
+        detail: selectedReviewRecordSaveGate.detail,
+      },
+      {
+        label: "下一步做什么",
+        value: selectedReviewEffectWindowLedger.nextStep,
+        detail: selectedReviewEffectWindowLedger.boundary,
+      },
+    ];
+  }, [
+    latestManualAction,
+    latestManualActionEvidenceText,
+    nextReviewTodo,
+    selectedReviewEffect,
+    selectedReviewEffectWindowLedger,
+    selectedReviewRecordSaveGate,
+  ]);
   const selectedManualActionPreflightText =
     selectedManualActionPreviewPreflightError ??
     (selectedBackendManualActionPreview
@@ -3158,6 +3197,24 @@ export function SignalTriageWorkbench() {
                   <b>{selectedReviewTodos.length} 项</b>
                 </div>
 
+                <div className="reviewFlowDecisionSummary" aria-label="复盘读回默认摘要">
+                  <div>
+                    <strong>复盘先看这四件事</strong>
+                    <span>默认决策层</span>
+                  </div>
+                  <ul>
+                    {selectedReviewReadbackDecisionItems.map((item) => (
+                      <li key={item.label}>
+                        <span>{item.label}</span>
+                        <b>{item.value}</b>
+                        <p>{item.detail}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <details className="reviewFlowStatusDetails" aria-label="复盘完整状态账本">
+                  <summary>展开复盘门禁、待办证据和保存细节</summary>
                 {reviewReadinessGateSummary && (
                   <div
                     className={`reviewReadinessGateSummary ${reviewReadinessGateSummary.status}`}
@@ -3496,6 +3553,7 @@ export function SignalTriageWorkbench() {
                   <span>{reviewRecordStatusText(latestReviewRecord)}</span>
                   {reviewTodoMessage && <span>{reviewTodoMessage}</span>}
                 </section>
+                </details>
 
                 <section className="sideSection reviewFlowItem ruleImprovementSection" aria-label="规则改进门槛">
                   <h3>规则改进门槛</h3>
