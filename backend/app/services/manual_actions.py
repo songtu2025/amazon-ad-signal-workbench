@@ -750,6 +750,8 @@ def save_review_record(
             raise ValueError("review_record_missing_required_evidence")
         if not _review_record_has_action_boundary(expected_evidence_snapshot):
             raise ValueError("review_record_missing_action_boundary")
+    if not _review_record_evidence_snapshot_has_expected_object(expected_evidence_snapshot, expected_object_id):
+        raise ValueError("review_record_evidence_snapshot_object_mismatch")
     if not _review_record_evidence_snapshot_matches_effect(effect, expected_evidence_snapshot):
         raise ValueError("review_record_evidence_snapshot_mismatch")
     record = ReviewRecord(
@@ -891,6 +893,40 @@ def _review_record_evidence_snapshot_matches_effect(
     return _review_record_evidence_snapshot_signature(expected_evidence_snapshot) == _review_record_evidence_snapshot_signature(
         effect.evidence_snapshot
     )
+
+
+def _review_record_evidence_snapshot_has_expected_object(
+    evidence_snapshot: list[ManualActionEvidenceSnapshot] | None,
+    expected_object_id: str | None,
+) -> bool:
+    references = _review_record_expected_object_terms(expected_object_id)
+    if not references:
+        return True
+    snapshot_text = " ".join(
+        " ".join(
+            _review_record_evidence_snapshot_item_text(item, field)
+            for field in ("label", "value", "detail", "source")
+            if _review_record_evidence_snapshot_item_text(item, field)
+        )
+        for item in evidence_snapshot or []
+    ).casefold()
+    return any(reference.casefold() in snapshot_text for reference in references)
+
+
+def _review_record_evidence_snapshot_item_text(item: ManualActionEvidenceSnapshot | dict[str, object], field: str) -> str:
+    if isinstance(item, dict):
+        return str(item.get(field) or "").strip()
+    return str(getattr(item, field, "") or "").strip()
+
+
+def _review_record_expected_object_terms(expected_object_id: str | None) -> list[str]:
+    text = str(expected_object_id or "").strip()
+    terms = [text] if text else []
+    if ":" in text:
+        tail = text.rsplit(":", 1)[-1].strip()
+        if tail:
+            terms.append(tail)
+    return list(dict.fromkeys(terms))
 
 
 def _review_record_evidence_snapshot_signature(

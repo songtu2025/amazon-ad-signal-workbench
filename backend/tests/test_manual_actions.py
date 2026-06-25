@@ -153,6 +153,16 @@ def diagnosis_without_label_snapshot(label: str) -> list[dict[str, str]]:
     return [item for item in diagnosis_evidence_snapshot() if item["label"] != label]
 
 
+def diagnosis_evidence_snapshot_for_other_object() -> list[dict[str, str]]:
+    return [
+        {
+            key: value.replace("kids sunglasses", "boys sunglasses") if isinstance(value, str) else value
+            for key, value in item.items()
+        }
+        for item in diagnosis_evidence_snapshot()
+    ]
+
+
 def search_term_full_review_chain_snapshot() -> list[dict[str, str]]:
     return [
         {
@@ -1794,6 +1804,74 @@ def test_review_record_rejects_evidence_snapshot_not_inherited_from_effect(tmp_p
         assert str(error) == "review_record_evidence_snapshot_mismatch"
     else:
         raise AssertionError("ReviewRecord 不能保存非当前人工动作继承的证据快照")
+
+    assert not (tmp_path / "review_records.jsonl").exists()
+
+
+def test_review_record_rejects_evidence_snapshot_without_target_object_reference(tmp_path: Path) -> None:
+    other_object_snapshot = diagnosis_evidence_snapshot_for_other_object()
+    action_payload = {
+        "id": "manual-action-fixed",
+        "signal_id": "sig-test-manual-action",
+        "action_type": "handled",
+        "action_note": "已人工处理",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "adopted",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "shop-rivbos",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "kids sunglasses",
+        "object_label": "kids sunglasses",
+        "evidence_snapshot": other_object_snapshot,
+    }
+    (tmp_path / "manual_actions.jsonl").write_text(json.dumps(action_payload, ensure_ascii=False) + "\n", encoding="utf-8")
+    effect = manual_actions.build_review_effect_result(
+        "sig-test-manual-action",
+        review_window="7d",
+        action_root=tmp_path,
+        signal_rows=[
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-01",
+                "end_date": "2026-06-07",
+                "cost": 80,
+                "orders": 1,
+                "sales": 50,
+            },
+            {
+                "market_id": 1,
+                "search_term": "kids sunglasses",
+                "start_date": "2026-06-09",
+                "end_date": "2026-06-15",
+                "cost": 60,
+                "orders": 5,
+                "sales": 200,
+            },
+        ],
+        now=datetime(2026, 6, 16, tzinfo=UTC),
+    )
+
+    try:
+        manual_actions.save_review_record(
+            effect,
+            review_note="证据快照未指向当前对象不能保存",
+            reviewer_name="本地运营",
+            expected_action_id="manual-action-fixed",
+            expected_object_type="search_term",
+            expected_object_id="kids sunglasses",
+            expected_review_window="7d",
+            expected_evidence_snapshot=other_object_snapshot,
+            expected_can_auto_change_rules=False,
+            expected_can_auto_execute_ads=False,
+            review_root=tmp_path,
+        )
+    except ValueError as error:
+        assert str(error) == "review_record_evidence_snapshot_object_mismatch"
+    else:
+        raise AssertionError("ReviewRecord 不能保存未能回看当前对象的证据快照")
 
     assert not (tmp_path / "review_records.jsonl").exists()
 
