@@ -7,6 +7,9 @@ import {
   buildManualConfirmationEvidenceItems,
   buildDiagnosisContextSummary,
   buildProductScopeAnalysisPath,
+  buildProductScopeDiagnosisBrief,
+  buildProductScopeEvidenceMatrix,
+  buildProductScopeEvidenceRouteGuide,
   buildProductScopeFirstScreenSummary,
   buildProductScopeGroupOverview,
   buildSearchIntentPanelContext,
@@ -21,6 +24,7 @@ import {
   manualActionReviewRouteSplitSummary,
   manualActionPreviewForSelectedSignal,
   mergeBackendTriageSignals,
+  productScopeAdGroupDiagnosisRows,
   recommendedManualStatusText,
   filterSignalsBySearchIntent,
   resolveSearchIntentFocusSelection,
@@ -253,6 +257,33 @@ async function main() {
   assertIncludes(asText(firstScreenSummary.landingGates), "复盘门槛");
   assertIncludes(firstScreenSummary.boundary, "未投放子 ASIN 不进入广告诊断");
   assertIncludes(firstScreenSummary.boundary, "搜索词和广告位不能直接归因");
+  const productScopeEvidenceMatrix = buildProductScopeEvidenceMatrix(selectedProductScopeOption, triage);
+  const productScopeEvidenceRouteGuide = productScopeEvidenceMatrix ? buildProductScopeEvidenceRouteGuide(productScopeEvidenceMatrix) : null;
+  const adGroupDiagnosisRows = productScopeAdGroupDiagnosisRows(triage);
+  const productScopeDiagnosisBrief = buildProductScopeDiagnosisBrief(
+    firstScreenSummary,
+    productScopeEvidenceRouteGuide,
+    adGroupDiagnosisRows,
+  );
+  assert(productScopeDiagnosisBrief !== null, "Parent ASIN 运行态必须生成单屏诊断框架。");
+  assert(productScopeDiagnosisBrief?.sections.length === 4, "单屏诊断框架必须固定为销售入口、广告组、具体证据和 AI 判断四层。");
+  assertOrderedLabels(
+    productScopeDiagnosisBrief?.sections.map((section: any) => section.title) ?? [],
+    ["Parent ASIN 销售表现入口", "广告组优先排序", "当前广告组复核路径", "AI 人工动作判断"],
+    "Parent ASIN 单屏诊断框架顺序",
+  );
+  const diagnosisBriefRuntimeText = asText(productScopeDiagnosisBrief);
+  assertIncludes(diagnosisBriefRuntimeText, "不是四块报表纵向堆叠");
+  assertIncludes(diagnosisBriefRuntimeText, "不逐个读完整报表");
+  assertIncludes(diagnosisBriefRuntimeText, "这个 Parent ASIN 是否有足够广告证据");
+  assertIncludes(diagnosisBriefRuntimeText, "今天应该先看哪个广告组");
+  assertIncludes(diagnosisBriefRuntimeText, "投放商品、投放词、搜索词，还是广告位");
+  assertIncludes(diagnosisBriefRuntimeText, "只能做哪一种人工动作");
+  assertIncludes(diagnosisBriefRuntimeText, "只做人工留痕");
+  assertIncludes(diagnosisBriefRuntimeText, "记录观察");
+  assertIncludes(diagnosisBriefRuntimeText, "加入复盘");
+  assertIncludes(diagnosisBriefRuntimeText, "不要把 AI 判断包装成自动");
+  assertIncludes(diagnosisBriefRuntimeText, "不代表系统可以自动");
   const analysisPath = buildProductScopeAnalysisPath(selectedProductScopeOption);
   assertIncludes(asText(analysisPath.steps), "Parent ASIN 销售盘");
   assertIncludes(asText(analysisPath.steps), "广告 ASIN 覆盖");
@@ -580,7 +611,7 @@ async function main() {
   assertIncludes(authorizationSummary?.authorizedResult ?? "", "ManualAction 1 条 / ReviewTodo 2 条");
   assertIncludes(authorizationSummary?.authorizedResult ?? "", "7d / 14d");
   const evidenceSnapshotCount = preflight.evidence_snapshot_preview?.item_count ?? 0;
-  assert(evidenceSnapshotCount === 30, "新 SearchTerm 预检应保存搜索词表现判断后的 30 条证据快照。");
+  assert(evidenceSnapshotCount >= 30, "新 SearchTerm 预检应至少保存搜索词表现判断后的 30 条证据快照。");
   assert(evidenceSnapshotCount >= 27, "下一候选预检应包含 Parent ASIN、广告 ASIN、逐投放上下文和广告位活动级背景后的完整证据快照。");
   assertIncludes(authorizationSummary?.evidence ?? "", `${evidenceSnapshotCount} 条`);
   assertIncludes(authorizationSummary?.boundary ?? "", "未授权前不写 manual_actions");

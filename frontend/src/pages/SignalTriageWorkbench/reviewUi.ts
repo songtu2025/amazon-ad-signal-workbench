@@ -3484,10 +3484,16 @@ export function manualActionPreflightPriorityEvidenceRows(preflight: ManualActio
     preflight,
     fallbackEvidenceSnapshot: [],
   });
+  const seenLabels = new Set<string>();
   return rows
     .map((item, index) => ({ item, index, priority: priorityRank.get(item.label) }))
     .filter((entry): entry is { item: ManualActionEvidenceSnapshotForUi; index: number; priority: number } => entry.priority !== undefined)
     .sort((left, right) => left.priority - right.priority || left.index - right.index)
+    .filter((entry) => {
+      if (seenLabels.has(entry.item.label)) return false;
+      seenLabels.add(entry.item.label);
+      return true;
+    })
     .slice(0, limit)
     .map((entry) => entry.item);
 }

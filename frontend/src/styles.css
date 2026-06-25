@@ -2218,6 +2218,95 @@ h3 {
   line-height: 1.45;
 }
 
+.productScopeDiagnosisFramework {
+  display: grid;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid #d8e6f1;
+  border-radius: 8px;
+  background: #f8fbfe;
+}
+
+.productScopeDiagnosisFrameworkHeader {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.productScopeDiagnosisFrameworkHeader strong {
+  color: #17314b;
+  font-size: 13px;
+}
+
+.productScopeDiagnosisFrameworkHeader span {
+  min-width: 0;
+  color: #60758c;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.productScopeDiagnosisFrameworkItems {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.productScopeDiagnosisFrameworkItem {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  min-height: 142px;
+  padding: 10px;
+  border: 1px solid #d8e6f1;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow-wrap: anywhere;
+}
+
+.productScopeDiagnosisFrameworkItem.scope,
+.productScopeDiagnosisFrameworkItem.context {
+  border-color: #c9ddef;
+  background: #f7fbff;
+}
+
+.productScopeDiagnosisFrameworkItem.ready,
+.productScopeDiagnosisFrameworkItem.manual {
+  border-color: #bddcc9;
+  background: #f7fbf8;
+}
+
+.productScopeDiagnosisFrameworkItem.blocked {
+  border-color: #efc8bd;
+  background: #fff8f6;
+}
+
+.productScopeDiagnosisFrameworkItem span {
+  color: #607186;
+  font-size: 11px;
+  font-weight: 780;
+}
+
+.productScopeDiagnosisFrameworkItem strong {
+  color: #182e44;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.productScopeDiagnosisFrameworkItem p {
+  margin: 0;
+  color: #435c75;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.productScopeDiagnosisFrameworkItem small {
+  color: #607186;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .productScopeDiagnosisBriefPath {
   display: flex;
   flex-wrap: wrap;
@@ -8785,6 +8874,15 @@ button.reviewTodoQueueNext:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .productScopeDiagnosisFrameworkHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .productScopeDiagnosisFrameworkItems {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .productScopeAdCoverageDecision ul {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -8983,6 +9081,10 @@ button.reviewTodoQueueNext:focus-visible {
   }
 
   .productScopeDiagnosisVerdict {
+    grid-template-columns: 1fr;
+  }
+
+  .productScopeDiagnosisFrameworkItems {
     grid-template-columns: 1fr;
   }
 

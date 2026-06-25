@@ -682,10 +682,19 @@ assertIncludes(workbenchSource, "brief.decisionGuide.primaryDecision");
 assertIncludes(workbenchSource, "brief.decisionGuide.readPath");
 assertIncludes(workbenchSource, "brief.decisionGuide.expandFocus");
 assertIncludes(workbenchSource, "brief.decisionGuide.notToDo");
+assertIncludes(workbenchSource, 'aria-label="Parent ASIN 单屏诊断框架"');
+assertIncludes(workbenchSource, "单屏诊断框架");
+assertIncludes(workbenchSource, "按运营阅读顺序压缩判断，不把销售、广告组、明细和 AI 分析堆成长报表。");
+assertIncludes(workbenchSource, "section.businessQuestion");
+assertIncludes(workbenchSource, "section.currentJudgement");
+assertIncludes(workbenchSource, "人工下一步：{section.nextManualStep}");
 assertIncludes(signalUiSource, "ProductScopeDecisionGuide");
 assertIncludes(signalUiSource, "不逐个读完整报表");
 assertIncludes(signalUiSource, "投放商品 -> 投放词 -> 搜索词 -> 广告位");
 assertIncludes(stylesSource, ".productScopeDecisionGuide");
+assertIncludes(stylesSource, ".productScopeDiagnosisFramework");
+assertIncludes(stylesSource, ".productScopeDiagnosisFrameworkItems");
+assertIncludes(stylesSource, ".productScopeDiagnosisFrameworkItem");
 assertIncludes(workbenchSource, "productScopeBusinessPreviewPath");
 assertIncludes(workbenchSource, "productScopeBusinessPreviewPathSummary");
 assertIncludes(workbenchSource, "productScopeFirstScreenSummary.pathSummary");
@@ -742,6 +751,7 @@ const adGroupPriorityTriageIndex = workbenchSource.indexOf('aria-label="优先�
 const adGroupRowsIndex = workbenchSource.indexOf('className="productScopeAdGroupDiagnosisRows"');
 const productScopeDecisionGuideIndex = workbenchSource.indexOf('aria-label="Parent ASIN 决策导览"');
 const productScopeVerdictIndex = workbenchSource.indexOf('aria-label="Parent ASIN 体检结论"');
+const productScopeFrameworkIndex = workbenchSource.indexOf('aria-label="Parent ASIN 单屏诊断框架"');
 const diagnosisBriefPathIndex = workbenchSource.indexOf('aria-label="运营诊断路径顺序"');
 const diagnosisBriefBusinessQuestionIndex = workbenchSource.indexOf("<b>业务问题</b>", productScopeDecisionGuideIndex);
 const diagnosisBriefCurrentJudgementIndex = workbenchSource.indexOf("<b>当前判断</b>", productScopeDecisionGuideIndex);
@@ -752,6 +762,10 @@ assert(
 assert(
   productScopeVerdictIndex > productScopeDecisionGuideIndex && productScopeVerdictIndex < diagnosisBriefPathIndex,
   "Parent ASIN 体检结论必须位于决策导览和四段路径之间，先压缩结论再进入明细路径。",
+);
+assert(
+  productScopeFrameworkIndex > productScopeVerdictIndex && productScopeFrameworkIndex < diagnosisBriefPathIndex,
+  "Parent ASIN 单屏诊断框架必须位于体检结论和明细路径之间，把草图四层先压缩成业务判断卡。",
 );
 assert(
   diagnosisBriefBusinessQuestionIndex > 0 && diagnosisBriefBusinessQuestionIndex < diagnosisBriefCurrentJudgementIndex,

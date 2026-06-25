@@ -4005,6 +4005,22 @@ function ProductScopeDiagnosisBriefPanel({ brief }: { brief: ProductScopeDiagnos
           </article>
         ))}
       </div>
+      <div className="productScopeDiagnosisFramework" aria-label="Parent ASIN 单屏诊断框架">
+        <div className="productScopeDiagnosisFrameworkHeader">
+          <strong>单屏诊断框架</strong>
+          <span>按运营阅读顺序压缩判断，不把销售、广告组、明细和 AI 分析堆成长报表。</span>
+        </div>
+        <div className="productScopeDiagnosisFrameworkItems">
+          {brief.sections.map((section) => (
+            <article className={`productScopeDiagnosisFrameworkItem ${section.tone}`} key={section.id}>
+              <span>{section.label}. {section.title}</span>
+              <strong>{section.businessQuestion}</strong>
+              <p>{section.currentJudgement}</p>
+              <small>人工下一步：{section.nextManualStep}</small>
+            </article>
+          ))}
+        </div>
+      </div>
       <p className="productScopeDiagnosisBriefSummary">{brief.summary}</p>
       <div className="productScopeDiagnosisBriefPath" aria-label="运营诊断路径顺序">
         {brief.sections.map((section) => (
