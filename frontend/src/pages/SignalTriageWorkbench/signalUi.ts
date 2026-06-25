@@ -4119,6 +4119,7 @@ export interface ProductScopeAdGroupDiagnosisRow {
   title: string;
   statusLabel: string;
   statusTone: "healthy" | "observe" | "risk" | "gap";
+  diagnosisStatus: ProductScopeAdGroupDiagnosisStatus;
   problemType: string;
   metrics: string;
   trafficContext: string;
@@ -4135,6 +4136,13 @@ export interface ProductScopeAdGroupDiagnosisRow {
   boundary: string;
   forbiddenActions: string[];
   searchTermDiagnosis: ProductScopeSearchTermDiagnosis | null;
+}
+
+export interface ProductScopeAdGroupDiagnosisStatus {
+  label: string;
+  tone: "healthy" | "observe" | "risk" | "gap";
+  reason: string;
+  nextStep: string;
 }
 
 export interface ProductScopeAdGroupAdvertisedProductPerformance {
@@ -5084,6 +5092,7 @@ export function productScopeAdGroupDiagnosisRows(summary: SignalTriageSummaryFor
       title: row.ad_group_name?.trim() || row.ad_group_id?.trim() || "未知广告组",
       statusLabel: row.diagnosis_label?.trim() || "待判断",
       statusTone: productScopeAdGroupDiagnosisTone(row.diagnosis_status),
+      diagnosisStatus: productScopeAdGroupDiagnosisStatus(row, candidateCount, canWriteManualAction),
       problemType: row.problem_type?.trim() || "诊断口径待补充",
       metrics: `花费 ${formatEvidenceNumber(row.spend)} / 订单 ${Math.round(row.orders ?? 0)} / ACOS ${formatEvidencePercent(row.acos)}`,
       trafficContext: `广告 ASIN ${row.ad_group_advertised_asin_count ?? 0} 个 / 搜索词 ${row.search_term_count ?? 0} 条 / 广告位 ${
@@ -5296,6 +5305,78 @@ function productScopeAdGroupAdvertisedProductPerformance(
         sampleBoundary: item.sample_boundary?.trim() || null,
       };
     });
+}
+
+function productScopeAdGroupDiagnosisStatus(
+  row: ProductScopeDrilldownAdGroupDiagnosisForUi,
+  candidateCount: number,
+  canWriteManualAction: boolean,
+): ProductScopeAdGroupDiagnosisStatus {
+  const effectiveCount = row.effective_search_term_count ?? row.search_term_diagnosis?.effective_terms?.length ?? 0;
+  const zeroOrderCount = row.zero_order_search_term_count ?? row.search_term_diagnosis?.zero_order_terms?.length ?? 0;
+  const searchTermCount = row.search_term_count ?? 0;
+  const placementCount = row.placement_count ?? 0;
+  const campaignPlacementCount = row.campaign_placement_count ?? 0;
+  const adAsinCount = row.ad_group_advertised_asin_count ?? row.current_scope_advertised_asin_count ?? row.ad_product_row_count ?? 0;
+  const manualActionText = canWriteManualAction
+    ? "右侧可人工记录观察、标记已处理、加入复盘或忽略本次。"
+    : "当前只读复核，未满足门禁前不写人工动作。";
+
+  if (adAsinCount === 0 || searchTermCount === 0) {
+    const missing = [adAsinCount > 0 ? "" : "投放商品", searchTermCount > 0 ? "" : "搜索词"].filter(Boolean).join("、");
+    return {
+      label: "证据缺口",
+      tone: "gap",
+      reason: `当前广告组缺少${missing || "关键"}证据，不能判断具体广告问题。`,
+      nextStep: "先补齐 advertised_products、投放词、搜索词或广告位证据，再进入人工复核。",
+    };
+  }
+  if (effectiveCount > 0 && zeroOrderCount > 0) {
+    return {
+      label: canWriteManualAction ? "待人工复核" : "只读复核",
+      tone: "risk",
+      reason: `同一广告组同时有有效词 ${effectiveCount} 条和无订单花费词 ${zeroOrderCount} 条，问题优先落在搜索词意图分化。`,
+      nextStep: `先核对投放商品、投放词、搜索词和广告位边界；${manualActionText}`,
+    };
+  }
+  if (zeroOrderCount > 0) {
+    return {
+      label: canWriteManualAction ? "待人工复核" : "只读复核",
+      tone: "risk",
+      reason: `存在无订单花费词 ${zeroOrderCount} 条，先判断词相关性、匹配方式和商品承接。`,
+      nextStep: `先复核搜索词和投放词，不自动否词或调价；${manualActionText}`,
+    };
+  }
+  if (placementCount === 0 && campaignPlacementCount > 0) {
+    return {
+      label: "广告位缺口",
+      tone: "gap",
+      reason: `只有活动级广告位 ${campaignPlacementCount} 条，不能判断广告组级广告位影响。`,
+      nextStep: "先补广告组级广告位证据；当前只用广告 ASIN、投放词和搜索词做人工复核。",
+    };
+  }
+  if (adAsinCount > 1) {
+    return {
+      label: "容器边界",
+      tone: "observe",
+      reason: `同广告组包含 ${adAsinCount} 个广告 ASIN，先按容器边界复核，不拆成单 ASIN 结论。`,
+      nextStep: `对比同组投放商品、投放词和搜索词表现；${manualActionText}`,
+    };
+  }
+  if (effectiveCount > 0) {
+    return {
+      label: "仅观察",
+      tone: "observe",
+      reason: `当前有有效搜索词 ${effectiveCount} 条，但缺少更强异常或复盘触发证据。`,
+      nextStep: "保持观察或记录观察；不要自动加词、调价或扩大投放。",
+    };
+  }
+  return {
+    label: "仅观察",
+    tone: "healthy",
+    reason: "当前广告组没有明显异常或机会，只保留广告上下文。",
+    nextStep: "不展开完整明细；等搜索词、广告位或候选信号变化后再复核。",
+  };
 }
 
 function productScopeAdGroupEvidenceSynthesis(

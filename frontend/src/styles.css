@@ -3299,6 +3299,51 @@ h3 {
   font-size: 11px;
 }
 
+.productScopeAdGroupWorkflowStatus {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid #d7e6f4;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.76);
+  color: #425d78;
+}
+
+.productScopeAdGroupWorkflowStatus strong {
+  color: #1f3047;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
+.productScopeAdGroupWorkflowStatus span,
+.productScopeAdGroupWorkflowStatus small {
+  color: #536a82;
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.productScopeAdGroupWorkflowStatus.risk {
+  border-color: #efc8bd;
+  background: #fff8f6;
+}
+
+.productScopeAdGroupWorkflowStatus.gap {
+  border-color: #e1d6b8;
+  background: #fffaf0;
+}
+
+.productScopeAdGroupWorkflowStatus.observe {
+  border-color: #cddced;
+  background: #f8fbff;
+}
+
+.productScopeAdGroupWorkflowStatus.healthy {
+  border-color: #bddcc9;
+  background: #f7fbf8;
+}
+
 .productScopeAdGroupDiagnosisMetrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

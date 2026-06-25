@@ -5127,6 +5127,11 @@ function ProductScopeAdGroupDiagnosisPanel({
             </div>
             <b>{priorityRow.statusLabel}</b>
           </div>
+          <div className={`productScopeAdGroupWorkflowStatus ${priorityRow.diagnosisStatus.tone}`} aria-label="优先广告组闭环状态">
+            <strong>{priorityRow.diagnosisStatus.label}</strong>
+            <span>{priorityRow.diagnosisStatus.reason}</span>
+            <small>下一步：{priorityRow.diagnosisStatus.nextStep}</small>
+          </div>
           <div className="productScopeAdGroupPriorityTriage" aria-label="优先广告组三段判断">
             <span>
               <b>问题类型</b>
@@ -5179,6 +5184,11 @@ function ProductScopeAdGroupDiagnosisPanel({
                   <strong>{row.title}</strong>
                 </div>
                 <b>{row.statusLabel}</b>
+              </div>
+              <div className={`productScopeAdGroupWorkflowStatus ${row.diagnosisStatus.tone}`} aria-label="广告组闭环状态">
+                <strong>{row.diagnosisStatus.label}</strong>
+                <span>{row.diagnosisStatus.reason}</span>
+                <small>下一步：{row.diagnosisStatus.nextStep}</small>
               </div>
               <div className="productScopeAdGroupDiagnosisDecision" aria-label="广告组业务判断">
                 <span>
@@ -5927,6 +5937,11 @@ function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagno
           <strong>{row.title}</strong>
         </div>
         <b>{row.statusLabel}</b>
+      </div>
+      <div className={`productScopeAdGroupWorkflowStatus ${row.diagnosisStatus.tone}`} aria-label="当前广告组闭环状态">
+        <strong>{row.diagnosisStatus.label}</strong>
+        <span>{row.diagnosisStatus.reason}</span>
+        <small>下一步：{row.diagnosisStatus.nextStep}</small>
       </div>
       <div className="productScopeAdGroupFocusDecision" aria-label="当前广告组三段复核判断">
         <span>

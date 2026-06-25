@@ -1034,6 +1034,12 @@ assertIncludes(workbenchSource, 'aria-label="广告组问题定位"');
 assertIncludes(workbenchSource, 'const priorityRow = rows[0]');
 assertIncludes(workbenchSource, 'aria-label="广告组优先判断"');
 assertIncludes(workbenchSource, 'aria-label="优先广告组三段判断"');
+assertIncludes(workbenchSource, 'aria-label="优先广告组闭环状态"');
+assertIncludes(workbenchSource, 'aria-label="广告组闭环状态"');
+assertIncludes(workbenchSource, 'aria-label="当前广告组闭环状态"');
+assertIncludes(workbenchSource, "row.diagnosisStatus.label");
+assertIncludes(workbenchSource, "row.diagnosisStatus.reason");
+assertIncludes(workbenchSource, "row.diagnosisStatus.nextStep");
 assertIncludes(workbenchSource, "<span>优先广告组</span>");
 assertIncludes(workbenchSource, "<b>问题类型</b>");
 assertIncludes(workbenchSource, "<b>证据强度</b>");
@@ -1055,6 +1061,13 @@ assertIncludes(workbenchSource, "row.ownershipDecision.evidencePath");
 assertIncludes(workbenchSource, "row.ownershipDecision.nextManualStep");
 assertIncludes(signalUiSource, "ProductScopeAdGroupOwnershipDecision");
 assertIncludes(signalUiSource, "productScopeAdGroupOwnershipDecision");
+assertIncludes(signalUiSource, "ProductScopeAdGroupDiagnosisStatus");
+assertIncludes(signalUiSource, "productScopeAdGroupDiagnosisStatus");
+assertIncludes(signalUiSource, '"待人工复核"');
+assertIncludes(signalUiSource, '"只读复核"');
+assertIncludes(signalUiSource, 'label: "证据缺口"');
+assertIncludes(signalUiSource, 'label: "广告位缺口"');
+assertIncludes(signalUiSource, 'label: "容器边界"');
 assertIncludes(signalUiSource, "问题先归属到广告组容器和搜索词上下文");
 assertIncludes(workbenchSource, 'aria-label="广告组问题落点"');
 assertIncludes(workbenchSource, "row.problemLocator.problemLocation");
@@ -1072,6 +1085,7 @@ const adGroupDiagnosisDecisionIndex = workbenchSource.indexOf('aria-label="广�
 const adGroupTrafficBoundaryIndex = workbenchSource.indexOf("{row.trafficContextBoundary}");
 const adGroupEvidenceSummaryIndex = workbenchSource.indexOf('aria-label="广告组证据摘要"');
 const adGroupPriorityGateIndex = workbenchSource.indexOf('aria-label="广告组优先判断"');
+const adGroupPriorityWorkflowStatusIndex = workbenchSource.indexOf('aria-label="优先广告组闭环状态"');
 const adGroupPriorityTriageIndex = workbenchSource.indexOf('aria-label="优先广告组三段判断"');
 const adGroupRowsIndex = workbenchSource.indexOf('className="productScopeAdGroupDiagnosisRows"');
 const productScopeDecisionGuideIndex = workbenchSource.indexOf('aria-label="Parent ASIN 决策导览"');
@@ -1122,10 +1136,17 @@ assert(
   "广告组数据区必须先给优先判断，再展示可点击广告组列表，避免用户从多行报表里自己找重点。",
 );
 assert(
-  adGroupPriorityGateIndex < adGroupPriorityTriageIndex && adGroupPriorityTriageIndex < adGroupRowsIndex,
-  "广告组优先判断必须先给三段判断：问题类型、证据强度、人工下一步。",
+  adGroupPriorityGateIndex < adGroupPriorityWorkflowStatusIndex &&
+    adGroupPriorityWorkflowStatusIndex < adGroupPriorityTriageIndex &&
+    adGroupPriorityTriageIndex < adGroupRowsIndex,
+  "广告组优先判断必须先给闭环状态，再给三段判断：问题类型、证据强度、人工下一步。",
 );
 assertIncludes(stylesSource, ".productScopeAdGroupPriorityTriage");
+assertIncludes(stylesSource, ".productScopeAdGroupWorkflowStatus");
+assertIncludes(stylesSource, ".productScopeAdGroupWorkflowStatus.risk");
+assertIncludes(stylesSource, ".productScopeAdGroupWorkflowStatus.gap");
+assertIncludes(stylesSource, ".productScopeAdGroupWorkflowStatus.observe");
+assertIncludes(stylesSource, ".productScopeAdGroupWorkflowStatus.healthy");
 assertIncludes(workbenchSource, 'aria-label="广告组证据合流判断"');
 assertIncludes(workbenchSource, "row.evidenceSynthesis.statusLabel");
 assertIncludes(workbenchSource, "row.evidenceSynthesis.evidenceChain");
