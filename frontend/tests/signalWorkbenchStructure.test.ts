@@ -1073,9 +1073,11 @@ assertIncludes(signalUiSource, "searchTermDecision?.nextManualStep");
 assertIncludes(signalUiSource, "topGroup.placementDecision.nextManualStep");
 assertIncludes(signalUiSource, "右侧按钮只保存人工留痕或复盘待办");
 assertIncludes(workbenchSource, "buildManualReviewClosureLedger");
+assertIncludes(workbenchSource, "buildManualReviewEvidencePathReadback");
 assertIncludes(workbenchSource, "buildReviewReadinessGateSummary");
 assertIncludes(workbenchSource, "buildReviewEvidenceRepairSummary");
 assertIncludes(workbenchSource, "selectedManualReviewClosureLedger");
+assertIncludes(workbenchSource, "selectedManualReviewEvidencePathReadback");
 assertIncludes(workbenchSource, "reviewReadinessGateSummary");
 assertIncludes(workbenchSource, "reviewEvidenceRepairSummary");
 assertIncludes(workbenchSource, "queueBusinessFilters");
@@ -1127,8 +1129,21 @@ assertIncludes(workbenchSource, "snapshotActionBoundaryText");
 assertIncludes(workbenchSource, "shouldPauseSnapshotPullForReview");
 assertIncludes(workbenchSource, "snapshotActionBoundary");
 assertIncludes(workbenchSource, 'aria-label="快照复盘门禁"');
+assertIncludes(workbenchSource, 'aria-label="人工留痕证据路径读回"');
 assertIncludes(workbenchSource, 'aria-label="人工确认复盘闭环三层"');
+const manualReviewEvidencePathIndex = workbenchSource.indexOf('aria-label="人工留痕证据路径读回"');
+const manualReviewClosureLedgerIndex = workbenchSource.indexOf('aria-label="人工确认复盘闭环三层"');
+assert(
+  manualReviewEvidencePathIndex >= 0 &&
+    manualReviewClosureLedgerIndex >= 0 &&
+    manualReviewEvidencePathIndex < manualReviewClosureLedgerIndex,
+  "右侧必须先展示同一证据路径读回，再展示三层状态账本，避免用户只看到技术状态。",
+);
 assertIncludes(workbenchSource, "manualReviewClosureLedger");
+assertIncludes(stylesSource, ".manualReviewEvidencePathReadback");
+assertIncludes(stylesSource, ".manualReviewEvidencePathReadback.ready");
+assertIncludes(stylesSource, ".manualReviewEvidencePathReadback.saved");
+assertIncludes(stylesSource, ".manualReviewEvidencePathReadback.blocked");
 assertIncludes(workbenchSource, '有效搜索词');
 assertIncludes(workbenchSource, '无订单花费词');
 assertIncludes(workbenchSource, 'aria-label="无候选人工动作门禁"');

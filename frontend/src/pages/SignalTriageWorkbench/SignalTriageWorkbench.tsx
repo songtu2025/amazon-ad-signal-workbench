@@ -104,6 +104,7 @@ import {
   manualActionAuthorizationReadinessSummary,
   manualConfirmationEvidenceReadinessSummary,
   manualConfirmationDiagnosisBridgeSummary,
+  buildManualReviewEvidencePathReadback,
   buildManualReviewClosureLedger,
   manualActionButtonGate,
   manualActionPostWriteContractItems,
@@ -1149,6 +1150,15 @@ export function SignalTriageWorkbench() {
   const selectedManualActionReadbackPathItems = useMemo(
     () =>
       buildManualActionReadbackPathItems({
+        latestManualAction,
+        reviewTodos: selectedReviewTodos,
+        reviewRecords: selectedReviewRecords,
+      }),
+    [latestManualAction, selectedReviewRecords, selectedReviewTodos],
+  );
+  const selectedManualReviewEvidencePathReadback = useMemo(
+    () =>
+      buildManualReviewEvidencePathReadback({
         latestManualAction,
         reviewTodos: selectedReviewTodos,
         reviewRecords: selectedReviewRecords,
@@ -3037,12 +3047,31 @@ export function SignalTriageWorkbench() {
                     ))}
                   </div>
                   <p className="manualActionReadbackStatusLine">{manualActionPostWriteExpectationSummaryText()}</p>
-                  <p
-                    className="manualActionReadbackStatusLine"
-                    title={`${manualActionPostWriteExpectationSummaryText()} ${selectedManualActionReadbackConsistency}`}
+                <p
+                  className="manualActionReadbackStatusLine"
+                  title={`${manualActionPostWriteExpectationSummaryText()} ${selectedManualActionReadbackConsistency}`}
+                >
+                  {selectedManualActionReadbackCompact}
+                </p>
+                  <div
+                    className={`manualReviewEvidencePathReadback ${selectedManualReviewEvidencePathReadback.tone}`}
+                    aria-label="人工留痕证据路径读回"
                   >
-                    {selectedManualActionReadbackCompact}
-                  </p>
+                    <div>
+                      <strong>{selectedManualReviewEvidencePathReadback.title}</strong>
+                      <span>{selectedManualReviewEvidencePathReadback.summary}</span>
+                    </div>
+                    <ul>
+                      {selectedManualReviewEvidencePathReadback.rows.map((row) => (
+                        <li key={row.label} className={row.tone}>
+                          <span>{row.label}</span>
+                          <b>{row.value}</b>
+                          <p>{row.detail}</p>
+                        </li>
+                      ))}
+                    </ul>
+                    <p>{selectedManualReviewEvidencePathReadback.boundary}</p>
+                  </div>
                 </div>
               </section>
 

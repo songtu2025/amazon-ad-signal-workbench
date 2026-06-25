@@ -536,6 +536,20 @@ export interface ManualReviewClosureLedger {
   boundary: string;
 }
 
+export interface ManualReviewEvidencePathReadbackInput {
+  latestManualAction: ManualActionForUi | null;
+  reviewTodos: ReviewTodoForUi[];
+  reviewRecords: ReviewRecordForUi[];
+}
+
+export interface ManualReviewEvidencePathReadback {
+  title: string;
+  tone: "ready" | "waiting" | "blocked" | "saved";
+  summary: string;
+  rows: ReviewTodoEvidenceReadbackRow[];
+  boundary: string;
+}
+
 export interface ReviewApplicabilityForUi {
   object_type?: string | null;
   signal_category?: string | null;
@@ -3467,6 +3481,112 @@ export function buildManualReviewClosureLedger(input: ManualReviewClosureLedgerI
       },
     ],
     boundary: "manual_actions 记录判断；review_todos 排程；review_records 保存结论；系统不自动执行广告动作。",
+  };
+}
+
+function manualReviewEvidencePathSnapshotStatus(
+  snapshot: ManualActionEvidenceSnapshotForUi[] | null | undefined,
+  objectType?: string | null,
+) {
+  const items = (snapshot ?? []).filter((item) => String(item.label ?? "").trim() && String(item.value ?? "").trim());
+  const labels = evidenceLabelSet(items);
+  const isSearchTerm = normalizedPreflightTargetValue(objectType) === "search_term";
+  const requiredGroups = isSearchTerm
+    ? [
+        reviewRecordDiagnosisPathLabels,
+        reviewRecordAiAdmissionLabels,
+        ["Parent ASIN 广告搜索词表现复核", "Parent ASIN 搜索词表现聚合", "广告搜索词聚合上下文", "搜索意图分组", "语义组"],
+        reviewRecordSearchTermPerformanceDecisionLabels,
+        reviewRecordAdGroupSynthesisLabels,
+        reviewRecordAdGroupProductPerformanceLabels,
+        reviewRecordAdContextRowsLabels,
+        reviewRecordTargetingEvidenceLabels,
+        reviewRecordSearchTermBoundaryLabels,
+        reviewRecordPlacementBoundaryLabels,
+        reviewRecordAbaContextLabels,
+      ]
+    : [reviewRecordDiagnosisPathLabels, reviewRecordAiAdmissionLabels, reviewRecordSearchTermBoundaryLabels, reviewRecordPlacementBoundaryLabels];
+  const missing = requiredGroups
+    .map((group) => (group.some((label) => labels.has(label)) ? "" : group[0]))
+    .filter(Boolean);
+  const readbackLabels = isSearchTerm
+    ? "排查路径 / AI 准入 / Parent ASIN 广告搜索词表现复核 / 搜索词表现判断 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
+    : "排查路径 / AI 准入 / 搜索词边界 / 广告位边界";
+  return {
+    count: items.length,
+    ready: items.length > 0 && missing.length === 0,
+    missing,
+    readbackLabels,
+  };
+}
+
+export function buildManualReviewEvidencePathReadback(
+  input: ManualReviewEvidencePathReadbackInput,
+): ManualReviewEvidencePathReadback {
+  const action = input.latestManualAction;
+  const actionStatus = manualReviewEvidencePathSnapshotStatus(action?.evidence_snapshot, action?.object_type);
+  const todoText = reviewTodoEvidenceSnapshotReadbackText(input.reviewTodos);
+  const recordText = reviewRecordEvidenceSnapshotReadbackText(input.reviewRecords);
+  const windows = readbackReviewWindows(input.reviewTodos);
+  const hasAllReviewWindows = windows.length === reviewWindowOrder.length;
+  const todoReady = input.reviewTodos.length > 0 && hasAllReviewWindows && !todoText?.includes("待核对");
+  const recordReady = input.reviewRecords.length > 0 && !recordText?.includes("待核对");
+  const hasBlocked =
+    Boolean(action && !actionStatus.ready) ||
+    (input.reviewTodos.length > 0 && !todoReady) ||
+    (input.reviewRecords.length > 0 && !recordReady);
+  const tone: ManualReviewEvidencePathReadback["tone"] = recordReady
+    ? "saved"
+    : hasBlocked
+      ? "blocked"
+      : todoReady
+        ? "ready"
+        : "waiting";
+  const summary = (() => {
+    if (!action) return "尚未产生人工留痕；没有点击时证据快照，就不能生成同一路径的复盘读回。";
+    if (recordReady) return "ManualAction、ReviewTodo 和 ReviewRecord 均可沿点击时证据路径读回。";
+    if (hasBlocked) return "证据路径读回存在缺口；缺口补齐前不能把待办或复盘记录当成完整业务证据。";
+    if (todoReady) return "人工留痕和 7/14 天复盘待办已沿同一条点击时证据路径读回；未保存复盘结论前不判断效果。";
+    return "已读到人工留痕，正在等待 7/14 天复盘待办或完整窗口。";
+  })();
+
+  return {
+    title: "同一证据路径读回",
+    tone,
+    summary,
+    rows: [
+      {
+        label: "ManualAction",
+        value: action ? (actionStatus.ready ? "路径已留存" : "路径待核对") : "未留痕",
+        detail: action
+          ? actionStatus.ready
+            ? `点击时 evidence_snapshot ${actionStatus.count} 条；可回看${actionStatus.readbackLabels}。`
+            : `已读到人工留痕，但点击时 evidence_snapshot 缺：${actionStatus.missing.join(" / ") || "证据快照"}；后续待办不能替代历史点击依据。`
+          : "尚未人工点击记录观察、标记已处理、加入复盘或忽略本次。",
+        tone: action ? (actionStatus.ready ? "ready" : "blocked") : "waiting",
+      },
+      {
+        label: "ReviewTodo",
+        value: input.reviewTodos.length > 0 ? (todoReady ? "已继承 7/14 天" : "待核对") : action?.action_type === "ignore" ? "不生成" : "等待生成",
+        detail:
+          input.reviewTodos.length > 0
+            ? `${todoText ?? "已读到复盘待办"}；ReviewTodo 只继承点击时证据路径并等待窗口，不代表效果结论。`
+            : action?.action_type === "ignore"
+              ? "忽略本次不生成 7/14 天待办，仍不代表误报或删除信号。"
+              : "复盘类人工动作应生成 7d / 14d 待办，并继承 ManualAction 的 evidence_snapshot。",
+        tone: input.reviewTodos.length > 0 ? (todoReady ? "ready" : "blocked") : "waiting",
+      },
+      {
+        label: "ReviewRecord",
+        value: input.reviewRecords.length > 0 ? (recordReady ? "结论已沿用" : "结论待核对") : "未保存结论",
+        detail:
+          input.reviewRecords.length > 0
+            ? `${recordText ?? "已读到复盘记录"}；ReviewRecord 只能保存人工复盘结论，不自动改规则或执行广告动作。`
+            : "只有 7/14 天窗口完整且人工保存后，ReviewRecord 才能沿已验证 evidence_snapshot 形成结论。",
+        tone: input.reviewRecords.length > 0 ? (recordReady ? "ready" : "blocked") : "waiting",
+      },
+    ],
+    boundary: "这张卡只验证 ManualAction -> ReviewTodo -> ReviewRecord 是否沿用点击时证据路径；不代表广告动作执行，也不代表系统自动判断改善。",
   };
 }
 

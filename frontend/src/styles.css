@@ -9098,6 +9098,99 @@ button.reviewTodoQueueNext:focus-visible {
   white-space: nowrap;
 }
 
+.manualReviewEvidencePathReadback {
+  display: grid;
+  gap: 7px;
+  border: 1px solid #dbe8f2;
+  border-radius: 8px;
+  padding: 8px;
+  background: #ffffff;
+}
+
+.manualReviewEvidencePathReadback.ready {
+  border-color: #b9d9c8;
+  background: #f7fcf8;
+}
+
+.manualReviewEvidencePathReadback.saved {
+  border-color: #a7d3bd;
+  background: #f4fbf7;
+}
+
+.manualReviewEvidencePathReadback.blocked {
+  border-color: #f0c9bf;
+  background: #fff8f6;
+}
+
+.manualReviewEvidencePathReadback > div {
+  display: grid;
+  gap: 3px;
+}
+
+.manualReviewEvidencePathReadback strong {
+  color: #23384f;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.manualReviewEvidencePathReadback > div span,
+.manualReviewEvidencePathReadback > p {
+  margin: 0;
+  color: #52677d;
+  font-size: 11px;
+  line-height: 1.38;
+}
+
+.manualReviewEvidencePathReadback ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.manualReviewEvidencePathReadback li {
+  display: grid;
+  gap: 3px;
+  border: 1px solid #e5eef7;
+  border-radius: 7px;
+  padding: 7px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.manualReviewEvidencePathReadback li.ready {
+  border-color: #bddcc9;
+}
+
+.manualReviewEvidencePathReadback li.blocked {
+  border-color: #efc8bd;
+}
+
+.manualReviewEvidencePathReadback li.waiting {
+  border-color: #ded8b6;
+}
+
+.manualReviewEvidencePathReadback li span {
+  color: #66758a;
+  font-size: 10.5px;
+  font-weight: 820;
+  line-height: 1.2;
+}
+
+.manualReviewEvidencePathReadback li b {
+  color: #1f3147;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.manualReviewEvidencePathReadback li p {
+  margin: 0;
+  color: #566b82;
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
 .manualActionButtonBoundary {
   border: 1px solid #d8e8f3;
   border-radius: 8px;

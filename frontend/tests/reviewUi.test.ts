@@ -46,6 +46,7 @@ import {
   manualActionAuthorizationReadinessSummary,
   manualConfirmationEvidenceReadinessSummary,
   manualConfirmationDiagnosisBridgeSummary,
+  buildManualReviewEvidencePathReadback,
   buildManualActionPostWritePreflightRequest,
   buildManualReviewClosureLedger,
   manualActionPreflightEvidenceSnapshotText,
@@ -1668,6 +1669,57 @@ assertEqual(manualActionReadbackPathAfterRecord[2].value, "已保存");
 assertIncludes(manualActionReadbackPathAfterRecord[2].detail, "复盘证据快照：7d 4 条");
 assertIncludes(manualActionReadbackPathAfterRecord[2].detail, "可回看对象引用");
 assertIncludes(manualActionReadbackPathAfterRecord[2].detail, "不自动执行广告动作");
+const pendingManualReviewEvidencePathReadback = buildManualReviewEvidencePathReadback({
+  latestManualAction: {
+    action_type: "handled",
+    object_type: "advertised_product",
+    object_id: "B016EXMW02",
+    object_label: "B016EXMW02",
+    evidence_snapshot: completeReviewTodoEvidenceSnapshot,
+  },
+  reviewTodos: [dueTodoWithCompleteEvidence, pendingTodoWithCompleteEvidence],
+  reviewRecords: [],
+});
+assertEqual(pendingManualReviewEvidencePathReadback.title, "同一证据路径读回");
+assertEqual(pendingManualReviewEvidencePathReadback.tone, "ready");
+assertIncludes(pendingManualReviewEvidencePathReadback.summary, "同一条点击时证据路径");
+assertEqual(pendingManualReviewEvidencePathReadback.rows[0].label, "ManualAction");
+assertEqual(pendingManualReviewEvidencePathReadback.rows[0].value, "路径已留存");
+assertIncludes(pendingManualReviewEvidencePathReadback.rows[0].detail, "点击时 evidence_snapshot 4 条");
+assertEqual(pendingManualReviewEvidencePathReadback.rows[1].label, "ReviewTodo");
+assertEqual(pendingManualReviewEvidencePathReadback.rows[1].value, "已继承 7/14 天");
+assertIncludes(pendingManualReviewEvidencePathReadback.rows[1].detail, "待办证据快照：7d 4 条 / 14d 4 条");
+assertEqual(pendingManualReviewEvidencePathReadback.rows[2].label, "ReviewRecord");
+assertEqual(pendingManualReviewEvidencePathReadback.rows[2].value, "未保存结论");
+assertIncludes(pendingManualReviewEvidencePathReadback.boundary, "不代表广告动作执行");
+const savedManualReviewEvidencePathReadback = buildManualReviewEvidencePathReadback({
+  latestManualAction: {
+    action_type: "handled",
+    object_type: "advertised_product",
+    object_id: "B016EXMW02",
+    object_label: "B016EXMW02",
+    evidence_snapshot: completeReviewTodoEvidenceSnapshot,
+  },
+  reviewTodos: [dueTodoWithCompleteEvidence, pendingTodoWithCompleteEvidence],
+  reviewRecords: [savedReviewRecord],
+});
+assertEqual(savedManualReviewEvidencePathReadback.tone, "saved");
+assertIncludes(savedManualReviewEvidencePathReadback.summary, "ManualAction、ReviewTodo 和 ReviewRecord");
+assertEqual(savedManualReviewEvidencePathReadback.rows[2].value, "结论已沿用");
+assertIncludes(savedManualReviewEvidencePathReadback.rows[2].detail, "复盘证据快照：7d 4 条");
+const blockedManualReviewEvidencePathReadback = buildManualReviewEvidencePathReadback({
+  latestManualAction: {
+    action_type: "handled",
+    object_type: "advertised_product",
+    object_id: "B016EXMW02",
+    evidence_snapshot: [{ label: "广告商品覆盖", value: "覆盖 raw 投放行 6/7" }],
+  },
+  reviewTodos: [dueTodoWithCompleteEvidence],
+  reviewRecords: [],
+});
+assertEqual(blockedManualReviewEvidencePathReadback.tone, "blocked");
+assertIncludes(blockedManualReviewEvidencePathReadback.summary, "证据路径读回存在缺口");
+assertIncludes(blockedManualReviewEvidencePathReadback.rows[0].detail, "点击时 evidence_snapshot 缺");
 const manualActionIdentityGateItems = buildManualActionIdentityGateItems({
   signal: {
     id: "sig-long-tail-beach-current",
