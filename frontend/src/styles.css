@@ -1750,6 +1750,41 @@ h3 {
   line-height: 1.4;
 }
 
+.productScopePriorityEvidencePreview {
+  display: grid;
+  gap: 3px;
+  padding: 7px 8px;
+  border: 1px solid #d9e7f4;
+  border-radius: 7px;
+  background: #fbfdff;
+}
+
+.productScopePriorityEvidencePreview.ready {
+  border-color: #bad8ee;
+  background: #f0f8ff;
+}
+
+.productScopePriorityEvidencePreview.pending {
+  border-color: #e0e6ef;
+  background: #f8fafc;
+}
+
+.productScopePriorityEvidencePreview b {
+  color: #52657b;
+  font-size: 10px;
+  font-weight: 820;
+}
+
+.productScopePriorityEvidencePreview strong {
+  color: #1f3047;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.productScopePriorityEvidencePreview small {
+  color: #607286;
+}
+
 .productScopePriorityEntryBridge {
   display: grid;
   gap: 10px;

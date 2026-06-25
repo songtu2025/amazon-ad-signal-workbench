@@ -2068,29 +2068,42 @@ export function SignalTriageWorkbench() {
               </div>
               <div className="productScopePriorityQueueRows">
                 {visibleProductScopePriorityQueueItems.length > 0 ? (
-                  visibleProductScopePriorityQueueItems.map((item, index) => (
-                    <button
-                      type="button"
-                      className={`productScopePriorityQueueRow ${item.tone} ${activeProductScopeId === item.scopeId ? "active" : ""}`}
-                      key={item.scopeId}
-                      onClick={() => handleSelectProductScopePriority(item.scopeId)}
-                      aria-label={`打开 ${item.label} 的 Parent ASIN 广告诊断`}
-                    >
-                      <span className="productScopePriorityRank">{index + 1}</span>
-                      <span className="productScopePriorityBody">
-                        <span className="productScopePriorityTopline">
-                          <strong>{item.label}</strong>
-                          <b>{item.priorityLabel}</b>
+                  visibleProductScopePriorityQueueItems.map((item, index) => {
+                    const adGroupEvidencePreview = buildProductScopePriorityAdGroupEvidencePreview(
+                      item,
+                      activeProductScopeId,
+                      selectedAdGroupDiagnosis,
+                    );
+
+                    return (
+                      <button
+                        type="button"
+                        className={`productScopePriorityQueueRow ${item.tone} ${activeProductScopeId === item.scopeId ? "active" : ""}`}
+                        key={item.scopeId}
+                        onClick={() => handleSelectProductScopePriority(item.scopeId)}
+                        aria-label={`打开 ${item.label} 的 Parent ASIN 广告诊断`}
+                      >
+                        <span className="productScopePriorityRank">{index + 1}</span>
+                        <span className="productScopePriorityBody">
+                          <span className="productScopePriorityTopline">
+                            <strong>{item.label}</strong>
+                            <b>{item.priorityLabel}</b>
+                          </span>
+                          <span>{item.mainQuestion}</span>
+                          <small>{item.evidenceSummary}</small>
+                          <span className={`productScopePriorityEvidencePreview ${adGroupEvidencePreview.tone}`}>
+                            <b>{adGroupEvidencePreview.label}</b>
+                            <strong>{adGroupEvidencePreview.focusLayer}</strong>
+                            <small>{adGroupEvidencePreview.nextManualStep}</small>
+                          </span>
+                          <small>排序依据：{item.rankReason}</small>
+                          <small>{item.decisionBadge}</small>
+                          <small>{item.nextManualStep}</small>
+                          <small>{item.boundary}</small>
                         </span>
-                        <span>{item.mainQuestion}</span>
-                        <small>{item.evidenceSummary}</small>
-                        <small>排序依据：{item.rankReason}</small>
-                        <small>{item.decisionBadge}</small>
-                        <small>{item.nextManualStep}</small>
-                        <small>{item.boundary}</small>
-                      </span>
-                    </button>
-                  ))
+                      </button>
+                    );
+                  })
                 ) : (
                   <div className="productScopePriorityQueueEmpty">
                     当前分诊桶暂无 Parent ASIN；切回全部，或等待新的广告证据、人工处理记录和复盘待办进入队列。
@@ -4013,6 +4026,14 @@ interface ProductScopePriorityDecisionSummary {
 
 type ProductScopePriorityBucketFilter = ProductScopePriorityDecisionBucket["id"] | "all";
 
+interface ProductScopePriorityAdGroupEvidencePreview {
+  label: string;
+  focusLayer: string;
+  nextManualStep: string;
+  boundary: string;
+  tone: "ready" | "pending";
+}
+
 function buildProductScopePriorityDecisionSummary(items: ProductScopePriorityQueueItem[]): ProductScopePriorityDecisionSummary | null {
   const topItem = items[0];
   if (!topItem) return null;
@@ -4070,6 +4091,33 @@ function productScopePriorityBucketFilterText(
   const bucket = summary.triageBuckets.find((item) => item.id === bucketFilter);
   if (!bucket) return "先排序，再下钻；当前分诊桶暂无可读对象。";
   return `当前只看：${bucket.label} ${bucket.count} 个；${bucket.action}`;
+}
+
+function buildProductScopePriorityAdGroupEvidencePreview(
+  item: ProductScopePriorityQueueItem,
+  activeScopeId: string,
+  adGroup: ProductScopeAdGroupDiagnosisRow | null,
+): ProductScopePriorityAdGroupEvidencePreview {
+  if (item.scopeId === activeScopeId && adGroup) {
+    const checklistItems = buildProductScopeAdGroupChecklistItems(adGroup);
+    const priority = buildProductScopeAdGroupReviewPriority(adGroup, checklistItems);
+
+    return {
+      label: "当前默认下钻",
+      focusLayer: priority.focusLayer,
+      nextManualStep: `${adGroup.title}：${priority.nextStep}`,
+      boundary: priority.boundary,
+      tone: "ready",
+    };
+  }
+
+  return {
+    label: "打开后读取",
+    focusLayer: "按该 Parent ASIN 的广告组优先级决定",
+    nextManualStep: "点击后再读取该 Parent ASIN 范围内的默认广告组和优先证据层。",
+    boundary: "未打开前不跨 Parent ASIN 套用当前广告组结论，也不生成广告动作。",
+    tone: "pending",
+  };
 }
 
 function ProductScopePriorityDecisionSummaryPanel({
@@ -4150,6 +4198,7 @@ function ProductScopePriorityEntryBridgePanel({
   const adGroupFocusReason = adGroup
     ? `${adGroup.nextReviewFocus}；${adGroup.boundary}`
     : "没有广告组诊断行时，不能把 Parent ASIN 直接包装成广告组问题，也不能生成自动广告动作。";
+  const adGroupEvidencePreview = buildProductScopePriorityAdGroupEvidencePreview(item, item.scopeId, adGroup);
 
   return (
     <section className={`productScopePriorityEntryBridge diagnosisStep ${item.tone}`} aria-label="当前 Parent ASIN 进入理由">
@@ -4184,12 +4233,20 @@ function ProductScopePriorityEntryBridgePanel({
           <span>{adGroupFocusReason}</span>
         </li>
         <li>
+          <b>默认下钻证据层</b>
+          <span>{adGroupEvidencePreview.focusLayer}</span>
+        </li>
+        <li>
+          <b>证据层人工下一步</b>
+          <span>{adGroupEvidencePreview.nextManualStep}</span>
+        </li>
+        <li>
           <b>进入右侧前核对</b>
           <span>{item.nextManualStep}</span>
         </li>
       </ul>
       <small>
-        {item.boundary} 下方“广告组问题定位”可切换当前广告组焦点；本区只解释进入理由，不写入人工动作，也不执行任何广告操作。
+        {item.boundary} {adGroupEvidencePreview.boundary} 下方“广告组问题定位”可切换当前广告组焦点；本区只解释进入理由，不写入人工动作，也不执行任何广告操作。
       </small>
     </section>
   );
