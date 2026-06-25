@@ -1086,6 +1086,27 @@ export function SignalTriageWorkbench() {
     () => buildReviewTodoDecisionReadbackSummary(nextReviewTodo),
     [nextReviewTodo],
   );
+  const selectedReviewTodoPathReadbackPreview = useMemo(() => {
+    if (!selectedReviewTodoDecisionReadback) return null;
+    const rows = selectedReviewTodoDecisionReadback.rows.filter((row) =>
+      ["原始诊断路径", "默认展开焦点", "复核证据层"].includes(row.label),
+    );
+    const readyCount = rows.filter((row) => row.tone === "ready").length;
+    const totalCount = rows.length;
+    const summary =
+      selectedReviewTodoDecisionReadback.tone === "ready"
+        ? `已回读 ${readyCount}/${totalCount} 个诊断路径节点；到期复盘先沿 Parent ASIN、广告组、搜索词证据回看，再判断处理后指标。`
+        : selectedReviewTodoDecisionReadback.tone === "blocked"
+          ? "复盘待办已有证据快照，但诊断路径不完整；到期后先补齐 Parent ASIN、广告组或搜索词证据，再保存复盘结论。"
+          : "当前还没有可回读的复盘待办证据快照；只能确认排程，不能判断效果。";
+    return {
+      title: "复盘待办诊断路径读回",
+      tone: selectedReviewTodoDecisionReadback.tone,
+      summary,
+      rows,
+      boundary: "这是 ReviewTodo 继承的点击时证据快照，不是当前实时广告事实；只服务人工复盘，不执行广告动作。",
+    };
+  }, [selectedReviewTodoDecisionReadback]);
   const selectedReviewEvidenceSnapshot = useMemo(() => {
     const todoSnapshot = nextReviewTodo?.evidence_snapshot ?? [];
     if (todoSnapshot.length > 0) {
@@ -3367,6 +3388,28 @@ export function SignalTriageWorkbench() {
                       </li>
                     ))}
                   </ul>
+                  {selectedReviewTodoPathReadbackPreview && (
+                    <section
+                      className={`reviewTodoPathReadbackPreview ${selectedReviewTodoPathReadbackPreview.tone}`}
+                      aria-label="复盘待办诊断路径读回"
+                    >
+                      <div>
+                        <strong>{selectedReviewTodoPathReadbackPreview.title}</strong>
+                        <span>{selectedReviewTodoPathReadbackPreview.tone === "ready" ? "路径可回读" : "先补证据"}</span>
+                      </div>
+                      <p>{selectedReviewTodoPathReadbackPreview.summary}</p>
+                      <ul>
+                        {selectedReviewTodoPathReadbackPreview.rows.map((row) => (
+                          <li key={row.label} className={row.tone}>
+                            <span>{row.label}</span>
+                            <b>{row.value}</b>
+                            <p>{row.detail}</p>
+                          </li>
+                        ))}
+                      </ul>
+                      <small>{selectedReviewTodoPathReadbackPreview.boundary}</small>
+                    </section>
+                  )}
                 </div>
 
                 <details className="reviewFlowStatusDetails" aria-label="复盘完整状态账本">
