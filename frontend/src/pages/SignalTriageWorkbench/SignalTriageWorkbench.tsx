@@ -2581,7 +2581,11 @@ export function SignalTriageWorkbench() {
           </div>
 
           {selectedAdGroupDiagnosis && (
-            <ProductScopeAdGroupActionBridgeCard row={selectedAdGroupDiagnosis} priorityItem={activeProductScopePriorityItem} />
+            <ProductScopeAdGroupActionBridgeCard
+              row={selectedAdGroupDiagnosis}
+              priorityItem={activeProductScopePriorityItem}
+              diagnosisBrief={productScopeDiagnosisBrief}
+            />
           )}
 
           {selectedSignal ? (
@@ -4859,9 +4863,11 @@ function ProductScopeAdGroupDataSummaryPanel({ row }: { row: ProductScopeAdGroup
 function ProductScopeAdGroupActionBridgeCard({
   row,
   priorityItem,
+  diagnosisBrief,
 }: {
   row: ProductScopeAdGroupDiagnosisRow;
   priorityItem: ProductScopePriorityQueueItem | null;
+  diagnosisBrief: ProductScopeDiagnosisBrief | null;
 }) {
   const items = buildProductScopeAdGroupChecklistItems(row);
   const reviewPath = items.map((item) => item.title).join(" → ");
@@ -4869,6 +4875,10 @@ function ProductScopeAdGroupActionBridgeCard({
   const scopeReadback = priorityItem ? `${scopeLabel} / ${priorityItem.priorityLabel}` : `${scopeLabel} / 当前广告组诊断`;
   const scopeBoundary =
     priorityItem?.boundary ?? "没有 Parent ASIN 分诊来源时，右侧人工动作只保存当前广告组留痕或复盘待办。";
+  const parentProofSections =
+    diagnosisBrief?.sections.filter((section) =>
+      ["sales_summary", "ad_group_priority", "ad_group_detail", "ai_summary"].includes(section.id),
+    ) ?? [];
 
   return (
     <section className="adGroupActionBridgeCard" aria-label="当前广告组人工动作承接">
@@ -4886,6 +4896,27 @@ function ProductScopeAdGroupActionBridgeCard({
           右侧只核对能否留痕或加入复盘，不重复解释 Parent ASIN 排序理由，也不执行广告操作。
         </small>
       </div>
+      {diagnosisBrief && (
+        <div className="adGroupActionBridgeParentProof" aria-label="Parent ASIN 单屏证明边界读回">
+          <div>
+            <strong>Parent ASIN 单屏判断读回</strong>
+            <span>{diagnosisBrief.statusLabel}</span>
+          </div>
+          <p>{diagnosisBrief.decisionGuide.primaryDecision}</p>
+          <ul>
+            {parentProofSections.map((section) => (
+              <li key={section.id}>
+                <b>{section.title}</b>
+                <small>业务问题：{section.businessQuestion}</small>
+                <small>能证明：{section.proves}</small>
+                <small>不能证明：{section.doesNotProve}</small>
+                <small>人工下一步：{section.nextManualStep}</small>
+              </li>
+            ))}
+          </ul>
+          <small>{diagnosisBrief.boundary}</small>
+        </div>
+      )}
       <div className="adGroupActionBridgePreflightEvidence" aria-label="人工点击前证据读回">
         <span>
           <b>复核顺序</b>

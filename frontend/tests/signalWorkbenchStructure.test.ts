@@ -108,7 +108,15 @@ assertIncludes(workbenchSource, "ProductScopeTargetingEvidencePanel row={row}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupDataSummaryPanel row={row}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupReviewOrderPanel row={row}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupOperationalChecklistPanel row={row}");
-assertIncludes(workbenchSource, "ProductScopeAdGroupActionBridgeCard row={selectedAdGroupDiagnosis} priorityItem={activeProductScopePriorityItem}");
+assertIncludes(workbenchSource, "diagnosisBrief={productScopeDiagnosisBrief}");
+assertIncludes(workbenchSource, "diagnosisBrief: ProductScopeDiagnosisBrief | null;");
+assertIncludes(workbenchSource, 'aria-label="Parent ASIN 单屏证明边界读回"');
+assertIncludes(workbenchSource, "diagnosisBrief.decisionGuide.primaryDecision");
+assertIncludes(workbenchSource, "diagnosisBrief?.sections.filter");
+assertIncludes(workbenchSource, "业务问题：{section.businessQuestion}");
+assertIncludes(workbenchSource, "能证明：{section.proves}");
+assertIncludes(workbenchSource, "不能证明：{section.doesNotProve}");
+assertIncludes(workbenchSource, "人工下一步：{section.nextManualStep}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupReasoningDetails row={row}");
 assertIncludes(workbenchSource, "先看证据层，再看 AI 推理");
 assertIncludes(workbenchSource, 'aria-label="广告组下具体数据四要素摘要"');
@@ -264,7 +272,7 @@ const focusMetricsIndex = workbenchSource.indexOf(
 const selectedSignalBranchIndex = workbenchSource.indexOf("{selectedSignal ? (");
 const actionPanelIndex = workbenchSource.indexOf('<aside className="actionPanel">');
 const adGroupActionBridgeRenderIndex = workbenchSource.indexOf(
-  "<ProductScopeAdGroupActionBridgeCard row={selectedAdGroupDiagnosis} priorityItem={activeProductScopePriorityItem} />",
+  "<ProductScopeAdGroupActionBridgeCard",
 );
 const actionDecisionCardIndex = workbenchSource.indexOf('className="actionDecisionCard"');
 const selectedSignalScopeContextRenderIndex = workbenchSource.indexOf(
@@ -387,6 +395,8 @@ assertIncludes(stylesSource, ".productScopeAdGroupChecklistProof");
 assertIncludes(stylesSource, ".productScopeAdGroupChecklistProof span");
 assertIncludes(stylesSource, ".adGroupActionBridgeReviewEvidence");
 assertIncludes(stylesSource, ".adGroupActionBridgeReviewEvidence ul");
+assertIncludes(stylesSource, ".adGroupActionBridgeParentProof");
+assertIncludes(stylesSource, ".adGroupActionBridgeParentProof ul");
 assertIncludes(stylesSource, ".adGroupActionBridgePreflightEvidence");
 assertIncludes(stylesSource, ".adGroupActionBridgeCard");
 assertIncludes(stylesSource, ".adGroupActionBridgeScope");
