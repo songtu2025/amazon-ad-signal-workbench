@@ -724,6 +724,65 @@ h3 {
   line-height: 1.45;
 }
 
+.productScopeSingleScreenSearchIntentPath {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.productScopeSingleScreenSearchIntentPath li {
+  display: grid;
+  grid-template-columns: minmax(88px, 0.9fr) minmax(64px, 0.45fr) minmax(0, 1.25fr);
+  gap: 6px;
+  align-items: start;
+  min-width: 0;
+  border: 1px solid #d8e4ef;
+  border-radius: 7px;
+  padding: 6px;
+  background: #fff;
+}
+
+.productScopeSingleScreenSearchIntentPath li.scale {
+  border-color: #c6decf;
+  background: #f7fbf8;
+}
+
+.productScopeSingleScreenSearchIntentPath li.waste {
+  border-color: #f0c9bf;
+  background: #fff8f6;
+}
+
+.productScopeSingleScreenSearchIntentPath li.observe {
+  border-color: #d6e1ec;
+  background: #f8fafc;
+}
+
+.productScopeSingleScreenSearchIntentPath b,
+.productScopeSingleScreenSearchIntentPath strong,
+.productScopeSingleScreenSearchIntentPath small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.productScopeSingleScreenSearchIntentPath b {
+  color: #52647a;
+  font-size: 11px;
+}
+
+.productScopeSingleScreenSearchIntentPath strong {
+  color: #172a42;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.productScopeSingleScreenSearchIntentPath small {
+  color: #607186;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .productScopePriorityDecisionShortcuts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
@@ -10582,6 +10641,10 @@ button.reviewTodoQueueNext:focus-visible {
   .searchIntentReviewDecisionDistribution,
   .searchIntentReviewPriorityPath,
   .searchIntentReviewDecisionNext {
+    grid-template-columns: 1fr;
+  }
+
+  .productScopeSingleScreenSearchIntentPath li {
     grid-template-columns: 1fr;
   }
 

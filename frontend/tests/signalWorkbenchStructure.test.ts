@@ -116,6 +116,8 @@ assertIncludes(workbenchSource, "首页摘要读回");
 assertIncludes(workbenchSource, "Parent ASIN 经营盘 → 有广告数据的广告 ASIN → 广告组 → 投放商品 / 投放词 / 搜索词 / 广告位");
 assertIncludes(workbenchSource, "广告证据");
 assertIncludes(workbenchSource, "默认聚焦广告组");
+assertIncludes(workbenchSource, 'aria-label="单屏搜索词复核顺序"');
+assertIncludes(workbenchSource, "searchIntentSummary.priorityPathItems.map");
 assertIncludes(workbenchSource, "聚焦原因");
 assertIncludes(workbenchSource, "进入右侧前核对");
 assertIncludes(workbenchSource, "暂无可聚焦广告组；先补齐广告组、投放商品、投放词、搜索词和广告位证据。");
@@ -1213,6 +1215,7 @@ assertIncludes(workbenchSource, "<ReviewRepairSampleItem item={item} />");
 assertIncludes(workbenchSource, 'aria-label="历史待办治理下一步"');
 assertIncludes(stylesSource, ".productScopeSingleScreenCommandCard");
 assertIncludes(stylesSource, ".productScopeSingleScreenGrid");
+assertIncludes(stylesSource, ".productScopeSingleScreenSearchIntentPath");
 const reviewGateRenderIndex = workbenchSource.indexOf('aria-label="全局复盘可验证性"');
 const reviewEvidenceRepairRenderIndex = workbenchSource.indexOf("aria-label={reviewEvidenceRepairAriaLabel}");
 assert(

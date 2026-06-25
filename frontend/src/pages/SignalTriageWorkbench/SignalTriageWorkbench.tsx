@@ -4630,6 +4630,17 @@ function ProductScopeSingleScreenCommandCard({
         <span className="scope">
           <b>搜索词复核</b>
           <strong>{searchIntentText}</strong>
+          {searchIntentSummary && (
+            <ol className="productScopeSingleScreenSearchIntentPath" aria-label="单屏搜索词复核顺序">
+              {searchIntentSummary.priorityPathItems.map((item) => (
+                <li className={item.tone} key={item.label}>
+                  <b>{item.label}</b>
+                  <strong>{item.value}</strong>
+                  <small>{item.detail}</small>
+                </li>
+              ))}
+            </ol>
+          )}
           <small>{searchIntentSummary?.nextManualStep ?? "搜索词复核只聚合当前 Parent ASIN 广告上下文，不改变经营诊断入口。"}</small>
         </span>
         <span className={aiGate?.tone ?? "waiting"}>
