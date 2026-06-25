@@ -1446,6 +1446,7 @@ export interface ProductScopePriorityQueueItem {
   label: string;
   priorityLabel: string;
   tone: ProductScopePriorityQueueTone;
+  workflowStatus: ProductScopePriorityWorkflowStatus;
   mainQuestion: string;
   evidenceSummary: string;
   rankReason: string;
@@ -1456,6 +1457,13 @@ export interface ProductScopePriorityQueueItem {
   reviewTodoCount: number;
   dueReviewTodoCount: number;
   score: number;
+}
+
+export interface ProductScopePriorityWorkflowStatus {
+  label: string;
+  tone: ProductScopePriorityQueueTone;
+  reason: string;
+  nextStep: string;
 }
 
 export type ProductScopePrioritySearchIntentSummaryMap = Record<string, SearchIntentSummaryForUi[] | undefined>;
@@ -7194,6 +7202,13 @@ export function buildProductScopePriorityQueueItems(
         label: option.label ?? option.parent_asin ?? option.scope_id.replace("parent_asin:", ""),
         priorityLabel: priority.label,
         tone: priority.tone,
+        workflowStatus: productScopePriorityWorkflowStatus({
+          dueReviewTodoCount,
+          reviewTodoCount: scopeReviewTodos.length,
+          highSignalCount,
+          openSignalCount,
+          hasAdEvidence,
+        }),
         mainQuestion: productScopePriorityQuestion({
           strongestKind,
           dueReviewTodoCount,
@@ -7259,6 +7274,14 @@ export function mergeActiveProductScopePriorityTriageHint(
       ...item,
       priorityLabel: shouldKeepReviewPriority ? item.priorityLabel : "人工确认",
       tone: shouldKeepReviewPriority ? item.tone : "urgent",
+      workflowStatus: shouldKeepReviewPriority
+        ? item.workflowStatus
+        : {
+            label: "待人工确认",
+            tone: "urgent",
+            reason: `已选 Parent 返回 ${candidateCount} 个可复核候选，先核对推荐候选是否需要人工留痕。`,
+            nextStep: `打开 ${recommendedLabel} 的诊断证据，再决定记录观察、标记已处理、加入复盘或忽略本次。`,
+          },
       mainQuestion: shouldKeepReviewPriority
         ? item.mainQuestion
         : `已选 Parent 有 ${candidateCount} 个可人工复核候选，先看 ${recommendedLabel} 是否需要留痕或加入复盘。`,
@@ -7310,6 +7333,15 @@ export function mergeProductScopePrioritySearchIntentHints(
           ...item,
           priorityLabel: upgradedPriorityLabel,
           tone: upgradedTone,
+          workflowStatus:
+            shouldKeepReviewPriority || topCard.operationDecisionTone === "observe"
+              ? item.workflowStatus
+              : {
+                  label: "待人工确认",
+                  tone: "urgent",
+                  reason: `${topCard.title} 已形成${topCard.operationDecisionLabel}线索，需要下钻具体 SearchTerm 后再人工判断。`,
+                  nextStep: `打开 ${primarySearchTerm} 的具体 SearchTerm 诊断，再决定记录观察、标记已处理、加入复盘或忽略本次。`,
+                },
           mainQuestion: shouldKeepReviewPriority
             ? item.mainQuestion
             : `当前 Parent 有 ${searchIntentCards.length} 组广告搜索词复核线索，先看 ${topCard.title} 是否需要进入具体 SearchTerm 人工复核。`,
@@ -7400,6 +7432,61 @@ function productScopePriorityLabel(input: {
   if (input.openSignalCount > 0) return { label: "排队复核", tone: "watch" };
   if (input.hasAdEvidence) return { label: "观察", tone: "watch" };
   return { label: "暂不展开", tone: "quiet" };
+}
+
+function productScopePriorityWorkflowStatus(input: {
+  dueReviewTodoCount: number;
+  reviewTodoCount: number;
+  highSignalCount: number;
+  openSignalCount: number;
+  hasAdEvidence: boolean;
+}): ProductScopePriorityWorkflowStatus {
+  if (input.dueReviewTodoCount > 0) {
+    return {
+      label: "到期复盘",
+      tone: "review",
+      reason: `已有 ${input.dueReviewTodoCount} 条复盘待办到期，先核对处理前后指标。`,
+      nextStep: "打开右侧复盘待办；只有复盘效果 ready 后，才人工保存复盘记录。",
+    };
+  }
+  if (input.reviewTodoCount > 0) {
+    return {
+      label: "等待复盘",
+      tone: "review",
+      reason: `已有 ${input.reviewTodoCount} 条复盘待办，当前重点是等 7/14 天窗口完整。`,
+      nextStep: "未到期前不重复处理；只补充观察，不自动调整广告。",
+    };
+  }
+  if (input.highSignalCount > 0) {
+    return {
+      label: "待人工确认",
+      tone: "urgent",
+      reason: `存在 ${input.highSignalCount} 条高优先广告信号，需要判断是否影响花费、订单或 ACOS。`,
+      nextStep: "打开诊断链路，在右侧选择记录观察、标记已处理、加入复盘或忽略本次。",
+    };
+  }
+  if (input.openSignalCount > 0) {
+    return {
+      label: "仅观察",
+      tone: "watch",
+      reason: `有 ${input.openSignalCount} 条待复核信号，但当前不足以升级成优先人工处理。`,
+      nextStep: "只核对证据是否足够；证据不足时记录观察或继续等待新数据。",
+    };
+  }
+  if (input.hasAdEvidence) {
+    return {
+      label: "仅观察",
+      tone: "watch",
+      reason: "有广告表现背景，但暂无明确异常、机会或复盘待办。",
+      nextStep: "不逐层阅读完整报表；等新增信号或指标变化后再展开。",
+    };
+  }
+  return {
+    label: "证据缺口",
+    tone: "quiet",
+    reason: "当前没有投放广告证据，不能进入广告诊断动作。",
+    nextStep: "先补 advertised_products、搜索词或广告位证据，再判断是否进入分析。",
+  };
 }
 
 function productScopePriorityQuestion(input: {

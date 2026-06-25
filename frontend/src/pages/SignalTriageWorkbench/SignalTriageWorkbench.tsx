@@ -2429,6 +2429,11 @@ export function SignalTriageWorkbench() {
                             <strong>{item.label}</strong>
                             <b>{item.priorityLabel}</b>
                           </span>
+                          <span className={`productScopePriorityWorkflowStatus ${item.workflowStatus.tone}`}>
+                            <b>{item.workflowStatus.label}</b>
+                            <small>{item.workflowStatus.reason}</small>
+                            <small>下一步：{item.workflowStatus.nextStep}</small>
+                          </span>
                           <span>{item.mainQuestion}</span>
                           <small>{item.evidenceSummary}</small>
                           <span className={`productScopePriorityEvidencePreview ${adGroupEvidencePreview.tone}`}>
