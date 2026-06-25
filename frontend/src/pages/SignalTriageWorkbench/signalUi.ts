@@ -1453,6 +1453,11 @@ export interface ProductScopePriorityQueueItem {
   score: number;
 }
 
+function appendPriorityText(text: string, addition: string): string {
+  if (!addition || text.includes(addition)) return text;
+  return `${text} / ${addition}`;
+}
+
 export interface ProductScopePriorityDecisionBucket {
   id: "review" | "manual" | "watch" | "quiet";
   label: string;
@@ -7138,6 +7143,42 @@ export function buildProductScopePriorityQueueItems(
     })
     .sort((left, right) => right.score - left.score || left.label.localeCompare(right.label))
     .slice(0, limit);
+}
+
+export function mergeActiveProductScopePriorityTriageHint(
+  items: ProductScopePriorityQueueItem[],
+  summary: SignalTriageSummaryForUi | null | undefined,
+): ProductScopePriorityQueueItem[] {
+  const selectedScopeId = summary?.product_scope_gate?.selected_product_scope_id?.trim();
+  const candidateCount =
+    summary?.product_scope_gate?.candidate_pool_count ?? summary?.signal_status?.candidate_count ?? 0;
+  if (!selectedScopeId || candidateCount <= 0) return items;
+
+  const recommendedLabel =
+    summary?.recommended_candidate?.object_label || summary?.recommended_candidate?.stable_object_id || "推荐候选";
+  const candidateText = `后端候选 ${candidateCount} 个`;
+  const recommendedText = `推荐 ${recommendedLabel}`;
+
+  return items.map((item) => {
+    if (item.scopeId !== selectedScopeId) return item;
+
+    const shouldKeepReviewPriority = item.tone === "review";
+    return {
+      ...item,
+      priorityLabel: shouldKeepReviewPriority ? item.priorityLabel : "人工确认",
+      tone: shouldKeepReviewPriority ? item.tone : "urgent",
+      mainQuestion: shouldKeepReviewPriority
+        ? item.mainQuestion
+        : `已选 Parent 有 ${candidateCount} 个可人工复核候选，先看 ${recommendedLabel} 是否需要留痕或加入复盘。`,
+      evidenceSummary: appendPriorityText(appendPriorityText(item.evidenceSummary, candidateText), recommendedText),
+      rankReason: `${item.rankReason}；已选 Parent 的 signal-triage 返回 ${candidateCount} 个可复核候选。`,
+      decisionBadge: shouldKeepReviewPriority
+        ? appendPriorityText(item.decisionBadge, `候选：${recommendedLabel}`)
+        : `人工动作：右侧人工确认 / 候选：${recommendedLabel} / 复盘状态：按后端门禁。`,
+      nextManualStep: `先打开 ${recommendedLabel} 的诊断证据，核对投放词、广告组、广告 ASIN 和边界后，再在右侧选择记录观察、标记已处理、加入复盘或忽略本次。`,
+      boundary: `${item.boundary} 当前候选来自已选 Parent 的 signal-triage 结果，只代表可人工复核线索，不代表自动加词、否词、调价或暂停广告。`,
+    } satisfies ProductScopePriorityQueueItem;
+  });
 }
 
 export function buildProductScopePriorityDecisionBuckets(items: ProductScopePriorityQueueItem[]): ProductScopePriorityDecisionBucket[] {

@@ -23,6 +23,7 @@ import {
   buildProductScopeOptionGroups,
   buildProductScopePriorityDecisionBuckets,
   buildProductScopePriorityQueueItems,
+  mergeActiveProductScopePriorityTriageHint,
   buildProductScopeManualActionTargetAlignment,
   buildProductScopeSignalExplanation,
   buildProductScopeAdmissionCard,
@@ -677,6 +678,33 @@ assertEqual(productScopePriorityQueueItems[3].priorityLabel, "暂不展开");
 assertIncludes(productScopePriorityQueueItems[3].decisionBadge, "人工动作：暂不展开");
 assertIncludes(productScopePriorityQueueItems[3].decisionBadge, "复盘状态：无待办");
 assertIncludes(productScopePriorityQueueItems[3].evidenceSummary, "当前无投放广告证据");
+
+const triagedProductScopePriorityQueueItems = mergeActiveProductScopePriorityTriageHint(productScopePriorityQueueItems, {
+  product_scope_gate: {
+    status: "ready",
+    is_actionable: true,
+    selected_product_scope_id: "parent_asin:B0WATCH",
+    candidate_pool_count: 3,
+    message: "已锁定 Parent ASIN / ASIN 经营对象，可进入广告证据下钻和人工确认。",
+  },
+  signal_status: { signal_count: 2, candidate_count: 3 },
+  recommended_candidate: {
+    signal_id: "sig-search-term-beach",
+    object_type: "search_term",
+    object_label: "beach essentials",
+    stable_object_id: "search_term:1:beach essentials",
+  },
+});
+assertEqual(triagedProductScopePriorityQueueItems[0].scopeId, "parent_asin:B0REVIEW");
+const triagedWatchPriorityItem = triagedProductScopePriorityQueueItems.find((item) => item.scopeId === "parent_asin:B0WATCH");
+assertEqual(triagedWatchPriorityItem?.priorityLabel, "人工确认");
+assertEqual(triagedWatchPriorityItem?.tone, "urgent");
+assertIncludes(triagedWatchPriorityItem?.mainQuestion ?? "", "可人工复核候选");
+assertIncludes(triagedWatchPriorityItem?.evidenceSummary ?? "", "后端候选 3 个");
+assertIncludes(triagedWatchPriorityItem?.evidenceSummary ?? "", "beach essentials");
+assertIncludes(triagedWatchPriorityItem?.decisionBadge ?? "", "候选：beach essentials");
+assertIncludes(triagedWatchPriorityItem?.nextManualStep ?? "", "投放词、广告组、广告 ASIN");
+assertIncludes(triagedWatchPriorityItem?.boundary ?? "", "不代表自动加词、否词、调价或暂停广告");
 
 const productScopePriorityDecisionBuckets = buildProductScopePriorityDecisionBuckets(productScopePriorityQueueItems);
 assertEqual(productScopePriorityDecisionBuckets.map((bucket) => `${bucket.label}:${bucket.count}`).join(" / "), "复盘优先:1 / 人工确认:1 / 保持观察:1 / 暂不展开:1");

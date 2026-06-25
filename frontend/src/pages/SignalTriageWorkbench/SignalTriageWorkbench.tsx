@@ -148,6 +148,7 @@ import {
   buildProductScopeOptionGroups,
   buildProductScopePriorityDecisionBuckets,
   buildProductScopePriorityQueueItems,
+  mergeActiveProductScopePriorityTriageHint,
   buildProductScopeManualActionTargetAlignment,
   buildProductScopeAdmissionCard,
   buildProductScopeEvidenceMatrix,
@@ -696,9 +697,13 @@ export function SignalTriageWorkbench() {
     () => buildProductScopeEntryGuidance(productScopeOptions, productScope?.coverage),
     [productScope?.coverage, productScopeOptions],
   );
-  const productScopePriorityQueueItems = useMemo(
+  const baseProductScopePriorityQueueItems = useMemo(
     () => buildProductScopePriorityQueueItems(productScopeOptions, normalizedSignals, reviewTodos, 10),
     [normalizedSignals, productScopeOptions, reviewTodos],
+  );
+  const productScopePriorityQueueItems = useMemo(
+    () => mergeActiveProductScopePriorityTriageHint(baseProductScopePriorityQueueItems, signalTriageSummary),
+    [baseProductScopePriorityQueueItems, signalTriageSummary],
   );
   const productScopePriorityDecisionSummary = useMemo(
     () => buildProductScopePriorityDecisionSummary(productScopePriorityQueueItems),
