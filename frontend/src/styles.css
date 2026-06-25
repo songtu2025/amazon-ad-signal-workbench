@@ -1567,6 +1567,12 @@ h3 {
   border-radius: 8px;
   padding: 7px;
   background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.productScopePriorityDecisionBuckets .productScopePriorityDecisionBucket {
+  justify-self: stretch;
 }
 
 .productScopePriorityDecisionBucket div {
@@ -1613,9 +1619,33 @@ h3 {
   background: #f8fafc;
 }
 
+.productScopePriorityDecisionBucket.all {
+  border-color: #c7d7e8;
+  background: #ffffff;
+}
+
+.productScopePriorityDecisionBucket.active {
+  box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.2);
+}
+
+.productScopePriorityDecisionBucket:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 .productScopePriorityQueueRows {
   display: grid;
   gap: 7px;
+}
+
+.productScopePriorityQueueEmpty {
+  border: 1px dashed #cbd8e6;
+  border-radius: 8px;
+  padding: 10px;
+  background: #f8fafc;
+  color: #607286;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .productScopePriorityQueueRow {

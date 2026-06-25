@@ -401,6 +401,8 @@ export function SignalTriageWorkbench() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedAdGroupDiagnosisId, setSelectedAdGroupDiagnosisId] = useState<string | null>(null);
   const [filter, setFilter] = useState<QueueFilter>("all");
+  const [productScopePriorityBucketFilter, setProductScopePriorityBucketFilter] =
+    useState<ProductScopePriorityBucketFilter>("all");
   const [loading, setLoading] = useState(true);
   const [creatingSnapshot, setCreatingSnapshot] = useState(false);
   const [probingSnapshot, setProbingSnapshot] = useState(false);
@@ -758,6 +760,14 @@ export function SignalTriageWorkbench() {
   const productScopePriorityDecisionSummary = useMemo(
     () => buildProductScopePriorityDecisionSummary(productScopePriorityQueueItems),
     [productScopePriorityQueueItems],
+  );
+  const visibleProductScopePriorityQueueItems = useMemo(
+    () => filterProductScopePriorityQueueItems(productScopePriorityQueueItems, productScopePriorityBucketFilter),
+    [productScopePriorityBucketFilter, productScopePriorityQueueItems],
+  );
+  const productScopePriorityQueueFilterText = useMemo(
+    () => productScopePriorityBucketFilterText(productScopePriorityBucketFilter, productScopePriorityDecisionSummary),
+    [productScopePriorityBucketFilter, productScopePriorityDecisionSummary],
   );
   const activeProductScopePriorityItem = useMemo(
     () => productScopePriorityQueueItems.find((item) => item.scopeId === activeProductScopeId) ?? null,
@@ -2045,6 +2055,8 @@ export function SignalTriageWorkbench() {
           {productScopePriorityDecisionSummary && (
             <ProductScopePriorityDecisionSummaryPanel
               summary={productScopePriorityDecisionSummary}
+              activeBucketFilter={productScopePriorityBucketFilter}
+              onBucketFilterChange={setProductScopePriorityBucketFilter}
               onOpenTop={handleSelectProductScopePriority}
             />
           )}
@@ -2052,32 +2064,38 @@ export function SignalTriageWorkbench() {
             <section className="productScopePriorityQueue" aria-label="今日 Parent ASIN 优先处理清单">
               <div className="productScopePriorityQueueHeader">
                 <strong>今日 Parent ASIN 优先处理清单</strong>
-                <span>先排序，再下钻；避免 10 个 Parent ASIN 像看 10 张报纸。</span>
+                <span>{productScopePriorityQueueFilterText}</span>
               </div>
               <div className="productScopePriorityQueueRows">
-                {productScopePriorityQueueItems.map((item, index) => (
-                  <button
-                    type="button"
-                    className={`productScopePriorityQueueRow ${item.tone} ${activeProductScopeId === item.scopeId ? "active" : ""}`}
-                    key={item.scopeId}
-                    onClick={() => handleSelectProductScopePriority(item.scopeId)}
-                    aria-label={`打开 ${item.label} 的 Parent ASIN 广告诊断`}
-                  >
-                    <span className="productScopePriorityRank">{index + 1}</span>
-                    <span className="productScopePriorityBody">
-                      <span className="productScopePriorityTopline">
-                        <strong>{item.label}</strong>
-                        <b>{item.priorityLabel}</b>
+                {visibleProductScopePriorityQueueItems.length > 0 ? (
+                  visibleProductScopePriorityQueueItems.map((item, index) => (
+                    <button
+                      type="button"
+                      className={`productScopePriorityQueueRow ${item.tone} ${activeProductScopeId === item.scopeId ? "active" : ""}`}
+                      key={item.scopeId}
+                      onClick={() => handleSelectProductScopePriority(item.scopeId)}
+                      aria-label={`打开 ${item.label} 的 Parent ASIN 广告诊断`}
+                    >
+                      <span className="productScopePriorityRank">{index + 1}</span>
+                      <span className="productScopePriorityBody">
+                        <span className="productScopePriorityTopline">
+                          <strong>{item.label}</strong>
+                          <b>{item.priorityLabel}</b>
+                        </span>
+                        <span>{item.mainQuestion}</span>
+                        <small>{item.evidenceSummary}</small>
+                        <small>排序依据：{item.rankReason}</small>
+                        <small>{item.decisionBadge}</small>
+                        <small>{item.nextManualStep}</small>
+                        <small>{item.boundary}</small>
                       </span>
-                      <span>{item.mainQuestion}</span>
-                      <small>{item.evidenceSummary}</small>
-                      <small>排序依据：{item.rankReason}</small>
-                      <small>{item.decisionBadge}</small>
-                      <small>{item.nextManualStep}</small>
-                      <small>{item.boundary}</small>
-                    </span>
-                  </button>
-                ))}
+                    </button>
+                  ))
+                ) : (
+                  <div className="productScopePriorityQueueEmpty">
+                    当前分诊桶暂无 Parent ASIN；切回全部，或等待新的广告证据、人工处理记录和复盘待办进入队列。
+                  </div>
+                )}
               </div>
             </section>
           )}
@@ -3948,6 +3966,8 @@ interface ProductScopePriorityDecisionSummary {
   boundary: string;
 }
 
+type ProductScopePriorityBucketFilter = ProductScopePriorityDecisionBucket["id"] | "all";
+
 function buildProductScopePriorityDecisionSummary(items: ProductScopePriorityQueueItem[]): ProductScopePriorityDecisionSummary | null {
   const topItem = items[0];
   if (!topItem) return null;
@@ -3977,13 +3997,49 @@ function buildProductScopePriorityDecisionSummary(items: ProductScopePriorityQue
   };
 }
 
+function filterProductScopePriorityQueueItems(
+  items: ProductScopePriorityQueueItem[],
+  bucketFilter: ProductScopePriorityBucketFilter,
+): ProductScopePriorityQueueItem[] {
+  if (bucketFilter === "all") return items;
+  return items.filter((item) => productScopePriorityBucketMatches(item, bucketFilter));
+}
+
+function productScopePriorityBucketMatches(
+  item: ProductScopePriorityQueueItem,
+  bucketFilter: ProductScopePriorityDecisionBucket["id"],
+): boolean {
+  if (bucketFilter === "review") return item.tone === "review";
+  if (bucketFilter === "manual") return item.tone === "urgent";
+  if (bucketFilter === "watch") return item.tone === "watch";
+  return item.tone === "quiet";
+}
+
+function productScopePriorityBucketFilterText(
+  bucketFilter: ProductScopePriorityBucketFilter,
+  summary: ProductScopePriorityDecisionSummary | null,
+): string {
+  if (!summary || bucketFilter === "all") {
+    return "先排序，再下钻；显示全部 Parent ASIN，避免 10 个 Parent ASIN 像看 10 张报纸。";
+  }
+  const bucket = summary.triageBuckets.find((item) => item.id === bucketFilter);
+  if (!bucket) return "先排序，再下钻；当前分诊桶暂无可读对象。";
+  return `当前只看：${bucket.label} ${bucket.count} 个；${bucket.action}`;
+}
+
 function ProductScopePriorityDecisionSummaryPanel({
   summary,
+  activeBucketFilter,
+  onBucketFilterChange,
   onOpenTop,
 }: {
   summary: ProductScopePriorityDecisionSummary;
+  activeBucketFilter: ProductScopePriorityBucketFilter;
+  onBucketFilterChange: (bucketFilter: ProductScopePriorityBucketFilter) => void;
   onOpenTop: (scopeId: string) => void;
 }) {
+  const totalCount = summary.triageBuckets.reduce((count, bucket) => count + bucket.count, 0);
+
   return (
     <section className="productScopePriorityDecisionSummary" aria-label="Parent ASIN 首页分诊摘要">
       <div className="productScopePriorityDecisionHeader">
@@ -3993,15 +4049,36 @@ function ProductScopePriorityDecisionSummaryPanel({
       <b>{summary.headline}</b>
       <p>{summary.scaleText}</p>
       <div className="productScopePriorityDecisionBuckets" aria-label="Parent ASIN 分诊桶">
+        <button
+          type="button"
+          className={`productScopePriorityDecisionBucket all ${activeBucketFilter === "all" ? "active" : ""}`}
+          onClick={() => onBucketFilterChange("all")}
+          aria-pressed={activeBucketFilter === "all"}
+        >
+          <div>
+            <strong>全部</strong>
+            <b>{totalCount} 个</b>
+          </div>
+          <p>先看排序后的全量 Parent ASIN</p>
+          <small>用于恢复完整队列，不展开全部明细。</small>
+        </button>
         {summary.triageBuckets.map((bucket) => (
-          <article className={`productScopePriorityDecisionBucket ${bucket.tone}`} key={bucket.id}>
+          <button
+            type="button"
+            className={`productScopePriorityDecisionBucket ${bucket.tone} ${activeBucketFilter === bucket.id ? "active" : ""}`}
+            disabled={bucket.count === 0}
+            key={bucket.id}
+            onClick={() => onBucketFilterChange(bucket.id)}
+            aria-pressed={activeBucketFilter === bucket.id}
+            aria-label={`只看${bucket.label} Parent ASIN`}
+          >
             <div>
               <strong>{bucket.label}</strong>
               <b>{bucket.count} 个</b>
             </div>
             <p>{bucket.objectLabels.length > 0 ? bucket.objectLabels.join(" / ") : "暂无对象"}</p>
             <small>{bucket.action}</small>
-          </article>
+          </button>
         ))}
       </div>
       <p>阅读策略：{summary.readingStrategy}</p>
