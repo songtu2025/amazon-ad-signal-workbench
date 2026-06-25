@@ -4143,6 +4143,15 @@ function SearchIntentReviewDecisionSummaryPanel({ summary }: { summary: SearchIn
           </div>
         ))}
       </dl>
+      <ol className="searchIntentReviewPriorityPath" aria-label="搜索词复核优先顺序">
+        {summary.priorityPathItems.map((item) => (
+          <li className={item.tone} key={item.label}>
+            <b>{item.label}</b>
+            <span>{item.value}</span>
+            <small>{item.detail}</small>
+          </li>
+        ))}
+      </ol>
       <div className="searchIntentReviewDecisionNext" aria-label="搜索词复核下一步">
         <span>
           <b>优先对象</b>

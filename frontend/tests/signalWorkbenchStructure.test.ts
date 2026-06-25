@@ -686,6 +686,8 @@ assertIncludes(workbenchSource, "searchIntentPanelContext.boundary");
 assertIncludes(workbenchSource, "SearchIntentReviewDecisionSummaryPanel");
 assertIncludes(workbenchSource, 'aria-label="广告搜索词表现复核判断摘要"');
 assertIncludes(workbenchSource, 'aria-label="有效词、浪费词和证据缺口分布"');
+assertIncludes(workbenchSource, 'aria-label="搜索词复核优先顺序"');
+assertIncludes(workbenchSource, "summary.priorityPathItems.map");
 assertIncludes(workbenchSource, 'aria-label="搜索词复核下一步"');
 assertIncludes(workbenchSource, "<b>点击后</b>");
 assertIncludes(workbenchSource, 'aria-label="广告搜索词表现复核空态"');
@@ -909,6 +911,7 @@ assertIncludes(stylesSource, "grid-template-columns: minmax(300px, 0.78fr) minma
 assertIncludes(stylesSource, ".searchIntentReviewDecisionSummary");
 assertIncludes(stylesSource, ".searchIntentReviewDecisionCommand");
 assertIncludes(stylesSource, ".searchIntentReviewDecisionDistribution");
+assertIncludes(stylesSource, ".searchIntentReviewPriorityPath");
 assertIncludes(stylesSource, ".searchIntentReviewDecisionNext");
 assertIncludes(stylesSource, "@media (max-width: 1180px)");
 assertNotIncludes(stylesSource, "@media (max-width: 1320px)");

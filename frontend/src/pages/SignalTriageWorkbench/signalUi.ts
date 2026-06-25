@@ -244,6 +244,7 @@ export interface SearchIntentReviewDecisionSummary {
   manualReviewPath: string;
   proofBoundary: string;
   distributionItems: SearchIntentReviewDecisionSummaryItem[];
+  priorityPathItems: SearchIntentReviewDecisionSummaryItem[];
   evidenceGap: string;
   nextManualStep: string;
   boundary: string;
@@ -6718,6 +6719,14 @@ export function buildSearchIntentReviewDecisionSummary(cards: SearchIntentReview
   const topSearchTermLabel = firstCard.primarySearchTerm
     ? `优先打开 SearchTerm：${firstCard.primarySearchTerm}；${firstCard.primarySearchTermReason}`
     : `优先打开聚合：${firstCard.intentLabel}；等待具体 SearchTerm 证据补齐。`;
+  const priorityPathItems = cards.slice(0, 3).map((card, index) => ({
+    label: `${index + 1}. ${card.intentLabel}`,
+    value: card.operationDecisionLabel,
+    detail: card.primarySearchTerm
+      ? `先打开 ${card.primarySearchTerm}：${card.primarySearchTermReason}`
+      : card.evidenceGap,
+    tone: card.operationDecisionTone,
+  }));
 
   return {
     headline: `先看 ${firstCard.intentLabel}：${firstCard.operationDecisionLabel}。当前 ${cards.length} 组搜索词中，有效词扩量 ${scaleCount} 组 / 浪费词止损 ${wasteCount} 组 / 证据缺口观察 ${observeCount} 组。`,
@@ -6750,6 +6759,7 @@ export function buildSearchIntentReviewDecisionSummary(cards: SearchIntentReview
         tone: "observe",
       },
     ],
+    priorityPathItems,
     evidenceGap: firstCard.evidenceGap,
     nextManualStep: firstCard.nextManualStep,
     boundary: "本摘要只做搜索词复核排序，不改变 Parent ASIN 诊断入口，不把搜索词表现分组当作人工动作对象，也不生成自动加词、否词、调价或暂停广告动作。",

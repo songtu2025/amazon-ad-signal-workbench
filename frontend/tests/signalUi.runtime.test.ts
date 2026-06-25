@@ -14,6 +14,7 @@ import {
   buildProductScopeGroupOverview,
   buildSearchIntentPanelContext,
   buildSearchIntentReviewCards,
+  buildSearchIntentReviewDecisionSummary,
   buildNextUnhandledManualActionCandidate,
   buildReviewEvidenceRepairSummary,
   buildReviewReadinessGateSummary,
@@ -309,6 +310,21 @@ async function main() {
     "广告搜索词表现聚合必须包含推荐 SearchTerm 所属的 Parent ASIN 广告搜索词行。",
   );
   const searchIntentReviewCards = buildSearchIntentReviewCards(searchIntents);
+  const searchIntentReviewDecisionSummary = buildSearchIntentReviewDecisionSummary(searchIntentReviewCards);
+  assert(searchIntentReviewDecisionSummary !== null, "真实 Parent ASIN 搜索词表现聚合必须生成复核顺序摘要。");
+  assert(
+    searchIntentReviewDecisionSummary.priorityPathItems[0]?.label === "1. 规则语义：海滩出行用品",
+    "真实 Parent ASIN 搜索词复核顺序第一项必须是海滩出行用品。",
+  );
+  assert(
+    searchIntentReviewDecisionSummary.priorityPathItems[0]?.value === "扩量复核",
+    "真实 Parent ASIN 搜索词复核顺序第一项必须保留扩量复核判断。",
+  );
+  assertIncludes(searchIntentReviewDecisionSummary.priorityPathItems[0]?.detail ?? "", "beach essentials");
+  assert(
+    searchIntentReviewDecisionSummary.priorityPathItems.length <= 3,
+    "搜索词复核优先顺序默认只展示前三个对象，避免用户逐卡读完再判断。",
+  );
   assert(
     searchIntents.length <= 8 && searchIntentReviewCards.length === searchIntents.length,
     "Parent ASIN 广告搜索词表现复核不应默认隐藏当前真实分组；小于等于 8 组时必须完整展示。",

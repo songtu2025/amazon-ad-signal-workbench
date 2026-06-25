@@ -6253,6 +6253,10 @@ assertEqual(searchIntentReviewDecisionSummary.distributionItems[2].label, "证�
 assertIncludes(searchIntentReviewDecisionSummary.distributionItems[0].detail, "有订单");
 assertIncludes(searchIntentReviewDecisionSummary.distributionItems[1].detail, "无订单消耗");
 assertIncludes(searchIntentReviewDecisionSummary.distributionItems[2].detail, "投放词");
+assertEqual(searchIntentReviewDecisionSummary.priorityPathItems[0].label, "1. 规则语义：儿童太阳镜");
+assertEqual(searchIntentReviewDecisionSummary.priorityPathItems[0].value, "扩量复核");
+assertIncludes(searchIntentReviewDecisionSummary.priorityPathItems[0].detail, "baby sunglasses");
+assertEqual(searchIntentReviewDecisionSummary.priorityPathItems.length <= 3, true);
 assertIncludes(searchIntentReviewDecisionSummary.evidenceGap, "广告位影响需要继续打开广告位证据核对");
 assertIncludes(searchIntentReviewDecisionSummary.nextManualStep, "具体 SearchTerm 信号");
 assertIncludes(searchIntentReviewDecisionSummary.boundary, "不改变 Parent ASIN 诊断入口");
