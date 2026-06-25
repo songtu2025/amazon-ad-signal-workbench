@@ -742,9 +742,15 @@ const adGroupPriorityTriageIndex = workbenchSource.indexOf('aria-label="优先�
 const adGroupRowsIndex = workbenchSource.indexOf('className="productScopeAdGroupDiagnosisRows"');
 const productScopeDecisionGuideIndex = workbenchSource.indexOf('aria-label="Parent ASIN 决策导览"');
 const diagnosisBriefPathIndex = workbenchSource.indexOf('aria-label="运营诊断路径顺序"');
+const diagnosisBriefBusinessQuestionIndex = workbenchSource.indexOf("<b>业务问题</b>", productScopeDecisionGuideIndex);
+const diagnosisBriefCurrentJudgementIndex = workbenchSource.indexOf("<b>当前判断</b>", productScopeDecisionGuideIndex);
 assert(
   productScopeDecisionGuideIndex > 0 && productScopeDecisionGuideIndex < diagnosisBriefPathIndex,
   "Parent ASIN 决策导览必须先于四段路径，先告诉用户是否展开、展开哪里和不能做什么。",
+);
+assert(
+  diagnosisBriefBusinessQuestionIndex > 0 && diagnosisBriefBusinessQuestionIndex < diagnosisBriefCurrentJudgementIndex,
+  "Parent ASIN 四段体检路径必须先展示业务问题，再展示当前判断，避免重新变成指标报表。",
 );
 assert(
   adGroupDiagnosisDecisionIndex < adGroupEvidenceSummaryIndex &&

@@ -3980,6 +3980,7 @@ export interface ProductScopeDiagnosisBriefSection {
   id: "sales_summary" | "ai_summary" | "ad_group_priority" | "ad_group_detail";
   label: string;
   title: string;
+  businessQuestion: string;
   purpose: string;
   currentJudgement: string;
   proves: string;
@@ -5141,6 +5142,7 @@ export function buildProductScopeDiagnosisBrief(
         id: "sales_summary",
         label: "1",
         title: "Parent ASIN 销售表现入口",
+        businessQuestion: "这个 Parent ASIN 是否有足够广告证据，值得进入广告诊断？",
         purpose: "先回答这个 Parent ASIN 是否值得进入广告诊断，并限定销售子 ASIN 只是经营背景，不把未投放变体拉进广告分析。",
         currentJudgement: salesEntryCurrentJudgement,
         proves: "能证明当前 Parent ASIN 经营盘、销售子 ASIN 范围，以及哪些广告 ASIN 有 advertised_products 证据可进入下钻。",
@@ -5152,6 +5154,7 @@ export function buildProductScopeDiagnosisBrief(
         id: "ad_group_priority",
         label: "2",
         title: "广告组优先排序",
+        businessQuestion: "进入广告诊断后，今天应该先看哪个广告组，而不是扫完整广告组列表？",
         purpose: "在进入广告诊断后，先找最值得人工复核的广告组，避免运营逐个广告组读报表。",
         currentJudgement: adGroupJudgement,
         proves: adGroupProves,
@@ -5163,6 +5166,7 @@ export function buildProductScopeDiagnosisBrief(
         id: "ad_group_detail",
         label: "3",
         title: "当前广告组复核路径",
+        businessQuestion: "当前广告组的问题落在哪一层证据：投放商品、投放词、搜索词，还是广告位？",
         purpose: "先确认问题落点、证据缺口和人工下一步，再把广告组拆成投放商品、投放词、搜索词和广告位四类证据。",
         currentJudgement: routeStepText,
         proves: routeDecision?.proves ?? "能证明当前页面已经给出广告证据下钻路径。",
@@ -5175,6 +5179,7 @@ export function buildProductScopeDiagnosisBrief(
         id: "ai_summary",
         label: "4",
         title: "AI 人工动作判断",
+        businessQuestion: "证据读完后，运营现在只能做哪一种人工动作，后续如何复盘？",
         purpose: "在销售入口、广告组排序和广告组下证据都读完后，只把当前状态汇总为记录观察、标记已处理、加入复盘或忽略本次。",
         currentJudgement: firstScreenSummary.mvpStatus.summary,
         proves: firstScreenSummary.mvpStatus.detail,

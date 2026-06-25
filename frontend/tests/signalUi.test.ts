@@ -5195,6 +5195,7 @@ assertIncludes(productScopeDiagnosisBrief.decisionGuide.notToDo, "自动加词")
 assertIncludes(productScopeDiagnosisBrief.decisionGuide.nextManualStep, "人工");
 assertEqual(productScopeDiagnosisBrief.sections.length, 4);
 assertEqual(productScopeDiagnosisBrief.sections[0].title, "Parent ASIN 销售表现入口");
+assertIncludes(productScopeDiagnosisBrief.sections[0].businessQuestion, "是否有足够广告证据");
 assertIncludes(productScopeDiagnosisBrief.sections[0].purpose, "是否值得进入广告诊断");
 assertIncludes(productScopeDiagnosisBrief.sections[0].currentJudgement, "可以进入广告诊断");
 assertIncludes(productScopeDiagnosisBrief.sections[0].currentJudgement, "不把全部销售子 ASIN 当广告对象");
@@ -5204,13 +5205,16 @@ assertIncludes(productScopeDiagnosisBrief.sections[0].proves, "哪些广告 ASIN
 assertIncludes(productScopeDiagnosisBrief.sections[0].doesNotProve, "所有子 ASIN 都有广告数据");
 assertIncludes(productScopeDiagnosisBrief.sections[0].nextManualStep, "下一步进入广告组排序");
 assertEqual(productScopeDiagnosisBrief.sections[1].title, "广告组优先排序");
+assertIncludes(productScopeDiagnosisBrief.sections[1].businessQuestion, "先看哪个广告组");
 assertIncludes(productScopeDiagnosisBrief.sections[1].purpose, "避免运营逐个广告组读报表");
 assertIncludes(productScopeDiagnosisBrief.sections[1].currentJudgement, "花费");
 assertEqual(productScopeDiagnosisBrief.sections[2].title, "当前广告组复核路径");
+assertIncludes(productScopeDiagnosisBrief.sections[2].businessQuestion, "问题落在哪一层证据");
 assertIncludes(productScopeDiagnosisBrief.sections[2].purpose, "先确认问题落点、证据缺口和人工下一步");
 assertIncludes(productScopeDiagnosisBrief.sections[2].purpose, "投放商品、投放词、搜索词和广告位");
 assertIncludes(productScopeDiagnosisBrief.sections[2].currentJudgement, "7 层证据");
 assertEqual(productScopeDiagnosisBrief.sections[3].title, "AI 人工动作判断");
+assertIncludes(productScopeDiagnosisBrief.sections[3].businessQuestion, "只能做哪一种人工动作");
 assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "在销售入口、广告组排序和广告组下证据都读完后");
 assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "记录观察、标记已处理、加入复盘或忽略本次");
 assertIncludes(productScopeDiagnosisBrief.sections[3].doesNotProve, "不代表系统可以自动加词");

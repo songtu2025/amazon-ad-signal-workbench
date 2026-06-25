@@ -4017,6 +4017,10 @@ function ProductScopeDiagnosisBriefPanel({ brief }: { brief: ProductScopeDiagnos
             </div>
             <ul>
               <li>
+                <b>业务问题</b>
+                <span>{section.businessQuestion}</span>
+              </li>
+              <li>
                 <b>当前判断</b>
                 <span>{section.currentJudgement}</span>
               </li>
