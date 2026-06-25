@@ -3139,6 +3139,9 @@ const triageReviewFeedbackSummary = {
           priority_result: "worse",
           sample_review_record_ids: ["review-record-worse-7d"],
           sample_action_ids: ["manual-action-worse"],
+          sample_parent_scopes: ["Parent ASIN B00K4W4AAA 下只复核有广告数据的搜索词表现。"],
+          sample_search_terms: ["12 month sunglasses"],
+          sample_ad_contexts: ["优先复核广告组：RBK004-beach essentials-精准 / 投放词 beach essentials"],
           recommendation: "worse 1：优先复核该规则反馈样本上下文（广告搜索词表现复核）的阈值、证据来源和建议动作。",
           action_boundary: {
             result: "worse",
@@ -3214,6 +3217,9 @@ assertIncludes(ruleFeedbackPrioritySummary?.records[1] ?? "", "缺口：保存�
 assertEqual(ruleFeedbackPrioritySummary?.candidateGroups.length, 1);
 assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "规则语义：海滩出行用品");
 assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "worse 1");
+assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "Parent ASIN来源：Parent ASIN B00K4W4AAA");
+assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "SearchTerm样本：12 month sunglasses");
+assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "逐投放来源：优先复核广告组：RBK004-beach essentials-精准");
 assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "beach essentials");
 assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "ABA边界");
 assertIncludes(ruleFeedbackPrioritySummary?.candidateGroups[0] ?? "", "不能当作店铺数据或广告归因");

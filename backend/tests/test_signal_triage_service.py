@@ -3454,6 +3454,7 @@ def test_review_readiness_summarizes_saved_review_records_as_rule_feedback(monke
                 id="manual-action-worse",
                 signal_id="sig-anomaly",
                 evidence_snapshot=[
+                    SimpleNamespace(label="Parent ASIN入口", value="Parent ASIN B00K4W4AAA 下只复核有广告数据的搜索词表现。"),
                     SimpleNamespace(label="语义组", value="规则语义：海滩出行用品"),
                     SimpleNamespace(label="搜索词", value="12 month sunglasses"),
                     SimpleNamespace(label="ABA语义参考词", value="beach essentials"),
@@ -3596,6 +3597,9 @@ def test_review_readiness_summarizes_saved_review_records_as_rule_feedback(monke
     assert feedback["candidate_groups"][0]["group_label"] == "规则语义：海滩出行用品"
     assert feedback["candidate_groups"][0]["aba_reference_term"] == "beach essentials"
     assert feedback["candidate_groups"][0]["aba_period"] == "2026-05-10 到 2026-05-16"
+    assert feedback["candidate_groups"][0]["sample_parent_scopes"] == ["Parent ASIN B00K4W4AAA 下只复核有广告数据的搜索词表现。"]
+    assert feedback["candidate_groups"][0]["sample_search_terms"] == ["12 month sunglasses"]
+    assert feedback["candidate_groups"][0]["sample_ad_contexts"] == ["优先复核广告组：RBK004-beach essentials-精准 / 投放词 beach essentials"]
     assert feedback["candidate_groups"][0]["by_result"] == {"worse": 1}
     assert "复核该规则反馈样本上下文（广告搜索词表现复核）的阈值、证据来源和建议动作" in feedback["candidate_groups"][0]["recommendation"]
     assert feedback["candidate_groups"][0]["action_boundary"]["allowed_reviews"] == ["复核阈值", "复核证据来源", "复核建议动作"]
@@ -3645,7 +3649,9 @@ def test_review_readiness_groups_saved_review_record_snapshot_without_manual_act
             evidence_snapshot=[
                 SimpleNamespace(label="排查路径", value="Parent 经营盘子 -> 广告 ASIN -> 广告组 -> 搜索词"),
                 SimpleNamespace(label="AI 准入", value="可进入人工确认 / ready_for_manual_confirmation / 候选 1 个"),
+                SimpleNamespace(label="Parent ASIN入口", value="Parent ASIN B00K4W4AAA 下只复核有广告数据的搜索词表现。"),
                 SimpleNamespace(label="语义组", value="规则语义：海滩出行用品"),
+                SimpleNamespace(label="逐投放上下文", value="广告组 RBK004-beach essentials-精准 / 投放词 beach essentials"),
                 SimpleNamespace(label="ABA语义参考词", value="beach essentials"),
                 SimpleNamespace(label="ABA周期", value="2026-05-10 到 2026-05-16"),
                 SimpleNamespace(label="ABA匹配边界", value="ABA 是站点级，只按站点 + 周期 + 搜索词匹配。"),
@@ -3684,6 +3690,9 @@ def test_review_readiness_groups_saved_review_record_snapshot_without_manual_act
     assert feedback["candidate_groups"][0]["aba_match_boundary"] == "ABA 是站点级，只按站点 + 周期 + 搜索词匹配。"
     assert feedback["candidate_groups"][0]["sample_review_record_ids"] == ["review-record-snapshot-only"]
     assert feedback["candidate_groups"][0]["sample_action_ids"] == ["manual-action-missing"]
+    assert feedback["candidate_groups"][0]["sample_parent_scopes"] == ["Parent ASIN B00K4W4AAA 下只复核有广告数据的搜索词表现。"]
+    assert feedback["candidate_groups"][0]["sample_search_terms"] == ["beach essentials"]
+    assert feedback["candidate_groups"][0]["sample_ad_contexts"] == ["广告组 RBK004-beach essentials-精准 / 投放词 beach essentials"]
     assert feedback["candidate_groups"][0]["by_result"] == {"worse": 1}
     assert "复核该规则反馈样本上下文（广告搜索词表现复核）" in feedback["candidate_groups"][0]["recommendation"]
     assert "不是广告处理对象" in feedback["candidate_groups"][0]["boundary"]

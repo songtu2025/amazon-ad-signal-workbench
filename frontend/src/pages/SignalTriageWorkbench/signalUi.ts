@@ -471,6 +471,9 @@ export interface RuleFeedbackCandidateGroupForUi {
   priority_result?: string | null;
   sample_review_record_ids?: string[];
   sample_action_ids?: string[];
+  sample_parent_scopes?: string[];
+  sample_search_terms?: string[];
+  sample_ad_contexts?: string[];
   recommendation?: string | null;
   action_boundary?: RuleFeedbackActionBoundaryForUi | null;
   boundary?: string | null;
@@ -3624,6 +3627,9 @@ function ruleFeedbackCandidateGroupText(group: RuleFeedbackCandidateGroupForUi) 
     : group.aba_reference_term
       ? "；ABA边界：ABA 只作为站点级市场背景，不能当作店铺、广告组、商品或搜索词归因证据。"
       : "";
+  const parentScopeText = ruleFeedbackCandidateGroupSampleText("Parent ASIN来源", group.sample_parent_scopes);
+  const searchTermText = ruleFeedbackCandidateGroupSampleText("SearchTerm样本", group.sample_search_terms);
+  const adContextText = ruleFeedbackCandidateGroupSampleText("逐投放来源", group.sample_ad_contexts);
   const recommendation = group.recommendation ? `；${group.recommendation}` : "";
   const actionBoundary = ruleFeedbackRecordActionBoundaryText(group.action_boundary);
   const boundary = group.boundary
@@ -3631,7 +3637,16 @@ function ruleFeedbackCandidateGroupText(group: RuleFeedbackCandidateGroupForUi) 
     : actionBoundary
       ? ""
       : "；该上下文只用于规则反馈样本归类和人工复核优先级，不是广告处理对象；不自动改规则，不自动执行广告动作。";
-  return `${groupType}：${groupLabel} / ${totalText} / ${resultText}${abaText}${abaBoundary}${recommendation}${actionBoundary}${boundary}`;
+  return `${groupType}：${groupLabel} / ${totalText} / ${resultText}${parentScopeText}${searchTermText}${adContextText}${abaText}${abaBoundary}${recommendation}${actionBoundary}${boundary}`;
+}
+
+function ruleFeedbackCandidateGroupSampleText(label: string, values?: string[]) {
+  const text = (values ?? [])
+    .map((value) => stringValue(value))
+    .filter(Boolean)
+    .slice(0, 3)
+    .join(" / ");
+  return text ? `；${label}：${text}` : "";
 }
 
 function ruleFeedbackActionBoundaryText(boundaries: Record<string, RuleFeedbackActionBoundaryForUi> | null | undefined) {

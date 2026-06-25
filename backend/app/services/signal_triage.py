@@ -5536,7 +5536,9 @@ def _review_feedback_candidate_groups(
     groups: dict[str, dict[str, Any]] = {}
     for record in review_records:
         action_id = str(_value(getattr(record, "action_id", "")) or "").strip()
-        evidence_source = manual_action_by_id.get(action_id) or record
+        action_source = manual_action_by_id.get(action_id)
+        evidence_source = action_source or record
+        context_sources = [source for source in (action_source, record) if source is not None]
         search_intent_label = next(
             (value for label in SEARCH_INTENT_CONTEXT_LABELS if (value := _evidence_snapshot_value(evidence_source, label))),
             None,
@@ -5565,6 +5567,9 @@ def _review_feedback_candidate_groups(
                 "by_result": {},
                 "sample_review_record_ids": [],
                 "sample_action_ids": [],
+                "sample_parent_scopes": [],
+                "sample_search_terms": [],
+                "sample_ad_contexts": [],
             },
         )
         if not group.get("aba_period"):
@@ -5578,6 +5583,15 @@ def _review_feedback_candidate_groups(
         group["by_result"][result] = group["by_result"].get(result, 0) + 1
         _append_unique(group["sample_review_record_ids"], str(_value(getattr(record, "id", "")) or "").strip())
         _append_unique(group["sample_action_ids"], action_id)
+        _append_evidence_snapshot_values(group["sample_parent_scopes"], context_sources, ("Parent ASIN入口", "Parent ASIN 入口"))
+        object_type = str(_value(getattr(record, "object_type", "")) or "").strip()
+        if object_type == "search_term":
+            _append_unique(
+                group["sample_search_terms"],
+                str(_value(getattr(record, "object_label", "")) or _value(getattr(record, "object_id", "")) or "").strip(),
+            )
+        _append_evidence_snapshot_values(group["sample_search_terms"], context_sources, ("搜索词",))
+        _append_evidence_snapshot_values(group["sample_ad_contexts"], context_sources, ("逐投放上下文",))
 
     candidates: list[dict[str, Any]] = []
     for group in groups.values():
@@ -5603,6 +5617,16 @@ def _review_feedback_candidate_groups(
 
 def _manual_action_evidence_value(action: Any, label: str) -> str | None:
     return _evidence_snapshot_value(action, label)
+
+
+def _append_evidence_snapshot_values(items: list[str], sources: list[Any], labels: tuple[str, ...], limit: int = 3) -> None:
+    for source in sources:
+        for label in labels:
+            value = _evidence_snapshot_value(source, label)
+            if value:
+                _append_unique(items, value)
+            if len(items) >= limit:
+                return
 
 
 def _evidence_snapshot_value(source: Any, label: str) -> str | None:
