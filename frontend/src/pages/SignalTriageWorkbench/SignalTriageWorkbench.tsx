@@ -5129,11 +5129,11 @@ function ProductScopeAdGroupOperationalChecklistPanel({ row }: { row: ProductSco
   const items = buildProductScopeAdGroupChecklistItems(row);
 
   return (
-    <div className="productScopeAdGroupChecklist" aria-label="当前广告组运营检查清单">
-      <div className="productScopeAdGroupChecklistHeader">
-        <strong>运营检查清单</strong>
-        <span>先看证据层，再看 AI 推理</span>
-      </div>
+    <details className="productScopeAdGroupChecklist" aria-label="当前广告组完整运营检查清单">
+      <summary className="productScopeAdGroupChecklistHeader">
+        <strong>展开完整运营检查清单</strong>
+        <span>四层证据 / 证明边界 / 人工下一步</span>
+      </summary>
       <ol>
         {items.map((item) => (
           <li key={item.key}>
@@ -5157,7 +5157,8 @@ function ProductScopeAdGroupOperationalChecklistPanel({ row }: { row: ProductSco
           </li>
         ))}
       </ol>
-    </div>
+      <small>默认层已经先给三段判断、四要素摘要、证据切换和复核顺序；这份清单只用于审计回看，不执行广告动作。</small>
+    </details>
   );
 }
 

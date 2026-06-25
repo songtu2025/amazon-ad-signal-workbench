@@ -3437,6 +3437,10 @@ h3 {
   background: #f7fbff;
 }
 
+.productScopeAdGroupChecklist[open] {
+  background: #fbfdff;
+}
+
 .productScopeAdGroupReviewOrder {
   display: grid;
   gap: 8px;
@@ -3541,6 +3545,20 @@ h3 {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.productScopeAdGroupChecklist summary {
+  cursor: pointer;
+  list-style: none;
+  outline: none;
+}
+
+.productScopeAdGroupChecklist summary::-webkit-details-marker {
+  display: none;
+}
+
+.productScopeAdGroupChecklist summary:focus-visible {
+  box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.18);
 }
 
 .productScopeAdGroupChecklistHeader strong,
