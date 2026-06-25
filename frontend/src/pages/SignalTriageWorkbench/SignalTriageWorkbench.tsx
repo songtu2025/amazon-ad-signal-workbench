@@ -1233,6 +1233,39 @@ export function SignalTriageWorkbench() {
     () => manualActionAuthorizationReadinessSummary(selectedManualActionPreviewPreflight),
     [selectedManualActionPreviewPreflight],
   );
+  const selectedManualActionButtonCommandItems = useMemo(() => {
+    const manualActionContract = selectedManualActionPostWriteContractItems.find((item) => item.label === "人工留痕");
+    const reviewTodoContract = selectedManualActionPostWriteContractItems.find((item) => item.label === "复盘待办");
+    return [
+      {
+        label: "当前可点什么",
+        value: selectedManualActionChoiceRecommendation.label,
+        detail: selectedManualActionChoiceRecommendation.reason,
+      },
+      {
+        label: "为什么可点",
+        value: selectedManualActionChoiceRecommendation.tone === "ready" ? "准入可人工点击" : "暂不可写入",
+        detail: selectedManualActionAuthorizationReadiness?.primary ?? selectedManualActionChoiceRecommendation.evidenceBoundary,
+      },
+      {
+        label: "点后写什么",
+        value: manualActionContract?.value ?? "等待后端预检",
+        detail:
+          selectedManualActionAuthorizationReadiness?.authorizedResult ??
+          manualActionContract?.detail ??
+          selectedManualActionChoiceRecommendation.reviewPlan,
+      },
+      {
+        label: "何时复盘",
+        value: reviewTodoContract?.value ?? "7d / 14d",
+        detail: reviewTodoContract?.detail ?? selectedManualActionChoiceRecommendation.reviewPlan,
+      },
+    ];
+  }, [
+    selectedManualActionAuthorizationReadiness,
+    selectedManualActionChoiceRecommendation,
+    selectedManualActionPostWriteContractItems,
+  ]);
   const selectedManualActionRouteSplit = useMemo(
     () =>
       manualActionReviewRouteSplitSummary(
@@ -2807,6 +2840,23 @@ export function SignalTriageWorkbench() {
                   </span>
                   <span>{selectedManualActionTargetSummary}</span>
                 </div>
+                <div className="manualActionButtonCommandSummary" aria-label="人工按钮执行摘要">
+                  <div>
+                    <strong>按钮前先看这四件事</strong>
+                    <span>默认决策层</span>
+                  </div>
+                  <ul>
+                    {selectedManualActionButtonCommandItems.map((item) => (
+                      <li key={item.label}>
+                        <span>{item.label}</span>
+                        <b>{item.value}</b>
+                        <p>{item.detail}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <details className="manualActionPreflightDetails" aria-label="人工按钮前完整预检证据">
+                  <summary>展开完整预检、证据快照和写后合同</summary>
                 {selectedManualActionTargetSwitch && (
                   <div
                     className={`manualActionTargetSwitch ${selectedManualActionTargetSwitch.tone}`}
@@ -2979,6 +3029,7 @@ export function SignalTriageWorkbench() {
                     ))}
                   </ul>
                 </div>
+                </details>
                 <div className="manualActionButtonBoundary" aria-label="人工留痕动作">
                   只保存人工留痕和复盘待办，不执行广告动作
                 </div>

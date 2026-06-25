@@ -329,6 +329,10 @@ const searchIntentManualActionPreflightConsistencyIndex = workbenchSource.indexO
 const productScopeManualActionTargetAlignmentIndex = workbenchSource.indexOf(
   "<ProductScopeManualActionTargetAlignmentCard summary={selectedManualActionTargetAlignment} />",
 );
+const manualActionButtonCommandSummaryIndex = workbenchSource.indexOf('aria-label="人工按钮执行摘要"');
+const manualActionPreflightDetailsIndex = workbenchSource.indexOf('aria-label="人工按钮前完整预检证据"');
+const manualActionPreflightEvidenceGapIndex = workbenchSource.indexOf('aria-label="优先查看的边界与证据缺口"');
+const manualActionPostWriteContractIndex = workbenchSource.indexOf('aria-label="点击后验收合同"');
 const manualActionChoiceRecommendationIndex = workbenchSource.indexOf('aria-label="本次建议人工动作"');
 const manualActionChoiceGuideIndex = workbenchSource.indexOf('className="manualActionChoiceGuide"');
 const manualActionGridIndex = workbenchSource.indexOf('<div className="manualActionGrid" aria-label="人工动作按钮">');
@@ -526,6 +530,23 @@ assert(
 );
 assert(productScopeManualActionTargetAlignmentIndex > manualActionSectionIndex, "人工动作对象链路读回必须渲染在人工确认区内");
 assert(productScopeManualActionTargetAlignmentIndex < manualActionGridIndex, "人工动作对象链路读回必须先于人工动作按钮");
+assert(manualActionButtonCommandSummaryIndex > manualActionSectionIndex, "人工按钮执行摘要必须渲染在人工确认区内");
+assert(
+  manualActionButtonCommandSummaryIndex < manualActionPreflightDetailsIndex,
+  "人工确认默认层必须先回答按钮怎么点，再展开完整预检证据。",
+);
+assert(manualActionButtonCommandSummaryIndex < manualActionGridIndex, "人工按钮执行摘要必须先于人工动作按钮");
+assert(manualActionPreflightDetailsIndex < manualActionGridIndex, "完整预检证据必须保留在按钮前的折叠审计区");
+assert(
+  manualActionPreflightDetailsIndex < manualActionPreflightEvidenceGapIndex &&
+    manualActionPreflightEvidenceGapIndex < manualActionGridIndex,
+  "优先边界和证据缺口必须进入完整预检折叠区，避免默认铺成长证据。",
+);
+assert(
+  manualActionPreflightDetailsIndex < manualActionPostWriteContractIndex &&
+    manualActionPostWriteContractIndex < manualActionGridIndex,
+  "点击后验收合同必须进入完整预检折叠区，按钮前默认层只保留执行摘要。",
+);
 assert(manualActionChoiceRecommendationIndex > manualActionSectionIndex, "本次建议人工动作必须渲染在人工确认区内");
 assert(manualActionChoiceRecommendationIndex < manualActionChoiceGuideIndex, "本次建议人工动作必须先于四个动作选择依据展示");
 assert(manualActionChoiceRecommendationIndex < manualActionGridIndex, "本次建议人工动作必须先于人工动作按钮展示");
@@ -1247,6 +1268,18 @@ assert(
 );
 assertIncludes(workbenchSource, 'aria-label="人工留痕动作"');
 assertIncludes(workbenchSource, "只保存人工留痕和复盘待办，不执行广告动作");
+assertIncludes(workbenchSource, "selectedManualActionButtonCommandItems");
+assertIncludes(workbenchSource, 'aria-label="人工按钮执行摘要"');
+assertIncludes(workbenchSource, "按钮前先看这四件事");
+assertIncludes(workbenchSource, "当前可点什么");
+assertIncludes(workbenchSource, "为什么可点");
+assertIncludes(workbenchSource, "点后写什么");
+assertIncludes(workbenchSource, "何时复盘");
+assertIncludes(workbenchSource, '<details className="manualActionPreflightDetails" aria-label="人工按钮前完整预检证据">');
+assertIncludes(workbenchSource, "展开完整预检、证据快照和写后合同");
+assertIncludes(stylesSource, ".manualActionButtonCommandSummary");
+assertIncludes(stylesSource, ".manualActionPreflightDetails");
+assertIncludes(stylesSource, ".manualActionPreflightDetails[open] > summary");
 assertIncludes(workbenchSource, "manualActionEmptyStateText(manualActionPreflight)");
 assertIncludes(workbenchSource, "reviewTodoEmptyStateText(latestManualAction)");
 assertIncludes(workbenchSource, "buildManualActionPathSteps");
