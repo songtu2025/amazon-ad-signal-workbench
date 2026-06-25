@@ -146,14 +146,26 @@ assertIncludes(workbenchSource, "这只是人工复核路径，不证明搜索�
 assertIncludes(workbenchSource, "先按中间检查清单复核，再选择右侧人工动作");
 assertIncludes(workbenchSource, "复盘待办会按同一组证据回读");
 assertIncludes(workbenchSource, "这里只保存人工留痕或复盘待办");
+assertIncludes(workbenchSource, 'aria-label="人工动作默认证据层"');
+assertIncludes(workbenchSource, "<strong>人工动作默认证据层</strong>");
+assertIncludes(workbenchSource, "const priority = buildProductScopeAdGroupReviewPriority(row, items);");
+assertIncludes(workbenchSource, "const defaultEvidenceItem = items.find((item) => priority.focusLayer.includes(item.title)) ?? items[0];");
+assertIncludes(workbenchSource, "{defaultEvidenceItem.purpose}");
+assertIncludes(workbenchSource, "{defaultEvidenceItem.judgement}");
+assertIncludes(workbenchSource, "{defaultEvidenceItem.proves}");
+assertIncludes(workbenchSource, "{defaultEvidenceItem.doesNotProve}");
+assertIncludes(workbenchSource, "{defaultEvidenceItem.nextStep}");
 assertIncludes(workbenchSource, 'className="adGroupActionBridgePreflightEvidence"');
 assertIncludes(workbenchSource, 'aria-label="人工点击前证据读回"');
-assertIncludes(workbenchSource, "<b>复核顺序</b>");
+assertIncludes(workbenchSource, "<b>默认复核层</b>");
 assertIncludes(workbenchSource, "<b>证据缺口</b>");
 assertIncludes(workbenchSource, "<b>动作边界</b>");
 assertIncludes(workbenchSource, "row.evidenceSynthesis.evidenceGap");
 assertIncludes(workbenchSource, "row.forbiddenActions.join(\" / \")");
 assertIncludes(workbenchSource, "只能人工记录或加入复盘");
+assertIncludes(workbenchSource, 'className="adGroupActionBridgeFullEvidence"');
+assertIncludes(workbenchSource, 'aria-label="人工点击前完整证据层"');
+assertIncludes(workbenchSource, "展开四层完整证据");
 assertIncludes(workbenchSource, 'className="adGroupActionBridgeReviewEvidence"');
 assertIncludes(workbenchSource, 'aria-label="复盘回读证据链"');
 assertIncludes(workbenchSource, "人工动作保存后，7/14 天复盘必须沿这四层证据回看");
@@ -276,6 +288,19 @@ const actionPanelIndex = workbenchSource.indexOf('<aside className="actionPanel"
 const adGroupActionBridgeRenderIndex = workbenchSource.indexOf(
   "<ProductScopeAdGroupActionBridgeCard",
 );
+const adGroupActionBridgeFunctionIndex = workbenchSource.indexOf("function ProductScopeAdGroupActionBridgeCard");
+const adGroupActionBridgeDefaultEvidenceIndex = workbenchSource.indexOf(
+  'aria-label="人工动作默认证据层"',
+  adGroupActionBridgeFunctionIndex,
+);
+const adGroupActionBridgeFullEvidenceIndex = workbenchSource.indexOf(
+  'aria-label="人工点击前完整证据层"',
+  adGroupActionBridgeFunctionIndex,
+);
+const adGroupActionBridgeReviewEvidenceIndex = workbenchSource.indexOf(
+  'aria-label="复盘回读证据链"',
+  adGroupActionBridgeFunctionIndex,
+);
 const actionDecisionCardIndex = workbenchSource.indexOf('className="actionDecisionCard"');
 const selectedSignalScopeContextRenderIndex = workbenchSource.indexOf(
   "<SelectedSignalScopeContextStrip context={selectedSignalScopeContext} />",
@@ -361,6 +386,9 @@ assert(adGroupDiagnosisRenderIndex < selectedSignalBranchIndex, "广告组问题
 assert(actionPanelIndex >= 0, "右侧建议处理区必须存在");
 assert(adGroupActionBridgeRenderIndex > actionPanelIndex, "当前广告组人工动作承接必须渲染在右侧建议处理区内");
 assert(adGroupActionBridgeRenderIndex < actionDecisionCardIndex, "当前广告组人工动作承接必须先于建议动作摘要");
+assert(adGroupActionBridgeDefaultEvidenceIndex > adGroupActionBridgeFunctionIndex, "右侧人工动作承接必须先给默认证据层");
+assert(adGroupActionBridgeDefaultEvidenceIndex < adGroupActionBridgeFullEvidenceIndex, "默认证据层必须先于完整四层证据");
+assert(adGroupActionBridgeFullEvidenceIndex < adGroupActionBridgeReviewEvidenceIndex, "完整四层证据必须先于复盘回读证据链");
 assertIncludes(workbenchSource, "buildSelectedSignalScopeContext");
 assertIncludes(workbenchSource, "selectedSignalScopeContext");
 assertIncludes(workbenchSource, "buildSearchIntentFocusContext");
@@ -404,6 +432,10 @@ assertIncludes(stylesSource, ".productScopeAdGroupChecklistProof");
 assertIncludes(stylesSource, ".productScopeAdGroupChecklistProof span");
 assertIncludes(stylesSource, ".adGroupActionBridgeReviewEvidence");
 assertIncludes(stylesSource, ".adGroupActionBridgeReviewEvidence ul");
+assertIncludes(stylesSource, ".adGroupActionBridgeDefaultEvidence");
+assertIncludes(stylesSource, ".adGroupActionBridgeDefaultEvidence ul");
+assertIncludes(stylesSource, ".adGroupActionBridgeFullEvidence");
+assertIncludes(stylesSource, ".adGroupActionBridgeFullEvidence summary");
 assertIncludes(stylesSource, ".adGroupActionBridgeParentProof");
 assertIncludes(stylesSource, ".adGroupActionBridgeParentProof ul");
 assertIncludes(stylesSource, ".adGroupActionBridgePreflightEvidence");

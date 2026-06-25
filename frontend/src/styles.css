@@ -7637,6 +7637,64 @@ button.reviewTodoQueueNext:focus-visible {
   overflow-wrap: anywhere;
 }
 
+.adGroupActionBridgeDefaultEvidence {
+  display: grid;
+  gap: 7px;
+  border: 1px solid #cfe3f2;
+  border-radius: 8px;
+  padding: 8px;
+  background: #f2f8ff;
+}
+
+.adGroupActionBridgeDefaultEvidence > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.adGroupActionBridgeDefaultEvidence strong {
+  color: #14273e;
+  font-size: 12px;
+  font-weight: 820;
+  line-height: 1.35;
+}
+
+.adGroupActionBridgeDefaultEvidence > div span {
+  border: 1px solid #bdd8ef;
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: #ffffff;
+  color: #24557e;
+  font-size: 10.5px;
+  font-weight: 820;
+  line-height: 1.2;
+}
+
+.adGroupActionBridgeDefaultEvidence ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adGroupActionBridgeDefaultEvidence li {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #dbe8f4;
+  border-radius: 7px;
+  background: #ffffff;
+}
+
+.adGroupActionBridgeDefaultEvidence b,
+.adGroupActionBridgeDefaultEvidence small {
+  overflow-wrap: anywhere;
+}
+
 .adGroupActionBridgeParentProof {
   display: grid;
   gap: 7px;
@@ -7727,6 +7785,43 @@ button.reviewTodoQueueNext:focus-visible {
   font-size: 11px;
   line-height: 1.4;
   overflow-wrap: anywhere;
+}
+
+.adGroupActionBridgeFullEvidence {
+  display: grid;
+  gap: 7px;
+  border: 1px solid #dbe8f4;
+  border-radius: 8px;
+  padding: 8px;
+  background: #ffffff;
+}
+
+.adGroupActionBridgeFullEvidence summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+  color: #31536f;
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.adGroupActionBridgeFullEvidence summary::-webkit-details-marker {
+  display: none;
+}
+
+.adGroupActionBridgeFullEvidence summary b {
+  border: 1px solid #e1ebf5;
+  border-radius: 999px;
+  padding: 2px 6px;
+  color: #4f647b;
+  font-size: 10.5px;
+}
+
+.adGroupActionBridgeFullEvidence[open] summary {
+  margin-bottom: 7px;
 }
 
 .adGroupActionBridgeList {
@@ -9827,6 +9922,10 @@ button.reviewTodoQueueNext:focus-visible {
   }
 
   .adGroupActionBridgeParentProof ul {
+    grid-template-columns: 1fr;
+  }
+
+  .adGroupActionBridgeDefaultEvidence ul {
     grid-template-columns: 1fr;
   }
 

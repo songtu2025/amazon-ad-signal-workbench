@@ -5038,6 +5038,8 @@ function ProductScopeAdGroupActionBridgeCard({
   diagnosisBrief: ProductScopeDiagnosisBrief | null;
 }) {
   const items = buildProductScopeAdGroupChecklistItems(row);
+  const priority = buildProductScopeAdGroupReviewPriority(row, items);
+  const defaultEvidenceItem = items.find((item) => priority.focusLayer.includes(item.title)) ?? items[0];
   const reviewPath = items.map((item) => item.title).join(" → ");
   const scopeLabel = priorityItem?.label ?? "未绑定 Parent ASIN 入口";
   const scopeReadback = priorityItem ? `${scopeLabel} / ${priorityItem.priorityLabel}` : `${scopeLabel} / 当前广告组诊断`;
@@ -5064,6 +5066,34 @@ function ProductScopeAdGroupActionBridgeCard({
           右侧只核对能否留痕或加入复盘，不重复解释 Parent ASIN 排序理由，也不执行广告操作。
         </small>
       </div>
+      {defaultEvidenceItem && (
+        <div className="adGroupActionBridgeDefaultEvidence" aria-label="人工动作默认证据层">
+          <div>
+            <strong>人工动作默认证据层</strong>
+            <span>{priority.focusLayer}</span>
+          </div>
+          <p>{defaultEvidenceItem.purpose}</p>
+          <ul>
+            <li>
+              <b>当前判断</b>
+              <small>{defaultEvidenceItem.judgement}</small>
+            </li>
+            <li>
+              <b>能证明</b>
+              <small>{defaultEvidenceItem.proves}</small>
+            </li>
+            <li>
+              <b>不能证明</b>
+              <small>{defaultEvidenceItem.doesNotProve}</small>
+            </li>
+            <li>
+              <b>人工下一步</b>
+              <small>{defaultEvidenceItem.nextStep}</small>
+            </li>
+          </ul>
+          <small>{priority.boundary}</small>
+        </div>
+      )}
       {diagnosisBrief && (
         <div className="adGroupActionBridgeParentProof" aria-label="Parent ASIN 单屏证明边界读回">
           <div>
@@ -5087,8 +5117,8 @@ function ProductScopeAdGroupActionBridgeCard({
       )}
       <div className="adGroupActionBridgePreflightEvidence" aria-label="人工点击前证据读回">
         <span>
-          <b>复核顺序</b>
-          <small>{reviewPath}</small>
+          <b>默认复核层</b>
+          <small>{priority.focusLayer}</small>
         </span>
         <span>
           <b>证据缺口</b>
@@ -5099,15 +5129,22 @@ function ProductScopeAdGroupActionBridgeCard({
           <small>{row.forbiddenActions.join(" / ")}；只能人工记录或加入复盘。</small>
         </span>
       </div>
-      <ul className="adGroupActionBridgeList">
-        {items.map((item) => (
-          <li key={item.key}>
-            <span>{item.title}</span>
-            <b>{item.judgement}</b>
-            <small>{item.nextStep}</small>
-          </li>
-        ))}
-      </ul>
+      <details className="adGroupActionBridgeFullEvidence" aria-label="人工点击前完整证据层">
+        <summary>
+          <span>展开四层完整证据</span>
+          <b>{items.length} 层</b>
+        </summary>
+        <ul className="adGroupActionBridgeList">
+          {items.map((item) => (
+            <li key={item.key}>
+              <span>{item.title}</span>
+              <b>{item.judgement}</b>
+              <small>{item.nextStep}</small>
+            </li>
+          ))}
+        </ul>
+        <small>完整路径：{reviewPath}</small>
+      </details>
       <div className="adGroupActionBridgeReviewEvidence" aria-label="复盘回读证据链">
         <strong>复盘回读证据链</strong>
         <p>人工动作保存后，7/14 天复盘必须沿这四层证据回看，不能只看最终指标涨跌。</p>
