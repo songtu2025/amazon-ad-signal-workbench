@@ -1348,6 +1348,48 @@ export function SignalTriageWorkbench() {
     selectedManualActionChoiceRecommendation,
     selectedManualActionPostWriteContractItems,
   ]);
+  const selectedManualActionDiagnosisPathItems = useMemo(
+    () => [
+      {
+        label: "1. 经营入口",
+        value: activeProductScopePriorityItem
+          ? `${activeProductScopePriorityItem.label} / ${activeProductScopePriorityItem.priorityLabel}`
+          : selectedProductScopeOption?.label ?? "等待 Parent ASIN 入口",
+        detail: activeProductScopePriorityItem?.mainQuestion ?? "先锁定当前经营入口，不把全部销售子 ASIN 当作广告动作对象。",
+        tone: activeProductScopePriorityItem?.tone ?? "waiting",
+      },
+      {
+        label: "2. 广告组定位",
+        value: selectedAdGroupDiagnosis ? `${selectedAdGroupDiagnosis.title} / ${selectedAdGroupDiagnosis.statusLabel}` : "等待广告组证据",
+        detail: selectedAdGroupDiagnosis?.problemLocator.problemLocation ?? "广告组是投放容器；缺证据时不能包装成商品或搜索词问题。",
+        tone: selectedAdGroupDiagnosis?.statusTone ?? "blocked",
+      },
+      {
+        label: "3. 搜索词证据",
+        value: searchIntentReviewDecisionSummary
+          ? `${searchIntentReviewDecisionSummary.topSearchTermLabel} / ${searchIntentReviewDecisionSummary.topDecisionLabel}`
+          : "等待搜索词复核",
+        detail: searchIntentReviewDecisionSummary?.nextManualStep ?? "搜索词只说明当前广告上下文，不能自动归因到单个广告 ASIN。",
+        tone: searchIntentReviewDecisionSummary ? "ready" : "blocked",
+      },
+      {
+        label: "4. 按钮前核对",
+        value: selectedManualActionChoiceRecommendation.label,
+        detail:
+          selectedManualActionAuthorizationReadiness?.primary ??
+          "按钮只保存人工留痕或复盘待办，不执行调价、加词、否词或暂停广告。",
+        tone: selectedManualActionChoiceRecommendation.tone,
+      },
+    ],
+    [
+      activeProductScopePriorityItem,
+      searchIntentReviewDecisionSummary,
+      selectedAdGroupDiagnosis,
+      selectedManualActionAuthorizationReadiness,
+      selectedManualActionChoiceRecommendation,
+      selectedProductScopeOption?.label,
+    ],
+  );
   const selectedManualActionRouteSplit = useMemo(
     () =>
       manualActionReviewRouteSplitSummary(
@@ -2959,6 +3001,21 @@ export function SignalTriageWorkbench() {
                     需要人工点击才会留痕
                   </span>
                   <span>{selectedManualActionTargetSummary}</span>
+                </div>
+                <div className="manualActionDiagnosisPathSummary" aria-label="人工按钮前诊断路径核对">
+                  <div>
+                    <strong>按钮前先沿同一条诊断路径核对</strong>
+                    <span>不跳过证据</span>
+                  </div>
+                  <ol>
+                    {selectedManualActionDiagnosisPathItems.map((item) => (
+                      <li className={item.tone} key={item.label}>
+                        <span>{item.label}</span>
+                        <b>{item.value}</b>
+                        <p>{item.detail}</p>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
                 <div className="manualActionButtonCommandSummary" aria-label="人工按钮执行摘要">
                   <div>

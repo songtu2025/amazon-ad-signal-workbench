@@ -9324,6 +9324,106 @@ button.reviewTodoQueueNext:focus-visible {
   color: #637288;
 }
 
+.manualActionDiagnosisPathSummary {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #d3e2ef;
+  border-radius: 8px;
+  padding: 9px;
+  background: #fbfdff;
+}
+
+.manualActionDiagnosisPathSummary > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.manualActionDiagnosisPathSummary strong {
+  color: #1f3147;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.manualActionDiagnosisPathSummary > div span {
+  border: 1px solid #d6e4f1;
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #ffffff;
+  color: #49637f;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.manualActionDiagnosisPathSummary ol {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.manualActionDiagnosisPathSummary li {
+  display: grid;
+  gap: 3px;
+  border: 1px solid #dde8f2;
+  border-radius: 7px;
+  padding: 7px;
+  background: #ffffff;
+  min-width: 0;
+}
+
+.manualActionDiagnosisPathSummary li.ready,
+.manualActionDiagnosisPathSummary li.healthy {
+  border-color: #c8e2d2;
+  background: #f8fcfa;
+}
+
+.manualActionDiagnosisPathSummary li.waiting,
+.manualActionDiagnosisPathSummary li.watch,
+.manualActionDiagnosisPathSummary li.observe,
+.manualActionDiagnosisPathSummary li.gap {
+  border-color: #e4d5ab;
+  background: #fffdf6;
+}
+
+.manualActionDiagnosisPathSummary li.blocked,
+.manualActionDiagnosisPathSummary li.quiet,
+.manualActionDiagnosisPathSummary li.risk {
+  border-color: #edc9c0;
+  background: #fff8f6;
+}
+
+.manualActionDiagnosisPathSummary li.review,
+.manualActionDiagnosisPathSummary li.urgent {
+  border-color: #c9dcf0;
+  background: #f7fbff;
+}
+
+.manualActionDiagnosisPathSummary li span {
+  color: #66758a;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.manualActionDiagnosisPathSummary li b {
+  color: #203246;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.manualActionDiagnosisPathSummary li p {
+  margin: 0;
+  color: #566b82;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .manualActionButtonCommandSummary {
   display: grid;
   gap: 8px;
