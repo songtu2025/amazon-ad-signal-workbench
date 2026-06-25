@@ -3791,6 +3791,23 @@ h3 {
   background: #f8fbff;
 }
 
+.productScopeAdGroupAdvertisedProductsDecision {
+  display: grid;
+  gap: 7px;
+  padding: 9px 10px;
+  border: 1px solid #dbe7f2;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.productScopeAdGroupAdvertisedProductsDecision ul {
+  gap: 5px;
+}
+
+.productScopeAdGroupAdvertisedProductsDecision li {
+  grid-template-columns: 76px minmax(0, 1fr);
+}
+
 .productScopeTargetingEvidence[open] {
   background: #fbfdff;
 }

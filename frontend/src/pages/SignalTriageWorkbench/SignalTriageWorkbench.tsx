@@ -5018,6 +5018,49 @@ function ProductScopeTargetingEvidencePanel({ row }: { row: ProductScopeAdGroupD
   );
 }
 
+function ProductScopeAdGroupAdvertisedProductsPanel({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
+  if (row.advertisedProductPerformance.length === 0) return null;
+
+  return (
+    <div className="productScopeAdGroupAdvertisedProducts" aria-label="广告组内投放商品表现">
+      <strong>广告组内投放商品表现</strong>
+      <p>业务问题：当前广告组下哪些广告 ASIN 承接了花费、点击、订单和销售，是否需要继续按投放商品复核？</p>
+      <div className="productScopeAdGroupAdvertisedProductsDecision" aria-label="投放商品业务判断">
+        <ul>
+          <li>
+            <b>当前判断</b>
+            <span>{row.ownershipDecision.currentJudgement}</span>
+          </li>
+          <li>
+            <b>能证明</b>
+            <span>这些 ASIN 是当前广告组下的投放商品，指标可以说明同组内花费、订单、销售额、ACOS 和 CVR 的分布。</span>
+          </li>
+          <li>
+            <b>不能证明</b>
+            <span>{row.ownershipDecision.doesNotProve}</span>
+          </li>
+          <li>
+            <b>人工下一步</b>
+            <span>{row.ownershipDecision.nextManualStep}</span>
+          </li>
+        </ul>
+      </div>
+      <ul>
+        {row.advertisedProductPerformance.map((product) => (
+          <li key={product.key}>
+            <b>{product.asin}</b>
+            <span>
+              {product.msku ? `${product.msku} / ` : ""}
+              {product.metrics}
+              {product.sampleBoundary ? `；${product.sampleBoundary}` : ""}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 interface ProductScopeAdGroupChecklistItem {
   key: string;
   label: string;
@@ -5594,23 +5637,7 @@ function ProductScopeAdGroupFocusPanel({ row }: { row: ProductScopeAdGroupDiagno
       </div>
       <small>{row.trafficContextBoundary}</small>
       <ProductScopeAdGroupOperationalChecklistPanel row={row} />
-      {row.advertisedProductPerformance.length > 0 && (
-        <div className="productScopeAdGroupAdvertisedProducts" aria-label="广告组内投放商品表现">
-          <strong>广告组内投放商品表现</strong>
-          <ul>
-            {row.advertisedProductPerformance.map((product) => (
-              <li key={product.key}>
-                <b>{product.asin}</b>
-                <span>
-                  {product.msku ? `${product.msku} / ` : ""}
-                  {product.metrics}
-                  {product.sampleBoundary ? `；${product.sampleBoundary}` : ""}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <ProductScopeAdGroupAdvertisedProductsPanel row={row} />
       <ProductScopeTargetingEvidencePanel row={row} />
       {row.searchTermDiagnosis && <ProductScopeSearchTermDiagnosisPanel rowId={row.id} diagnosis={row.searchTermDiagnosis} />}
       <div className="productScopePlacementEvidenceDecision" aria-label="广告位证据判断">

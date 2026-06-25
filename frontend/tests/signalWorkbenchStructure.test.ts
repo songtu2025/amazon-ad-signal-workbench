@@ -69,6 +69,7 @@ assertIncludes(workbenchSource, "function ProductScopeDiagnosisBriefPanel");
 assertIncludes(workbenchSource, "function ProductScopeEvidenceMatrixPanel");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupDiagnosisPanel");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupFocusPanel");
+assertIncludes(workbenchSource, "function ProductScopeAdGroupAdvertisedProductsPanel");
 assertIncludes(workbenchSource, "function ProductScopeTargetingEvidencePanel");
 assertIncludes(workbenchSource, "function buildProductScopeTargetingEvidenceRows");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupEvidenceSwitcherPanel");
@@ -78,6 +79,11 @@ assertIncludes(workbenchSource, "function buildProductScopeAdGroupChecklistItems
 assertIncludes(workbenchSource, "function ProductScopeAdGroupActionBridgeCard");
 assertIncludes(workbenchSource, "function ProductScopeAdGroupReasoningDetails");
 assertIncludes(workbenchSource, 'aria-label="广告组内投放商品表现"');
+assertIncludes(workbenchSource, 'aria-label="投放商品业务判断"');
+assertIncludes(workbenchSource, "业务问题：当前广告组下哪些广告 ASIN 承接了花费、点击、订单和销售");
+assertIncludes(workbenchSource, "row.ownershipDecision.currentJudgement");
+assertIncludes(workbenchSource, "row.ownershipDecision.doesNotProve");
+assertIncludes(workbenchSource, "row.ownershipDecision.nextManualStep");
 assertIncludes(workbenchSource, 'aria-label="投放词证据完整审计材料"');
 assertIncludes(workbenchSource, '<details className="productScopeTargetingEvidence" aria-label="投放词证据完整审计材料">');
 assertIncludes(workbenchSource, "展开投放词证据明细");
@@ -116,6 +122,7 @@ assertIncludes(workbenchSource, "暂无可聚焦广告组；先补齐广告组�
 assertIncludes(workbenchSource, "下方“广告组问题定位”可切换当前广告组焦点");
 assertIncludes(workbenchSource, "本区只解释进入理由，不写入人工动作，也不执行任何广告操作");
 assertIncludes(workbenchSource, "ProductScopeTargetingEvidencePanel row={row}");
+assertIncludes(workbenchSource, "ProductScopeAdGroupAdvertisedProductsPanel row={row}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupDataSummaryPanel row={row}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupReviewOrderPanel row={row}");
 assertIncludes(workbenchSource, "ProductScopeAdGroupOperationalChecklistPanel row={row}");
@@ -283,7 +290,7 @@ const adGroupChecklistIndex = workbenchSource.indexOf("<ProductScopeAdGroupOpera
 const adGroupDataSummaryIndex = workbenchSource.indexOf("<ProductScopeAdGroupDataSummaryPanel row={row} />");
 const adGroupEvidenceSwitcherIndex = workbenchSource.indexOf("<ProductScopeAdGroupEvidenceSwitcherPanel row={row} />");
 const adGroupReviewOrderIndex = workbenchSource.indexOf("<ProductScopeAdGroupReviewOrderPanel row={row} />");
-const advertisedProductsInFocusIndex = workbenchSource.indexOf('aria-label="广告组内投放商品表现"');
+const advertisedProductsInFocusIndex = workbenchSource.indexOf("<ProductScopeAdGroupAdvertisedProductsPanel row={row} />");
 const targetingEvidenceInFocusIndex = workbenchSource.indexOf("<ProductScopeTargetingEvidencePanel row={row} />");
 const searchTermDiagnosisPanelIndex = workbenchSource.indexOf(
   "{row.searchTermDiagnosis && <ProductScopeSearchTermDiagnosisPanel rowId={row.id} diagnosis={row.searchTermDiagnosis} />}",
@@ -456,6 +463,7 @@ assertIncludes(stylesSource, ".productScopeDiagnosisFrameworkEvidence b");
 assertIncludes(stylesSource, ".productScopeDiagnosisFrameworkNext");
 assertIncludes(stylesSource, ".productScopeTargetingEvidence");
 assertIncludes(stylesSource, ".productScopeTargetingEvidenceHeader");
+assertIncludes(stylesSource, ".productScopeAdGroupAdvertisedProductsDecision");
 assertIncludes(stylesSource, ".productScopeTargetingEvidence[open]");
 assertIncludes(stylesSource, ".productScopeTargetingEvidence summary");
 assertIncludes(stylesSource, ".productScopeAdGroupFocusDecision");
