@@ -346,6 +346,8 @@ export interface ManualActionChoiceRecommendation {
   tone: "ready" | "blocked";
   title: string;
   reason: string;
+  evidenceLink: string;
+  evidenceBoundary: string;
   reviewPlan: string;
   boundary: string;
 }
@@ -353,6 +355,7 @@ export interface ManualActionChoiceRecommendation {
 export interface ManualActionChoiceRecommendationInput {
   recommendedActionType?: ManualActionForUi["action_type"] | null;
   gatesByAction: Partial<Record<ManualActionForUi["action_type"], ManualActionButtonGate>>;
+  diagnosisEvidence?: DiagnosisEvidenceSummaryForManualBridge | null;
 }
 
 export interface ManualActionExpectedTargetForUi {
@@ -3222,9 +3225,42 @@ export function manualActionChoiceGuideItems(): ManualActionChoiceGuideItem[] {
   ];
 }
 
+function manualActionChoiceEvidenceLink(
+  diagnosisEvidence: DiagnosisEvidenceSummaryForManualBridge | null | undefined,
+): Pick<ManualActionChoiceRecommendation, "evidenceLink" | "evidenceBoundary"> {
+  if (!diagnosisEvidence) {
+    return {
+      evidenceLink: "证据回链：先回到中间诊断区核对业务问题、证据强度和人工下一步。",
+      evidenceBoundary: "边界回链：当前推荐只说明人工动作选择，不替代中间证据复核，也不执行广告动作。",
+    };
+  }
+
+  const context = [
+    diagnosisEvidence.businessQuestion?.trim(),
+    diagnosisEvidence.objectReadback?.trim(),
+  ]
+    .filter((item): item is string => Boolean(item))
+    .join("；");
+  const proves = diagnosisEvidence.proves?.trim();
+  const doesNotProve = diagnosisEvidence.doesNotProve?.trim();
+  const evidenceGap = diagnosisEvidence.evidenceGap?.trim();
+
+  return {
+    evidenceLink: `证据回链：${context || diagnosisEvidence.title?.trim() || "中间诊断证据链"}${
+      proves ? `；能证明：${proves}` : ""
+    }`,
+    evidenceBoundary: doesNotProve
+      ? `边界回链：不能证明：${doesNotProve}`
+      : evidenceGap
+        ? `边界回链：证据缺口：${evidenceGap}`
+        : "边界回链：仍需人工确认，不自动执行广告动作。",
+  };
+}
+
 export function manualActionChoiceRecommendation({
   recommendedActionType,
   gatesByAction,
+  diagnosisEvidence,
 }: ManualActionChoiceRecommendationInput): ManualActionChoiceRecommendation {
   const guides = manualActionChoiceGuideItems();
   const guideByAction = new Map(guides.map((guide) => [guide.actionType, guide]));
@@ -3235,7 +3271,8 @@ export function manualActionChoiceRecommendation({
     recommendedGuide && recommendedGate?.disabled === false ? recommendedGuide : firstReadyGuide ?? recommendedGuide ?? guides[0];
   const selectedGate = gatesByAction[selectedGuide.actionType] ?? null;
   const isReady = selectedGate?.disabled === false;
-  const fallbackReason = selectedGate?.reason ?? selectedGate?.compactReason ?? "当前后端预检尚未给出可写入结果。";
+  const fallbackReason = selectedGate?.reason ?? selectedGate?.compactReason ?? "当前准入预检尚未给出可写入结果。";
+  const evidenceLink = manualActionChoiceEvidenceLink(diagnosisEvidence);
 
   if (!isReady) {
     return {
@@ -3244,21 +3281,25 @@ export function manualActionChoiceRecommendation({
       tone: "blocked",
       title: "本次建议选择",
       reason: `当前没有可点击的人工动作：${fallbackReason}`,
-      reviewPlan: "先补齐后端预检、稳定对象或证据快照，再决定是否进入 7/14 天复盘。",
+      evidenceLink: evidenceLink.evidenceLink,
+      evidenceBoundary: evidenceLink.evidenceBoundary,
+      reviewPlan: "先补齐准入预检、稳定对象或证据快照，再决定是否进入 7/14 天复盘。",
       boundary: "不会自动调价、暂停广告、加词或否词。",
     };
   }
 
   const reasonPrefix =
     selectedGuide.actionType === recommendedActionType
-      ? "后端推荐动作可用"
-      : "后端推荐动作暂不可点，先选择当前第一个可用人工动作";
+      ? "系统推荐动作可用"
+      : "系统推荐动作暂不可点，先选择当前第一个可用人工动作";
   return {
     actionType: selectedGuide.actionType,
     label: selectedGuide.label,
     tone: "ready",
     title: "本次建议选择",
     reason: `${reasonPrefix}：${selectedGuide.whenToUse}`,
+    evidenceLink: evidenceLink.evidenceLink,
+    evidenceBoundary: evidenceLink.evidenceBoundary,
     reviewPlan: `${selectedGuide.writes} 点击后只形成留痕或排程，不保存改善结论。`,
     boundary: "不会自动调价、暂停广告、加词或否词。",
   };
@@ -3364,10 +3405,10 @@ export function manualActionAuthorizationReadinessSummary(
     title: "待授权写入状态",
     tone: blocked ? "blocked" : ready ? "ready" : "waiting",
     primary: ready
-      ? "后端只读预检已通过，但当前没有写入；必须人工点击并通过授权门禁后才会生成留痕。"
+      ? "准入核对已通过，但当前没有写入；必须人工点击并通过授权门禁后才会生成留痕。"
       : blocked
-        ? "当前人工动作被后端预检阻断，不能写入人工留痕。"
-        : "后端预检尚未进入可授权写入状态，当前不要写入人工留痕。",
+        ? "当前人工动作被准入预检阻断，不能写入人工留痕。"
+        : "准入预检尚未进入可授权写入状态，当前不要写入人工留痕。",
     target: `目标：${targetText}`,
     currentState: `当前：ManualAction ${currentManualActions} 条 / ReviewTodo ${currentReviewTodos} 条`,
     authorizedResult: `授权后预期：ManualAction ${expectedManualActions} 条 / ReviewTodo ${expectedReviewTodos} 条 / 窗口 ${windows}`,

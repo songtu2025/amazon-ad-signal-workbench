@@ -977,8 +977,9 @@ export function SignalTriageWorkbench() {
       manualActionChoiceRecommendation({
         recommendedActionType: selectedBackendManualActionPreview?.actionType ?? null,
         gatesByAction: selectedManualActionChoiceGates,
+        diagnosisEvidence: selectedDiagnosisEvidenceSummary,
       }),
-    [selectedBackendManualActionPreview?.actionType, selectedManualActionChoiceGates],
+    [selectedBackendManualActionPreview?.actionType, selectedDiagnosisEvidenceSummary, selectedManualActionChoiceGates],
   );
   const selectedManualActionPathSteps = useMemo(
     () =>
@@ -2835,6 +2836,8 @@ export function SignalTriageWorkbench() {
                     <strong>{selectedManualActionChoiceRecommendation.label}</strong>
                   </div>
                   <p>{selectedManualActionChoiceRecommendation.reason}</p>
+                  <small>{selectedManualActionChoiceRecommendation.evidenceLink}</small>
+                  <small>{selectedManualActionChoiceRecommendation.evidenceBoundary}</small>
                   <small>{selectedManualActionChoiceRecommendation.reviewPlan}</small>
                   <small>{selectedManualActionChoiceRecommendation.boundary}</small>
                 </div>
@@ -2842,7 +2845,7 @@ export function SignalTriageWorkbench() {
                   {manualActionChoiceGuides.map((guide) => {
                     const guideGate = selectedManualActionChoiceGates[guide.actionType] ?? {
                       disabled: true,
-                      reason: "当前后端预检尚未完成。",
+                      reason: "当前准入预检尚未完成。",
                       compactReason: "等待预检",
                     };
                     return (
