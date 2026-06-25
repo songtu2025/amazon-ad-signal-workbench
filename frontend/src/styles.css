@@ -7859,7 +7859,8 @@ button.reviewTodoQueueNext:focus-visible {
 }
 
 .reviewTodoPathReadbackPreview,
-.reviewRecordSaveDecisionPreview {
+.reviewRecordSaveDecisionPreview,
+.ruleFeedbackSourcePreview {
   display: grid;
   gap: 7px;
   border: 1px solid #d7e5f0;
@@ -7869,25 +7870,29 @@ button.reviewTodoQueueNext:focus-visible {
 }
 
 .reviewTodoPathReadbackPreview.ready,
-.reviewRecordSaveDecisionPreview.ready {
+.reviewRecordSaveDecisionPreview.ready,
+.ruleFeedbackSourcePreview.ready {
   border-color: #c6ead9;
   background: #f8fffb;
 }
 
 .reviewTodoPathReadbackPreview.waiting,
-.reviewRecordSaveDecisionPreview.waiting {
+.reviewRecordSaveDecisionPreview.waiting,
+.ruleFeedbackSourcePreview.waiting {
   border-color: #ead7a8;
   background: #fffaf0;
 }
 
 .reviewTodoPathReadbackPreview.blocked,
-.reviewRecordSaveDecisionPreview.blocked {
+.reviewRecordSaveDecisionPreview.blocked,
+.ruleFeedbackSourcePreview.blocked {
   border-color: #f0c7be;
   background: #fff7f5;
 }
 
 .reviewTodoPathReadbackPreview > div,
-.reviewRecordSaveDecisionPreview > div {
+.reviewRecordSaveDecisionPreview > div,
+.ruleFeedbackSourcePreview > div {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -7895,7 +7900,8 @@ button.reviewTodoQueueNext:focus-visible {
 }
 
 .reviewTodoPathReadbackPreview > div span,
-.reviewRecordSaveDecisionPreview > div span {
+.reviewRecordSaveDecisionPreview > div span,
+.ruleFeedbackSourcePreview > div span {
   border: 1px solid #d7e5f0;
   border-radius: 999px;
   padding: 2px 7px;
@@ -7910,7 +7916,9 @@ button.reviewTodoQueueNext:focus-visible {
 .reviewTodoPathReadbackPreview p,
 .reviewTodoPathReadbackPreview small,
 .reviewRecordSaveDecisionPreview p,
-.reviewRecordSaveDecisionPreview small {
+.reviewRecordSaveDecisionPreview small,
+.ruleFeedbackSourcePreview p,
+.ruleFeedbackSourcePreview small {
   margin: 0;
   color: #52677d;
   font-size: 11px;
@@ -7918,22 +7926,26 @@ button.reviewTodoQueueNext:focus-visible {
 }
 
 .reviewTodoPathReadbackPreview li,
-.reviewRecordSaveDecisionPreview li {
+.reviewRecordSaveDecisionPreview li,
+.ruleFeedbackSourcePreview li {
   border-left: 3px solid #9aa8b8;
 }
 
 .reviewTodoPathReadbackPreview li.ready,
-.reviewRecordSaveDecisionPreview li.ready {
+.reviewRecordSaveDecisionPreview li.ready,
+.ruleFeedbackSourcePreview li.ready {
   border-left-color: #22a06b;
 }
 
 .reviewTodoPathReadbackPreview li.waiting,
-.reviewRecordSaveDecisionPreview li.waiting {
+.reviewRecordSaveDecisionPreview li.waiting,
+.ruleFeedbackSourcePreview li.waiting {
   border-left-color: #d8a84b;
 }
 
 .reviewTodoPathReadbackPreview li.blocked,
-.reviewRecordSaveDecisionPreview li.blocked {
+.reviewRecordSaveDecisionPreview li.blocked,
+.ruleFeedbackSourcePreview li.blocked {
   border-left-color: #d0452f;
 }
 

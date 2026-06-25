@@ -1549,6 +1549,60 @@ export function SignalTriageWorkbench() {
       },
     ];
   }, [latestReviewRecord, ruleFeedbackPrioritySummary, selectedRuleFeedbackCandidate, selectedRuleImprovementReadiness]);
+  const selectedRuleFeedbackSourcePreview = useMemo(() => {
+    const tone =
+      selectedRuleImprovementReadiness.tone === "saved" || selectedRuleImprovementReadiness.tone === "ready"
+        ? "ready"
+        : "blocked";
+    const sourceValue = latestReviewRecord
+      ? "当前对象复盘记录"
+      : ruleFeedbackPrioritySummary
+        ? ruleFeedbackPrioritySummary.title
+        : "等待已保存复盘";
+    const sourceDetail =
+      selectedRuleFeedbackCandidate?.basis ??
+      ruleFeedbackPrioritySummary?.basis ??
+      "没有已保存 ReviewRecord 前，规则反馈区只展示复盘输入证据和保存门槛。";
+    const priorityDetail =
+      ruleFeedbackPrioritySummary?.priority ??
+      selectedRuleFeedbackCandidate?.recommendation ??
+      selectedRuleImprovementReadiness.description;
+    const boundaryDetail =
+      ruleFeedbackPrioritySummary?.actionBoundary ??
+      selectedRuleFeedbackCandidate?.boundary ??
+      "规则反馈只进入解释层和人工复核优先级，不自动改规则，不自动执行广告动作。";
+
+    return {
+      title: "规则反馈样本来源读回",
+      tone,
+      summary: latestReviewRecord
+        ? "已保存复盘记录可作为当前对象的规则反馈样本；先回看样本来源，再决定人工复核方向。"
+        : ruleFeedbackPrioritySummary
+          ? "已有复盘样本池摘要；先看样本来源和复核优先级，再展开候选组和样本细节。"
+          : "当前还没有可反馈规则的已保存复盘样本；只能等待复盘或先保存 ReviewRecord。",
+      rows: [
+        {
+          label: "样本来源",
+          value: sourceValue,
+          detail: sourceDetail,
+          tone,
+        },
+        {
+          label: "复核优先级",
+          value: ruleFeedbackPrioritySummary?.title ?? selectedRuleImprovementReadiness.title,
+          detail: priorityDetail,
+          tone,
+        },
+        {
+          label: "动作边界",
+          value: "只做人工复核",
+          detail: boundaryDetail,
+          tone,
+        },
+      ],
+      boundary: "规则反馈样本只帮助人工复核解释、证据和阈值；不自动改规则，也不执行广告动作。",
+    };
+  }, [latestReviewRecord, ruleFeedbackPrioritySummary, selectedRuleFeedbackCandidate, selectedRuleImprovementReadiness]);
   const selectedBaseManualActionEvidenceSnapshot = useMemo(
     () => buildManualActionEvidenceSnapshot(selectedTriageBusinessEvidenceItems),
     [selectedTriageBusinessEvidenceItems],
@@ -3850,6 +3904,26 @@ export function SignalTriageWorkbench() {
                         </li>
                       ))}
                     </ul>
+                    <section
+                      className={`ruleFeedbackSourcePreview ${selectedRuleFeedbackSourcePreview.tone}`}
+                      aria-label="规则反馈样本来源读回"
+                    >
+                      <div>
+                        <strong>{selectedRuleFeedbackSourcePreview.title}</strong>
+                        <span>{selectedRuleFeedbackSourcePreview.tone === "ready" ? "可人工复核" : "等待样本"}</span>
+                      </div>
+                      <p>{selectedRuleFeedbackSourcePreview.summary}</p>
+                      <ul>
+                        {selectedRuleFeedbackSourcePreview.rows.map((row) => (
+                          <li key={row.label} className={row.tone}>
+                            <span>{row.label}</span>
+                            <b>{row.value}</b>
+                            <p>{row.detail}</p>
+                          </li>
+                        ))}
+                      </ul>
+                      <small>{selectedRuleFeedbackSourcePreview.boundary}</small>
+                    </section>
                   </div>
                   <details className="ruleFeedbackDetails" aria-label="规则反馈完整审计材料">
                     <summary>展开规则改进门槛、候选组和样本细节</summary>

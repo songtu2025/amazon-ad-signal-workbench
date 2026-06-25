@@ -379,6 +379,7 @@ const saveReviewRecordButtonIndex = workbenchSource.indexOf('<button className="
 const ruleImprovementSectionIndex = workbenchSource.indexOf('aria-label="规则改进门槛"');
 const ruleFeedbackDecisionSummaryIndex = workbenchSource.indexOf('aria-label="规则反馈默认摘要"');
 const ruleFeedbackDetailsIndex = workbenchSource.indexOf('aria-label="规则反馈完整审计材料"');
+const ruleFeedbackSourcePreviewIndex = workbenchSource.indexOf('aria-label="规则反馈样本来源读回"');
 const ruleFeedbackCandidateIndex = workbenchSource.indexOf('aria-label="规则反馈候选"');
 const ruleFeedbackPrioritySummaryIndex = workbenchSource.indexOf('aria-label="规则反馈候选汇总"');
 assert(productScopeSingleScreenRenderIndex >= 0, "Parent ASIN 单屏作战卡必须默认渲染");
@@ -627,6 +628,8 @@ assert(reviewMetricTableIndex < reviewRecordPreflightChecklistIndex, "指标明�
 assert(reviewRecordPreflightChecklistIndex < saveReviewRecordButtonIndex, "保存按钮必须在保存前检查清单之后");
 assert(ruleImprovementSectionIndex >= 0, "规则改进门槛区必须存在");
 assert(ruleFeedbackDecisionSummaryIndex > ruleImprovementSectionIndex, "规则反馈默认摘要必须渲染在规则改进区内");
+assert(ruleFeedbackSourcePreviewIndex > ruleFeedbackDecisionSummaryIndex, "规则反馈默认摘要必须读回样本来源");
+assert(ruleFeedbackSourcePreviewIndex < ruleFeedbackDetailsIndex, "规则反馈样本来源读回必须先于完整审计材料");
 assert(ruleFeedbackDecisionSummaryIndex < ruleFeedbackDetailsIndex, "规则反馈必须先给默认业务判断，再展开完整审计材料");
 assert(ruleFeedbackDetailsIndex < ruleFeedbackCandidateIndex, "规则反馈候选必须保留在完整审计材料折叠区");
 assert(ruleFeedbackDetailsIndex < ruleFeedbackPrioritySummaryIndex, "规则反馈样本池必须保留在完整审计材料折叠区");
@@ -1289,6 +1292,11 @@ assertIncludes(workbenchSource, "展开复盘门禁、待办证据和保存细�
 assertIncludes(workbenchSource, "selectedRuleFeedbackDecisionItems");
 assertIncludes(workbenchSource, 'aria-label="规则反馈默认摘要"');
 assertIncludes(workbenchSource, "规则反馈先看这四件事");
+assertIncludes(workbenchSource, "selectedRuleFeedbackSourcePreview");
+assertIncludes(workbenchSource, 'aria-label="规则反馈样本来源读回"');
+assertIncludes(workbenchSource, "样本来源");
+assertIncludes(workbenchSource, "复核优先级");
+assertIncludes(workbenchSource, "规则反馈样本只帮助人工复核解释、证据和阈值");
 assertIncludes(workbenchSource, "有没有复盘结论");
 assertIncludes(workbenchSource, "能不能反馈规则");
 assertIncludes(workbenchSource, "反馈依据是什么");
@@ -1305,6 +1313,9 @@ assertIncludes(stylesSource, ".reviewRecordSaveDecisionPreview.blocked");
 assertIncludes(stylesSource, ".reviewFlowStatusDetails");
 assertIncludes(stylesSource, ".reviewFlowStatusDetails[open] > summary");
 assertIncludes(stylesSource, ".ruleFeedbackDecisionSummary");
+assertIncludes(stylesSource, ".ruleFeedbackSourcePreview");
+assertIncludes(stylesSource, ".ruleFeedbackSourcePreview.ready");
+assertIncludes(stylesSource, ".ruleFeedbackSourcePreview.blocked");
 assertIncludes(stylesSource, ".ruleFeedbackDetails");
 assertIncludes(stylesSource, ".ruleFeedbackDetails[open] > summary");
 assertIncludes(stylesSource, ".manualReviewEvidencePathReadback");
