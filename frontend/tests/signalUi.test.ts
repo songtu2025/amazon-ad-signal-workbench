@@ -24,6 +24,7 @@ import {
   buildProductScopePriorityDecisionBuckets,
   buildProductScopePriorityQueueItems,
   mergeActiveProductScopePriorityTriageHint,
+  mergeProductScopePrioritySearchIntentHints,
   buildProductScopeManualActionTargetAlignment,
   buildProductScopeSignalExplanation,
   buildProductScopeAdmissionCard,
@@ -705,6 +706,65 @@ assertIncludes(triagedWatchPriorityItem?.evidenceSummary ?? "", "beach essential
 assertIncludes(triagedWatchPriorityItem?.decisionBadge ?? "", "候选：beach essentials");
 assertIncludes(triagedWatchPriorityItem?.nextManualStep ?? "", "投放词、广告组、广告 ASIN");
 assertIncludes(triagedWatchPriorityItem?.boundary ?? "", "不代表自动加词、否词、调价或暂停广告");
+
+const searchIntentEnhancedPriorityQueueItems = mergeProductScopePrioritySearchIntentHints(productScopePriorityQueueItems, {
+  "parent_asin:B0WATCH": [
+    {
+      intent_label: "规则语义：海滩出行用品",
+      search_terms: ["beach essentials"],
+      metrics: {
+        impressions: 800,
+        clicks: 40,
+        cost: 24,
+        orders: 8,
+        sales: 96,
+        acos: 0.25,
+        cvr: 0.2,
+        cpc: 0.6,
+      },
+      insight: "该语义类目转化稳定，属于放量候选",
+      semantic_source: "规则语义",
+      aba_match_count: 1,
+      data_grain: "当前 Parent ASIN 相关广告上下文中实际产生表现的用户搜索词行，按标准化用户搜索词及规则归类聚合",
+      business_question: "这组同类广告用户搜索词在当前 Parent ASIN 广告上下文下，是应该扩量、止损，还是只观察？",
+      current_judgement: "当前判断：有订单且 ACOS 较低，优先复核是否存在可人工确认的扩量机会。",
+      metric_purpose: "指标目的：花费 24 和点击 40 判断消耗规模；订单 8、CVR 20.00%、ACOS 25.00% 判断承接质量。",
+      ad_context: "广告上下文：覆盖 1 个广告活动、1 个广告组、1 条搜索词表现行；仍需核对同广告组投放商品。",
+      evidence_gap: "证据缺口：广告位影响需要继续打开广告位证据核对。",
+      proves: "能证明当前广告上下文内同类广告搜索词有订单和 ABA 背景。",
+      does_not_prove: "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现，也不能把搜索词表现分组当作人工动作对象。",
+      next_manual_step: "逐条打开具体 SearchTerm 信号，人工核对投放词、广告组和广告位。",
+      top_search_terms: [
+        {
+          search_term: "beach essentials",
+          normalized_query: "beach essentials",
+          ad_group_names: ["beach essentials 精准"],
+          targeting_texts: ["beach essentials"],
+          clicks: 40,
+          cost: 24,
+          orders: 8,
+          sales: 96,
+          acos: 0.25,
+          aba_rank: 208,
+          aba_period: "2026-06-07 至 2026-06-13",
+          source_row_count: 2,
+        },
+      ],
+    },
+  ],
+});
+assertEqual(searchIntentEnhancedPriorityQueueItems[0].scopeId, "parent_asin:B0REVIEW");
+const searchIntentEnhancedWatchPriorityItem = searchIntentEnhancedPriorityQueueItems.find((item) => item.scopeId === "parent_asin:B0WATCH");
+assertEqual(searchIntentEnhancedWatchPriorityItem?.priorityLabel, "搜索词扩量");
+assertEqual(searchIntentEnhancedWatchPriorityItem?.tone, "urgent");
+assertIncludes(searchIntentEnhancedWatchPriorityItem?.mainQuestion ?? "", "广告搜索词复核线索");
+assertIncludes(searchIntentEnhancedWatchPriorityItem?.evidenceSummary ?? "", "搜索词复核 1 组");
+assertIncludes(searchIntentEnhancedWatchPriorityItem?.evidenceSummary ?? "", "扩量复核");
+assertIncludes(searchIntentEnhancedWatchPriorityItem?.rankReason ?? "", "搜索词复核摘要");
+assertIncludes(searchIntentEnhancedWatchPriorityItem?.decisionBadge ?? "", "搜索词：扩量复核");
+assertIncludes(searchIntentEnhancedWatchPriorityItem?.nextManualStep ?? "", "具体 SearchTerm 诊断");
+assertIncludes(searchIntentEnhancedWatchPriorityItem?.boundary ?? "", "不把搜索词表现分组当作人工动作对象");
+assertIncludes(searchIntentEnhancedWatchPriorityItem?.boundary ?? "", "不自动加词、否词、调价或暂停广告");
 
 const productScopePriorityDecisionBuckets = buildProductScopePriorityDecisionBuckets(productScopePriorityQueueItems);
 assertEqual(productScopePriorityDecisionBuckets.map((bucket) => `${bucket.label}:${bucket.count}`).join(" / "), "复盘优先:1 / 人工确认:1 / 保持观察:1 / 暂不展开:1");

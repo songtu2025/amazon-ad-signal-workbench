@@ -1453,6 +1453,8 @@ export interface ProductScopePriorityQueueItem {
   score: number;
 }
 
+export type ProductScopePrioritySearchIntentSummaryMap = Record<string, SearchIntentSummaryForUi[] | undefined>;
+
 function appendPriorityText(text: string, addition: string): string {
   if (!addition || text.includes(addition)) return text;
   return `${text} / ${addition}`;
@@ -7179,6 +7181,60 @@ export function mergeActiveProductScopePriorityTriageHint(
       boundary: `${item.boundary} 当前候选来自已选 Parent 的 signal-triage 结果，只代表可人工复核线索，不代表自动加词、否词、调价或暂停广告。`,
     } satisfies ProductScopePriorityQueueItem;
   });
+}
+
+export function mergeProductScopePrioritySearchIntentHints(
+  items: ProductScopePriorityQueueItem[],
+  searchIntentsByScope: ProductScopePrioritySearchIntentSummaryMap,
+): ProductScopePriorityQueueItem[] {
+  return items
+    .map((item, index) => {
+      const searchIntentCards = buildSearchIntentReviewCards(searchIntentsByScope[item.scopeId] ?? [], 3);
+      const topCard = searchIntentCards[0];
+      if (!topCard) return { item, index };
+
+      const decisionText = `搜索词复核 ${searchIntentCards.length} 组`;
+      const topText = `优先 ${topCard.operationDecisionLabel}：${topCard.title}`;
+      const primarySearchTerm = topCard.primarySearchTerm ?? topCard.title;
+      const scoreBonus =
+        topCard.operationDecisionTone === "waste"
+          ? 420
+          : topCard.operationDecisionTone === "scale"
+            ? 360
+            : 80;
+      const shouldKeepReviewPriority = item.tone === "review";
+      const upgradedTone: ProductScopePriorityQueueTone =
+        shouldKeepReviewPriority ? item.tone : topCard.operationDecisionTone === "observe" ? item.tone : "urgent";
+      const upgradedPriorityLabel = shouldKeepReviewPriority
+        ? item.priorityLabel
+        : topCard.operationDecisionTone === "scale"
+          ? "搜索词扩量"
+          : topCard.operationDecisionTone === "waste"
+            ? "搜索词止损"
+            : item.priorityLabel === "暂不展开"
+              ? "搜索词观察"
+              : item.priorityLabel;
+
+      return {
+        item: {
+          ...item,
+          priorityLabel: upgradedPriorityLabel,
+          tone: upgradedTone,
+          mainQuestion: shouldKeepReviewPriority
+            ? item.mainQuestion
+            : `当前 Parent 有 ${searchIntentCards.length} 组广告搜索词复核线索，先看 ${topCard.title} 是否需要进入具体 SearchTerm 人工复核。`,
+          evidenceSummary: appendPriorityText(appendPriorityText(item.evidenceSummary, decisionText), topText),
+          rankReason: `${item.rankReason}；搜索词复核摘要：${topCard.operationDecisionReason}`,
+          decisionBadge: appendPriorityText(item.decisionBadge, `搜索词：${topCard.operationDecisionLabel}`),
+          nextManualStep: `先打开 ${primarySearchTerm} 的具体 SearchTerm 诊断，核对投放词、广告组、广告 ASIN 和广告位边界，再决定记录观察、标记已处理、加入复盘或忽略本次。`,
+          boundary: `${item.boundary} 搜索词复核只用于 Parent 首页排序和下钻提示，不把搜索词表现分组当作人工动作对象，也不自动加词、否词、调价或暂停广告。`,
+          score: item.score + scoreBonus + searchIntentCards.length * 12,
+        } satisfies ProductScopePriorityQueueItem,
+        index,
+      };
+    })
+    .sort((left, right) => right.item.score - left.item.score || left.index - right.index)
+    .map(({ item }) => item);
 }
 
 export function buildProductScopePriorityDecisionBuckets(items: ProductScopePriorityQueueItem[]): ProductScopePriorityDecisionBucket[] {

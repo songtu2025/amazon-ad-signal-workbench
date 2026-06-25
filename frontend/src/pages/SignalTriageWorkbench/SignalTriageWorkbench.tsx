@@ -149,6 +149,7 @@ import {
   buildProductScopePriorityDecisionBuckets,
   buildProductScopePriorityQueueItems,
   mergeActiveProductScopePriorityTriageHint,
+  mergeProductScopePrioritySearchIntentHints,
   buildProductScopeManualActionTargetAlignment,
   buildProductScopeAdmissionCard,
   buildProductScopeEvidenceMatrix,
@@ -229,6 +230,7 @@ import {
   RecommendedManualActionPreview,
   ProductScopePriorityDecisionBucket,
   ProductScopePriorityQueueItem,
+  ProductScopePrioritySearchIntentSummaryMap,
   ProductScopeManualActionTargetAlignment,
   SelectedSignalScopeContext,
   SearchIntentPanelContext,
@@ -361,6 +363,27 @@ function formatMoney(value: number) {
   return `$${value.toFixed(2)}`;
 }
 
+function hasProductScopeId(scopeId: string | null | undefined, options: ProductScopeOption[]) {
+  return Boolean(scopeId && options.some((option) => option.scope_id === scopeId));
+}
+
+async function fetchProductScopePrioritySearchIntents(
+  marketId: number,
+  scopeIds: string[],
+): Promise<ProductScopePrioritySearchIntentSummaryMap> {
+  const uniqueScopeIds = [...new Set(scopeIds.filter(Boolean))];
+  const entries = await Promise.all(
+    uniqueScopeIds.map(async (scopeId) => {
+      try {
+        return [scopeId, await fetchSearchIntents(marketId, scopeId)] as const;
+      } catch {
+        return [scopeId, []] as const;
+      }
+    }),
+  );
+  return Object.fromEntries(entries);
+}
+
 export function SignalTriageWorkbench() {
   const [signals, setSignals] = useState<AiSignal[]>([]);
   const [snapshotStatus, setSnapshotStatus] = useState<SnapshotStatus | null>(null);
@@ -370,6 +393,8 @@ export function SignalTriageWorkbench() {
   const [signalTriageSummary, setSignalTriageSummary] = useState<SignalTriageSummary | null>(null);
   const [reviewEvidenceRepair, setReviewEvidenceRepair] = useState<ReviewEvidenceRepairPayload | null>(null);
   const [searchIntents, setSearchIntents] = useState<SearchIntentSummary[]>([]);
+  const [productScopePrioritySearchIntentsByScope, setProductScopePrioritySearchIntentsByScope] =
+    useState<ProductScopePrioritySearchIntentSummaryMap>({});
   const [marketOptions, setMarketOptions] = useState<MarketOption[]>([]);
   const [productScope, setProductScope] = useState<ProductScopeSummary | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -428,12 +453,24 @@ export function SignalTriageWorkbench() {
         fetchReviewTodos(selectedMarketId),
       ]);
       const nextProductScopeOptions = nextProductScope.options;
-      const nextActiveProductScopeId = resolveProductScopePrioritySelectionId(
-        selectedProductScopeId,
+      const nextBaseProductScopePriorityItems = buildProductScopePriorityQueueItems(
         nextProductScopeOptions,
         nextSignals,
         nextReviewTodos,
+        10,
       );
+      const nextPrioritySearchIntentsByScope = await fetchProductScopePrioritySearchIntents(
+        selectedMarketId,
+        nextBaseProductScopePriorityItems.map((item) => item.scopeId),
+      );
+      const nextSearchIntentEnhancedPriorityItems = mergeProductScopePrioritySearchIntentHints(
+        nextBaseProductScopePriorityItems,
+        nextPrioritySearchIntentsByScope,
+      );
+      const nextActiveProductScopeId = selectedProductScopeId && hasProductScopeId(selectedProductScopeId, nextProductScopeOptions)
+        ? selectedProductScopeId
+        : (nextSearchIntentEnhancedPriorityItems[0]?.scopeId ??
+          resolveProductScopePrioritySelectionId(selectedProductScopeId, nextProductScopeOptions, nextSignals, nextReviewTodos));
       const nextProductScopedSignals = filterSignalsByProductScope(nextSignals, nextActiveProductScopeId, nextProductScopeOptions);
       const [nextSignalTriageSummary, nextReviewEvidenceRepair, nextSearchIntents] = await Promise.all([
         fetchSignalTriageSummary(selectedMarketId, 5, nextActiveProductScopeId),
@@ -453,6 +490,10 @@ export function SignalTriageWorkbench() {
       setSnapshotInspection(nextSnapshotInspection);
       setSignalScanSummary(nextSignalScanSummary);
       setSearchIntents(nextSearchIntents);
+      setProductScopePrioritySearchIntentsByScope({
+        ...nextPrioritySearchIntentsByScope,
+        [nextActiveProductScopeId]: nextSearchIntents,
+      });
       setSignalTriageSummary(nextSignalTriageSummary);
       setReviewEvidenceRepair(nextReviewEvidenceRepair);
       setReviewTodos(nextReviewTodos);
@@ -559,6 +600,10 @@ export function SignalTriageWorkbench() {
         setSignalTriageSummary(nextSignalTriageSummary);
         setReviewEvidenceRepair(nextReviewEvidenceRepair);
         setSearchIntents(nextSearchIntents);
+        setProductScopePrioritySearchIntentsByScope((current) => ({
+          ...current,
+          [activeProductScopeId]: nextSearchIntents,
+        }));
         const nextDisplayProductScopedSignals = mergeBackendTriageSignals(
           productScopedSignals,
           normalizedSignals,
@@ -701,9 +746,13 @@ export function SignalTriageWorkbench() {
     () => buildProductScopePriorityQueueItems(productScopeOptions, normalizedSignals, reviewTodos, 10),
     [normalizedSignals, productScopeOptions, reviewTodos],
   );
+  const searchIntentProductScopePriorityQueueItems = useMemo(
+    () => mergeProductScopePrioritySearchIntentHints(baseProductScopePriorityQueueItems, productScopePrioritySearchIntentsByScope),
+    [baseProductScopePriorityQueueItems, productScopePrioritySearchIntentsByScope],
+  );
   const productScopePriorityQueueItems = useMemo(
-    () => mergeActiveProductScopePriorityTriageHint(baseProductScopePriorityQueueItems, signalTriageSummary),
-    [baseProductScopePriorityQueueItems, signalTriageSummary],
+    () => mergeActiveProductScopePriorityTriageHint(searchIntentProductScopePriorityQueueItems, signalTriageSummary),
+    [searchIntentProductScopePriorityQueueItems, signalTriageSummary],
   );
   const productScopePriorityDecisionSummary = useMemo(
     () => buildProductScopePriorityDecisionSummary(productScopePriorityQueueItems),
