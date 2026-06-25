@@ -2459,7 +2459,7 @@ export function SignalTriageWorkbench() {
                         className={`productScopePriorityQueueRow ${item.tone} ${activeProductScopeId === item.scopeId ? "active" : ""}`}
                         key={item.scopeId}
                         onClick={() => handleSelectProductScopePriority(item.scopeId)}
-                        aria-label={`打开 ${item.label} 的 Parent ASIN 广告诊断`}
+                        aria-label={productScopePriorityQueueAriaLabel(item)}
                       >
                         <span className="productScopePriorityRank">{index + 1}</span>
                         <span className="productScopePriorityBody">
@@ -2470,19 +2470,24 @@ export function SignalTriageWorkbench() {
                           <span className={`productScopePriorityWorkflowStatus ${item.workflowStatus.tone}`}>
                             <b>{item.workflowStatus.label}</b>
                             <small>{item.workflowStatus.reason}</small>
-                            <small>下一步：{item.workflowStatus.nextStep}</small>
                           </span>
-                          <span>{item.mainQuestion}</span>
-                          <small>{item.evidenceSummary}</small>
+                          <span className="productScopePriorityQueueDigest">
+                            <b>判断</b>
+                            <small>{item.mainQuestion}</small>
+                          </span>
+                          <span className="productScopePriorityQueueDigest">
+                            <b>证据</b>
+                            <small>{item.evidenceSummary}</small>
+                          </span>
+                          <span className="productScopePriorityQueueDigest action">
+                            <b>下一步</b>
+                            <small>{item.workflowStatus.nextStep}</small>
+                          </span>
                           <span className={`productScopePriorityEvidencePreview ${adGroupEvidencePreview.tone}`}>
                             <b>{adGroupEvidencePreview.label}</b>
                             <strong>{adGroupEvidencePreview.focusLayer}</strong>
                             <small>{adGroupEvidencePreview.nextManualStep}</small>
                           </span>
-                          <small>排序依据：{item.rankReason}</small>
-                          <small>{item.decisionBadge}</small>
-                          <small>{item.nextManualStep}</small>
-                          <small>{item.boundary}</small>
                         </span>
                       </button>
                     );
@@ -4752,6 +4757,16 @@ function productScopePriorityBucketFilterText(
   const bucket = summary.triageBuckets.find((item) => item.id === bucketFilter);
   if (!bucket) return "先排序，再下钻；当前分诊桶暂无可读对象。";
   return `当前只看：${bucket.label} ${bucket.count} 个；${bucket.action}`;
+}
+
+function productScopePriorityQueueAriaLabel(item: ProductScopePriorityQueueItem): string {
+  return [
+    `打开 ${item.label} 的 Parent ASIN 广告诊断`,
+    item.priorityLabel,
+    item.workflowStatus.label,
+    item.workflowStatus.nextStep,
+    item.boundary,
+  ].join("；");
 }
 
 function buildProductScopePriorityAdGroupEvidencePreview(

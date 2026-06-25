@@ -1956,6 +1956,37 @@ h3 {
   line-height: 1.4;
 }
 
+.productScopePriorityQueueDigest {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 6px;
+  align-items: start;
+  border: 1px solid #e0e8f1;
+  border-radius: 7px;
+  padding: 6px 8px;
+  background: #ffffff;
+}
+
+.productScopePriorityQueueDigest.action {
+  border-color: #d1e3f0;
+  background: #f6fbff;
+}
+
+.productScopePriorityQueueDigest b {
+  color: #526b84;
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
+.productScopePriorityQueueDigest small {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .productScopePriorityEvidencePreview {
   display: grid;
   gap: 3px;

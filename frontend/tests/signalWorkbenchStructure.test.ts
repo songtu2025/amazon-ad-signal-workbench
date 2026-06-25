@@ -866,6 +866,13 @@ assertIncludes(workbenchSource, "productScopePriorityEvidencePreview");
 assertIncludes(workbenchSource, "当前默认下钻");
 assertIncludes(workbenchSource, "打开后读取");
 assertIncludes(workbenchSource, "未打开前不跨 Parent ASIN 套用当前广告组结论");
+assertIncludes(workbenchSource, "function productScopePriorityQueueAriaLabel");
+assertIncludes(workbenchSource, "aria-label={productScopePriorityQueueAriaLabel(item)}");
+assertIncludes(workbenchSource, "productScopePriorityQueueDigest");
+const productScopePriorityQueueRenderSource = workbenchSource.slice(
+  workbenchSource.indexOf('className="productScopePriorityQueueRows"'),
+  workbenchSource.indexOf("{diagnosisPathSummary && <QueueDiagnosisPathPanel", workbenchSource.indexOf('className="productScopePriorityQueueRows"')),
+);
 assertIncludes(workbenchSource, "当前只看：${bucket.label}");
 assertIncludes(workbenchSource, "当前分诊桶暂无 Parent ASIN");
 assertIncludes(workbenchSource, "待处理规模：${items.length} 个 Parent ASIN");
@@ -876,12 +883,13 @@ assertIncludes(workbenchSource, 'aria-label="今日 Parent ASIN 优先处理清�
 assertIncludes(workbenchSource, "今日 Parent ASIN 优先处理清单");
 assertIncludes(workbenchSource, "先排序，再下钻");
 assertIncludes(workbenchSource, "避免 10 个 Parent ASIN 像看 10 张报纸");
-assertIncludes(workbenchSource, "排序依据：{item.rankReason}");
 assertIncludes(workbenchSource, "productScopePriorityWorkflowStatus");
 assertIncludes(workbenchSource, "{item.workflowStatus.label}");
 assertIncludes(workbenchSource, "{item.workflowStatus.reason}");
-assertIncludes(workbenchSource, "下一步：{item.workflowStatus.nextStep}");
-assertIncludes(workbenchSource, "{item.decisionBadge}");
+assertIncludes(workbenchSource, "{item.workflowStatus.nextStep}");
+assertNotIncludes(productScopePriorityQueueRenderSource, "排序依据：{item.rankReason}");
+assertNotIncludes(productScopePriorityQueueRenderSource, "<small>{item.decisionBadge}</small>");
+assertNotIncludes(productScopePriorityQueueRenderSource, "<small>{item.boundary}</small>");
 assertIncludes(workbenchSource, "handleSelectProductScopePriority(item.scopeId)");
 const productScopePriorityDecisionSummaryRenderIndex = workbenchSource.indexOf(
   "<ProductScopePriorityDecisionSummaryPanel",
@@ -941,6 +949,8 @@ assertIncludes(stylesSource, ".productScopePriorityDecisionBucket:disabled");
 assertIncludes(stylesSource, ".productScopePriorityDecisionShortcuts");
 assertIncludes(stylesSource, "repeat(auto-fit, minmax(min(170px, 100%), 1fr))");
 assertIncludes(stylesSource, ".productScopePriorityQueueEmpty");
+assertIncludes(stylesSource, ".productScopePriorityQueueDigest");
+assertIncludes(stylesSource, "-webkit-line-clamp: 2");
 assertIncludes(stylesSource, ".productScopePriorityWorkflowStatus");
 assertIncludes(stylesSource, ".productScopePriorityWorkflowStatus.urgent");
 assertIncludes(stylesSource, ".productScopePriorityWorkflowStatus.review");
