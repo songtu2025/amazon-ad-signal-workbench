@@ -1722,10 +1722,12 @@ assertIncludes(workbenchSource, "selectedDiagnosisEvidenceSummary?.nextManualSte
 assertIncludes(workbenchSource, 'aria-label="人工确认前四问"');
 assertIncludes(workbenchSource, "人工确认前四问");
 assertIncludes(workbenchSource, "先判断再点击");
-assertIncludes(workbenchSource, "1. 当前在确认什么");
-assertIncludes(workbenchSource, "2. 证据能证明什么");
-assertIncludes(workbenchSource, "3. 证据不能证明什么");
-assertIncludes(workbenchSource, "4. 现在人工做什么");
+assertIncludes(workbenchSource, "1. 当前判断");
+assertIncludes(workbenchSource, "2. 能证明");
+assertIncludes(workbenchSource, "3. 不能证明");
+assertIncludes(workbenchSource, "4. 人工下一步");
+assertIncludes(workbenchSource, "selectedSignal?.summary");
+assertIncludes(workbenchSource, "建议动作：${selectedManualActionChoiceRecommendation.label}");
 assertIncludes(workbenchSource, 'aria-label="复盘回看四问"');
 assertIncludes(workbenchSource, "复盘回看四问");
 assertIncludes(workbenchSource, "沿点击时证据判断");

@@ -1680,29 +1680,33 @@ export function SignalTriageWorkbench() {
     const reviewTodoContract = selectedManualActionPostWriteContractItems.find((item) => item.label === "复盘待办");
     return [
       {
-        label: "1. 当前在确认什么",
-        value: selectedDiagnosisEvidenceSummary?.businessQuestion ?? "等待中间诊断业务问题",
-        detail:
+        label: "1. 当前判断",
+        value: selectedSignal?.summary ?? selectedDiagnosisEvidenceSummary?.businessQuestion ?? "等待中间诊断当前判断",
+        detail: [
+          selectedDiagnosisEvidenceSummary?.businessQuestion,
           selectedDiagnosisEvidenceSummary?.objectReadback ??
-          "先确认当前人工按钮对应同一个 Parent ASIN、广告组和 SearchTerm 诊断对象。",
+            "先确认当前人工按钮对应同一个 Parent ASIN、广告组和 SearchTerm 诊断对象。",
+        ]
+          .filter((item): item is string => Boolean(item))
+          .join(" "),
       },
       {
-        label: "2. 证据能证明什么",
+        label: "2. 能证明",
         value: selectedDiagnosisEvidenceSummary?.proves ?? "等待证据链读回",
         detail: selectedManualActionChoiceRecommendation.evidenceLink,
       },
       {
-        label: "3. 证据不能证明什么",
+        label: "3. 不能证明",
         value: selectedDiagnosisEvidenceSummary?.doesNotProve ?? "不能替代人工判断",
         detail:
           selectedDiagnosisEvidenceSummary?.evidenceGap ??
           selectedManualActionChoiceRecommendation.evidenceBoundary,
       },
       {
-        label: "4. 现在人工做什么",
-        value: selectedManualActionChoiceRecommendation.label,
+        label: "4. 人工下一步",
+        value: selectedDiagnosisEvidenceSummary?.nextManualStep ?? selectedManualActionChoiceRecommendation.label,
         detail: [
-          selectedDiagnosisEvidenceSummary?.nextManualStep,
+          `建议动作：${selectedManualActionChoiceRecommendation.label}`,
           selectedManualActionAuthorizationReadiness?.primary ?? selectedManualActionChoiceRecommendation.reason,
           reviewTodoContract?.detail ?? selectedManualActionChoiceRecommendation.reviewPlan,
         ]
