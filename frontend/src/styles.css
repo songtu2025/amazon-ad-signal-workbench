@@ -6747,6 +6747,39 @@ button.reviewTodoQueueNext:focus-visible {
   font-size: 12px;
 }
 
+.keyEvidenceDecisionSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.keyEvidenceDecisionSummary span {
+  min-width: 0;
+  border: 1px solid #d8e8f5;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fbfdff;
+  display: grid;
+  gap: 5px;
+}
+
+.keyEvidenceDecisionSummary b {
+  color: #1e344f;
+  font-size: 12px;
+}
+
+.keyEvidenceDecisionSummary strong {
+  color: #1f2d3d;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.keyEvidenceDecisionSummary small {
+  color: #66758a;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .triageBusinessEvidenceStrip {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -6788,6 +6788,23 @@ function SignalDiagnosis({
             {visibleEvidenceFacts.length}/{signal.evidence.facts.length} 条
           </span>
         </div>
+        {keyEvidenceFacts.length > 0 && (
+          <div className="keyEvidenceDecisionSummary" aria-label="关键证据先读">
+            <span>
+              <b>先读哪几条</b>
+              <strong>{triggerEvidenceCountText(keyEvidenceFacts.length)}</strong>
+              <small>默认先看下方触发证据；完整证据只用于回查来源、对象边界和复盘审计。</small>
+            </span>
+            <span>
+              <b>能支撑什么</b>
+              <strong>{diagnosisEvidenceSummary?.proves ?? "等待诊断合同补充证明边界"}</strong>
+            </span>
+            <span>
+              <b>仍不能证明</b>
+              <strong>{diagnosisEvidenceSummary?.doesNotProve ?? "不能直接推出自动广告动作。"}</strong>
+            </span>
+          </div>
+        )}
         {triageBusinessEvidenceItems.length > 0 && (
           <div className="triageBusinessEvidenceStrip" aria-label="推荐对象业务证据">
             {triageBusinessEvidenceItems.map((item) => (

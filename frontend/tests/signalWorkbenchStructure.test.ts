@@ -1591,6 +1591,13 @@ assertIncludes(workbenchSource, "只服务上方业务判断");
 assertIncludes(workbenchSource, "这些指标只用于判断证据强度、对象边界和人工复核优先级，不能直接推出自动广告动作。");
 assertIncludes(workbenchSource, "指标目的：");
 assertIncludes(workbenchSource, "当前判断：");
+assertIncludes(workbenchSource, 'aria-label="关键证据先读"');
+assertIncludes(workbenchSource, "先读哪几条");
+assertIncludes(workbenchSource, "默认先看下方触发证据；完整证据只用于回查来源、对象边界和复盘审计。");
+assertIncludes(workbenchSource, "等待诊断合同补充证明边界");
+assertIncludes(workbenchSource, "不能直接推出自动广告动作。");
+assertIncludes(stylesSource, ".keyEvidenceDecisionSummary");
+assertIncludes(stylesSource, ".keyEvidenceDecisionSummary small");
 assertIncludes(workbenchSource, "searchTermReviewDecisionSummary");
 assertIncludes(workbenchSource, 'aria-label="广告搜索词复核优先判断"');
 assertIncludes(workbenchSource, '<details className="searchTermReviewLayer"');
@@ -1626,11 +1633,17 @@ assert(
 const diagnosisContractRenderIndex = workbenchSource.indexOf("<DiagnosisContractPanel");
 const diagnosisReasonIndex = workbenchSource.indexOf('className="detailSection diagnosisReason diagnosisStep stepReason"');
 const metricDecisionPanelIndex = workbenchSource.indexOf('className="metricDecisionPanel diagnosisStep stepEvidence"');
+const keyEvidenceDecisionSummaryIndex = workbenchSource.indexOf('aria-label="关键证据先读"');
+const keyEvidenceIndex = workbenchSource.indexOf('className="keyEvidence"');
 assert(
   diagnosisContractRenderIndex >= 0 &&
     diagnosisContractRenderIndex < diagnosisReasonIndex &&
     diagnosisReasonIndex < metricDecisionPanelIndex,
   "中间诊断必须先展示业务判断与原因，再展示关键指标，避免先堆指标。",
+);
+assert(
+  keyEvidenceDecisionSummaryIndex >= 0 && keyEvidenceDecisionSummaryIndex < keyEvidenceIndex,
+  "证据链必须先展示关键证据读法，再展示触发证据明细。",
 );
 assertIncludes(stylesSource, ".metricDecisionPanel");
 assertIncludes(stylesSource, ".metricDecisionPanel > p");
