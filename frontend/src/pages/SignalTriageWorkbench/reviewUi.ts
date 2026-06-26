@@ -4669,6 +4669,17 @@ export function manualActionPostWriteReadbackMessage(
   )}；${postWriteSummary}；${trimFinalPunctuation(manualActionPreflightStatusText(postWritePreflight))}。`;
 }
 
+const defaultPostWriteReviewMetricText = "花费、订单、销售额、ACOS、CVR 和广告位 / 搜索词边界";
+
+function manualActionPostWriteReviewMetricText(action: ManualActionForUi, reviewTodosForSelectedObject: ReviewTodoForUi[]) {
+  const snapshotItems = [
+    ...reviewTodosForSelectedObject.flatMap((todo) => todo.evidence_snapshot ?? []),
+    ...(action.evidence_snapshot ?? []),
+  ];
+  const reviewMetric = snapshotItems.find((item) => item.label === "复盘指标" && item.value.trim());
+  return `复盘看什么：${reviewMetric?.value.trim() || defaultPostWriteReviewMetricText}`;
+}
+
 function manualActionPostWriteReadbackSummary(
   action: ManualActionForUi,
   reviewTodosForSelectedObject: ReviewTodoForUi[],
@@ -4692,7 +4703,10 @@ function manualActionPostWriteReadbackSummary(
     ? "不执行广告动作"
     : "禁止副作用需继续核对";
   const todoEvidenceSegment = todoEvidenceReadback ? `，${todoEvidenceReadback}` : "";
-  return `${objectText} 写后读回：证据快照 ${snapshotCount} 条，复盘排程 ${windowText}${reviewTodoBoundaryText}${todoEvidenceSegment}，复盘结论 ${reviewRecordCount} 条，${forbiddenText}`;
+  return `${objectText} 写后复盘：${manualActionPostWriteReviewMetricText(
+    action,
+    reviewTodosForSelectedObject,
+  )}；写后读回：证据快照 ${snapshotCount} 条，复盘排程 ${windowText}${reviewTodoBoundaryText}${todoEvidenceSegment}，复盘结论 ${reviewRecordCount} 条，${forbiddenText}`;
 }
 
 export function manualActionReadbackCompactText(
