@@ -467,7 +467,7 @@ export function SignalTriageWorkbench() {
         nextReviewTodos,
       ] = await Promise.all([
         fetchMarketOptions(),
-        fetchProductScope(),
+        fetchProductScope(selectedMarketId),
         fetchSignals(selectedMarketId),
         fetchSnapshotStatus(),
         fetchSnapshotReadiness(selectedMarketId),

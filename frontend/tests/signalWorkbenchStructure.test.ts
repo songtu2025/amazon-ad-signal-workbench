@@ -26,10 +26,17 @@ const workbenchSource = readFileSync(
   join(process.cwd(), "src", "pages", "SignalTriageWorkbench", "SignalTriageWorkbench.tsx"),
   "utf8",
 );
+const apiSource = readFileSync(join(process.cwd(), "src", "api.ts"), "utf8");
+const apiPathsSource = readFileSync(join(process.cwd(), "src", "apiPaths.ts"), "utf8");
 const signalUiSource = readFileSync(join(process.cwd(), "src", "pages", "SignalTriageWorkbench", "signalUi.ts"), "utf8");
 const reviewUiSource = readFileSync(join(process.cwd(), "src", "pages", "SignalTriageWorkbench", "reviewUi.ts"), "utf8");
 const stylesSource = readFileSync(join(process.cwd(), "src", "styles.css"), "utf8");
 
+assertIncludes(apiPathsSource, "export function productScopePath(marketId?: number | null)");
+assertIncludes(apiPathsSource, 'return marketScopedPath("/api/product-scope", marketId);');
+assertIncludes(apiSource, "fetchProductScope(marketId?: number | null)");
+assertIncludes(apiSource, "productScopePath(marketId)");
+assertIncludes(workbenchSource, "fetchProductScope(selectedMarketId)");
 assertIncludes(workbenchSource, "buildProductScopeEvidenceMatrix");
 assertIncludes(workbenchSource, "buildProductScopeDiagnosisBrief");
 assertIncludes(workbenchSource, "productScopeAdGroupDiagnosisRows");

@@ -5,28 +5,40 @@ from app.models.product_scope import ProductScopeCoverage, ProductScopeOption, P
 from app.services.parent_asin_import import DEFAULT_PARENT_ASIN_SNAPSHOT_ROOT
 from app.services.parent_asin_store import load_parent_asin_rows_from_latest_snapshot
 from app.services.promotion_strategy_profiles import load_promotion_strategy_profiles
-from app.services.snapshot_store import DEFAULT_SNAPSHOT_ROOT, _integer, _latest_snapshot, _load_records, _number, _string
+from app.services.snapshot_store import DEFAULT_SNAPSHOT_ROOT, _integer, _latest_snapshot, _load_dict, _load_records, _number, _string
 
 
 def build_product_scope_summary(
     snapshot_root: Path = DEFAULT_SNAPSHOT_ROOT,
     parent_asin_snapshot_root: Path = DEFAULT_PARENT_ASIN_SNAPSHOT_ROOT,
     promotion_strategies: list[dict[str, Any]] | None = None,
+    selected_market_id: int | None = None,
 ) -> ProductScopeSummary:
-    snapshot_dir, manifest = _latest_snapshot(snapshot_root, require_success=True)
+    snapshot_dir, manifest = _latest_product_scope_snapshot(snapshot_root, selected_market_id=selected_market_id)
     if snapshot_dir is None or manifest is None:
+        boundary = (
+            f"market_id={selected_market_id} 暂无成功快照，不能建立该站点商品视角。"
+            if selected_market_id is not None
+            else "暂无成功快照，不能建立商品视角。"
+        )
         return ProductScopeSummary(
             has_snapshot=False,
             options=[_all_option(), _unattributed_option()],
-            coverage=ProductScopeCoverage(boundary="暂无成功快照，不能建立商品视角。"),
+            coverage=ProductScopeCoverage(boundary=boundary),
         )
 
     sales_rows = _load_records(snapshot_dir / "normalized" / "sales_product_daily_metrics.json")
     ad_rows = _load_records(snapshot_dir / "normalized" / "advertised_products.json")
     search_rows = _load_records(snapshot_dir / "normalized" / "ad_search_term_daily_metrics.json")
     placement_rows = _load_records(snapshot_dir / "normalized" / "ad_placement_daily_metrics.json")
-    parent_asin_rows = load_parent_asin_rows_from_latest_snapshot(parent_asin_snapshot_root)
-    strategy_rows = promotion_strategies if promotion_strategies is not None else load_promotion_strategy_profiles()
+    parent_asin_rows = _filter_rows_by_market(
+        load_parent_asin_rows_from_latest_snapshot(parent_asin_snapshot_root),
+        selected_market_id=selected_market_id,
+    )
+    strategy_rows = _filter_rows_by_market(
+        promotion_strategies if promotion_strategies is not None else load_promotion_strategy_profiles(),
+        selected_market_id=selected_market_id,
+    )
 
     sales_asins = {_string(row.get("asin")) for row in sales_rows if _string(row.get("asin"))}
     ad_asins = {_string(row.get("asin")) for row in ad_rows if _string(row.get("asin"))}
@@ -56,6 +68,43 @@ def build_product_scope_summary(
             boundary=_coverage_boundary(parent_asins=parent_asins, matched_asins=matched_asins),
         ),
     )
+
+
+def _latest_product_scope_snapshot(
+    snapshot_root: Path,
+    *,
+    selected_market_id: int | None = None,
+) -> tuple[Path | None, dict[str, Any] | None]:
+    if selected_market_id is None:
+        return _latest_snapshot(snapshot_root, require_success=True)
+
+    candidates: list[tuple[str, str, Path, dict[str, Any]]] = []
+    for snapshot_dir in snapshot_root.glob("*"):
+        if not snapshot_dir.is_dir():
+            continue
+        manifest_path = snapshot_dir / "manifest.json"
+        if not manifest_path.exists():
+            continue
+        manifest = _load_dict(manifest_path)
+        if manifest.get("status") != "success":
+            continue
+        if _integer(manifest.get("market_id")) != selected_market_id:
+            continue
+        candidates.append((_string(manifest.get("created_at")) or "", snapshot_dir.name, snapshot_dir, manifest))
+    if not candidates:
+        return None, None
+    _, _, snapshot_dir, manifest = sorted(candidates, key=lambda item: (item[0], item[1]), reverse=True)[0]
+    return snapshot_dir, manifest
+
+
+def _filter_rows_by_market(rows: list[dict[str, Any]], *, selected_market_id: int | None) -> list[dict[str, Any]]:
+    if selected_market_id is None:
+        return rows
+    return [row for row in rows if _row_market_id(row) == selected_market_id]
+
+
+def _row_market_id(row: dict[str, Any]) -> int | None:
+    return _integer(row.get("market_id")) or _integer(row.get("marketplace_id"))
 
 
 def _all_option() -> ProductScopeOption:

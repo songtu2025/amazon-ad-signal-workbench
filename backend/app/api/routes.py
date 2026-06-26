@@ -657,8 +657,8 @@ def list_market_options() -> list[MarketOption]:
 
 
 @router.get("/product-scope", response_model=ProductScopeSummary)
-def get_product_scope() -> ProductScopeSummary:
-    return build_product_scope_summary()
+def get_product_scope(market_id: int | None = None) -> ProductScopeSummary:
+    return build_product_scope_summary(selected_market_id=market_id)
 
 
 @router.get("/snapshot/status", response_model=SnapshotStatus)

@@ -19,6 +19,10 @@ export function searchIntentsPath(marketId?: number | null, productScopeId?: str
   return marketScopedPath(`/api/search-intents${scope}`, marketId);
 }
 
+export function productScopePath(marketId?: number | null) {
+  return marketScopedPath("/api/product-scope", marketId);
+}
+
 export interface ManualActionPreflightPathOptions {
   marketId?: number | null;
   top?: number;

@@ -83,6 +83,92 @@ def test_product_scope_summary_separates_asin_scope_from_unattributed_rows(tmp_p
     assert "经营订单/销售额来自 sales_product_daily_metrics" in (parent_option.metric_boundary or "")
 
 
+def test_product_scope_summary_uses_selected_market_snapshot(tmp_path: Path) -> None:
+    market_1_snapshot = tmp_path / "gerpgo_market_1_20260614_010000"
+    market_2_snapshot = tmp_path / "gerpgo_market_2_20260615_010000"
+    write_json(
+        market_1_snapshot / "manifest.json",
+        {
+            "snapshot_id": "market-1-snapshot",
+            "source": "gerpgo",
+            "market_id": 1,
+            "shop_name": "rivbos-us",
+            "marketplace_code": "US",
+            "created_at": "2026-06-14T01:00:00",
+            "status": "success",
+        },
+    )
+    write_json(
+        market_2_snapshot / "manifest.json",
+        {
+            "snapshot_id": "market-2-snapshot",
+            "source": "gerpgo",
+            "market_id": 2,
+            "shop_name": "rivbos-ca",
+            "marketplace_code": "CA",
+            "created_at": "2026-06-15T01:00:00",
+            "status": "success",
+        },
+    )
+    write_json(
+        market_1_snapshot / "normalized" / "sales_product_daily_metrics.json",
+        [{"id": "sales-us", "asin": "B0USCHILD", "parent_asin": "B0USPARENT", "orders": 3, "sales": 30.0}],
+    )
+    write_json(
+        market_1_snapshot / "normalized" / "advertised_products.json",
+        [{"id": "ad-us", "asin": "B0USCHILD", "parent_asin": "B0USPARENT", "spend": 10, "orders": 1, "sales": 12.0}],
+    )
+    write_json(market_1_snapshot / "normalized" / "ad_search_term_daily_metrics.json", [])
+    write_json(market_1_snapshot / "normalized" / "ad_placement_daily_metrics.json", [])
+    write_json(
+        market_2_snapshot / "normalized" / "sales_product_daily_metrics.json",
+        [{"id": "sales-ca", "asin": "B0CACHILD", "parent_asin": "B0CAPARENT", "orders": 9, "sales": 90.0}],
+    )
+    write_json(
+        market_2_snapshot / "normalized" / "advertised_products.json",
+        [{"id": "ad-ca", "asin": "B0CACHILD", "parent_asin": "B0CAPARENT", "spend": 99, "orders": 5, "sales": 50.0}],
+    )
+    write_json(market_2_snapshot / "normalized" / "ad_search_term_daily_metrics.json", [])
+    write_json(market_2_snapshot / "normalized" / "ad_placement_daily_metrics.json", [])
+
+    summary = build_product_scope_summary(
+        snapshot_root=tmp_path,
+        parent_asin_snapshot_root=tmp_path / "empty_parent_snapshots",
+        selected_market_id=1,
+    )
+
+    assert summary.snapshot_id == "market-1-snapshot"
+    assert summary.market_id == 1
+    assert [option.scope_id for option in summary.options if option.scope_type == "parent_asin"] == ["parent_asin:B0USPARENT"]
+    assert all("B0CAPARENT" not in option.scope_id for option in summary.options)
+
+
+def test_product_scope_summary_returns_empty_when_selected_market_has_no_success_snapshot(tmp_path: Path) -> None:
+    snapshot_dir = tmp_path / "gerpgo_market_2_20260615_010000"
+    write_json(
+        snapshot_dir / "manifest.json",
+        {
+            "snapshot_id": "market-2-snapshot",
+            "source": "gerpgo",
+            "market_id": 2,
+            "shop_name": "rivbos-ca",
+            "marketplace_code": "CA",
+            "created_at": "2026-06-15T01:00:00",
+            "status": "success",
+        },
+    )
+
+    summary = build_product_scope_summary(
+        snapshot_root=tmp_path,
+        parent_asin_snapshot_root=tmp_path / "empty_parent_snapshots",
+        selected_market_id=1,
+    )
+
+    assert summary.has_snapshot is False
+    assert summary.options[0].scope_id == "all"
+    assert "market_id=1 暂无成功快照" in summary.coverage.boundary
+
+
 def test_product_scope_summary_keeps_sales_children_separate_from_ad_coverage(tmp_path: Path) -> None:
     snapshot_dir = tmp_path / "gerpgo_market_1_20260615_162042"
     child_asins = [

@@ -1,6 +1,7 @@
 import {
   marketScopedPath,
   manualActionPreflightPath,
+  productScopePath,
   reviewEvidenceRepairPath,
   type SignalReviewRecordLookup,
   reviewTodosPath,
@@ -1445,8 +1446,8 @@ export function fetchMarketOptions(): Promise<MarketOption[]> {
   return request<MarketOption[]>("/api/market-options");
 }
 
-export function fetchProductScope(): Promise<ProductScopeSummary> {
-  return request<ProductScopeSummary>("/api/product-scope");
+export function fetchProductScope(marketId?: number | null): Promise<ProductScopeSummary> {
+  return request<ProductScopeSummary>(productScopePath(marketId));
 }
 
 export function fetchSnapshotStatus(): Promise<SnapshotStatus> {

@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.api import routes
 from app.main import app
+from app.models.product_scope import ProductScopeCoverage, ProductScopeSummary
 from app.models.snapshots import MarketOption, SnapshotCreateResult, SnapshotReadiness, SnapshotStatus
 from app.models.signals import (
     AdObjectRef,
@@ -122,6 +123,27 @@ def test_search_intents_route_returns_review_queue_fields(monkeypatch) -> None:
     assert payload[0]["aba_match_count"] == 1
     assert payload[0]["top_search_terms"][0]["search_term"] == "baby sunglasses"
     assert payload[0]["top_search_terms"][0]["aba_rank"] == 120
+
+
+def test_product_scope_route_passes_market_id_query(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_build_product_scope_summary(*, selected_market_id=None):
+        captured["selected_market_id"] = selected_market_id
+        return ProductScopeSummary(
+            has_snapshot=False,
+            market_id=selected_market_id,
+            options=[],
+            coverage=ProductScopeCoverage(boundary="测试经营入口口径"),
+        )
+
+    monkeypatch.setattr(routes, "build_product_scope_summary", fake_build_product_scope_summary)
+
+    response = TestClient(app).get("/api/product-scope?market_id=1")
+
+    assert response.status_code == 200
+    assert captured == {"selected_market_id": 1}
+    assert response.json()["market_id"] == 1
 
 
 def test_snapshot_readiness_route_passes_market_id_query(monkeypatch) -> None:
