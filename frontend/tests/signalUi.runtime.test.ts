@@ -809,6 +809,12 @@ async function main() {
         source: "advertised_products + ad_product_daily_metrics",
       },
       {
+        label: "默认核对层",
+        value: "默认先看逐投放上下文和同组投放商品表现",
+        detail: "到期复盘先按当时默认核对层回看，不直接从搜索词合计指标推导广告动作。",
+        source: "diagnosis_contract",
+      },
+      {
         label: "逐投放上下文",
         value: "beach essentials：优先复核 RBK004-beach essentials-精准（测试）及其投放词 beach essentials",
         detail: "复盘时必须按当时的广告组、投放词和广告 ASIN 承接顺序回看，不能把聚合指标解释成自动加词、否词或调价。",

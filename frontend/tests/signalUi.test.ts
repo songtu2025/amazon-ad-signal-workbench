@@ -1419,6 +1419,42 @@ assertIncludes(selectedSearchTermTargetSwitch?.diagnosisObject ?? "", "具体 Se
 assertIncludes(selectedSearchTermTargetSwitch?.diagnosisObject ?? "", "稳定对象：search_term / search_term:1:beach essentials");
 assertIncludes(selectedSearchTermTargetSwitch?.writeTarget ?? "", "具体 SearchTerm：beach vacation essentials");
 assertIncludes(selectedSearchTermTargetSwitch?.writeTarget ?? "", "稳定对象：search_term / search_term:1:beach vacation essentials");
+const semanticGroupNonCandidateSignal = {
+  id: "sig-semantic-group-visible-search-term",
+  signal_type: "opportunity",
+  signal_category: "search_term_opportunity",
+  object_type: "search_term",
+  severity: 4,
+  status: "pending",
+  freshness_status: "api_snapshot",
+  market_id: 1,
+  evidence: {
+    primary_object: {
+      object_type: "search_term",
+      object_id: "search_term:1:beach bag",
+      label: "beach bag",
+      search_term: "beach bag",
+      intent_label: "规则语义：海滩出行用品",
+    },
+  },
+} satisfies ProductScopedSignalForUi;
+assertEqual(
+  manualActionPreviewForSelectedSignal(
+    semanticGroupNonCandidateSignal.id,
+    searchTermHandledWithNextSummary,
+    semanticGroupNonCandidateSignal,
+  ),
+  null,
+);
+const semanticGroupNonCandidateAlignment = buildProductScopeManualActionTargetAlignment({
+  priorityItem: productScopePriorityQueueItems[0],
+  selectedSignal: semanticGroupNonCandidateSignal,
+  manualActionPreview: null,
+  preflight: null,
+});
+assertEqual(semanticGroupNonCandidateAlignment.tone, "waiting");
+assertIncludes(semanticGroupNonCandidateAlignment.primary, "没有后端可写预检对象");
+assertIncludes(semanticGroupNonCandidateAlignment.boundary, "不能把 Parent ASIN、广告组或搜索词上下文包装成人工动作");
 assertIncludes(selectedNextRouteSplitText, "ManualAction 0 条 / ReviewTodo 0 条");
 assertIncludes(selectedNextRouteSplitText, "授权后预期：ManualAction 1 条 / ReviewTodo 2 条");
 assertIncludes(selectedNextRouteSplitText, "ready 只代表可人工确认");
