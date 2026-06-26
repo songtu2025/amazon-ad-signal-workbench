@@ -724,6 +724,115 @@ def test_review_todo_void_api_removes_legacy_todos_and_blocks_review_record(monk
     assert save_response.json()["detail"] == "review_record_preflight_mismatch"
 
 
+def test_review_effect_route_uses_snapshot_rows_for_matching_search_term_only(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    action_root = tmp_path / "manual_actions"
+    action_root.mkdir(parents=True)
+    action_payload = {
+        "id": "manual-action-beach-essentials-route",
+        "signal_id": "sig-opportunity-search-term-1-beach-essentials",
+        "action_type": "add_to_review",
+        "action_note": "加入复盘",
+        "operator_name": "本地运营",
+        "acted_at": "2026-06-08T00:00:00+00:00",
+        "manual_status": "pending",
+        "snapshot_id": "snapshot-before",
+        "shop_id": "market:1",
+        "market_id": 1,
+        "object_type": "search_term",
+        "object_id": "search_term:1:beach essentials",
+        "object_label": "beach essentials",
+        "evidence_snapshot": [
+            {"label": "排查路径", "value": "Parent ASIN B00K4W4AAA -> beach essentials"},
+            {"label": "搜索词边界", "value": "beach essentials 只说明同广告组搜索词上下文"},
+            {"label": "动作边界", "value": "只允许人工留痕和复盘"},
+        ],
+    }
+    (action_root / "manual_actions.jsonl").write_text(
+        json.dumps(action_payload, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    signal_rows = [
+        {
+            "market_id": 1,
+            "object_type": "search_term",
+            "source_table": "ad_search_term_daily_metrics",
+            "search_term": "beach essentials",
+            "start_date": "2026-06-01",
+            "end_date": "2026-06-07",
+            "cost": 41,
+            "orders": 2,
+            "sales": 160,
+        },
+        {
+            "market_id": 1,
+            "object_type": "search_term",
+            "source_table": "ad_search_term_daily_metrics",
+            "search_term": "beach essentials",
+            "start_date": "2026-06-09",
+            "end_date": "2026-06-15",
+            "cost": 30,
+            "orders": 4,
+            "sales": 200,
+        },
+        {
+            "market_id": 1,
+            "object_type": "search_term",
+            "source_table": "ad_search_term_daily_metrics",
+            "search_term": "pool towels",
+            "start_date": "2026-06-09",
+            "end_date": "2026-06-15",
+            "cost": 999,
+            "orders": 99,
+            "sales": 9999,
+        },
+        {
+            "market_id": 1,
+            "object_type": "advertised_product",
+            "source_table": "ad_product_daily_metrics",
+            "asin": "B016EXMW02",
+            "search_term": "beach essentials",
+            "start_date": "2026-06-09",
+            "end_date": "2026-06-15",
+            "cost": 888,
+            "orders": 88,
+            "sales": 8888,
+        },
+        {
+            "market_id": 1,
+            "object_type": "placement",
+            "source_table": "ad_placement_daily_metrics",
+            "placement": "Top of Search",
+            "search_term": "beach essentials",
+            "start_date": "2026-06-09",
+            "end_date": "2026-06-15",
+            "cost": 777,
+            "orders": 77,
+            "sales": 7777,
+        },
+    ]
+    monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", action_root)
+    monkeypatch.setattr(routes, "load_signal_rows_from_success_snapshots", lambda: signal_rows)
+
+    response = TestClient(app).get(
+        "/api/signals/sig-opportunity-search-term-1-beach-essentials/review-effect",
+        params={"market_id": 1, "review_window": "7d"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "ready"
+    assert payload["object_type"] == "search_term"
+    assert payload["object_id"] == "search_term:1:beach essentials"
+    assert payload["before_metrics"]["cost"] == 41
+    assert payload["before_metrics"]["orders"] == 2
+    assert payload["after_metrics"]["cost"] == 30
+    assert payload["after_metrics"]["orders"] == 4
+    assert payload["after_metrics"]["sales"] == 200
+
+
 def test_review_record_rejects_evidence_snapshot_object_mismatch(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(routes, "MANUAL_ACTION_ROOT", tmp_path / "manual_actions")
     monkeypatch.setattr(routes, "REVIEW_RECORD_ROOT", tmp_path / "review_records")
