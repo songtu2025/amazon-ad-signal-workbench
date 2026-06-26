@@ -727,7 +727,10 @@ def test_manual_action_preflight_snapshots_next_unhandled_diagnosis_contract(mon
     snapshot_text = "\n".join(item["value"] for item in items)
     assert contract_items[0]["label"] == "广告组合流判断"
     assert "boys sunglasses" in contract_items[0]["value"]
-    assert [item["label"] for item in contract_items[1:5]] == [
+    assert contract_items[1]["label"] == "默认核对层"
+    assert "默认先查 3. 搜索词" in contract_items[1]["value"]
+    assert "boys sunglasses" in contract_items[1]["value"]
+    assert [item["label"] for item in contract_items[2:6]] == [
         "人工确认判断依据",
         "能证明的事实",
         "不能证明的边界",

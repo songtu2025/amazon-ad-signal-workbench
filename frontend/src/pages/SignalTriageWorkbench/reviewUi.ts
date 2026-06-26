@@ -3727,6 +3727,7 @@ export function manualActionPreflightEvidenceRows(preflight: ManualActionPreflig
 
 const manualActionPreflightPriorityEvidenceLabels = [
   "AI 准入",
+  "默认核对层",
   "搜索词",
   "搜索词表现判断",
   "人工下一步",

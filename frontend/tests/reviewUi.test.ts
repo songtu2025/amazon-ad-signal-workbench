@@ -1154,6 +1154,7 @@ const searchTermReviewTodoWithFullChain: ReviewTodoForUi = {
     { label: "搜索词边界", value: "beach essentials 只说明同广告组搜索词上下文", source: "ad_search_term_daily_metrics + business_rule" },
     { label: "广告位边界", value: "广告组级广告位 0 条 / 同广告活动广告位 4 条", source: "ad_placement_daily_metrics + business_rule" },
     { label: "ABA 背景", value: "ABA 排名 208 / 2026-06-07 至 2026-06-13", detail: "ABA 只作为站点级市场背景。", source: "diagnosis_contract + ABA导出" },
+    { label: "默认核对层", value: "默认先查 3. 搜索词：beach essentials 具备人工扩量复核价值", source: "diagnosis_contract" },
     { label: "人工确认判断依据", value: "beach essentials 具备人工扩量复核价值", source: "diagnosis_contract" },
     { label: "能证明的事实", value: "该搜索词已有订单和 ABA 站点级机会背景", source: "diagnosis_contract" },
     { label: "不能证明的边界", value: "不能证明单个广告 ASIN 需要自动加词或调价", source: "diagnosis_contract" },
@@ -1168,7 +1169,7 @@ const readyReviewTodoDecisionReadback = buildReviewTodoDecisionReadbackSummary(s
 const searchTermSnapshotLabels = searchTermReviewTodoWithFullChain.evidence_snapshot?.map((item) => item.label).join(" / ") ?? "";
 assertEqual(
   searchTermSnapshotLabels,
-  "排查路径 / AI 准入 / 搜索词表现分组 / 搜索词表现判断 / Parent ASIN入口 / 广告 ASIN承接 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景 / 人工确认判断依据 / 能证明的事实 / 不能证明的边界 / 人工下一步 / 证据缺口 / 需要补证 / 动作边界",
+  "排查路径 / AI 准入 / 搜索词表现分组 / 搜索词表现判断 / Parent ASIN入口 / 广告 ASIN承接 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景 / 默认核对层 / 人工确认判断依据 / 能证明的事实 / 不能证明的边界 / 人工下一步 / 证据缺口 / 需要补证 / 动作边界",
 );
 assertEqual(readyReviewTodoEvidenceReadback?.tone, "ready");
 assertEqual(readyReviewTodoDecisionReadback?.tone, "ready");
@@ -1274,7 +1275,7 @@ const searchTermManualActionReadbackPathAfterTodo = buildManualActionReadbackPat
   ],
   reviewRecords: [],
 });
-assertIncludes(searchTermManualActionReadbackPathAfterTodo[1].detail, "待办证据快照：7d 20 条 / 14d 20 条");
+assertIncludes(searchTermManualActionReadbackPathAfterTodo[1].detail, "待办证据快照：7d 21 条 / 14d 21 条");
 assertIncludes(
   searchTermManualActionReadbackPathAfterTodo[1].detail,
   "Parent ASIN 广告搜索词表现复核 / 搜索词表现判断 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景",
@@ -1357,7 +1358,7 @@ const searchTermSavedReviewRecord: ReviewRecordForUi = {
     can_auto_execute_ads: false,
   },
 };
-assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘证据快照：7d 20 条");
+assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘证据快照：7d 21 条");
 assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "Parent ASIN 广告搜索词表现复核 / 搜索词表现判断 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景");
 assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘上下文：Parent ASIN 广告搜索词表现复核：规则语义：海滩出行用品");
 assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "具体 SearchTerm：beach essentials");
@@ -2958,6 +2959,7 @@ const searchTermPreflightPriorityEvidenceRows = manualActionPreflightPriorityEvi
     item_count: 8,
     items: [
       { label: "AI 准入", value: "允许人工留痕，不会自动执行广告动作", source: "actionability_status" },
+      { label: "默认核对层", value: "默认先查 3. 搜索词：beach essentials 先核对搜索词层", source: "diagnosis_contract" },
       { label: "投放词证据", value: "1 个投放词 / beach essentials", source: "ad_search_term_daily_metrics" },
       { label: "ABA 背景", value: "排名 208 / 2026-06-07 至 2026-06-13", source: "diagnosis_contract + ABA导出" },
       { label: "搜索词表现", value: "花费 34.11 / 订单 21 / 销售额 193.20", source: "ad_search_term_daily_metrics" },
@@ -2976,8 +2978,8 @@ const searchTermPreflightPriorityEvidenceRows = manualActionPreflightPriorityEvi
 assertEqual(searchTermPreflightPriorityEvidenceRows.length, 8);
 const searchTermPreflightPriorityRow = (label: string) => searchTermPreflightPriorityEvidenceRows.find((row) => row.label === label);
 assertIncludes(searchTermPreflightPriorityRow("AI 准入")?.value ?? "", "不会自动执行广告动作");
+assertIncludes(searchTermPreflightPriorityRow("默认核对层")?.value ?? "", "默认先查 3. 搜索词");
 assertIncludes(searchTermPreflightPriorityRow("投放词证据")?.value ?? "", "beach essentials");
-assertIncludes(searchTermPreflightPriorityRow("ABA 背景")?.value ?? "", "排名 208");
 assertIncludes(searchTermPreflightPriorityRow("需要补证")?.value ?? "", "投放词维护状态");
 assertIncludes(searchTermPreflightPriorityRow("动作边界")?.value ?? "", "人工留痕");
 assertIncludes(searchTermPreflightPriorityRow("搜索词边界")?.detail ?? "", "不能自动归因");

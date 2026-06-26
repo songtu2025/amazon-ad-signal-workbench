@@ -67,6 +67,7 @@ ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
     "search_term_market_context",
     "manual_search_term_boundary",
     "manual_placement_boundary",
+    "diagnosis_contract_default_focus",
     "diagnosis_contract_judgement",
     "diagnosis_contract_proves",
     "diagnosis_contract_counter_evidence",
@@ -111,6 +112,7 @@ SEARCH_TERM_ACTIONABLE_EVIDENCE_BLOCK_ORDER = (
     "search_term_review_aba_context",
     "targeting_context",
     "search_term_market_context",
+    "diagnosis_contract_default_focus",
     "diagnosis_contract_judgement",
     "diagnosis_contract_proves",
     "diagnosis_contract_counter_evidence",
@@ -1197,6 +1199,7 @@ def _diagnosis_contract_snapshot_blocks(triage: dict[str, Any], target: dict[str
     next_manual_steps = _diagnosis_contract_lines(sections, "next_manual_step")
     evidence_gaps: list[str] = []
     required_evidence: list[str] = []
+    default_focus_block = _diagnosis_contract_default_focus_block(sections)
     for section in sections:
         title = str(section.get("title") or section.get("section_id") or "").strip()
         gap = str(section.get("evidence_gap") or "").strip()
@@ -1207,6 +1210,8 @@ def _diagnosis_contract_snapshot_blocks(triage: dict[str, Any], target: dict[str
             required_evidence.append(_diagnosis_contract_line(title, required))
 
     blocks: list[dict[str, str]] = []
+    if default_focus_block:
+        blocks.append(default_focus_block)
     if judgement:
         blocks.append(
             {
@@ -1268,6 +1273,33 @@ def _diagnosis_contract_snapshot_blocks(triage: dict[str, Any], target: dict[str
             }
         )
     return blocks
+
+
+def _diagnosis_contract_default_focus_block(sections: list[dict[str, Any]]) -> dict[str, str] | None:
+    focus_rules = (
+        ("3. 搜索词", ("搜索词机会", "搜索词", "search_term")),
+        ("4. 广告位", ("广告位证据", "广告位", "placement")),
+        ("2. 投放词", ("投放词", "targeting")),
+        ("1. 投放商品", ("投放商品", "广告商品", "广告 ASIN", "ad_asin")),
+        ("广告组边界", ("广告组边界", "广告组", "ad_group")),
+    )
+    for focus_layer, needles in focus_rules:
+        for section in sections:
+            title = str(section.get("title") or section.get("section_id") or "").strip()
+            current = str(section.get("current_judgement") or "").strip()
+            next_step = str(section.get("next_manual_step") or "").strip()
+            section_key = " ".join([str(section.get("section_id") or ""), title]).lower()
+            if current and any(needle.lower() in section_key for needle in needles):
+                value = f"默认先查 {focus_layer}：{_diagnosis_contract_line(title or focus_layer, current)}"
+                detail = next_step or "复盘时先沿默认核对层回看，再看完整证据链；不自动执行广告动作。"
+                return {
+                    "block_id": "diagnosis_contract_default_focus",
+                    "label": "默认核对层",
+                    "value": value,
+                    "detail": f"{detail} 该层只保存人工点击时的优先复核入口，不证明其他证据层没有问题。",
+                    "source": "diagnosis_contract",
+                }
+    return None
 
 
 def _search_term_entry_scope_snapshot_blocks(triage: dict[str, Any], target: dict[str, Any]) -> list[dict[str, str]]:
