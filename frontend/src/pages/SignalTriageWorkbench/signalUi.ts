@@ -8546,10 +8546,11 @@ export function buildProductScopeFirstScreenSummary(
     advertisedAsinCount > 0
       ? `${advertisedAsinCount} 个当前投放广告 ASIN，只进入有 advertised_products 证据的广告 ASIN；这不是销售子 ASIN 全量。`
       : "当前没有可进入广告诊断的广告 ASIN。";
+  const hasTriageSummary = Boolean(triageSummary);
   const actionabilityMessage =
     triageSummary?.actionability_status?.message?.trim() ||
     triageSummary?.actionability_status?.next_step?.trim() ||
-    "先复核广告 ASIN、广告组、投放词、搜索词和广告位证据。";
+    "正在读取当前经营入口的 AI 候选、对象边界和人工门禁。";
   const candidateCount = triageSummary?.signal_status?.candidate_count;
   const canWriteManualAction = triageSummary?.actionability_status?.can_write_manual_action === true;
   const manualActionCount = triageSummary?.review_status?.manual_action_count ?? 0;
@@ -8558,12 +8559,21 @@ export function buildProductScopeFirstScreenSummary(
   const earliestDueDate = triageSummary?.review_status?.review_wait_summary?.earliest_due_date?.trim();
   const candidateText =
     candidateCount === undefined
-      ? "AI 候选等待扫描"
+      ? "AI 准入正在读取"
       : canWriteManualAction && candidateCount > 0
         ? `${candidateCount} 个可写人工候选`
         : `${candidateCount} 个候选未通过人工写入门禁`;
   const mvpStatus: ProductScopeMvpStatus =
-    readyReviewCount > 0 && reviewRecordCount > 0
+    !hasTriageSummary && advertisedAsinCount > 0
+      ? {
+          title: "诊断 MVP 状态判定",
+          statusLabel: "读取 AI 准入中",
+          summary: "当前有真实广告证据，正在按当前经营入口读取 AI 候选、人工留痕和复盘门槛；读回前不能判断无候选或完整闭环。",
+          detail: "先保持 Parent ASIN -> 广告 ASIN -> 广告组 / 投放商品 / 搜索词 / 广告位的诊断路径，等待后端分诊读回后再显示人工下一步。",
+          boundary: "读回前只代表前端正在切换经营入口，不能保存人工动作，不能说建议有效或无效。",
+          tone: "diagnostic",
+        }
+      : readyReviewCount > 0 && reviewRecordCount > 0
       ? {
           title: "诊断 MVP 状态判定",
           statusLabel: "复盘闭环可验证",
@@ -8599,7 +8609,9 @@ export function buildProductScopeFirstScreenSummary(
               tone: "blocked",
             };
   const reviewGateValue =
-    readyReviewCount > 0
+    !hasTriageSummary
+      ? "等待人工留痕读回，不能生成复盘结论"
+      : readyReviewCount > 0
       ? `${readyReviewCount} 个 ready 复盘待人工保存`
       : manualActionCount > 0
         ? `已有 ${manualActionCount} 条人工留痕，最早 ${earliestDueDate || "等待窗口"} 后复盘`
@@ -8608,7 +8620,7 @@ export function buildProductScopeFirstScreenSummary(
     "Parent ASIN 经营销售入口 -> 广告 ASIN -> 广告组 -> 投放商品 / 投放词 / 搜索词 / 广告位 -> AI 信号诊断 -> 人工确认 -> 7/14 天复盘";
   const aiSignalStepDetail =
     candidateCount === undefined
-      ? `等待 AI 准入扫描；${actionabilityMessage}`
+      ? `正在读取当前 Parent ASIN 的 AI 候选和人工门禁；读回前不判断候选数量。${actionabilityMessage}`
       : `${candidateCount} 个候选；${actionabilityMessage}`;
   const landingGates: ProductScopeLandingGateItem[] = [
     {
@@ -8627,7 +8639,7 @@ export function buildProductScopeFirstScreenSummary(
       label: "AI 准入",
       value:
         candidateCount === undefined
-          ? "等待 AI 准入扫描"
+          ? "正在读取 AI 准入"
           : candidateCount > 0 && canWriteManualAction
             ? `${candidateCount} 个候选可人工复核`
             : `${candidateCount ?? 0} 个候选，只能诊断不能写动作`,
@@ -8637,8 +8649,10 @@ export function buildProductScopeFirstScreenSummary(
     {
       label: "复盘门槛",
       value: reviewGateValue,
-      detail: `已保存 review_records ${reviewRecordCount} 条；未保存复盘结论前不能说处理有效或无效。`,
-      tone: readyReviewCount > 0 ? "ready" : manualActionCount > 0 ? "waiting" : "blocked",
+      detail: hasTriageSummary
+        ? `已保存 review_records ${reviewRecordCount} 条；未保存复盘结论前不能说处理有效或无效。`
+        : "等待 /api/signal-triage 读回复盘门槛；读回前不能说处理有效或无效。",
+      tone: !hasTriageSummary ? "waiting" : readyReviewCount > 0 ? "ready" : manualActionCount > 0 ? "waiting" : "blocked",
     },
   ];
   return {

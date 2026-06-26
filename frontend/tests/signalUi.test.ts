@@ -5449,6 +5449,22 @@ assertEqual(productScopeFirstScreenSummary.landingGates[3].label, "复盘门槛"
 assertIncludes(productScopeFirstScreenSummary.landingGates[3].value, "最早 2026-06-22");
 assertIncludes(productScopeFirstScreenSummary.landingGates[3].detail, "review_records");
 
+const loadingProductScopeFirstScreenSummary = buildProductScopeFirstScreenSummary(productScopeGroupOverview, null);
+if (!loadingProductScopeFirstScreenSummary) {
+  throw new Error("Parent ASIN 首屏经营摘要读取态不能为空");
+}
+assertEqual(loadingProductScopeFirstScreenSummary.mvpStatus.statusLabel, "读取 AI 准入中");
+assertIncludes(loadingProductScopeFirstScreenSummary.mvpStatus.summary, "正在按当前经营入口读取 AI 候选");
+assertIncludes(loadingProductScopeFirstScreenSummary.mvpStatus.summary, "读回前不能判断无候选或完整闭环");
+assertNotIncludes(loadingProductScopeFirstScreenSummary.mvpStatus.summary, "AI 候选等待扫描");
+assertIncludes(loadingProductScopeFirstScreenSummary.pathSteps[4].detail, "正在读取当前 Parent ASIN 的 AI 候选和人工门禁");
+assertIncludes(loadingProductScopeFirstScreenSummary.pathSteps[4].detail, "读回前不判断候选数量");
+assertEqual(loadingProductScopeFirstScreenSummary.landingGates[2].label, "AI 准入");
+assertEqual(loadingProductScopeFirstScreenSummary.landingGates[2].value, "正在读取 AI 准入");
+assertIncludes(loadingProductScopeFirstScreenSummary.landingGates[2].detail, "正在读取当前经营入口的 AI 候选");
+assertEqual(loadingProductScopeFirstScreenSummary.landingGates[3].value, "等待人工留痕读回，不能生成复盘结论");
+assertIncludes(loadingProductScopeFirstScreenSummary.landingGates[3].detail, "等待 /api/signal-triage 读回复盘门槛");
+
 const productScopeDiagnosisBrief = buildProductScopeDiagnosisBrief(
   productScopeFirstScreenSummary,
   productScopeEvidenceRouteGuide,
