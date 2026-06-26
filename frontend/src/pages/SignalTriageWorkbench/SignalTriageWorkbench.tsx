@@ -2010,8 +2010,26 @@ export function SignalTriageWorkbench() {
         primarySearchTerm: activeSearchIntentReviewCard?.primarySearchTerm,
         primarySearchTermReason: activeSearchIntentReviewCard?.primarySearchTermReason,
         nextManualStep: activeSearchIntentReviewCard?.nextManualStep,
+        actionObjectType:
+          selectedManualActionPreviewPreflight?.target?.object_type ??
+          selectedBackendManualActionPreview?.objectType ??
+          selectedSignal?.object_type,
+        actionObjectId:
+          selectedManualActionPreviewPreflight?.target?.object_id ??
+          selectedBackendManualActionPreview?.objectId ??
+          selectedSignal?.evidence?.primary_object?.object_id,
+        actionObjectLabel:
+          selectedManualActionPreviewPreflight?.target?.object_label ??
+          selectedBackendManualActionPreview?.objectLabel ??
+          selectedSignal?.evidence?.primary_object?.label,
       }),
-    [activeSearchIntentReviewCard, selectedSearchIntentManualActionEvidenceSnapshot],
+    [
+      activeSearchIntentReviewCard,
+      selectedBackendManualActionPreview,
+      selectedManualActionPreviewPreflight,
+      selectedSearchIntentManualActionEvidenceSnapshot,
+      selectedSignal,
+    ],
   );
   const selectedSearchIntentManualActionPreflightConsistency = useMemo(
     () =>

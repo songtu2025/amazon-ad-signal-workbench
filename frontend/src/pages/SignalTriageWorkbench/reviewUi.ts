@@ -245,6 +245,9 @@ export interface SearchIntentManualActionReadbackInput {
   primarySearchTerm?: string | null;
   primarySearchTermReason?: string | null;
   nextManualStep?: string | null;
+  actionObjectType?: string | null;
+  actionObjectId?: string | null;
+  actionObjectLabel?: string | null;
 }
 
 export interface SearchIntentManualActionReadbackSummary {
@@ -2872,6 +2875,35 @@ function normalizeManualActionSearchTerm(value: string | null | undefined) {
   return normalizedPreflightTargetValue(value).toLowerCase().replace(/\s+/g, " ");
 }
 
+const searchIntentReadbackObjectTypeLabel: Record<string, string> = {
+  advertised_product: "广告商品",
+  sales_product: "销售商品",
+  search_term: "SearchTerm",
+  ad_group: "广告组",
+  product_scope: "经营入口",
+};
+
+function searchIntentReadbackObjectDisplayText(
+  objectType?: string | null,
+  objectId?: string | null,
+  objectLabel?: string | null,
+  fallbackSearchTerm?: string | null,
+) {
+  const type = normalizedPreflightTargetValue(objectType);
+  const id = normalizedPreflightTargetValue(objectId);
+  const label = normalizedPreflightTargetValue(objectLabel);
+  const fallback = normalizedPreflightTargetValue(fallbackSearchTerm);
+  if (type === "search_term") {
+    const searchTerm = searchTermDisplayNameFromIdentity(id, label) || fallback;
+    return searchTerm ? `SearchTerm：${searchTerm}` : "等待具体 SearchTerm";
+  }
+  if (type) {
+    const typeLabel = searchIntentReadbackObjectTypeLabel[type] ?? type;
+    return `${typeLabel}：${label || id || "待确认"}`;
+  }
+  return fallback ? `SearchTerm：${fallback}` : "等待具体人工动作对象";
+}
+
 export function buildSearchIntentManualActionReadbackSummary(
   input: SearchIntentManualActionReadbackInput | null,
 ): SearchIntentManualActionReadbackSummary | null {
@@ -2888,13 +2920,29 @@ export function buildSearchIntentManualActionReadbackSummary(
   const primarySearchTerm = normalizedPreflightTargetValue(input?.primarySearchTerm);
   const normalizedSearchTerm = normalizeManualActionSearchTerm(searchTerm);
   const normalizedPrimarySearchTerm = normalizeManualActionSearchTerm(primarySearchTerm);
-  const isPrimaryMismatch = Boolean(normalizedSearchTerm && normalizedPrimarySearchTerm && normalizedSearchTerm !== normalizedPrimarySearchTerm);
-  const tone: SearchIntentManualActionReadbackTone = !searchTerm ? "waiting" : isPrimaryMismatch ? "warning" : "ready";
-  const objectDetail = !searchTerm
-    ? "还没有读回具体 SearchTerm；不能直接写入人工动作，先等待后端预检确认稳定对象。"
+  const actionObjectType = normalizedPreflightTargetValue(input?.actionObjectType);
+  const actionObjectId = normalizedPreflightTargetValue(input?.actionObjectId);
+  const actionObjectLabel = normalizedPreflightTargetValue(input?.actionObjectLabel);
+  const hasActionObject = Boolean(actionObjectType && (actionObjectId || actionObjectLabel || searchTerm));
+  const isSearchTermActionObject = !actionObjectType || actionObjectType === "search_term";
+  const isPrimaryMismatch = Boolean(
+    isSearchTermActionObject &&
+      normalizedSearchTerm &&
+      normalizedPrimarySearchTerm &&
+      normalizedSearchTerm !== normalizedPrimarySearchTerm,
+  );
+  const tone: SearchIntentManualActionReadbackTone = !searchTerm && !hasActionObject
+    ? "waiting"
     : isPrimaryMismatch
-      ? "当前复盘对象与聚合卡片优先 SearchTerm 不一致；如果这是用户手动切换，应按当前 SearchTerm 证据留痕。"
-      : "人工动作和 7/14 天复盘会落到这个具体 SearchTerm，Parent ASIN 广告搜索词表现复核只保留为回看上下文。";
+      ? "warning"
+      : "ready";
+  const objectDetail = !searchTerm && !hasActionObject
+    ? "还没有读回具体人工动作对象；不能直接写入人工动作，先等待后端预检确认稳定对象。"
+    : !isSearchTermActionObject
+      ? "人工动作和 7/14 天复盘会落到这个真实动作对象；Parent ASIN 广告搜索词表现复核只保留为回看上下文，不能把分组或搜索词背景写成动作对象。"
+      : isPrimaryMismatch
+        ? "当前复盘对象与聚合卡片优先 SearchTerm 不一致；如果这是用户手动切换，应按当前 SearchTerm 证据留痕。"
+        : "人工动作和 7/14 天复盘会落到这个具体 SearchTerm，Parent ASIN 广告搜索词表现复核只保留为回看上下文。";
 
   return {
     title: "人工留痕对象读回",
@@ -2907,7 +2955,12 @@ export function buildSearchIntentManualActionReadbackSummary(
       },
       {
         label: "复盘对象",
-        value: searchTerm ? `SearchTerm：${searchTerm}` : "等待具体 SearchTerm",
+        value: searchIntentReadbackObjectDisplayText(
+          actionObjectType,
+          actionObjectId,
+          actionObjectLabel,
+          searchTerm,
+        ),
         detail: objectDetail,
       },
       {
@@ -3062,6 +3115,7 @@ export function buildSignalManualActionEvidenceSnapshot(
 ): ManualActionEvidenceSnapshotForUi[] {
   const facts = signal?.evidence?.facts ?? [];
   const primaryObject = signal?.evidence?.primary_object;
+  const primaryObjectType = normalizedPreflightTargetValue(primaryObject?.object_type || signal?.object_type);
   const factValue = (label: string) => signalFactValue(facts, label);
   const intentLabel =
     String(selectedSearchIntentLabel ?? "").trim() ||
@@ -3073,7 +3127,10 @@ export function buildSignalManualActionEvidenceSnapshot(
     String(primaryObject?.intent_label ?? "").trim();
   const snapshot = buildSearchIntentManualActionEvidenceSnapshot({
     intentLabel,
-    searchTerm: String(primaryObject?.search_term ?? "").trim() || factValue("搜索词") || String(primaryObject?.label ?? "").trim(),
+    searchTerm:
+      (primaryObjectType === "search_term"
+        ? String(primaryObject?.search_term ?? "").trim() || String(primaryObject?.label ?? "").trim()
+        : String(primaryObject?.search_term ?? "").trim()) || factValue("搜索词"),
     abaReferenceTerm: factValue("ABA语义参考词"),
     abaRank: factValue("ABA语义参考排名") || factValue("ABA排名"),
     abaPeriod: factValue("ABA周期"),

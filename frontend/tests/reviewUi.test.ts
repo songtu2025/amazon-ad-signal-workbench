@@ -3070,6 +3070,25 @@ assertIncludes(searchIntentManualActionReadback?.rows[4]?.value ?? "", "打开�
 assertIncludes(searchIntentManualActionReadback?.rows[4]?.detail ?? "", "后端 preflight evidence_snapshot_preview");
 assertIncludes(searchIntentManualActionReadback?.boundary ?? "", "不能自动加词、否词、调价、暂停广告");
 assertIncludes(searchIntentManualActionReadback?.boundary ?? "", "不能把 Parent ASIN 广告搜索词表现复核当作动作对象");
+const advertisedProductSearchIntentReadback = buildSearchIntentManualActionReadbackSummary({
+  evidenceSnapshot: [
+    {
+      label: "Parent ASIN 广告搜索词表现复核",
+      value: "规则语义：运动太阳镜",
+      detail: "只作为 Parent ASIN 搜索词复核上下文。",
+      source: "规则语义",
+    },
+  ],
+  actionObjectType: "advertised_product",
+  actionObjectId: "B0GL8QDHW5",
+  actionObjectLabel: "B0GL8QDHW5",
+  primarySearchTerm: "adult sunglasses womens sporty",
+});
+assertEqual(advertisedProductSearchIntentReadback?.tone, "ready");
+assertEqual(advertisedProductSearchIntentReadback?.rows[1]?.label, "复盘对象");
+assertIncludes(advertisedProductSearchIntentReadback?.rows[1]?.value ?? "", "广告商品：B0GL8QDHW5");
+assertIncludes(advertisedProductSearchIntentReadback?.rows[1]?.detail ?? "", "真实动作对象");
+assertNotIncludes(advertisedProductSearchIntentReadback?.rows[1]?.value ?? "", "SearchTerm：B0GL8QDHW5");
 const searchIntentReadyPreflight = {
   will_write: false,
   evidence_snapshot_preview: {
@@ -3173,6 +3192,19 @@ assertIncludes(
   "留痕证据快照：搜索词：beach essentials for toddlers 1-3；Parent ASIN 广告搜索词表现复核：规则语义：海滩出行用品",
 );
 assertIncludes(manualActionEvidenceSnapshotText({ evidence_snapshot: signalManualEvidenceSnapshot }) ?? "", "ABA语义参考词：beach essentials");
+const adProductSignalManualEvidenceSnapshot = buildSignalManualActionEvidenceSnapshot({
+  object_type: "advertised_product",
+  evidence: {
+    primary_object: {
+      object_type: "advertised_product",
+      label: "B0GL8QDHW5",
+      intent_label: "规则语义：运动太阳镜",
+    },
+    facts: [{ label: "语义组", value: "规则语义：运动太阳镜" }],
+  },
+});
+assertEqual(adProductSignalManualEvidenceSnapshot[0]?.label, "Parent ASIN 广告搜索词表现复核");
+assertNotIncludes(manualActionEvidenceSnapshotText({ evidence_snapshot: adProductSignalManualEvidenceSnapshot }) ?? "", "搜索词：B0GL8QDHW5");
 const mergedManualEvidenceSnapshot = mergeManualActionEvidenceSnapshots(searchIntentManualEvidenceSnapshot, manualEvidenceSnapshot);
 assertEqual(mergedManualEvidenceSnapshot[0].label, "搜索词");
 assertEqual(mergedManualEvidenceSnapshot[6].label, "广告商品覆盖");
