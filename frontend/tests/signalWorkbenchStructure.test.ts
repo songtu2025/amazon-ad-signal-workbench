@@ -442,6 +442,7 @@ const manualActionChoiceRecommendationIndex = workbenchSource.indexOf('aria-labe
 const manualActionChoiceGuideIndex = workbenchSource.indexOf('className="manualActionChoiceGuide"');
 const manualActionGridIndex = workbenchSource.indexOf('<div className="manualActionGrid" aria-label="人工动作按钮">');
 const manualActionPostWriteSummaryIndex = workbenchSource.indexOf('aria-label="人工动作写后默认摘要"');
+const manualActionPostWriteKeyEvidenceIndex = workbenchSource.indexOf('aria-label="写后关键证据快照"');
 const manualActionPostWriteDetailsIndex = workbenchSource.indexOf('aria-label="人工动作写后完整审计材料"');
 const manualActionReadbackPathIndex = workbenchSource.indexOf('aria-label="点击后读回路径"');
 const reviewFlowTodoIndex = workbenchSource.indexOf('className="sideSection reviewFlowItem reviewFlowTodo"');
@@ -696,8 +697,12 @@ assert(manualActionChoiceGuideIndex > manualActionSectionIndex, "人工动作选
 assert(manualActionChoiceGuideIndex < manualActionGridIndex, "人工动作选择依据必须先于人工动作按钮展示");
 assert(manualActionPostWriteSummaryIndex > manualActionGridIndex, "人工动作写后摘要必须跟在按钮之后，服务点击后读回");
 assert(
-  manualActionPostWriteSummaryIndex < manualActionPostWriteDetailsIndex,
-  "人工动作写后默认层必须先回答写入结果，再展开完整审计材料。",
+  manualActionPostWriteSummaryIndex < manualActionPostWriteKeyEvidenceIndex,
+  "人工动作写后默认层必须先回答写入结果，再读回写后关键证据。",
+);
+assert(
+  manualActionPostWriteKeyEvidenceIndex < manualActionPostWriteDetailsIndex,
+  "写后关键证据快照必须先于完整审计材料，避免用户写后重新拼证据。",
 );
 assert(
   manualActionPostWriteDetailsIndex < manualActionReadbackPathIndex &&
@@ -1695,11 +1700,18 @@ assertIncludes(workbenchSource, "selectedDiagnosisEvidenceSummary?.nextManualSte
 assertIncludes(workbenchSource, '<details className="manualActionPreflightDetails" aria-label="人工按钮前完整预检证据">');
 assertIncludes(workbenchSource, "展开完整预检、证据快照和写后合同");
 assertIncludes(workbenchSource, "selectedManualActionPostWriteDecisionItems");
+assertIncludes(workbenchSource, "selectedManualActionPostWriteKeyEvidenceItems");
+assertIncludes(workbenchSource, "nextReviewTodo?.evidence_snapshot?.length");
+assertIncludes(workbenchSource, "latestManualAction?.evidence_snapshot");
 assertIncludes(workbenchSource, 'aria-label="人工动作写后默认摘要"');
 assertIncludes(workbenchSource, "写后先看这四件事");
 assertIncludes(workbenchSource, "写入了吗");
 assertIncludes(workbenchSource, "证据留了吗");
 assertIncludes(workbenchSource, "复盘待办生成了吗");
+assertIncludes(workbenchSource, 'aria-label="写后关键证据快照"');
+assertIncludes(workbenchSource, "写后关键证据快照");
+assertIncludes(workbenchSource, "来自 evidence_snapshot");
+assertIncludes(workbenchSource, "只回看人工点击时保存的证据，不用当前实时页面重新生成判断，也不触发自动广告动作。");
 assertIncludes(workbenchSource, '<details className="manualActionPostWriteDetails" aria-label="人工动作写后完整审计材料">');
 assertIncludes(workbenchSource, "展开点击后读回路径和证据账本");
 assertIncludes(stylesSource, ".manualActionButtonCommandSummary");
@@ -1709,6 +1721,7 @@ assertIncludes(stylesSource, ".manualActionDiagnosisPathSummary");
 assertIncludes(stylesSource, ".manualActionPreflightDetails");
 assertIncludes(stylesSource, ".manualActionPreflightDetails[open] > summary");
 assertIncludes(stylesSource, ".manualActionPostWriteSummary");
+assertIncludes(stylesSource, ".manualActionPostWriteKeyEvidence");
 assertIncludes(stylesSource, ".manualActionPostWriteDetails");
 assertIncludes(stylesSource, ".manualActionPostWriteDetails[open] > summary");
 assertIncludes(workbenchSource, "manualActionEmptyStateText(manualActionPreflight)");

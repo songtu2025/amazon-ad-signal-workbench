@@ -1486,6 +1486,40 @@ export function SignalTriageWorkbench() {
       }),
     [latestManualAction, selectedReviewRecords, selectedReviewTodos],
   );
+  const selectedManualActionPostWriteKeyEvidenceItems = useMemo(() => {
+    const snapshot =
+      nextReviewTodo?.evidence_snapshot?.length
+        ? nextReviewTodo.evidence_snapshot
+        : latestManualAction?.evidence_snapshot ?? [];
+    const priorityLabels = [
+      "搜索词表现分组",
+      "投放上下文数",
+      "合并边界",
+      "人工确认判断依据",
+      "能证明的事实",
+      "不能证明的边界",
+      "人工下一步",
+      "广告组合流判断",
+      "逐投放上下文",
+      "投放词证据",
+      "广告位边界",
+      "需要补证",
+    ];
+    const priorityRank = new Map(priorityLabels.map((label, index) => [label, index]));
+    const seenLabels = new Set<string>();
+    return snapshot
+      .map((item, index) => ({ item, index, priority: priorityRank.get(evidenceFactDisplayLabel(item.label)) }))
+      .filter((entry): entry is { item: typeof snapshot[number]; index: number; priority: number } => entry.priority !== undefined)
+      .sort((left, right) => left.priority - right.priority || left.index - right.index)
+      .filter(({ item }) => {
+        const label = evidenceFactDisplayLabel(item.label);
+        if (seenLabels.has(label)) return false;
+        seenLabels.add(label);
+        return true;
+      })
+      .slice(0, 3)
+      .map(({ item }) => item);
+  }, [latestManualAction, nextReviewTodo]);
   const selectedManualActionPostWriteDecisionItems = useMemo(() => {
     const manualActionEvidenceRow = selectedManualReviewEvidencePathReadback.rows[0];
     const reviewTodoEvidenceRow = selectedManualReviewEvidencePathReadback.rows[1];
@@ -3779,6 +3813,26 @@ export function SignalTriageWorkbench() {
                       ))}
                     </ul>
                   </div>
+                  {selectedManualActionPostWriteKeyEvidenceItems.length > 0 && (
+                    <div className="manualActionPostWriteKeyEvidence" aria-label="写后关键证据快照">
+                      <div>
+                        <strong>写后关键证据快照</strong>
+                        <span>来自 evidence_snapshot</span>
+                      </div>
+                      <ul>
+                        {selectedManualActionPostWriteKeyEvidenceItems.map((item, index) => (
+                          <li key={`${item.label}-${item.value}-${index}`}>
+                            <span>{item.source ?? "点击时证据"}</span>
+                            <b>
+                              {evidenceFactDisplayLabel(item.label)}：{item.value}
+                            </b>
+                            {item.detail && <p>{item.detail}</p>}
+                          </li>
+                        ))}
+                      </ul>
+                      <small>只回看人工点击时保存的证据，不用当前实时页面重新生成判断，也不触发自动广告动作。</small>
+                    </div>
+                  )}
                   <details className="manualActionPostWriteDetails" aria-label="人工动作写后完整审计材料">
                     <summary>展开点击后读回路径和证据账本</summary>
                     <div className="manualActionReadbackPath" aria-label="点击后读回路径">

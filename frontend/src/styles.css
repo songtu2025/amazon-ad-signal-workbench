@@ -10613,6 +10613,79 @@ button.reviewTodoQueueNext:focus-visible {
   overflow-wrap: anywhere;
 }
 
+.manualActionPostWriteKeyEvidence {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #d6e5f0;
+  border-radius: 8px;
+  padding: 9px;
+  background: #fbfdff;
+}
+
+.manualActionPostWriteKeyEvidence > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.manualActionPostWriteKeyEvidence strong {
+  color: #203246;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.manualActionPostWriteKeyEvidence > div span {
+  border: 1px solid #d8e5f1;
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #ffffff;
+  color: #46627d;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.manualActionPostWriteKeyEvidence ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.manualActionPostWriteKeyEvidence li {
+  display: grid;
+  gap: 3px;
+  border: 1px solid #e1ebf5;
+  border-radius: 7px;
+  padding: 7px;
+  background: #ffffff;
+}
+
+.manualActionPostWriteKeyEvidence li span {
+  color: #66758a;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.manualActionPostWriteKeyEvidence li b {
+  color: #203246;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.manualActionPostWriteKeyEvidence li p,
+.manualActionPostWriteKeyEvidence small {
+  margin: 0;
+  color: #566b82;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .manualActionPostWriteDetails {
   display: grid;
   gap: 8px;
