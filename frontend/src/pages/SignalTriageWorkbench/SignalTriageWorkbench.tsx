@@ -584,6 +584,7 @@ export function SignalTriageWorkbench() {
   const [selectedSearchIntentLabel, setSelectedSearchIntentLabel] = useState<string | null>(null);
   const [selectedSearchIntentScopeId, setSelectedSearchIntentScopeId] = useState<string | null>(null);
   const [isEvidenceDrilldownFocused, setIsEvidenceDrilldownFocused] = useState(false);
+  const [pendingEvidenceDrilldownScopeId, setPendingEvidenceDrilldownScopeId] = useState<string | null>(null);
   const workbenchGridRef = useRef<HTMLElement | null>(null);
   const adGroupPriorityGateRef = useRef<HTMLDivElement | null>(null);
   const productScopeRequestSeq = useRef(0);
@@ -1147,17 +1148,21 @@ export function SignalTriageWorkbench() {
     setIsEvidenceDrilldownFocused(false);
   }
 
-  function handleSelectProductScope(scopeId: string, options?: { resetFilter?: boolean }) {
+  function handleSelectProductScope(scopeId: string, options?: { resetFilter?: boolean; keepPendingEvidenceDrilldown?: boolean }) {
     if (options?.resetFilter) {
       setFilter("all");
     }
     if (!scopeId || scopeId === activeProductScopeId) return;
+    if (!options?.keepPendingEvidenceDrilldown) {
+      setPendingEvidenceDrilldownScopeId(null);
+    }
     productScopeRequestSeq.current += 1;
     clearProductScopeTransientState();
     setSelectedProductScopeId(scopeId);
   }
 
   function handleSelectProductScopePriority(scopeId: string) {
+    setPendingEvidenceDrilldownScopeId(null);
     handleSelectProductScope(scopeId, { resetFilter: true });
   }
 
@@ -1191,6 +1196,26 @@ export function SignalTriageWorkbench() {
       target?.focus();
     });
   }
+
+  function handleOpenTopProductScopeEvidenceDrilldown(scopeId: string) {
+    if (!scopeId) return;
+    if (scopeId === activeProductScopeId) {
+      setPendingEvidenceDrilldownScopeId(null);
+      handleOpenProductScopeEvidenceDrilldown();
+      return;
+    }
+    setPendingEvidenceDrilldownScopeId(scopeId);
+    handleSelectProductScope(scopeId, { resetFilter: true, keepPendingEvidenceDrilldown: true });
+  }
+
+  useEffect(() => {
+    if (!pendingEvidenceDrilldownScopeId) return;
+    if (loading || activeProductScopeId !== pendingEvidenceDrilldownScopeId) return;
+    const triageScopeId = signalTriageSummary?.product_scope_gate?.selected_product_scope_id?.trim();
+    if (!signalTriageSummary || (triageScopeId && triageScopeId !== activeProductScopeId)) return;
+    setPendingEvidenceDrilldownScopeId(null);
+    handleOpenProductScopeEvidenceDrilldown();
+  }, [activeProductScopeId, loading, pendingEvidenceDrilldownScopeId, signalTriageSummary]);
 
   function handleLocateSignalInCurrentScope(
     signalId: string | null | undefined,
@@ -2488,7 +2513,7 @@ export function SignalTriageWorkbench() {
           {productScopePriorityDecisionSummary && (
             <ProductScopePriorityFirstScreenStrip
               summary={productScopePriorityDecisionSummary}
-              onOpenTop={handleSelectProductScopePriority}
+              onOpenTop={handleOpenTopProductScopeEvidenceDrilldown}
             />
           )}
           {diagnosisContextSummary && <DiagnosisContextStrip summary={diagnosisContextSummary} />}
@@ -5265,8 +5290,13 @@ function ProductScopePriorityFirstScreenStrip({
           <small>{compactBoundary}</small>
         </span>
       </div>
-      <button type="button" className="secondaryButton" onClick={() => onOpenTop(summary.topScopeId)}>
-        打开今日优先 Parent ASIN
+      <button
+        type="button"
+        className="secondaryButton"
+        onClick={() => onOpenTop(summary.topScopeId)}
+        aria-label={`打开今日优先 Parent ASIN ${summary.topLabel} 并定位广告证据下钻`}
+      >
+        打开并定位广告证据
       </button>
     </section>
   );
