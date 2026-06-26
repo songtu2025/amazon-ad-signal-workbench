@@ -5157,6 +5157,7 @@ function buildProductScopePriorityDecisionSummary(items: ProductScopePriorityQue
   const signalCount = items.reduce((total, item) => total + item.signalCount, 0);
   const topVerb = topItem.dueReviewTodoCount > 0 ? "先复盘" : "先处理";
   const remainingCount = Math.max(items.length - 1, 0);
+  const defaultDrilldown = productScopePriorityDefaultDrilldown(topItem);
 
   return {
     topScopeId: topItem.scopeId,
@@ -5176,8 +5177,8 @@ function buildProductScopePriorityDecisionSummary(items: ProductScopePriorityQue
       },
       {
         label: "打开后看哪层",
-        value: "广告组 -> 投放商品 / 投放词 / 搜索词 / 广告位",
-        detail: topItem.nextManualStep,
+        value: defaultDrilldown.value,
+        detail: defaultDrilldown.detail,
       },
       {
         label: "不要做什么",
@@ -5195,6 +5196,44 @@ function buildProductScopePriorityDecisionSummary(items: ProductScopePriorityQue
     nextManualStep: topItem.nextManualStep,
     boundary:
       "本摘要只做首页分诊排序，不替代销售表现、广告 ASIN、广告组、投放词、搜索词和广告位证据；点击后进入单个 Parent ASIN 诊断链路。",
+  };
+}
+
+function productScopePriorityDefaultDrilldown(item: ProductScopePriorityQueueItem): { value: string; detail: string } {
+  const decisionText = `${item.priorityLabel} ${item.actionCue} ${item.mainQuestion} ${item.workflowStatus.label}`;
+  if (item.dueReviewTodoCount > 0 || decisionText.includes("复盘")) {
+    return {
+      value: "复盘待办 -> 处理前后指标",
+      detail: "先核对到期 ReviewTodo，再看处理前后 7/14 天指标；未 ready 前不保存效果结论。",
+    };
+  }
+  if (decisionText.includes("搜索词") || item.actionCue === "先扩量" || item.actionCue === "先止损") {
+    return {
+      value: "搜索词 -> 广告组 / 投放词 / 广告 ASIN / 广告位边界",
+      detail: `先打开具体 SearchTerm 信号；${item.nextManualStep}`,
+    };
+  }
+  if (item.actionCue === "先查结构" || decisionText.includes("结构")) {
+    return {
+      value: "广告组结构 -> 投放商品 / 投放词 / 搜索词 / 广告位",
+      detail: item.nextManualStep,
+    };
+  }
+  if (item.tone === "quiet") {
+    return {
+      value: "广告证据缺口 -> 先补 advertised_products / 搜索词 / 广告位",
+      detail: "当前 Parent ASIN 只能作为经营背景，补齐广告证据前不展开广告动作判断。",
+    };
+  }
+  if (item.tone === "watch") {
+    return {
+      value: "观察层 -> 等新增信号或数据变化",
+      detail: item.nextManualStep,
+    };
+  }
+  return {
+    value: "广告组结构 -> 投放商品 / 投放词 / 搜索词 / 广告位",
+    detail: item.nextManualStep,
   };
 }
 
