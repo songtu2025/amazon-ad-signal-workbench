@@ -389,6 +389,13 @@ function recommendedSearchTermCarryEvidence(
   const targetingText = targetingBlock
     ? `${targetingBlock.value}；${targetingBlock.detail ?? "先人工核对投放词，不自动加词、调价或否词。"}`
     : "投放词证据不足：先核对搜索词来自关键词、商品定向还是自动投放上下文。";
+  const placementBlock = recommendedEvidenceBlock(drilldown, "placement_context_gap");
+  const placementCount = drilldown?.placement_context_count ?? 0;
+  const placementText = placementBlock
+    ? `广告位证据缺口：${placementBlock.value}；${placementBlock.detail ?? "缺少广告位上下文，不能判断广告位影响。"} 当前不能判断广告位影响，需要补同周期 ad_placement_daily_metrics 的 campaign_id + ad_group_id 级广告位表现，才能判断广告组级广告位影响。`
+    : placementCount > 0
+      ? `广告位上下文 ${placementCount} 条；只作为人工核对流量位置的证据，不能自动调整广告位加价、预算或竞价。`
+      : "广告位证据缺口：当前缺搜索词直连和广告组级广告位证据，不能判断广告位影响；需要补 ad_placement_daily_metrics 后再看。";
   const normalizedSearchTerm = searchTerm.toLowerCase().trim();
   const matchingEffectiveTerms =
     adGroup?.searchTermDiagnosis?.effectiveTerms.filter((term) => term.label.toLowerCase().includes(normalizedSearchTerm)) ?? [];
@@ -411,6 +418,7 @@ function recommendedSearchTermCarryEvidence(
     adGroupText,
     asinText,
     targetingText,
+    placementText,
     searchTermSampleText,
     boundaryText,
   };
@@ -5261,6 +5269,10 @@ function ProductScopeSingleScreenCommandCard({
               <li>
                 <b>投放词</b>
                 <span>{recommendedCarryEvidence.targetingText}</span>
+              </li>
+              <li>
+                <b>广告位</b>
+                <span>{recommendedCarryEvidence.placementText}</span>
               </li>
               <li>
                 <b>样本</b>

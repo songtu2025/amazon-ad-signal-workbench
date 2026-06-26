@@ -157,6 +157,11 @@ assertIncludes(workbenchSource, "搜索词聚合只做 Parent ASIN 视角参考"
 assertIncludes(workbenchSource, 'aria-label="推荐搜索词承接证据"');
 assertIncludes(workbenchSource, "这里只说明承接范围，不证明单个 ASIN 归因");
 assertIncludes(workbenchSource, "先人工核对投放词，不自动加词、调价或否词");
+assertIncludes(workbenchSource, "placement_context_gap");
+assertIncludes(workbenchSource, "recommendedCarryEvidence.placementText");
+assertIncludes(workbenchSource, "<b>广告位</b>");
+assertIncludes(workbenchSource, "不能判断广告位影响");
+assertIncludes(workbenchSource, "ad_placement_daily_metrics");
 assertIncludes(workbenchSource, "singleScreenPathItems.map");
 assertIncludes(workbenchSource, "1. 经营入口");
 assertIncludes(workbenchSource, "2. 广告组定位");
