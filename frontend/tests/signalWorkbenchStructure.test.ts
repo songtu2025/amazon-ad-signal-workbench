@@ -371,6 +371,19 @@ assert(
 
 const diagnosisPanelIndex = workbenchSource.indexOf('<section className="diagnosisPanel">');
 const productScopeSingleScreenRenderIndex = workbenchSource.indexOf("<ProductScopeSingleScreenCommandCard");
+const productScopeSingleScreenFunctionIndex = workbenchSource.indexOf("function ProductScopeSingleScreenCommandCard");
+const productScopeSingleScreenDefaultDrilldownIndex = workbenchSource.indexOf(
+  'aria-label="Parent ASIN 单屏默认下钻层"',
+  productScopeSingleScreenFunctionIndex,
+);
+const productScopeSingleScreenPathIndex = workbenchSource.indexOf(
+  'aria-label="Parent ASIN 单屏诊断路径"',
+  productScopeSingleScreenFunctionIndex,
+);
+const productScopeSingleScreenGridIndex = workbenchSource.indexOf(
+  'aria-label="Parent ASIN 单屏判断"',
+  productScopeSingleScreenFunctionIndex,
+);
 const productScopeBusinessPreviewIndex = workbenchSource.indexOf('className="productScopeBusinessPreview"');
 const productScopePriorityEntryBridgeRenderIndex = workbenchSource.indexOf(
   "<ProductScopePriorityEntryBridgePanel item={activeProductScopePriorityItem} adGroup={selectedAdGroupDiagnosis} />",
@@ -487,6 +500,15 @@ assert(productScopeSingleScreenRenderIndex >= 0, "Parent ASIN 单屏作战卡必
 assert(
   productScopeSingleScreenRenderIndex < productScopeBusinessPreviewIndex,
   "Parent ASIN 单屏作战卡必须先于折叠详情，避免用户先读长报表",
+);
+assert(productScopeSingleScreenDefaultDrilldownIndex > productScopeSingleScreenFunctionIndex, "Parent ASIN 单屏作战卡必须显示默认下钻层");
+assert(
+  productScopeSingleScreenDefaultDrilldownIndex < productScopeSingleScreenPathIndex,
+  "默认下钻层必须先于四步诊断路径，让用户先知道打开后看哪层",
+);
+assert(
+  productScopeSingleScreenDefaultDrilldownIndex < productScopeSingleScreenGridIndex,
+  "默认下钻层必须先于明细判断网格，避免用户先扫六块指标",
 );
 assert(diagnosisPanelIndex >= 0, "诊断区必须存在");
 assert(productScopePriorityEntryBridgeRenderIndex > diagnosisPanelIndex, "Parent ASIN 进入理由必须渲染在诊断区内");
@@ -1005,6 +1027,11 @@ assertIncludes(workbenchSource, "value: defaultDrilldown.value");
 assertIncludes(workbenchSource, "detail: defaultDrilldown.detail");
 assertIncludes(workbenchSource, "搜索词 -> 广告组 / 投放词 / 广告 ASIN / 广告位边界");
 assertIncludes(workbenchSource, "先打开具体 SearchTerm 信号");
+assertIncludes(workbenchSource, "const defaultDrilldown = priorityItem ? productScopePriorityDefaultDrilldown(priorityItem) : null");
+assertIncludes(workbenchSource, 'aria-label="Parent ASIN 单屏默认下钻层"');
+assertIncludes(workbenchSource, "{defaultDrilldown.value}");
+assertIncludes(workbenchSource, "{defaultDrilldown.detail}");
+assertIncludes(stylesSource, ".productScopeSingleScreenDefaultDrilldown");
 assertIncludes(workbenchSource, "不要逐个打开所有 Parent ASIN 报表");
 assertIncludes(workbenchSource, "readingStrategy");
 assertNotIncludes(workbenchSource, "阅读策略：{summary.readingStrategy}");

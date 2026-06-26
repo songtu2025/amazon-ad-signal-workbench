@@ -5505,6 +5505,7 @@ function ProductScopeSingleScreenCommandCard({
   const searchIntentText = searchIntentSummary
     ? `${searchIntentSummary.topIntentLabel} / ${searchIntentSummary.topDecisionLabel} / ${searchIntentSummary.topSearchTermLabel}`
     : "暂无广告搜索词表现聚合，不能从搜索词层判断扩量或止损。";
+  const defaultDrilldown = priorityItem ? productScopePriorityDefaultDrilldown(priorityItem) : null;
   const singleScreenPathItems = [
     {
       label: "1. 经营入口",
@@ -5547,6 +5548,13 @@ function ProductScopeSingleScreenCommandCard({
         </button>
       </div>
       <p>{summary.mvpStatus.summary}</p>
+      {defaultDrilldown && (
+        <div className="productScopeSingleScreenDefaultDrilldown" aria-label="Parent ASIN 单屏默认下钻层">
+          <span>默认先看</span>
+          <strong>{defaultDrilldown.value}</strong>
+          <small>{defaultDrilldown.detail}</small>
+        </div>
+      )}
       <ol className="productScopeSingleScreenPath" aria-label="Parent ASIN 单屏诊断路径">
         {singleScreenPathItems.map((item) => (
           <li className={item.tone} key={item.label}>

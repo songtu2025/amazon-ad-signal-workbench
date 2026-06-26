@@ -661,6 +661,43 @@ h3 {
   line-height: 1.5;
 }
 
+.productScopeSingleScreenDefaultDrilldown {
+  display: grid;
+  grid-template-columns: minmax(84px, 0.24fr) minmax(170px, 0.5fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  min-width: 0;
+  border: 1px solid #c7d9ef;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #f7fbff;
+}
+
+.productScopeSingleScreenDefaultDrilldown span,
+.productScopeSingleScreenDefaultDrilldown strong,
+.productScopeSingleScreenDefaultDrilldown small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.productScopeSingleScreenDefaultDrilldown span {
+  color: #58708a;
+  font-size: 11px;
+  font-weight: 780;
+}
+
+.productScopeSingleScreenDefaultDrilldown strong {
+  color: #14273e;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.productScopeSingleScreenDefaultDrilldown small {
+  color: #607186;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .productScopeSingleScreenPath {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -11848,6 +11885,7 @@ button.reviewTodoQueueNext:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .productScopeSingleScreenDefaultDrilldown,
   .productScopeSingleScreenPath,
   .productScopeSingleScreenSearchIntentPath li {
     grid-template-columns: 1fr;
