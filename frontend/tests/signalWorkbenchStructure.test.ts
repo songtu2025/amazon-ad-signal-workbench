@@ -1584,6 +1584,7 @@ assertIncludes(workbenchSource, "能证明");
 assertIncludes(workbenchSource, "不能证明");
 assertIncludes(workbenchSource, "人工下一步");
 assertIncludes(workbenchSource, "compactEvidenceDetails");
+assertIncludes(workbenchSource, 'className="detailSection diagnosisReason diagnosisStep stepReason"');
 assertIncludes(workbenchSource, 'className="metricDecisionPanel diagnosisStep stepEvidence"');
 assertIncludes(workbenchSource, 'aria-label="关键指标判断目的"');
 assertIncludes(workbenchSource, "只服务上方业务判断");
@@ -1623,10 +1624,13 @@ assert(
   "逐投放上下文必须先给优先摘要，再展开完整表现行。",
 );
 const diagnosisContractRenderIndex = workbenchSource.indexOf("<DiagnosisContractPanel");
+const diagnosisReasonIndex = workbenchSource.indexOf('className="detailSection diagnosisReason diagnosisStep stepReason"');
 const metricDecisionPanelIndex = workbenchSource.indexOf('className="metricDecisionPanel diagnosisStep stepEvidence"');
 assert(
-  diagnosisContractRenderIndex >= 0 && diagnosisContractRenderIndex < metricDecisionPanelIndex,
-  "中间诊断必须先展示业务判断与指标目的，再展示关键指标，避免先堆裸指标。",
+  diagnosisContractRenderIndex >= 0 &&
+    diagnosisContractRenderIndex < diagnosisReasonIndex &&
+    diagnosisReasonIndex < metricDecisionPanelIndex,
+  "中间诊断必须先展示业务判断与原因，再展示关键指标，避免先堆指标。",
 );
 assertIncludes(stylesSource, ".metricDecisionPanel");
 assertIncludes(stylesSource, ".metricDecisionPanel > p");

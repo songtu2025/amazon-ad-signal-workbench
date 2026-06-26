@@ -6714,6 +6714,17 @@ function SignalDiagnosis({
         <DiagnosisContractPanel items={diagnosisContractItems} summary={diagnosisEvidenceSummary} />
       )}
 
+      <section className="detailSection diagnosisReason diagnosisStep stepReason" aria-label="原因">
+        <div className="detailSectionHeader">
+          <h3>原因</h3>
+          <span>{evidenceSupport.sourceSummary}</span>
+        </div>
+        <p>{triggerRationale.triggerRule}</p>
+        <p>{triggerRationale.objectRule}</p>
+        <p>{evidenceSupport.confidenceReason}</p>
+        {evidenceSupport.supportWarning && <p>{evidenceSupport.supportWarning}</p>}
+      </section>
+
       <section className="metricDecisionPanel diagnosisStep stepEvidence" aria-label="关键指标判断目的">
         <div className="detailSectionHeader">
           <h3>关键指标判断目的</h3>
@@ -6725,17 +6736,6 @@ function SignalDiagnosis({
             <MetricDecisionCell key={item.label} item={item} />
           ))}
         </div>
-      </section>
-
-      <section className="detailSection diagnosisReason diagnosisStep stepReason" aria-label="原因">
-        <div className="detailSectionHeader">
-          <h3>原因</h3>
-          <span>{evidenceSupport.sourceSummary}</span>
-        </div>
-        <p>{triggerRationale.triggerRule}</p>
-        <p>{triggerRationale.objectRule}</p>
-        <p>{evidenceSupport.confidenceReason}</p>
-        {evidenceSupport.supportWarning && <p>{evidenceSupport.supportWarning}</p>}
       </section>
 
       {triageDiagnosisPathItems.length > 0 && <DiagnosisPathPanel items={triageDiagnosisPathItems} />}
