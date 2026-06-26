@@ -1608,6 +1608,12 @@ assertIncludes(workbenchSource, "selectedSignal.id === signalTriageSummary?.next
 assertNotIncludes(workbenchSource, "selectedSignal.id === signalTriageSummary?.recommended_candidate?.signal_id ? recommendedDiagnosisContractItems : []");
 assertIncludes(workbenchSource, "buildSignalDiagnosisEvidenceSummary");
 assertIncludes(workbenchSource, "diagnosisEvidenceSummary");
+assertIncludes(workbenchSource, "SignalDiagnosisFirstReadPanel");
+assertIncludes(workbenchSource, 'aria-label="中间诊断先读四问"');
+assertIncludes(workbenchSource, "诊断先读四问");
+assertIncludes(workbenchSource, "signalDiagnosisFirstReadGrid");
+assertIncludes(workbenchSource, "当前判断");
+assertIncludes(workbenchSource, "只允许记录观察、标记已处理、加入复盘或忽略本次，不自动执行广告动作。");
 assertIncludes(workbenchSource, 'aria-label="业务判断与指标目的"');
 assertIncludes(workbenchSource, "业务判断与指标目的");
 assertIncludes(workbenchSource, "默认只给运营决策摘要");
@@ -1632,6 +1638,8 @@ assertIncludes(workbenchSource, "先读哪几条");
 assertIncludes(workbenchSource, "默认先看下方触发证据；完整证据只用于回查来源、对象边界和复盘审计。");
 assertIncludes(workbenchSource, "等待诊断合同补充证明边界");
 assertIncludes(workbenchSource, "不能直接推出自动广告动作。");
+assertIncludes(stylesSource, ".signalDiagnosisFirstRead");
+assertIncludes(stylesSource, ".signalDiagnosisFirstReadGrid");
 assertIncludes(stylesSource, ".keyEvidenceDecisionSummary");
 assertIncludes(stylesSource, ".keyEvidenceDecisionSummary small");
 assertIncludes(workbenchSource, "searchTermReviewDecisionSummary");
@@ -1667,10 +1675,18 @@ assert(
   "逐投放上下文必须先给优先摘要，再展开完整表现行。",
 );
 const diagnosisContractRenderIndex = workbenchSource.indexOf("<DiagnosisContractPanel");
+const signalDiagnosisFirstReadRenderIndex = workbenchSource.indexOf("<SignalDiagnosisFirstReadPanel");
+const diagnosticScopeRenderIndex = workbenchSource.indexOf('aria-label="诊断主视角"');
 const diagnosisReasonIndex = workbenchSource.indexOf('className="detailSection diagnosisReason diagnosisStep stepReason"');
 const metricDecisionPanelIndex = workbenchSource.indexOf('className="metricDecisionPanel diagnosisStep stepEvidence"');
 const keyEvidenceDecisionSummaryIndex = workbenchSource.indexOf('aria-label="关键证据先读"');
 const keyEvidenceIndex = workbenchSource.indexOf('className="keyEvidence"');
+assert(
+  signalDiagnosisFirstReadRenderIndex >= 0 &&
+    signalDiagnosisFirstReadRenderIndex < diagnosticScopeRenderIndex &&
+    signalDiagnosisFirstReadRenderIndex < diagnosisContractRenderIndex,
+  "中间诊断必须先展示四问摘要，再进入诊断主视角和完整业务判断面板。",
+);
 assert(
   diagnosisContractRenderIndex >= 0 &&
     diagnosisContractRenderIndex < diagnosisReasonIndex &&

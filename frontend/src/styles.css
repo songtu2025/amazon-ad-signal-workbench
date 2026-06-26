@@ -5947,6 +5947,79 @@ button.reviewTodoQueueNext:focus-visible {
   line-height: 1.6;
 }
 
+.signalDiagnosisFirstRead {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #c7d9ee;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #f7fbff;
+  box-shadow: inset 3px 0 0 #8ab8e8;
+}
+
+.signalDiagnosisFirstRead.medium {
+  border-color: #d9d0f0;
+  background: #fbf8ff;
+  box-shadow: inset 3px 0 0 #a58de0;
+}
+
+.signalDiagnosisFirstRead.weak {
+  border-color: #e0e6ef;
+  background: #f8fafc;
+  box-shadow: inset 3px 0 0 #9aa9ba;
+}
+
+.signalDiagnosisFirstRead > p {
+  margin: 0;
+  color: #54667b;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.signalDiagnosisFirstReadGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
+  gap: 8px;
+}
+
+.signalDiagnosisFirstReadGrid span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid #dde7f2;
+  border-radius: 7px;
+  padding: 7px 8px;
+  background: #ffffff;
+}
+
+.signalDiagnosisFirstReadGrid b {
+  color: #60758d;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.signalDiagnosisFirstReadGrid strong {
+  color: #24364f;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.signalDiagnosisFirstReadGrid small {
+  display: -webkit-box;
+  margin: 0;
+  color: #65768a;
+  font-size: 11px;
+  line-height: 1.4;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
 .diagnosisStep {
   position: relative;
   padding-left: 46px;

@@ -4505,6 +4505,56 @@ function DiagnosisContractPanel({
   );
 }
 
+function SignalDiagnosisFirstReadPanel({
+  signal,
+  summary,
+}: {
+  signal: AiSignal;
+  summary: SignalDiagnosisEvidenceSummary;
+}) {
+  const rows = [
+    {
+      label: "当前判断",
+      value: signal.summary,
+      detail: summary.businessQuestion,
+    },
+    {
+      label: "能证明",
+      value: summary.proves,
+      detail: summary.strengthReason,
+    },
+    {
+      label: "不能证明",
+      value: summary.doesNotProve,
+      detail: summary.evidenceGap,
+    },
+    {
+      label: "人工下一步",
+      value: summary.nextManualStep,
+      detail: "只允许记录观察、标记已处理、加入复盘或忽略本次，不自动执行广告动作。",
+    },
+  ];
+
+  return (
+    <section className={`signalDiagnosisFirstRead ${summary.tone}`} aria-label="中间诊断先读四问">
+      <div className="detailSectionHeader">
+        <h3>诊断先读四问</h3>
+        <span>{summary.strengthLabel}</span>
+      </div>
+      <p>{summary.objectReadback}</p>
+      <div className="signalDiagnosisFirstReadGrid">
+        {rows.map((row) => (
+          <span key={row.label}>
+            <b>{row.label}</b>
+            <strong>{row.value}</strong>
+            <small>{row.detail}</small>
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function SearchTermOpportunityReviewChainPanel({
   chain,
   adContextRows,
@@ -6756,6 +6806,8 @@ function SignalDiagnosis({
         <h2>{signal.summary}</h2>
         <p>{signal.why}</p>
       </div>
+
+      {diagnosisEvidenceSummary && <SignalDiagnosisFirstReadPanel signal={signal} summary={diagnosisEvidenceSummary} />}
 
       <section className="diagnosticScope" aria-label="诊断主视角">
         <div>
