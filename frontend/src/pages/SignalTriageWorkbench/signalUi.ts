@@ -4163,6 +4163,11 @@ export interface ProductScopeDiagnosisBrief {
   boundary: string;
 }
 
+export interface ProductScopeRecommendedAdGroupEvidence {
+  searchTermLabel?: string | null;
+  adGroupNames: string[];
+}
+
 export interface ProductScopeAdGroupActionableReview {
   title: string;
   evidence: string;
@@ -5281,25 +5286,39 @@ export function buildProductScopeDiagnosisBrief(
   firstScreenSummary: ProductScopeFirstScreenSummary | null,
   routeGuide: ProductScopeEvidenceRouteGuide | null,
   adGroupRows: ProductScopeAdGroupDiagnosisRow[],
+  recommendedAdGroupEvidence?: ProductScopeRecommendedAdGroupEvidence | null,
 ): ProductScopeDiagnosisBrief | null {
   if (!firstScreenSummary) return null;
   const adFact = firstScreenSummary.factItems[1];
   const primaryAdGroup = adGroupRows[0];
+  const recommendedAdGroupNames = [...new Set(recommendedAdGroupEvidence?.adGroupNames.map((name) => name.trim()).filter(Boolean) ?? [])];
+  const recommendedSearchTerm = recommendedAdGroupEvidence?.searchTermLabel?.trim();
+  const hasRecommendedAdGroupEvidence = !primaryAdGroup && recommendedAdGroupNames.length > 0;
+  const recommendedAdGroupLabel = recommendedSearchTerm ? `推荐搜索词 ${recommendedSearchTerm}` : "推荐搜索词证据";
+  const recommendedAdGroupNameText = recommendedAdGroupNames.slice(0, 3).join("、");
   const routeDecision = routeGuide?.decision;
   const routeStepText = routeGuide
     ? `${routeGuide.steps.length} 层证据：${routeGuide.summary}`
     : firstScreenSummary.pathSummary;
   const adGroupJudgement = primaryAdGroup
     ? `${primaryAdGroup.title}：${primaryAdGroup.statusLabel}；${primaryAdGroup.metrics}`
+    : hasRecommendedAdGroupEvidence
+      ? `当前没有独立广告组异常排序；${recommendedAdGroupLabel} 关联 ${recommendedAdGroupNames.length} 个广告组：${recommendedAdGroupNameText}。这些广告组只作为搜索词证据下钻入口，不代表广告组本身异常。`
     : "暂无可排序广告组；先确认广告商品、搜索词和广告位证据是否可下钻。";
   const adGroupProves = primaryAdGroup
     ? primaryAdGroup.evidenceSynthesis.proves
+    : hasRecommendedAdGroupEvidence
+      ? `能证明 ${recommendedAdGroupLabel} 已经回到广告组上下文，可沿这些广告组核对投放商品、投放词、搜索词和广告位证据。`
     : "当前只能证明还没有足够广告组诊断行进入排序。";
   const adGroupDoesNotProve = primaryAdGroup
     ? primaryAdGroup.evidenceSynthesis.doesNotProve
+    : hasRecommendedAdGroupEvidence
+      ? "不能证明广告组本身异常，也不能证明搜索词表现已经自动归因到单个广告 ASIN；缺广告位证据时也不能判断广告位影响。"
     : "不能证明广告组没有问题，也不能把缺失排序解释成广告结构健康。";
   const adGroupNextManualStep = primaryAdGroup
     ? primaryAdGroup.problemLocator.nextManualStep
+    : hasRecommendedAdGroupEvidence
+      ? `先打开 ${recommendedAdGroupNameText} 核对同组投放商品、投放词、搜索词和广告位证据，再决定是否记录观察、加入复盘或忽略本次。`
     : "先补齐广告组、投放商品、投放词、搜索词和广告位证据，再进入人工复核。";
   const adEvidenceGate = firstScreenSummary.landingGates.find((gate) => gate.label === "广告证据");
   const scopeGate = firstScreenSummary.landingGates.find((gate) => gate.label === "经营口径");
@@ -5321,14 +5340,18 @@ export function buildProductScopeDiagnosisBrief(
         title: "Parent ASIN 决策导览",
         primaryDecision: primaryAdGroup
           ? `先展开 ${primaryAdGroup.title}：${primaryAdGroup.problemType}；${primaryAdGroup.statusLabel}。`
+          : hasRecommendedAdGroupEvidence
+            ? `可以进入广告诊断；先沿 ${recommendedAdGroupLabel} 关联的 ${recommendedAdGroupNames.length} 个广告组下钻证据，不把它包装成广告组异常。`
           : "可以进入广告诊断，但暂无可排序广告组；先确认广告组、投放商品、投放词、搜索词和广告位证据是否齐全。",
         readPath: "先判断 Parent ASIN 是否有广告证据，再看广告 ASIN 覆盖，接着只展开问题广告组，不逐个读完整报表。",
         expandFocus: primaryAdGroup
           ? `${primaryAdGroup.problemLocator.problemLocation}；下钻顺序为投放商品 -> 投放词 -> 搜索词 -> 广告位。`
+          : hasRecommendedAdGroupEvidence
+            ? `先从 ${recommendedAdGroupNameText} 进入投放商品 -> 投放词 -> 搜索词 -> 广告位核对；这些是证据入口，不是自动动作对象。`
           : "暂时不展开广告组明细；补齐广告组诊断行后再进入四层广告证据。",
         notToDo:
           "不要把销售子 ASIN 全量、搜索词或广告位直接归因到单个广告 ASIN，也不要把 AI 判断包装成自动加词、否词、调价或暂停广告。",
-        nextManualStep: primaryAdGroup ? primaryAdGroup.problemLocator.nextManualStep : salesEntryNextManualStep,
+        nextManualStep: primaryAdGroup ? primaryAdGroup.problemLocator.nextManualStep : hasRecommendedAdGroupEvidence ? adGroupNextManualStep : salesEntryNextManualStep,
         tone: primaryAdGroup ? "ready" : "waiting",
       }
     : {
@@ -5350,9 +5373,11 @@ export function buildProductScopeDiagnosisBrief(
     },
     {
       label: "今日焦点",
-      value: primaryAdGroup ? primaryAdGroup.title : "等待广告组证据",
+      value: primaryAdGroup ? primaryAdGroup.title : hasRecommendedAdGroupEvidence ? `${recommendedAdGroupLabel} 关联广告组` : "等待广告组证据",
       detail: primaryAdGroup
         ? `${primaryAdGroup.problemType}；${primaryAdGroup.problemLocator.problemLocation}`
+        : hasRecommendedAdGroupEvidence
+          ? `${recommendedAdGroupNames.length} 个广告组可作为证据下钻入口：${recommendedAdGroupNameText}；不代表广告组异常结论。`
         : "缺少可排序广告组时，不展开广告组明细，也不生成广告动作。",
       tone: primaryAdGroup ? "ready" : "waiting",
     },
@@ -5413,7 +5438,7 @@ export function buildProductScopeDiagnosisBrief(
         proves: adGroupProves,
         doesNotProve: adGroupDoesNotProve,
         nextManualStep: adGroupNextManualStep,
-        tone: primaryAdGroup ? "ready" : "blocked",
+        tone: primaryAdGroup ? "ready" : hasRecommendedAdGroupEvidence ? "context" : "blocked",
       },
       {
         id: "ad_group_detail",

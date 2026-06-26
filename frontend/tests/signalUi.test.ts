@@ -5530,6 +5530,34 @@ assertIncludes(productScopeDiagnosisBrief.manualActions.join(" / "), "记录观�
 assertIncludes(productScopeDiagnosisBrief.manualActions.join(" / "), "加入复盘");
 assertIncludes(productScopeDiagnosisBrief.boundary, "搜索词和广告位不能直接归因");
 
+const recommendedAdGroupEvidenceBrief = buildProductScopeDiagnosisBrief(productScopeFirstScreenSummary, productScopeEvidenceRouteGuide, [], {
+  searchTermLabel: "beach essentials",
+  adGroupNames: ["RBK004-beach essentials-精准（测试）", "RBK004-扩展-beach essentials"],
+});
+if (!recommendedAdGroupEvidenceBrief) {
+  throw new Error("推荐搜索词广告组证据诊断路径不能为空");
+}
+assertIncludes(recommendedAdGroupEvidenceBrief.decisionGuide.primaryDecision, "可以进入广告诊断");
+assertIncludes(recommendedAdGroupEvidenceBrief.decisionGuide.primaryDecision, "推荐搜索词 beach essentials");
+assertIncludes(recommendedAdGroupEvidenceBrief.decisionGuide.primaryDecision, "2 个广告组");
+assertIncludes(recommendedAdGroupEvidenceBrief.decisionGuide.primaryDecision, "不把它包装成广告组异常");
+assertIncludes(recommendedAdGroupEvidenceBrief.decisionGuide.expandFocus, "投放商品 -> 投放词 -> 搜索词 -> 广告位");
+assertIncludes(recommendedAdGroupEvidenceBrief.decisionGuide.expandFocus, "证据入口，不是自动动作对象");
+assertIncludes(recommendedAdGroupEvidenceBrief.decisionGuide.nextManualStep, "记录观察、加入复盘或忽略本次");
+assertIncludes(recommendedAdGroupEvidenceBrief.verdictItems[1].value, "推荐搜索词 beach essentials 关联广告组");
+assertIncludes(recommendedAdGroupEvidenceBrief.verdictItems[1].detail, "2 个广告组可作为证据下钻入口");
+assertIncludes(recommendedAdGroupEvidenceBrief.verdictItems[1].detail, "不代表广告组异常结论");
+assertIncludes(recommendedAdGroupEvidenceBrief.sections[2].currentJudgement, "当前没有独立广告组异常排序");
+assertIncludes(recommendedAdGroupEvidenceBrief.sections[2].currentJudgement, "RBK004-beach essentials-精准（测试）");
+assertIncludes(recommendedAdGroupEvidenceBrief.sections[2].currentJudgement, "RBK004-扩展-beach essentials");
+assertIncludes(recommendedAdGroupEvidenceBrief.sections[2].currentJudgement, "只作为搜索词证据下钻入口");
+assertNotIncludes(recommendedAdGroupEvidenceBrief.sections[2].currentJudgement, "暂无可排序广告组");
+assertIncludes(recommendedAdGroupEvidenceBrief.sections[2].proves, "已经回到广告组上下文");
+assertIncludes(recommendedAdGroupEvidenceBrief.sections[2].doesNotProve, "不能证明广告组本身异常");
+assertIncludes(recommendedAdGroupEvidenceBrief.sections[2].doesNotProve, "不能证明搜索词表现已经自动归因到单个广告 ASIN");
+assertIncludes(recommendedAdGroupEvidenceBrief.sections[2].nextManualStep, "核对同组投放商品、投放词、搜索词和广告位证据");
+assertEqual(recommendedAdGroupEvidenceBrief.sections[2].tone, "context");
+
 const noCandidateMvpSummary = buildProductScopeFirstScreenSummary(productScopeGroupOverview, {
   signal_status: { candidate_count: 0 },
   actionability_status: {

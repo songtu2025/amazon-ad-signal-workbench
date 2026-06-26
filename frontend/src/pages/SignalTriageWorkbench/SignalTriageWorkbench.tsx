@@ -861,6 +861,16 @@ export function SignalTriageWorkbench() {
     () => (productScopeEvidenceMatrix ? buildProductScopeEvidenceRouteGuide(productScopeEvidenceMatrix) : null),
     [productScopeEvidenceMatrix],
   );
+  const productScopeRecommendedAdGroupEvidence = useMemo(
+    () =>
+      recommendedAdGroupNamesForCurrentScope.length
+        ? {
+            searchTermLabel: recommendedSearchTermForCurrentScope,
+            adGroupNames: recommendedAdGroupNamesForCurrentScope,
+          }
+        : null,
+    [recommendedAdGroupNamesForCurrentScope, recommendedSearchTermForCurrentScope],
+  );
   const canRecommendManualActionInCurrentScope =
     isActionableProductScope(selectedProductScopeOption) && canRecommendManualActionFromTriageSummary(signalTriageSummary);
   const fallbackRecommendedManualActionCandidate = useMemo(
@@ -880,8 +890,14 @@ export function SignalTriageWorkbench() {
     [productScopeGroupOverview, signalTriageSummary],
   );
   const productScopeDiagnosisBrief = useMemo(
-    () => buildProductScopeDiagnosisBrief(productScopeFirstScreenSummary, productScopeEvidenceRouteGuide, productScopeAdGroupDiagnosisForCurrentFocus),
-    [productScopeAdGroupDiagnosisForCurrentFocus, productScopeEvidenceRouteGuide, productScopeFirstScreenSummary],
+    () =>
+      buildProductScopeDiagnosisBrief(
+        productScopeFirstScreenSummary,
+        productScopeEvidenceRouteGuide,
+        productScopeAdGroupDiagnosisForCurrentFocus,
+        productScopeRecommendedAdGroupEvidence,
+      ),
+    [productScopeAdGroupDiagnosisForCurrentFocus, productScopeEvidenceRouteGuide, productScopeFirstScreenSummary, productScopeRecommendedAdGroupEvidence],
   );
   const productScopeSelectionSummary = useMemo(
     () => buildProductScopeSelectionSummary(selectedProductScopeOption),
