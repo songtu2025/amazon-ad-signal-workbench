@@ -1592,19 +1592,19 @@ export function SignalTriageWorkbench() {
       : "暂无复盘待办";
     return [
       {
-        label: "1. 当时确认什么",
+        label: "1. 当时判断",
         value: judgementRow?.detail ?? "等待 ReviewTodo 业务判断快照",
         detail: nextReviewTodo
           ? `${nextReviewText}；${reviewCheckpointText(nextReviewTodo, selectedReviewEffect)}`
           : reviewTodoEmptyStateText(latestManualAction),
       },
       {
-        label: "2. 当时证据证明什么",
+        label: "2. 当时能证明",
         value: provesRow?.detail ?? "等待证据能证明的事实",
         detail: selectedReviewTodoDecisionReadback?.summary ?? "没有 ReviewTodo 证据快照时，不能回看当时判断依据。",
       },
       {
-        label: "3. 当时证据不能证明什么",
+        label: "3. 当时不能证明",
         value: doesNotProveRow?.detail ?? "等待证据不能证明的边界",
         detail:
           selectedReviewTodoDecisionReadback?.boundary ??
@@ -3895,7 +3895,7 @@ export function SignalTriageWorkbench() {
                 <div className="reviewFlowDecisionSummary" aria-label="复盘回看四问">
                   <div>
                     <strong>复盘回看四问</strong>
-                    <span>沿点击时证据判断</span>
+                    <span>沿点击时证据快照</span>
                   </div>
                   <ul>
                     {selectedReviewReadbackDecisionItems.map((item) => (
