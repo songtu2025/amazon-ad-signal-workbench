@@ -56,6 +56,7 @@ import {
   marketOptionLabel,
   shouldPauseSnapshotPullForReview,
   snapshotActionBoundaryText,
+  snapshotCreateButtonText,
   snapshotFreshnessText,
   snapshotInspectionText,
   snapshotPipelineMessage,
@@ -877,6 +878,10 @@ export function SignalTriageWorkbench() {
   const shouldPauseSnapshotPull = useMemo(
     () => shouldPauseSnapshotPullForReview(signalTriageSummary?.review_status ?? null),
     [signalTriageSummary?.review_status],
+  );
+  const snapshotCreateButtonLabel = useMemo(
+    () => snapshotCreateButtonText(creatingSnapshot, signalTriageSummary?.review_status ?? null),
+    [creatingSnapshot, signalTriageSummary?.review_status],
   );
   const selectedProductScopeOption = useMemo(
     () => productScopeOptions.find((option) => option.scope_id === activeProductScopeId) ?? null,
@@ -2364,7 +2369,7 @@ export function SignalTriageWorkbench() {
             aria-label={shouldPauseSnapshotPull ? "复盘窗口未到期，暂不拉取真实 API 快照" : "拉取真实 API 快照"}
           >
             <Database size={16} />
-            {creatingSnapshot ? "拉取中" : "拉取快照"}
+            {snapshotCreateButtonLabel}
           </button>
           <button className="iconButton refreshButton" onClick={loadSignals} disabled={loading} aria-label="刷新信号">
             <RefreshCw size={18} />

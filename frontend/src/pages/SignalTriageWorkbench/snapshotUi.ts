@@ -125,6 +125,12 @@ export function snapshotActionBoundaryText(reviewStatus: SnapshotReviewStatusFor
   return `复盘窗口未到期：现在只刷新本地信号和查看人工留痕，${earliestDueDate} 后再只读检查${reviewTargetText}；未到期前${forbiddenText}。`;
 }
 
+export function snapshotCreateButtonText(isCreating: boolean, reviewStatus: SnapshotReviewStatusForUi | null | undefined) {
+  if (isCreating) return "拉取中";
+  if (shouldPauseSnapshotPullForReview(reviewStatus)) return "等待复盘到期";
+  return "拉取快照";
+}
+
 export function snapshotFreshnessText(status: SnapshotStatusForUi | null, readiness: SnapshotReadinessForUi | null) {
   if (!status) return "读取快照状态";
   if (!status.has_snapshot && readiness?.missing.length) {

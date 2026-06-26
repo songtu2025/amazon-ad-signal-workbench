@@ -1587,6 +1587,8 @@ assertIncludes(workbenchSource, 'aria-label="复盘下一步路径"');
 assertIncludes(workbenchSource, "reviewReadinessNextSteps");
 assertIncludes(workbenchSource, "snapshotActionBoundaryText");
 assertIncludes(workbenchSource, "shouldPauseSnapshotPullForReview");
+assertIncludes(workbenchSource, "snapshotCreateButtonText");
+assertIncludes(workbenchSource, "snapshotCreateButtonLabel");
 assertIncludes(workbenchSource, "snapshotActionBoundary");
 assertIncludes(workbenchSource, 'aria-label="快照复盘门禁"');
 assertIncludes(workbenchSource, 'aria-label="人工留痕证据路径读回"');

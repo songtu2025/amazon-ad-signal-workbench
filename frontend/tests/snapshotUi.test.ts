@@ -14,6 +14,7 @@ import {
   snapshotProbeMessage,
   shouldPauseSnapshotPullForReview,
   snapshotActionBoundaryText,
+  snapshotCreateButtonText,
 } from "../src/pages/SignalTriageWorkbench/snapshotUi";
 import {
   marketScopedPath,
@@ -242,10 +243,13 @@ assertEqual(marketOptionLabel(snapshotMarketOption), "rivbos / US / market_id 1"
 assertEqual(marketOptionLabel(sampleMarketOption), "market-1 / 待探测 / market_id 1");
 
 assertBoolean(shouldPauseSnapshotPullForReview(waitingReviewStatus), true);
+assertEqual(snapshotCreateButtonText(false, waitingReviewStatus), "等待复盘到期");
+assertEqual(snapshotCreateButtonText(true, waitingReviewStatus), "拉取中");
 
 assertIncludes(snapshotActionBoundaryText(waitingReviewStatus), "复盘窗口未到期");
 assertIncludes(snapshotActionBoundaryText(waitingReviewStatus), "2026-06-22 后再只读检查 7 天广告指标复盘效果");
 assertIncludes(snapshotActionBoundaryText(waitingReviewStatus), "未到期前不拉取快照、不保存复盘结论");
 
 assertBoolean(shouldPauseSnapshotPullForReview({ manual_action_count: 0, ready_count: 0 }), false);
+assertEqual(snapshotCreateButtonText(false, { manual_action_count: 0, ready_count: 0 }), "拉取快照");
 assertEqual(snapshotActionBoundaryText({ manual_action_count: 0, ready_count: 0 }), "快照拉取只用于人工低频补齐真实 API 数据，不会执行广告动作。");
