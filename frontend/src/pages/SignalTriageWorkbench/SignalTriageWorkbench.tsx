@@ -2669,7 +2669,7 @@ export function SignalTriageWorkbench() {
                 <p key={note}>{note}</p>
               ))}
               {productScopeGroupOverview && (
-                <div className="productGroupOverview" aria-label="Parent ASIN 经营背景与广告证据概览">
+                <div className="productGroupOverview" aria-label="Parent ASIN 经营销售盘与广告证据概览">
                   <div className="productGroupOverviewHeader">
                     <strong>{productScopeGroupOverview.title}</strong>
                     <span>{productScopeGroupOverview.summary}</span>

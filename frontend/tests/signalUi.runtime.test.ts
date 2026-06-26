@@ -287,7 +287,7 @@ async function main() {
   assertIncludes(diagnosisBriefRuntimeText, "不是把筛选器、销售、广告组、明细和 AI 分析纵向堆叠成长报表");
   assertIncludes(diagnosisBriefRuntimeText, "当前页面到底在看哪个店铺、站点、Parent ASIN 和周期");
   assertIncludes(diagnosisBriefRuntimeText, "不逐个读完整报表");
-  assertIncludes(diagnosisBriefRuntimeText, "这个 Parent ASIN 是否有足够广告证据");
+  assertIncludes(diagnosisBriefRuntimeText, "整体销售盘和广告承接占比");
   assertIncludes(diagnosisBriefRuntimeText, "今天应该先看哪个广告组");
   assertIncludes(diagnosisBriefRuntimeText, "投放商品、投放词、搜索词，还是广告位");
   assertIncludes(diagnosisBriefRuntimeText, "只能做哪一种人工动作");

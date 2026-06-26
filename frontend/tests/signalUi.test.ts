@@ -5304,8 +5304,11 @@ if (!productScopeGroupOverview) {
   throw new Error("Parent ASIN 入口应显示商品组概览");
 }
 
-assertEqual(productScopeGroupOverview.title, "Parent ASIN B0PARENT 经营背景与广告证据");
-assertEqual(productScopeGroupOverview.summary, "经营背景：12 个销售表现子 ASIN；广告诊断：仅 3 个有投放证据的广告 ASIN 可下钻");
+assertEqual(productScopeGroupOverview.title, "Parent ASIN B0PARENT 经营销售盘与广告证据");
+assertEqual(
+  productScopeGroupOverview.summary,
+  "经营盘：12 个销售表现子 ASIN / 经营订单 24591；广告承接：3 个广告 ASIN / 广告订单占比 1.1% / 广告销售占比 1.0%",
+);
 assertEqual(productScopeGroupOverview.adAsinLabels.length, 3);
 assertIncludes(productScopeGroupOverview.adAsinLabels[0], "B016EXMW02");
 assertIncludes(productScopeGroupOverview.adAsinLabels[0], "$80.00");
@@ -5332,17 +5335,21 @@ assertIncludes(productScopeGroupOverview.adCoverageDecision.doesNotProve, "不�
 assertIncludes(productScopeGroupOverview.adCoverageDecision.nextManualStep, "未覆盖 B016EXMW1G、B016EXMW4S、B016EXMXTC、B06VW5SQ97、B07MH544J8 等 9 个");
 assertIncludes(productScopeGroupOverview.adCoverageDecision.nextManualStep, "补广告投放行、非 SP 来源或商品映射证据");
 assertEqual(productScopeGroupOverview.relationItems.length, 4);
-assertEqual(productScopeGroupOverview.relationItems[0].label, "销售背景（不直接诊断）");
+assertEqual(productScopeGroupOverview.relationItems[0].label, "经营销售盘（业务分母）");
 assertIncludes(productScopeGroupOverview.relationItems[0].value, "Parent ASIN B0PARENT");
 assertIncludes(productScopeGroupOverview.relationItems[0].value, "销售表现识别 12 个子 ASIN");
 assertIncludes(productScopeGroupOverview.relationItems[0].value, "经营订单 24591");
 assertIncludes(productScopeGroupOverview.relationItems[0].value, "经营销售额 $262341.49");
-assertIncludes(productScopeGroupOverview.relationItems[0].value, "不等同广告对象");
+assertIncludes(productScopeGroupOverview.relationItems[0].value, "广告订单占比 1.1%");
+assertIncludes(productScopeGroupOverview.relationItems[0].value, "广告销售占比 1.0%");
+assertIncludes(productScopeGroupOverview.relationItems[0].value, "判断广告承接是否值得下钻");
+assertIncludes(productScopeGroupOverview.relationItems[0].value, "不等同广告动作对象");
 assertEqual(productScopeGroupOverview.relationItems[1].label, "广告诊断对象（有投放证据）");
 assertIncludes(productScopeGroupOverview.relationItems[1].value, "仅 3 个 advertised_products 广告 ASIN 可下钻");
 assertIncludes(productScopeGroupOverview.relationItems[1].value, "广告花费 $764.11");
 assertIncludes(productScopeGroupOverview.relationItems[1].value, "广告订单 281");
 assertIncludes(productScopeGroupOverview.relationItems[1].value, "广告销售额 $2715.06");
+assertIncludes(productScopeGroupOverview.relationItems[1].value, "只带这些广告 ASIN");
 assertIncludes(productScopeGroupOverview.relationItems[1].value, "广告组");
 assertIncludes(productScopeGroupOverview.relationItems[1].value, "投放词");
 assertEqual(productScopeGroupOverview.relationItems[2].label, "策略事实");
@@ -5437,7 +5444,8 @@ assertIncludes(productScopeFirstScreenSummary.boundary, "搜索词和广告位�
 assertEqual(productScopeFirstScreenSummary.landingGates.length, 4);
 assertEqual(productScopeFirstScreenSummary.landingGates[0].label, "经营口径");
 assertIncludes(productScopeFirstScreenSummary.landingGates[0].value, "销售表现识别 12 个子 ASIN");
-assertIncludes(productScopeFirstScreenSummary.landingGates[0].detail, "经营背景");
+assertIncludes(productScopeFirstScreenSummary.landingGates[0].value, "广告订单占比 1.1%");
+assertIncludes(productScopeFirstScreenSummary.landingGates[0].detail, "经营分母");
 assertEqual(productScopeFirstScreenSummary.landingGates[1].label, "广告证据");
 assertIncludes(productScopeFirstScreenSummary.landingGates[1].value, "3 个广告 ASIN 可下钻");
 assertIncludes(productScopeFirstScreenSummary.landingGates[1].detail, "当前 SP 广告覆盖率 25.0%");
@@ -5503,12 +5511,13 @@ assertIncludes(productScopeDiagnosisBrief.sections[0].currentJudgement, "筛选�
 assertIncludes(productScopeDiagnosisBrief.sections[0].doesNotProve, "不能证明广告组就是产品");
 assertIncludes(productScopeDiagnosisBrief.sections[0].doesNotProve, "不能把 ABA 当店铺专属数据");
 assertEqual(productScopeDiagnosisBrief.sections[1].title, "Parent ASIN 销售表现入口");
-assertIncludes(productScopeDiagnosisBrief.sections[1].businessQuestion, "是否有足够广告证据");
-assertIncludes(productScopeDiagnosisBrief.sections[1].purpose, "是否值得进入广告诊断");
+assertIncludes(productScopeDiagnosisBrief.sections[1].businessQuestion, "整体销售盘和广告承接占比");
+assertIncludes(productScopeDiagnosisBrief.sections[1].purpose, "经营盘多大");
+assertIncludes(productScopeDiagnosisBrief.sections[1].purpose, "广告承接占多少");
 assertIncludes(productScopeDiagnosisBrief.sections[1].currentJudgement, "可以进入广告诊断");
+assertIncludes(productScopeDiagnosisBrief.sections[1].currentJudgement, "广告承接占比");
 assertIncludes(productScopeDiagnosisBrief.sections[1].currentJudgement, "不把全部销售子 ASIN 当广告对象");
-assertIncludes(productScopeDiagnosisBrief.sections[1].purpose, "限定销售子 ASIN 只是经营背景");
-assertIncludes(productScopeDiagnosisBrief.sections[1].purpose, "不把未投放变体拉进广告分析");
+assertIncludes(productScopeDiagnosisBrief.sections[1].purpose, "未投放变体不进入广告分析");
 assertIncludes(productScopeDiagnosisBrief.sections[1].proves, "哪些广告 ASIN 有 advertised_products 证据");
 assertIncludes(productScopeDiagnosisBrief.sections[1].doesNotProve, "所有子 ASIN 都有广告数据");
 assertIncludes(productScopeDiagnosisBrief.sections[1].nextManualStep, "下一步进入广告组排序");

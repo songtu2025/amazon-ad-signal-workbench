@@ -5329,7 +5329,7 @@ export function buildProductScopeDiagnosisBrief(
   const salesEntryCurrentJudgement = hasAdvertisedAsin
     ? `可以进入广告诊断：${adEvidenceGate?.value ?? firstScreenSummary.adCoverageDecision.statusLabel}。${
         adEvidenceGate?.detail ?? firstScreenSummary.adCoverageDecision.summary
-      } 经营销售盘只做背景，不把全部销售子 ASIN 当广告对象。`
+      } 经营销售盘用于判断总盘和广告承接占比，不把全部销售子 ASIN 当广告对象。`
     : `暂不进入广告诊断：${adEvidenceGate?.value ?? "缺少广告 ASIN，不能进入广告诊断"}。${
         adEvidenceGate?.detail ?? firstScreenSummary.adCoverageDecision.summary
       } 先补齐 advertised_products、广告组、投放词、搜索词或广告位证据。`;
@@ -5421,8 +5421,8 @@ export function buildProductScopeDiagnosisBrief(
         id: "sales_summary",
         label: "1",
         title: "Parent ASIN 销售表现入口",
-        businessQuestion: "这个 Parent ASIN 是否有足够广告证据，值得进入广告诊断？",
-        purpose: "先回答这个 Parent ASIN 是否值得进入广告诊断，并限定销售子 ASIN 只是经营背景，不把未投放变体拉进广告分析。",
+        businessQuestion: "这个 Parent ASIN 的整体销售盘和广告承接占比，是否支持进入广告诊断？",
+        purpose: "先回答经营盘多大、广告承接占多少、哪些广告 ASIN 有证据可下钻，并限定未投放变体不进入广告分析。",
         currentJudgement: salesEntryCurrentJudgement,
         proves: "能证明当前 Parent ASIN 经营盘、销售子 ASIN 范围，以及哪些广告 ASIN 有 advertised_products 证据可进入下钻。",
         doesNotProve: "不能证明 Parent ASIN 下所有子 ASIN 都有广告数据，也不能直接生成广告动作对象。",
@@ -8417,6 +8417,11 @@ function formatCoverageRatio(part: number, total: number): string {
   return `${((part / total) * 100).toFixed(1)}%`;
 }
 
+function formatScopeShare(part: number, total: number): string {
+  if (total <= 0) return "占比待核对";
+  return `${((part / total) * 100).toFixed(1)}%`;
+}
+
 function buildProductScopeAdCoverageDecision(
   childAsins: string[],
   adAsinRows: ProductGroupAdAsinRow[],
@@ -8523,15 +8528,17 @@ export function buildProductScopeGroupOverview(
   const parentAdSpend = scopeAdSpend(selectedScope);
   const parentAdOrders = scopeAdOrders(selectedScope);
   const parentAdSales = scopeAdSales(selectedScope);
+  const adOrderShareText = formatScopeShare(parentAdOrders, parentOrders);
+  const adSalesShareText = formatScopeShare(parentAdSales, parentSales);
   const relationItems: ProductScopeRelationItem[] = [
     {
-      label: "销售背景（不直接诊断）",
-      value: `Parent ASIN ${parentAsin} / 销售表现识别 ${childAsins.length} 个子 ASIN / 经营订单 ${parentOrders} / 经营销售额 ${formatScopeMoney(parentSales)}；用于先看整体经营，不等同广告对象`,
+      label: "经营销售盘（业务分母）",
+      value: `Parent ASIN ${parentAsin} / 销售表现识别 ${childAsins.length} 个子 ASIN / 经营订单 ${parentOrders} / 经营销售额 ${formatScopeMoney(parentSales)}；广告订单占比 ${adOrderShareText} / 广告销售占比 ${adSalesShareText}，用于判断广告承接是否值得下钻，不等同广告动作对象`,
       tone: "primary",
     },
     {
       label: "广告诊断对象（有投放证据）",
-      value: `仅 ${adAsinLabels.length} 个 advertised_products 广告 ASIN 可下钻 / 广告花费 ${formatScopeMoney(parentAdSpend)} / 广告订单 ${parentAdOrders} / 广告销售额 ${formatScopeMoney(parentAdSales)}，继续看广告组、投放词和搜索词`,
+      value: `仅 ${adAsinLabels.length} 个 advertised_products 广告 ASIN 可下钻 / 广告花费 ${formatScopeMoney(parentAdSpend)} / 广告订单 ${parentAdOrders} / 广告销售额 ${formatScopeMoney(parentAdSales)}；只带这些广告 ASIN 继续看广告组、投放词和搜索词`,
       tone: "direct",
     },
     {
@@ -8550,8 +8557,8 @@ export function buildProductScopeGroupOverview(
   ];
 
   return {
-    title: `Parent ASIN ${parentAsin} 经营背景与广告证据`,
-    summary: `经营背景：${childAsins.length} 个销售表现子 ASIN；广告诊断：仅 ${adAsinLabels.length} 个有投放证据的广告 ASIN 可下钻`,
+    title: `Parent ASIN ${parentAsin} 经营销售盘与广告证据`,
+    summary: `经营盘：${childAsins.length} 个销售表现子 ASIN / 经营订单 ${parentOrders}；广告承接：${adAsinLabels.length} 个广告 ASIN / 广告订单占比 ${adOrderShareText} / 广告销售占比 ${adSalesShareText}`,
     adAsinLabels,
     adAsinRows,
     adCoverageDecision,
@@ -8652,7 +8659,7 @@ export function buildProductScopeFirstScreenSummary(
     {
       label: "经营口径",
       value: salesFact,
-      detail: "销售表现子 ASIN 是经营背景；广告诊断必须继续落到有广告证据的广告 ASIN。",
+      detail: "销售表现子 ASIN 是经营分母；广告诊断必须继续落到有广告证据的广告 ASIN。",
       tone: "scope",
     },
     {
