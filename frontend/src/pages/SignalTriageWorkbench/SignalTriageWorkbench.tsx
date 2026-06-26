@@ -1334,7 +1334,7 @@ export function SignalTriageWorkbench() {
   const selectedReviewTodoPathReadbackPreview = useMemo(() => {
     if (!selectedReviewTodoDecisionReadback) return null;
     const rows = selectedReviewTodoDecisionReadback.rows.filter((row) =>
-      ["原始诊断路径", "默认展开焦点", "复核证据层"].includes(row.label),
+      ["原始诊断路径", "默认展开焦点", "默认核对层", "复核证据层"].includes(row.label),
     );
     const readyCount = rows.filter((row) => row.tone === "ready").length;
     const totalCount = rows.length;

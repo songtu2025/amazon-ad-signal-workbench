@@ -1813,6 +1813,8 @@ assertIncludes(workbenchSource, 'item.label === "默认核对层"');
 assertIncludes(workbenchSource, 'aria-label="人工确认默认核对层"');
 assertIncludes(workbenchSource, "沿后端 preflight 保存的默认核对层复核");
 assertIncludes(stylesSource, ".manualActionDefaultReviewLayer");
+assertIncludes(workbenchSource, '"默认核对层", "复核证据层"');
+assertIncludes(workbenchSource, 'aria-label="复盘待办诊断路径读回"');
 assertIncludes(workbenchSource, "1. 经营入口");
 assertIncludes(workbenchSource, "2. 广告组定位");
 assertIncludes(workbenchSource, "3. 搜索词证据");

@@ -1179,6 +1179,8 @@ assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "原始诊断路
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "Parent ASIN B00K4W4AAA");
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "默认展开焦点");
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "广告组合流判断");
+assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "默认核对层");
+assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "默认先查 3. 搜索词");
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "逐投放复核顺序");
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "优先复核广告组");
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "对照复核广告组");
@@ -1264,6 +1266,13 @@ const blockedReviewTodoDecisionReadbackWithoutAdContextRows = buildReviewTodoDec
 assertEqual(blockedReviewTodoDecisionReadbackWithoutAdContextRows?.tone, "blocked");
 assertIncludes(JSON.stringify(blockedReviewTodoDecisionReadbackWithoutAdContextRows), "缺少逐投放上下文");
 assertIncludes(JSON.stringify(blockedReviewTodoDecisionReadbackWithoutAdContextRows), "不能知道当时先看哪个广告组");
+const blockedReviewTodoDecisionReadbackWithoutDefaultReviewLayer = buildReviewTodoDecisionReadbackSummary({
+  ...searchTermReviewTodoWithFullChain,
+  evidence_snapshot: searchTermReviewTodoWithFullChain.evidence_snapshot?.filter((item) => item.label !== "默认核对层"),
+});
+assertEqual(blockedReviewTodoDecisionReadbackWithoutDefaultReviewLayer?.tone, "blocked");
+assertIncludes(JSON.stringify(blockedReviewTodoDecisionReadbackWithoutDefaultReviewLayer), "缺少默认核对层");
+assertIncludes(JSON.stringify(blockedReviewTodoDecisionReadbackWithoutDefaultReviewLayer), "不能第一眼知道当时默认先核对");
 const searchTermManualActionReadbackPathAfterTodo = buildManualActionReadbackPathItems({
   latestManualAction: {
     action_type: "add_to_review",
