@@ -1187,6 +1187,10 @@ assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "投放词证据
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "广告位边界");
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "搜索词表现判断");
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "扩量复核：订单 23");
+assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "证据能证明");
+assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "该搜索词已有订单和 ABA 站点级机会背景");
+assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "证据不能证明");
+assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "不能证明单个广告 ASIN 需要自动加词或调价");
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "人工下一步");
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "需要补证");
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "动作边界");

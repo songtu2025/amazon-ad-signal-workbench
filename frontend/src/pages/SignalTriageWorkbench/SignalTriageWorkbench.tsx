@@ -1543,43 +1543,49 @@ export function SignalTriageWorkbench() {
     ],
   );
   const selectedReviewReadbackDecisionItems = useMemo(() => {
-    const latestActionText = latestManualAction
-      ? `${manualActionLabel[latestManualAction.action_type]} / ${
-          latestManualAction.acted_at ? new Date(latestManualAction.acted_at).toLocaleDateString() : "时间待补充"
-        }`
-      : "尚未留痕";
+    const reviewRow = (...labels: string[]) =>
+      selectedReviewTodoDecisionReadback?.rows.find((row) => labels.includes(row.label));
+    const judgementRow = reviewRow("搜索词表现判断", "当时判断");
+    const provesRow = reviewRow("证据能证明");
+    const doesNotProveRow = reviewRow("证据不能证明");
+    const nextStepRow = reviewRow("人工下一步");
     const nextReviewText = nextReviewTodo
-      ? `${manualActionReviewWindowLabel([nextReviewTodo.review_window])} / ${new Date(nextReviewTodo.due_at).toLocaleDateString()}`
+      ? `${nextReviewObjectLabel} / ${manualActionReviewWindowLabel([nextReviewTodo.review_window])}`
       : "暂无复盘待办";
     return [
       {
-        label: "已经记录了吗",
-        value: latestActionText,
-        detail: latestManualActionEvidenceText ?? "没有人工留痕时，不能进入复盘效果判断。",
+        label: "1. 当时确认什么",
+        value: judgementRow?.detail ?? "等待 ReviewTodo 业务判断快照",
+        detail: nextReviewTodo
+          ? `${nextReviewText}；${reviewCheckpointText(nextReviewTodo, selectedReviewEffect)}`
+          : reviewTodoEmptyStateText(latestManualAction),
       },
       {
-        label: "什么时候复盘",
-        value: nextReviewText,
-        detail: nextReviewTodo ? reviewCheckpointText(nextReviewTodo, selectedReviewEffect) : reviewTodoEmptyStateText(latestManualAction),
+        label: "2. 当时证据证明什么",
+        value: provesRow?.detail ?? "等待证据能证明的事实",
+        detail: selectedReviewTodoDecisionReadback?.summary ?? "没有 ReviewTodo 证据快照时，不能回看当时判断依据。",
       },
       {
-        label: "现在能下结论吗",
-        value: selectedReviewRecordSaveGate.canSave ? "可人工保存" : "暂不能保存",
-        detail: selectedReviewRecordSaveGate.detail,
+        label: "3. 当时证据不能证明什么",
+        value: doesNotProveRow?.detail ?? "等待证据不能证明的边界",
+        detail:
+          selectedReviewTodoDecisionReadback?.boundary ??
+          "复盘只能沿点击时证据快照回看，不能把搜索词、广告位或 ABA 直接当成自动动作依据。",
       },
       {
-        label: "下一步做什么",
-        value: selectedReviewEffectWindowLedger.nextStep,
-        detail: selectedReviewEffectWindowLedger.boundary,
+        label: "4. 现在复盘做什么",
+        value: nextStepRow?.detail ?? selectedReviewEffectWindowLedger.nextStep,
+        detail: `${selectedReviewRecordSaveGate.detail} ${selectedReviewEffectWindowLedger.boundary}`,
       },
     ];
   }, [
     latestManualAction,
-    latestManualActionEvidenceText,
     nextReviewTodo,
+    nextReviewObjectLabel,
     selectedReviewEffect,
     selectedReviewEffectWindowLedger,
     selectedReviewRecordSaveGate,
+    selectedReviewTodoDecisionReadback,
   ]);
   const selectedManualActionPreflightText =
     selectedManualActionPreviewPreflightError ??
@@ -3787,10 +3793,10 @@ export function SignalTriageWorkbench() {
                   <b>{selectedReviewTodos.length} 项</b>
                 </div>
 
-                <div className="reviewFlowDecisionSummary" aria-label="复盘读回默认摘要">
+                <div className="reviewFlowDecisionSummary" aria-label="复盘回看四问">
                   <div>
-                    <strong>复盘先看这四件事</strong>
-                    <span>默认决策层</span>
+                    <strong>复盘回看四问</strong>
+                    <span>沿点击时证据判断</span>
                   </div>
                   <ul>
                     {selectedReviewReadbackDecisionItems.map((item) => (

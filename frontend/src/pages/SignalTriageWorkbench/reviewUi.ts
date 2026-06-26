@@ -1457,6 +1457,8 @@ export function buildReviewTodoDecisionReadbackSummary(todo: ReviewTodoForUi | n
     snapshot,
     isSearchTermTodo ? reviewRecordSearchTermPerformanceDecisionLabels : ["人工确认判断依据"],
   );
+  const provesText = reviewTodoDecisionSnapshotText(snapshot, ["能证明的事实"]);
+  const doesNotProveText = reviewTodoDecisionSnapshotText(snapshot, ["不能证明的边界"]);
   const nextStepText = reviewTodoDecisionSnapshotText(snapshot, reviewRecordManualNextStepLabels);
   const requiredEvidenceText = reviewTodoDecisionSnapshotText(snapshot, reviewRecordRequiredEvidenceLabels);
   const boundaryText = reviewTodoDecisionSnapshotText(snapshot, reviewRecordManualActionBoundaryLabels);
@@ -1482,16 +1484,19 @@ export function buildReviewTodoDecisionReadbackSummary(todo: ReviewTodoForUi | n
     ? [adContextRowsText, targetingEvidenceText, searchTermBoundaryText, placementBoundaryText].filter(Boolean).join("；")
     : [adAsinCoverageText, placementBoundaryText].filter(Boolean).join("；");
   const hasCoreEvidenceReadback = isSearchTermTodo ? hasEvidenceLayerReadback : true;
-  const hasCoreReadback = Boolean(decisionText && nextStepText && boundaryText && hasDecisionPathReadback && hasCoreEvidenceReadback);
+  const hasBusinessJudgementReadback = Boolean(decisionText && provesText && doesNotProveText && nextStepText);
+  const hasCoreReadback = Boolean(
+    hasBusinessJudgementReadback && boundaryText && hasDecisionPathReadback && hasCoreEvidenceReadback,
+  );
   const tone: ReviewTodoDecisionReadbackSummary["tone"] = hasCoreReadback ? "ready" : hasSnapshot ? "blocked" : "waiting";
 
   return {
     title: isSearchTermTodo ? "复盘待办业务判断读回" : "复盘待办判断读回",
     tone,
     summary: hasCoreReadback
-      ? "已能第一眼回看当时为什么进入复盘、从哪个 Parent ASIN / 广告对象展开、默认看哪个广告组、逐投放复核顺序和动作边界；待办仍只表示排程，未到期不判断效果。"
+      ? "已能第一眼回看当时为什么进入复盘、证据能证明什么、不能证明什么、从哪个 Parent ASIN / 广告对象展开、默认看哪个广告组、逐投放复核顺序和动作边界；待办仍只表示排程，未到期不判断效果。"
       : hasSnapshot
-        ? "当前待办有证据快照，但缺少业务判断、原始诊断路径、人工下一步或动作边界；保存 ReviewRecord 前必须回到完整证据核对。"
+        ? "当前待办有证据快照，但缺少业务判断、证明边界、原始诊断路径、人工下一步或动作边界；保存 ReviewRecord 前必须回到完整证据核对。"
         : "当前待办没有证据快照；只能看到排程，不能回看当时判断。",
     rows: [
       {
@@ -1535,6 +1540,18 @@ export function buildReviewTodoDecisionReadbackSummary(todo: ReviewTodoForUi | n
         value: decisionText ? "已回读" : hasSnapshot ? "缺少判断" : "等待证据快照",
         detail: decisionText ?? "缺少当时为什么进入复盘的判断，不能只凭处理后指标反推原因。",
         tone: (decisionText ? "ready" : hasSnapshot ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
+      },
+      {
+        label: "证据能证明",
+        value: provesText ? "已回读" : hasSnapshot ? "缺少能证明" : "等待证据快照",
+        detail: provesText ?? "缺少证据能证明的事实，复盘时无法判断当时判断是否有足够证据支撑。",
+        tone: (provesText ? "ready" : hasSnapshot ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
+      },
+      {
+        label: "证据不能证明",
+        value: doesNotProveText ? "已回读" : hasSnapshot ? "缺少不能证明" : "等待证据快照",
+        detail: doesNotProveText ?? "缺少证据不能证明的边界，复盘时容易把相关性误读成归因或自动动作依据。",
+        tone: (doesNotProveText ? "ready" : hasSnapshot ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
       },
       {
         label: "人工下一步",
