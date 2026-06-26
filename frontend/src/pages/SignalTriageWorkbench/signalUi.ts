@@ -2583,7 +2583,13 @@ export function manualActionReviewRouteSplitSummary(
       },
       {
         label: "人工下一步",
-        value: selectedIsNext && nextTone === "ready" ? "可人工授权" : selectedIsRecommended ? "先切换候选" : "先确认选中对象",
+        value: selectedIsNext
+          ? nextTone === "ready"
+            ? "可人工授权"
+            : "等待预检"
+          : selectedIsRecommended
+            ? "先切换候选"
+            : "先确认选中对象",
         detail: nextStep,
         tone: selectedIsNext && nextTone === "ready" ? "ready" : "waiting",
       },

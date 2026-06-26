@@ -1371,6 +1371,16 @@ const selectedNextRouteSplitText = JSON.stringify(selectedNextRouteSplit);
 assertIncludes(selectedNextRouteSplitText, "已留痕旧对象");
 assertIncludes(selectedNextRouteSplitText, "ManualAction 1 条 / ReviewTodo 2 条");
 assertIncludes(selectedNextRouteSplitText, "待授权新对象");
+const selectedNextWaitingRouteSplit = manualActionReviewRouteSplitSummary(handledRecommendedWithNextSummary, "sig-next-unhandled", {
+  tone: "waiting",
+  target: "目标：sales_product / B06VW5SQ97 / RBK004-RBK004-2 深蓝",
+  currentState: "当前：等待后端只读预检读回 ManualAction / ReviewTodo 计数",
+  authorizedResult: "授权后预期：人工点击后才生成 ManualAction 和 7/14 天 ReviewTodo",
+  evidence: "证据快照：等待只读预检确认，未确认前不能写入",
+});
+const selectedNextWaitingRouteSplitText = JSON.stringify(selectedNextWaitingRouteSplit);
+assertIncludes(selectedNextWaitingRouteSplitText, "等待预检");
+assertNotIncludes(selectedNextWaitingRouteSplitText, "先确认选中对象");
 
 const searchTermHandledWithNextSummary = {
   recommended_manual_status: {

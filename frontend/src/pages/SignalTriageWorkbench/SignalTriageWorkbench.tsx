@@ -3194,6 +3194,46 @@ export function SignalTriageWorkbench() {
             </div>
           </div>
 
+          {selectedManualActionTargetSwitch && (
+            <div
+              className={`manualActionTargetSwitch ${selectedManualActionTargetSwitch.tone}`}
+              aria-label="人工动作目标切换提示"
+            >
+              <strong>{selectedManualActionTargetSwitch.title}</strong>
+              <p>{selectedManualActionTargetSwitch.primary}</p>
+              <ul>
+                <li>
+                  <span>已推荐对象</span>
+                  <b>{selectedManualActionTargetSwitch.diagnosisObject}</b>
+                </li>
+                <li>
+                  <span>当前按钮对象</span>
+                  <b>{selectedManualActionTargetSwitch.writeTarget}</b>
+                </li>
+              </ul>
+              <small>{selectedManualActionTargetSwitch.boundary}</small>
+            </div>
+          )}
+          {selectedManualActionRouteSplit && (
+            <div
+              className={`manualActionRouteSplit ${selectedManualActionRouteSplit.tone}`}
+              aria-label="人工确认双轨分流"
+            >
+              <strong>{selectedManualActionRouteSplit.title}</strong>
+              <p>{selectedManualActionRouteSplit.primary}</p>
+              <ul>
+                {selectedManualActionRouteSplit.rows.map((row) => (
+                  <li key={row.label} className={row.tone}>
+                    <span>{row.label}</span>
+                    <b>{row.value}</b>
+                    <p>{row.detail}</p>
+                  </li>
+                ))}
+              </ul>
+              <small>{selectedManualActionRouteSplit.boundary}</small>
+            </div>
+          )}
+
           {selectedAdGroupDiagnosis && (
             <ProductScopeAdGroupActionBridgeCard
               row={selectedAdGroupDiagnosis}
@@ -3407,45 +3447,6 @@ export function SignalTriageWorkbench() {
                 </div>
                 <details className="manualActionPreflightDetails" aria-label="人工按钮前完整预检证据">
                   <summary>展开完整预检、证据快照和写后合同</summary>
-                {selectedManualActionTargetSwitch && (
-                  <div
-                    className={`manualActionTargetSwitch ${selectedManualActionTargetSwitch.tone}`}
-                    aria-label="人工动作目标切换提示"
-                  >
-                    <strong>{selectedManualActionTargetSwitch.title}</strong>
-                    <p>{selectedManualActionTargetSwitch.primary}</p>
-                    <ul>
-                      <li>
-                        <span>诊断对象</span>
-                        <b>{selectedManualActionTargetSwitch.diagnosisObject}</b>
-                      </li>
-                      <li>
-                        <span>可写候选</span>
-                        <b>{selectedManualActionTargetSwitch.writeTarget}</b>
-                      </li>
-                    </ul>
-                    <small>{selectedManualActionTargetSwitch.boundary}</small>
-                  </div>
-                )}
-                {selectedManualActionRouteSplit && (
-                  <div
-                    className={`manualActionRouteSplit ${selectedManualActionRouteSplit.tone}`}
-                    aria-label="人工确认双轨分流"
-                  >
-                    <strong>{selectedManualActionRouteSplit.title}</strong>
-                    <p>{selectedManualActionRouteSplit.primary}</p>
-                    <ul>
-                      {selectedManualActionRouteSplit.rows.map((row) => (
-                        <li key={row.label} className={row.tone}>
-                          <span>{row.label}</span>
-                          <b>{row.value}</b>
-                          <p>{row.detail}</p>
-                        </li>
-                      ))}
-                    </ul>
-                    <small>{selectedManualActionRouteSplit.boundary}</small>
-                  </div>
-                )}
                 {selectedSearchIntentManualActionReadback && (
                   <SearchIntentManualActionReadbackCard summary={selectedSearchIntentManualActionReadback} />
                 )}
@@ -6050,31 +6051,31 @@ function ProductScopeAdGroupActionBridgeCard({
     ) ?? [];
 
   return (
-    <section className="adGroupActionBridgeCard" aria-label="当前广告组人工动作承接">
+    <section className="adGroupActionBridgeCard" aria-label="当前广告组证据上下文">
       <div className="adGroupActionBridgeHeader">
-        <strong>当前广告组人工动作承接</strong>
+        <strong>当前广告组证据上下文</strong>
         <span>{row.statusLabel}</span>
       </div>
-      <p>先按中间检查清单复核，再选择右侧人工动作；复盘待办会按同一组证据回读，这里只保存人工留痕或复盘待办。</p>
+      <p>先按中间检查清单复核广告组上下文；真实人工动作对象以下方双轨分流和后端预检读回为准。</p>
       <div className="adGroupActionBridgeScope" aria-label="人工动作前核对">
-        <span>动作对象：{row.title} / {row.problemType}</span>
+        <span>广告组上下文：{row.title} / {row.problemType}</span>
         <span>来源读回：{scopeReadback}</span>
         <span>允许动作：记录观察 / 标记已处理 / 加入复盘 / 忽略本次</span>
         <small>
           {scopeBoundary}
-          右侧只核对能否留痕或加入复盘，不重复解释 Parent ASIN 排序理由，也不执行广告操作。
+          广告组只说明承接场景，不能替代真实人工动作对象；右侧不执行广告操作。
         </small>
       </div>
       {defaultEvidenceItem && (
-        <div className="adGroupActionBridgeDefaultEvidence" aria-label="人工动作保存准入">
+        <div className="adGroupActionBridgeDefaultEvidence" aria-label="广告组证据带入核对">
           <div>
-            <strong>人工动作保存准入</strong>
+            <strong>广告组证据带入</strong>
             <span>{priority.focusLayer}</span>
           </div>
-          <p>这里只确认当前点击会保存哪类人工证据，诊断细节以上方广告组证据为准。</p>
+          <p>这里只说明当前广告组会作为哪类证据带入；真实写入对象看人工确认双轨和预检。</p>
           <ul>
             <li>
-              <b>动作对象</b>
+              <b>广告组上下文</b>
               <small>{row.title} / {row.problemType}</small>
             </li>
             <li>

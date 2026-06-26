@@ -122,7 +122,7 @@ assertIncludes(workbenchSource, 'aria-label="当前广告组优先查看证据�
 assertIncludes(workbenchSource, 'aria-label="当前广告组完整运营检查清单"');
 assertIncludes(workbenchSource, '<details className="productScopeAdGroupChecklist" aria-label="当前广告组完整运营检查清单">');
 assertIncludes(workbenchSource, "默认层已经先给三段判断、四要素摘要、证据切换和复核顺序");
-assertIncludes(workbenchSource, 'aria-label="当前广告组人工动作承接"');
+assertIncludes(workbenchSource, 'aria-label="当前广告组证据上下文"');
 assertIncludes(workbenchSource, 'aria-label="广告组推理细节"');
 assertIncludes(workbenchSource, 'aria-label="当前广告组复核路径"');
 assertIncludes(workbenchSource, 'aria-label="当前广告组三段复核判断"');
@@ -217,15 +217,14 @@ assertIncludes(workbenchSource, "先按顺序复核");
 assertIncludes(workbenchSource, 'className="productScopeAdGroupReviewOrderDetails"');
 assertIncludes(workbenchSource, "展开四层复核步骤");
 assertIncludes(workbenchSource, "这只是人工复核路径，不证明搜索词或广告位已归因到单个广告 ASIN");
-assertIncludes(workbenchSource, "先按中间检查清单复核，再选择右侧人工动作");
-assertIncludes(workbenchSource, "复盘待办会按同一组证据回读");
-assertIncludes(workbenchSource, "这里只保存人工留痕或复盘待办");
-assertIncludes(workbenchSource, 'aria-label="人工动作保存准入"');
-assertIncludes(workbenchSource, "<strong>人工动作保存准入</strong>");
+assertIncludes(workbenchSource, "先按中间检查清单复核广告组上下文");
+assertIncludes(workbenchSource, "真实人工动作对象以下方双轨分流和后端预检读回为准");
+assertIncludes(workbenchSource, 'aria-label="广告组证据带入核对"');
+assertIncludes(workbenchSource, "<strong>广告组证据带入</strong>");
 assertIncludes(workbenchSource, "const priority = buildProductScopeAdGroupReviewPriority(row, items);");
 assertIncludes(workbenchSource, "const defaultEvidenceItem = items.find((item) => priority.focusLayer.includes(item.title)) ?? items[0];");
-assertIncludes(workbenchSource, "这里只确认当前点击会保存哪类人工证据");
-assertIncludes(workbenchSource, "诊断细节以上方广告组证据为准");
+assertIncludes(workbenchSource, "这里只说明当前广告组会作为哪类证据带入");
+assertIncludes(workbenchSource, "真实写入对象看人工确认双轨和预检");
 assertIncludes(workbenchSource, "<b>留痕证据</b>");
 assertIncludes(workbenchSource, "<b>复盘窗口</b>");
 assertIncludes(workbenchSource, "7/14 天复盘沿保存时 evidence_snapshot 回看");
@@ -255,10 +254,12 @@ assertIncludes(workbenchSource, "不能只看最终指标涨跌");
 assertIncludes(workbenchSource, "能证明：{item.proves}");
 assertIncludes(workbenchSource, "不能证明：{item.doesNotProve}");
 assertIncludes(workbenchSource, 'aria-label="人工动作前核对"');
-assertIncludes(workbenchSource, "动作对象：");
+assertIncludes(workbenchSource, "广告组上下文：");
 assertIncludes(workbenchSource, "来源读回：");
 assertIncludes(workbenchSource, "允许动作：记录观察 / 标记已处理 / 加入复盘 / 忽略本次");
-assertIncludes(workbenchSource, "右侧只核对能否留痕或加入复盘，不重复解释 Parent ASIN 排序理由，也不执行广告操作。");
+assertIncludes(workbenchSource, "广告组只说明承接场景，不能替代真实人工动作对象；右侧不执行广告操作。");
+assertNotIncludes(workbenchSource, "动作对象：{row.title}");
+assertNotIncludes(workbenchSource, 'aria-label="当前广告组人工动作承接"');
 assertNotIncludes(workbenchSource, 'aria-label="Parent ASIN 分诊路径承接"');
 assertNotIncludes(workbenchSource, "这里把 Parent ASIN 分诊理由带到人工动作前核对，不执行广告操作。");
 assertIncludes(workbenchSource, "未绑定 Parent ASIN 入口");
@@ -367,12 +368,20 @@ const focusMetricsIndex = workbenchSource.indexOf(
 );
 const selectedSignalBranchIndex = workbenchSource.indexOf("{selectedSignal ? (");
 const actionPanelIndex = workbenchSource.indexOf('<aside className="actionPanel">');
+const manualActionTargetSwitchRenderIndex = workbenchSource.indexOf(
+  'aria-label="人工动作目标切换提示"',
+  actionPanelIndex,
+);
+const manualActionRouteSplitRenderIndex = workbenchSource.indexOf(
+  'aria-label="人工确认双轨分流"',
+  actionPanelIndex,
+);
 const adGroupActionBridgeRenderIndex = workbenchSource.indexOf(
   "<ProductScopeAdGroupActionBridgeCard",
 );
 const adGroupActionBridgeFunctionIndex = workbenchSource.indexOf("function ProductScopeAdGroupActionBridgeCard");
 const adGroupActionBridgeDefaultEvidenceIndex = workbenchSource.indexOf(
-  'aria-label="人工动作保存准入"',
+  'aria-label="广告组证据带入核对"',
   adGroupActionBridgeFunctionIndex,
 );
 const adGroupActionBridgeFullEvidenceIndex = workbenchSource.indexOf(
@@ -491,12 +500,15 @@ assert(routeGuideRenderIndex > diagnosisPanelIndex, "广告证据链导览必须
 assert(routeGuideRenderIndex < selectedSignalBranchIndex, "广告证据链导览不能被单条信号选中状态挡住");
 assert(adGroupDiagnosisRenderIndex < selectedSignalBranchIndex, "广告组问题定位不能被单条信号选中状态挡住");
 assert(actionPanelIndex >= 0, "右侧建议处理区必须存在");
-assert(adGroupActionBridgeRenderIndex > actionPanelIndex, "当前广告组人工动作承接必须渲染在右侧建议处理区内");
-assert(adGroupActionBridgeRenderIndex < actionDecisionCardIndex, "当前广告组人工动作承接必须先于建议动作摘要");
+assert(manualActionTargetSwitchRenderIndex > actionPanelIndex, "人工动作目标切换必须渲染在右侧建议处理默认层");
+assert(manualActionRouteSplitRenderIndex > manualActionTargetSwitchRenderIndex, "人工确认双轨必须紧跟目标切换读回");
+assert(manualActionRouteSplitRenderIndex < adGroupActionBridgeRenderIndex, "人工确认双轨必须先于广告组上下文，避免把广告组误读成当前可写对象");
+assert(adGroupActionBridgeRenderIndex > actionPanelIndex, "当前广告组证据上下文必须渲染在右侧建议处理区内");
+assert(adGroupActionBridgeRenderIndex < actionDecisionCardIndex, "当前广告组证据上下文必须先于建议动作摘要");
 assert(actionReviewCommandIndex > actionDecisionCardIndex, "右侧人工处理承接必须渲染在建议动作摘要内");
 assert(actionReviewCommandIndex < actionBoundaryBarIndex, "右侧建议处理必须先承接中间诊断的人工下一步，再展示通用动作边界");
-assert(adGroupActionBridgeDefaultEvidenceIndex > adGroupActionBridgeFunctionIndex, "右侧人工动作承接必须先给保存准入");
-assert(adGroupActionBridgeDefaultEvidenceIndex < adGroupActionBridgeFullEvidenceIndex, "保存准入必须先于完整四层证据");
+assert(adGroupActionBridgeDefaultEvidenceIndex > adGroupActionBridgeFunctionIndex, "右侧广告组上下文必须先给证据带入核对");
+assert(adGroupActionBridgeDefaultEvidenceIndex < adGroupActionBridgeFullEvidenceIndex, "证据带入核对必须先于完整四层证据");
 assert(adGroupActionBridgeFullEvidenceIndex < adGroupActionBridgeReviewEvidenceIndex, "完整四层证据必须先于复盘回读证据链");
 assertIncludes(workbenchSource, "actionReviewCommand");
 assertIncludes(workbenchSource, "selectedSearchTermOpportunityReviewChain.currentJudgement");
