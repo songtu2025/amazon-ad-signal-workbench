@@ -202,14 +202,14 @@ async function main() {
   const selectedRecommendedSwitch = manualActionQueueTargetSwitchSummary(triage, recommendedSignalId);
   assert(selectedRecommendedSwitch?.tone === "blocked", "选中已留痕推荐对象时，目标切换提示必须阻断重复写入。");
   assertIncludes(selectedRecommendedSwitch?.primary ?? "", recommendedLabel);
-  assertIncludes(selectedRecommendedSwitch?.primary ?? "", "已经有人工留痕");
+  assertIncludes(selectedRecommendedSwitch?.primary ?? "", "已留痕对象");
   assertIncludes(selectedRecommendedSwitch?.diagnosisObject ?? "", recommendedLabel);
   assertIncludes(selectedRecommendedSwitch?.writeTarget ?? "", nextLabel);
-  assertIncludes(selectedRecommendedSwitch?.boundary ?? "", "推荐对象和可写候选必须分开处理");
+  assertIncludes(selectedRecommendedSwitch?.boundary ?? "", "右侧按钮只保存本次待授权对象");
   const selectedNextSwitch = manualActionQueueTargetSwitchSummary(triage, nextSignalId);
   assert(selectedNextSwitch?.tone === "ready", "选中下一未留痕候选时，目标切换提示应允许继续人工预检。");
   assertIncludes(selectedNextSwitch?.primary ?? "", nextLabel);
-  assertIncludes(selectedNextSwitch?.primary ?? "", "下一个未留痕候选");
+  assertIncludes(selectedNextSwitch?.primary ?? "", "本次按钮只写入");
 
   const recommendedStatus = recommendedManualStatusText(triage) ?? "";
   assertIncludes(recommendedStatus, recommendedLabel);
@@ -430,7 +430,7 @@ async function main() {
   const benchmarkQueueSwitch = manualActionQueueTargetSwitchSummary(triage, benchmarkFocusSelection.signalId);
   assert(benchmarkQueueSwitch?.tone === "blocked", "beach essentials 已留痕时，右侧必须阻断重复写入而不是换对象保存。");
   assertIncludes(asText(benchmarkQueueSwitch), "beach essentials");
-  assertIncludes(asText(benchmarkQueueSwitch), "已经有人工留痕");
+  assertIncludes(asText(benchmarkQueueSwitch), "已留痕对象");
   const benchmarkExpectedObjectId =
     triage.recommended_manual_status?.object_id ||
     triage.recommended_candidate?.manual_action_preview?.object_id ||
@@ -684,12 +684,12 @@ async function main() {
   const routeSplitText = asText(routeSplitSummary);
   assertIncludes(routeSplitText, recommendedLabel);
   assertIncludes(routeSplitText, nextLabel);
-  assertIncludes(routeSplitText, "已留痕旧对象");
-  assertIncludes(routeSplitText, "待授权新对象");
+  assertIncludes(routeSplitText, "已留痕对象");
+  assertIncludes(routeSplitText, "本次写入对象");
   assertIncludes(routeSplitText, "ManualAction 0 条 / ReviewTodo 0 条");
   assertIncludes(routeSplitText, "ManualAction 1 条 / ReviewTodo 2 条");
   assertIncludes(routeSplitText, "ready 只代表可人工确认");
-  assertIncludes(routeSplitText, "不能互借证据");
+  assertIncludes(routeSplitText, "不能互借状态");
   const recommendedRouteSplitSummary = manualActionReviewRouteSplitSummary(triage, recommendedSignalId, authorizationSummary);
   assert(recommendedRouteSplitSummary?.tone === "blocked", "选中已留痕推荐对象时，双轨分流应阻断重复写入。");
   assertIncludes(asText(recommendedRouteSplitSummary), "先切换候选");

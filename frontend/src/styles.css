@@ -9819,6 +9819,38 @@ button.reviewTodoQueueNext:focus-visible {
   overflow-wrap: anywhere;
 }
 
+.manualActionRouteSplitDetails {
+  display: grid;
+  gap: 7px;
+}
+
+.manualActionRouteSplitDetails > summary {
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+  border: 1px solid #d8e6f1;
+  border-radius: 8px;
+  padding: 8px 9px;
+  background: #fbfdff;
+  color: #31577f;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.manualActionRouteSplitDetails > summary strong {
+  color: #25364b;
+  font-size: 12px;
+}
+
+.manualActionRouteSplitDetails > summary span {
+  color: #52677d;
+  font-weight: 680;
+}
+
+.manualActionRouteSplitDetails[open] > summary {
+  margin-bottom: 6px;
+}
+
 .manualActionRouteSplit {
   display: grid;
   gap: 7px;

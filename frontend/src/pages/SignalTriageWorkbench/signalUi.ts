@@ -365,10 +365,11 @@ const userFacingManualActionLabels: Record<string, string> = {
 };
 
 function userFacingManualActionText(text: string): string {
-  return Object.entries(userFacingManualActionLabels).reduce(
+  const actionText = Object.entries(userFacingManualActionLabels).reduce(
     (current, [actionCode, actionLabel]) => current.replace(new RegExp(`\\b${actionCode}\\b`, "g"), actionLabel),
     text,
   );
+  return actionText.replace(/下一个未留痕候选/g, "本次待授权对象");
 }
 
 export interface ManualActionPreflightCheck {
@@ -2256,7 +2257,7 @@ export function buildNextUnhandledManualActionCandidate<T extends ManualActionCa
   return {
     signal,
     objectLabel,
-    reason: userFacingManualActionText(summary?.next_action || `下一个未留痕候选 ${objectLabel} 需要人工确认。`),
+    reason: userFacingManualActionText(summary?.next_action || `本次待授权对象 ${objectLabel} 需要人工确认。`),
     manualActionPreview: {
       willWrite: false,
       actionType: "add_to_review",
@@ -2490,7 +2491,7 @@ export function manualActionQueueTargetSwitchSummary(
     stringValue(nextCandidate.object_label) ||
     stringValue(nextCandidate.stable_object_id) ||
     stringValue(nextCandidate.object_id) ||
-    "下一个未留痕候选";
+    "本次待授权对象";
   const nextObjectText =
     objectIdentityDisplayText(
       stringValue(nextPreview?.object_type || nextCandidate.object_type),
@@ -2501,17 +2502,17 @@ export function manualActionQueueTargetSwitchSummary(
   const selectedIsNext = Boolean(selectedSignalId && selectedSignalId === nextSignalId);
   const tone: ManualActionQueueTargetSwitchSummary["tone"] = selectedIsRecommended ? "blocked" : selectedIsNext ? "ready" : "waiting";
   const primary = selectedIsRecommended
-    ? `当前选中 ${recommendedLabel}，它已经有人工留痕；右侧按钮不能继续写同一对象。`
+    ? `当前打开的是已留痕对象 ${recommendedLabel}；右侧按钮不会重复写它，请定位到本次待授权对象 ${nextLabel} 后再确认。`
     : selectedIsNext
-      ? `当前选中 ${nextLabel}，这是下一个未留痕候选；只读预检通过后才允许人工确认。`
-      : `${recommendedLabel} 已有人工留痕；当前可写候选已切换到 ${nextLabel}。`;
+      ? `本次按钮只写入 ${nextLabel}；诊断证据来自当前候选，后端预检通过后才允许人工确认。`
+      : `${recommendedLabel} 已有人工留痕；本次按钮只指向待授权对象 ${nextLabel}，先确认当前选中信号是否已经切到该对象。`;
   return {
-    title: "人工动作目标切换",
+    title: "本次按钮写入对象",
     tone,
     primary,
-    diagnosisObject: `诊断推荐对象：${recommendedObjectText}`,
-    writeTarget: `当前可写候选：${nextObjectText}`,
-    boundary: "推荐对象和可写候选必须分开处理；不能把推荐对象的诊断证据写到另一个可写候选，也不能自动加词、否词、调价或暂停广告。",
+    diagnosisObject: recommendedObjectText,
+    writeTarget: nextObjectText,
+    boundary: "右侧按钮只保存本次待授权对象的人工留痕；已留痕对象只作为证据边界和复盘读回来源，不能互借状态，也不能自动加词、否词、调价或暂停广告。",
   };
 }
 
@@ -2540,7 +2541,7 @@ export function manualActionReviewRouteSplitSummary(
     stringValue(nextCandidate.object_label) ||
     stringValue(nextCandidate.stable_object_id) ||
     stringValue(nextCandidate.object_id) ||
-    "下一个未留痕候选";
+    "本次待授权对象";
   const recommendedSignalId = stringValue(status.signal_id) || stringValue(recommended?.signal_id);
   const nextSignalId = stringValue(nextPreview?.signal_id) || stringValue(nextCandidate.signal_id);
   const selectedIsRecommended = Boolean(selectedSignalId && selectedSignalId === recommendedSignalId);
@@ -2559,24 +2560,24 @@ export function manualActionReviewRouteSplitSummary(
     ? `${nextLabel} / ${readiness.target.replace(/^目标：/, "")}`
     : `${nextLabel} / 待后端只读预检`;
   const nextStep = selectedIsNext
-    ? "当前选中待授权新对象：先核对预检、证据快照和对象身份，再由人工按钮授权。"
+    ? "当前已经选中本次写入对象：先核对预检、证据快照和对象身份，再由人工按钮授权。"
     : selectedIsRecommended
-      ? "当前停在已留痕旧对象：不要重复写入，切到下一候选后再做只读预检。"
+      ? "当前停在已留痕对象：不要重复写入，切到本次写入对象后再做只读预检。"
       : "当前未直接停在两条轨道之一：先确认信号队列选中对象，再判断是否进入人工按钮。";
 
   return {
-    title: "人工确认双轨分流",
+    title: "对象边界核对",
     tone,
-    primary: `${recommendedLabel} 已进入人工留痕轨道；${nextLabel} 是待授权新轨道。两者不能互借证据或状态。`,
+    primary: `默认只处理本次写入对象 ${nextLabel}；${recommendedLabel} 只作为已留痕边界和复盘读回来源。`,
     rows: [
       {
-        label: "已留痕旧对象",
+        label: "已留痕对象",
         value: `${recommendedLabel} / ManualAction ${manualActionCount} 条 / ReviewTodo ${reviewTodoCount} 条`,
-        detail: `这条轨道只说明已经记录人工判断，并等待 ${windows} 复盘；不能再把它当作当前可写对象。`,
+        detail: `这里只说明已经记录人工判断，并等待 ${windows} 复盘；默认按钮不再写入这个对象。`,
         tone: "saved",
       },
       {
-        label: "待授权新对象",
+        label: "本次写入对象",
         value: nextValue,
         detail: `${currentWriteState}；${expectedWriteState}；${evidenceState}`,
         tone: nextTone,
@@ -2594,7 +2595,7 @@ export function manualActionReviewRouteSplitSummary(
         tone: selectedIsNext && nextTone === "ready" ? "ready" : "waiting",
       },
     ],
-    boundary: `${switchSummary.boundary}；已留痕旧对象只进入复盘读回，待授权新对象只有人工点击后才写入 manual_actions 和 review_todos。${
+    boundary: `${switchSummary.boundary}；已留痕对象只进入复盘读回，本次写入对象只有人工点击后才写入 manual_actions 和 review_todos。${
       readiness?.boundary ? `；${readiness.boundary}` : ""
     }`,
   };

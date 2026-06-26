@@ -399,7 +399,7 @@ const manualActionTargetSwitchRenderIndex = workbenchSource.indexOf(
   actionPanelIndex,
 );
 const manualActionRouteSplitRenderIndex = workbenchSource.indexOf(
-  'aria-label="人工确认双轨分流"',
+  'aria-label="人工确认对象边界详情"',
   actionPanelIndex,
 );
 const adGroupActionBridgeRenderIndex = workbenchSource.indexOf(
@@ -531,8 +531,8 @@ assert(routeGuideRenderIndex < selectedSignalBranchIndex, "广告证据链导览
 assert(adGroupDiagnosisRenderIndex < selectedSignalBranchIndex, "广告组问题定位不能被单条信号选中状态挡住");
 assert(actionPanelIndex >= 0, "右侧建议处理区必须存在");
 assert(manualActionTargetSwitchRenderIndex > actionPanelIndex, "人工动作目标切换必须渲染在右侧建议处理默认层");
-assert(manualActionRouteSplitRenderIndex > manualActionTargetSwitchRenderIndex, "人工确认双轨必须紧跟目标切换读回");
-assert(manualActionRouteSplitRenderIndex < adGroupActionBridgeRenderIndex, "人工确认双轨必须先于广告组上下文，避免把广告组误读成当前可写对象");
+assert(manualActionRouteSplitRenderIndex > manualActionTargetSwitchRenderIndex, "人工确认对象边界详情必须紧跟目标写入读回");
+assert(manualActionRouteSplitRenderIndex < adGroupActionBridgeRenderIndex, "人工确认对象边界必须先于广告组上下文，避免把广告组误读成当前可写对象");
 assert(adGroupActionBridgeRenderIndex > actionPanelIndex, "当前广告组证据上下文必须渲染在右侧建议处理区内");
 assert(adGroupActionBridgeRenderIndex < actionDecisionCardIndex, "当前广告组证据上下文必须先于建议动作摘要");
 assert(actionReviewCommandIndex > actionDecisionCardIndex, "右侧人工处理承接必须渲染在建议动作摘要内");
@@ -967,7 +967,7 @@ assertNotIncludes(workbenchSource, "setSelectedProductScopeId(allScope.scope_id)
 assertIncludes(workbenchSource, "function handleLocateSignalInCurrentScope");
 assertIncludes(workbenchSource, "当前诊断入口下没有命中这条复盘待办对应信号");
 assertIncludes(workbenchSource, "当前诊断入口下没有命中推荐候选信号");
-assertIncludes(workbenchSource, "当前诊断入口下没有命中下一个候选信号");
+assertIncludes(workbenchSource, "当前诊断入口下没有命中本次待授权对象");
 assertIncludes(workbenchSource, "productScopePriorityQueueItems");
 assertIncludes(workbenchSource, "const productScopePriorityDecisionSummary = useMemo");
 assertIncludes(workbenchSource, "buildProductScopePriorityDecisionSummary(productScopePriorityQueueItems)");
@@ -1448,7 +1448,11 @@ assertIncludes(workbenchSource, 'aria-label="人工候选与广告组关系"');
 assertIncludes(workbenchSource, 'aria-label="人工动作目标切换提示"');
 assertIncludes(workbenchSource, "manualActionQueueTargetSwitchSummary");
 assertIncludes(workbenchSource, "manualActionTargetSwitch");
-assertIncludes(workbenchSource, 'aria-label="人工确认双轨分流"');
+assertIncludes(workbenchSource, "按钮写入");
+assertIncludes(workbenchSource, "证据边界");
+assertIncludes(workbenchSource, "manualActionRouteSplitDetails");
+assertIncludes(workbenchSource, 'aria-label="人工确认对象边界详情"');
+assertIncludes(workbenchSource, 'aria-label="人工确认对象边界核对"');
 assertIncludes(workbenchSource, "manualActionReviewRouteSplitSummary");
 assertIncludes(workbenchSource, "manualActionRouteSplit");
 assertIncludes(workbenchSource, 'aria-label="人工动作待授权写入状态"');

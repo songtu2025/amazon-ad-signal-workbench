@@ -2907,9 +2907,9 @@ export function SignalTriageWorkbench() {
               </div>
             )}
             {nextUnhandledManualActionCandidate && (
-              <div className="recommendedManualActionCandidate" aria-label="下一个未留痕候选">
+              <div className="recommendedManualActionCandidate" aria-label="本次待授权对象">
                 <div>
-                  <strong>下一个未留痕候选</strong>
+                  <strong>本次待授权对象</strong>
                   <span>{nextUnhandledManualActionCandidate.objectLabel}</span>
                 </div>
                 <span className="recommendedManualActionStatus">只定位队列；留痕仍需右侧人工按钮。</span>
@@ -2929,12 +2929,12 @@ export function SignalTriageWorkbench() {
                     handleLocateSignalInCurrentScope(
                       nextUnhandledManualActionCandidate.signal.id,
                       setManualActionMessage,
-                      "当前诊断入口下没有命中下一个候选信号；诊断入口已保持不变。需要跨范围查看时，请先使用显式全量排查入口。",
+                      "当前诊断入口下没有命中本次待授权对象；诊断入口已保持不变。需要跨范围查看时，请先使用显式全量排查入口。",
                     )
                   }
-                  aria-label={`定位下一个未留痕候选 ${nextUnhandledManualActionCandidate.objectLabel}`}
+                  aria-label={`定位本次待授权对象 ${nextUnhandledManualActionCandidate.objectLabel}`}
                 >
-                  定位候选
+                  定位对象
                 </button>
               </div>
             )}
@@ -3393,35 +3393,42 @@ export function SignalTriageWorkbench() {
               <p>{selectedManualActionTargetSwitch.primary}</p>
               <ul>
                 <li>
-                  <span>已推荐对象</span>
-                  <b>{selectedManualActionTargetSwitch.diagnosisObject}</b>
+                  <span>按钮写入</span>
+                  <b>{selectedManualActionTargetSwitch.writeTarget}</b>
                 </li>
                 <li>
-                  <span>当前按钮对象</span>
-                  <b>{selectedManualActionTargetSwitch.writeTarget}</b>
+                  <span>证据边界</span>
+                  <b>{selectedManualActionTargetSwitch.diagnosisObject}</b>
                 </li>
               </ul>
               <small>{selectedManualActionTargetSwitch.boundary}</small>
             </div>
           )}
           {selectedManualActionRouteSplit && (
-            <div
-              className={`manualActionRouteSplit ${selectedManualActionRouteSplit.tone}`}
-              aria-label="人工确认双轨分流"
+            <details
+              className={`manualActionRouteSplitDetails ${selectedManualActionRouteSplit.tone}`}
+              aria-label="人工确认对象边界详情"
             >
-              <strong>{selectedManualActionRouteSplit.title}</strong>
-              <p>{selectedManualActionRouteSplit.primary}</p>
-              <ul>
-                {selectedManualActionRouteSplit.rows.map((row) => (
-                  <li key={row.label} className={row.tone}>
-                    <span>{row.label}</span>
-                    <b>{row.value}</b>
-                    <p>{row.detail}</p>
-                  </li>
-                ))}
-              </ul>
-              <small>{selectedManualActionRouteSplit.boundary}</small>
-            </div>
+              <summary>
+                <strong>{selectedManualActionRouteSplit.title}</strong>
+                <span>{selectedManualActionRouteSplit.primary}</span>
+              </summary>
+              <div
+                className={`manualActionRouteSplit ${selectedManualActionRouteSplit.tone}`}
+                aria-label="人工确认对象边界核对"
+              >
+                <ul>
+                  {selectedManualActionRouteSplit.rows.map((row) => (
+                    <li key={row.label} className={row.tone}>
+                      <span>{row.label}</span>
+                      <b>{row.value}</b>
+                      <p>{row.detail}</p>
+                    </li>
+                  ))}
+                </ul>
+                <small>{selectedManualActionRouteSplit.boundary}</small>
+              </div>
+            </details>
           )}
 
           {selectedAdGroupDiagnosis && (

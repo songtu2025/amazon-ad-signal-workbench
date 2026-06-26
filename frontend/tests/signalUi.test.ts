@@ -1201,7 +1201,7 @@ const nextUnhandledManualActionCandidate = buildNextUnhandledManualActionCandida
 
 assertEqual(nextUnhandledManualActionCandidate?.signal.id, "sig-next-unhandled");
 assertEqual(nextUnhandledManualActionCandidate?.manualActionPreview.objectId, "B06VW5SQ97");
-assertIncludes(nextUnhandledManualActionCandidate?.reason ?? "", "下一个未留痕候选 RBK004-RBK004-2 深蓝");
+assertIncludes(nextUnhandledManualActionCandidate?.reason ?? "", "本次待授权对象 RBK004-RBK004-2 深蓝");
 assertIncludes(nextUnhandledManualActionCandidate?.reason ?? "", "加入复盘");
 assertNotIncludes(nextUnhandledManualActionCandidate?.reason ?? "", "add_to_review");
 assertIncludes(nextUnhandledManualActionCandidate?.reason ?? "", "不要自动执行广告动作");
@@ -1346,16 +1346,16 @@ const selectedRecommendedTargetSwitch = manualActionQueueTargetSwitchSummary(
 );
 assertEqual(selectedRecommendedTargetSwitch?.tone, "blocked");
 assertIncludes(selectedRecommendedTargetSwitch?.primary ?? "", "B016EXMW02");
-assertIncludes(selectedRecommendedTargetSwitch?.primary ?? "", "已经有人工留痕");
+assertIncludes(selectedRecommendedTargetSwitch?.primary ?? "", "已留痕对象");
 assertIncludes(selectedRecommendedTargetSwitch?.diagnosisObject ?? "", "B016EXMW02");
 assertIncludes(selectedRecommendedTargetSwitch?.writeTarget ?? "", "B06VW5SQ97");
-assertIncludes(selectedRecommendedTargetSwitch?.boundary ?? "", "推荐对象和可写候选必须分开处理");
-assertIncludes(selectedRecommendedTargetSwitch?.boundary ?? "", "不能把推荐对象的诊断证据写到另一个可写候选");
+assertIncludes(selectedRecommendedTargetSwitch?.boundary ?? "", "右侧按钮只保存本次待授权对象");
+assertIncludes(selectedRecommendedTargetSwitch?.boundary ?? "", "不能互借状态");
 
 const selectedNextTargetSwitch = manualActionQueueTargetSwitchSummary(handledRecommendedWithNextSummary, "sig-next-unhandled");
 assertEqual(selectedNextTargetSwitch?.tone, "ready");
 assertIncludes(selectedNextTargetSwitch?.primary ?? "", "RBK004-RBK004-2 深蓝");
-assertIncludes(selectedNextTargetSwitch?.primary ?? "", "下一个未留痕候选");
+assertIncludes(selectedNextTargetSwitch?.primary ?? "", "本次按钮只写入");
 const selectedNextRouteSplit = manualActionReviewRouteSplitSummary(handledRecommendedWithNextSummary, "sig-next-unhandled", {
   tone: "ready",
   target: "目标：sales_product / B06VW5SQ97 / RBK004-RBK004-2 深蓝",
@@ -1365,12 +1365,12 @@ const selectedNextRouteSplit = manualActionReviewRouteSplitSummary(handledRecomm
   boundary: "ready 只代表可人工确认，未授权前不写 manual_actions。",
 });
 assertEqual(selectedNextRouteSplit?.tone, "ready");
-assertIncludes(selectedNextRouteSplit?.primary ?? "", "B016EXMW02 已进入人工留痕轨道");
-assertIncludes(selectedNextRouteSplit?.primary ?? "", "RBK004-RBK004-2 深蓝 是待授权新轨道");
+assertIncludes(selectedNextRouteSplit?.primary ?? "", "默认只处理本次写入对象");
+assertIncludes(selectedNextRouteSplit?.primary ?? "", "B016EXMW02 只作为已留痕边界");
 const selectedNextRouteSplitText = JSON.stringify(selectedNextRouteSplit);
-assertIncludes(selectedNextRouteSplitText, "已留痕旧对象");
+assertIncludes(selectedNextRouteSplitText, "已留痕对象");
 assertIncludes(selectedNextRouteSplitText, "ManualAction 1 条 / ReviewTodo 2 条");
-assertIncludes(selectedNextRouteSplitText, "待授权新对象");
+assertIncludes(selectedNextRouteSplitText, "本次写入对象");
 const selectedNextWaitingRouteSplit = manualActionReviewRouteSplitSummary(handledRecommendedWithNextSummary, "sig-next-unhandled", {
   tone: "waiting",
   target: "目标：sales_product / B06VW5SQ97 / RBK004-RBK004-2 深蓝",
@@ -1422,7 +1422,7 @@ assertIncludes(selectedSearchTermTargetSwitch?.writeTarget ?? "", "稳定对象�
 assertIncludes(selectedNextRouteSplitText, "ManualAction 0 条 / ReviewTodo 0 条");
 assertIncludes(selectedNextRouteSplitText, "授权后预期：ManualAction 1 条 / ReviewTodo 2 条");
 assertIncludes(selectedNextRouteSplitText, "ready 只代表可人工确认");
-assertIncludes(selectedNextRouteSplitText, "不能互借证据");
+assertIncludes(selectedNextRouteSplitText, "不能互借状态");
 const selectedRecommendedRouteSplit = manualActionReviewRouteSplitSummary(
   handledRecommendedWithNextSummary,
   "sig-ad-product-no-strategy",
@@ -1633,7 +1633,7 @@ const separatedRecommendedManualStatus = recommendedManualStatusText({
   },
 });
 assertIncludes(separatedRecommendedManualStatus ?? "", "等待 7 天 / 14 天完整窗口");
-assertNotIncludes(separatedRecommendedManualStatus ?? "", "下一个未留痕候选 RBK004-RBK004-2 深蓝");
+assertNotIncludes(separatedRecommendedManualStatus ?? "", "本次待授权对象 RBK004-RBK004-2 深蓝");
 
 const handledRecommendedCardCopy = recommendedManualActionCardCopy({
   recommended_manual_status: {
