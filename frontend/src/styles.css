@@ -11120,6 +11120,30 @@ button.reviewTodoQueueNext:focus-visible {
   gap: 7px;
 }
 
+.manualActionChoiceGuideDetails,
+.manualActionSecondaryActions {
+  display: grid;
+  gap: 7px;
+}
+
+.manualActionChoiceGuideDetails > summary,
+.manualActionSecondaryActions > summary {
+  cursor: pointer;
+  border: 1px solid #d8e6f1;
+  border-radius: 8px;
+  padding: 8px 9px;
+  background: #fbfdff;
+  color: #31577f;
+  font-size: 11px;
+  font-weight: 780;
+  line-height: 1.35;
+}
+
+.manualActionChoiceGuideDetails[open] > summary,
+.manualActionSecondaryActions[open] > summary {
+  margin-bottom: 6px;
+}
+
 .manualActionChoiceRecommendation {
   display: grid;
   gap: 5px;
@@ -11333,6 +11357,14 @@ button.reviewTodoQueueNext:focus-visible {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+
+.manualActionGrid:has(> .manualActionButton:only-child) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.manualActionGridSecondary {
+  margin-top: 0;
 }
 
 .manualActionGrid button {

@@ -1287,6 +1287,11 @@ export function SignalTriageWorkbench() {
       }),
     [selectedBackendManualActionPreview?.actionType, selectedDiagnosisEvidenceSummary, selectedManualActionChoiceGates],
   );
+  const recommendedManualActionType = selectedManualActionChoiceRecommendation.actionType;
+  const secondaryManualActionTypes = useMemo(
+    () => manualActionOrder.filter((actionType) => actionType !== recommendedManualActionType),
+    [recommendedManualActionType],
+  );
   const selectedManualActionPathSteps = useMemo(
     () =>
       buildManualActionPathSteps({
@@ -2230,6 +2235,51 @@ export function SignalTriageWorkbench() {
     } finally {
       setSavingManualAction(false);
     }
+  }
+
+  function renderManualActionButton(actionType: ManualActionType) {
+    const Icon = manualActionIcon[actionType];
+    const actionPreflight = manualActionPreflightForAction(
+      actionType,
+      manualActionPreflightsByAction,
+      manualActionPreflight,
+    );
+    const actionPreflightError = manualActionPreflightErrorForAction(
+      actionType,
+      manualActionPreflightErrorsByAction,
+      manualActionPreflightError,
+    );
+    const actionGate = manualActionButtonGate(
+      actionType,
+      actionPreflight,
+      actionPreflightError,
+      hasReviewTodoForSelectedObject,
+      manualActionExpectedTargetForSignal(selectedSignal, actionType),
+    );
+    const isDuplicateReviewAction = actionType === "add_to_review" && hasReviewTodoForSelectedObject;
+    const actionLabel = isDuplicateReviewAction ? "等待复盘窗口" : manualActionLabel[actionType];
+    const actionExpectationText = manualActionButtonExpectationText(actionType, actionPreflight);
+    const actionIntent = actionGate.reason ?? [manualActionIntentText(actionType), actionExpectationText].filter(Boolean).join(" ");
+    const compactIntent = actionGate.compactReason ?? actionExpectationText ?? manualActionCompactIntent[actionType];
+
+    return (
+      <button
+        key={actionType}
+        className={`manualActionButton${actionType === recommendedManualActionType ? " primaryManualAction" : ""}`}
+        onFocus={() => setManualActionPreviewActionType(actionType)}
+        onMouseEnter={() => setManualActionPreviewActionType(actionType)}
+        onClick={() => handleManualAction(actionType)}
+        disabled={savingManualAction || actionGate.disabled}
+        aria-label={`${actionLabel}：${actionIntent}`}
+        title={actionIntent}
+      >
+        <Icon size={16} aria-hidden="true" />
+        <span className="manualActionButtonText">
+          <strong>{actionLabel}</strong>
+          <span>{compactIntent}</span>
+        </span>
+      </button>
+    );
   }
 
   async function handleSaveReviewRecord() {
@@ -3770,69 +3820,38 @@ export function SignalTriageWorkbench() {
                   <small>{selectedManualActionChoiceRecommendation.reviewPlan}</small>
                   <small>{selectedManualActionChoiceRecommendation.boundary}</small>
                 </div>
-                <div className="manualActionChoiceGuide" aria-label="人工动作选择依据">
-                  {manualActionChoiceGuides.map((guide) => {
-                    const guideGate = selectedManualActionChoiceGates[guide.actionType] ?? {
-                      disabled: true,
-                      reason: "当前准入预检尚未完成。",
-                      compactReason: "等待预检",
-                    };
-                    return (
-                      <div key={guide.actionType} className={`manualActionChoiceGuideItem ${guideGate.disabled ? "blocked" : "ready"}`}>
-                        <span>{guide.label}</span>
-                        <b>{guideGate.disabled ? guideGate.compactReason ?? "暂不可用" : "可人工点击"}</b>
-                        <p>{guide.whenToUse}</p>
-                        <small>{guide.writes}</small>
-                        <small>{guideGate.reason ?? guide.boundary}</small>
-                      </div>
-                    );
-                  })}
-                </div>
+                <details className="manualActionChoiceGuideDetails" aria-label="人工动作选择依据">
+                  <summary>展开 4 个人工动作选择依据</summary>
+                  <div className="manualActionChoiceGuide">
+                    {manualActionChoiceGuides.map((guide) => {
+                      const guideGate = selectedManualActionChoiceGates[guide.actionType] ?? {
+                        disabled: true,
+                        reason: "当前准入预检尚未完成。",
+                        compactReason: "等待预检",
+                      };
+                      return (
+                        <div key={guide.actionType} className={`manualActionChoiceGuideItem ${guideGate.disabled ? "blocked" : "ready"}`}>
+                          <span>{guide.label}</span>
+                          <b>{guideGate.disabled ? guideGate.compactReason ?? "暂不可用" : "可人工点击"}</b>
+                          <p>{guide.whenToUse}</p>
+                          <small>{guide.writes}</small>
+                          <small>{guideGate.reason ?? guide.boundary}</small>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </details>
                 <div className="manualActionGrid" aria-label="人工动作按钮">
-                  {manualActionOrder.map((actionType) => {
-                    const Icon = manualActionIcon[actionType];
-                    const actionPreflight = manualActionPreflightForAction(
-                      actionType,
-                      manualActionPreflightsByAction,
-                      manualActionPreflight,
-                    );
-                    const actionPreflightError = manualActionPreflightErrorForAction(
-                      actionType,
-                      manualActionPreflightErrorsByAction,
-                      manualActionPreflightError,
-                    );
-                    const actionGate = manualActionButtonGate(
-                      actionType,
-                      actionPreflight,
-                      actionPreflightError,
-                      hasReviewTodoForSelectedObject,
-                      manualActionExpectedTargetForSignal(selectedSignal, actionType),
-                    );
-                    const isDuplicateReviewAction = actionType === "add_to_review" && hasReviewTodoForSelectedObject;
-                    const actionLabel = isDuplicateReviewAction ? "等待复盘窗口" : manualActionLabel[actionType];
-                    const actionExpectationText = manualActionButtonExpectationText(actionType, actionPreflight);
-                    const actionIntent = actionGate.reason ?? [manualActionIntentText(actionType), actionExpectationText].filter(Boolean).join(" ");
-                    const compactIntent = actionGate.compactReason ?? actionExpectationText ?? manualActionCompactIntent[actionType];
-                    return (
-                      <button
-                        key={actionType}
-                        className={`manualActionButton${actionType === "add_to_review" ? " primaryManualAction" : ""}`}
-                        onFocus={() => setManualActionPreviewActionType(actionType)}
-                        onMouseEnter={() => setManualActionPreviewActionType(actionType)}
-                        onClick={() => handleManualAction(actionType)}
-                        disabled={savingManualAction || actionGate.disabled}
-                        aria-label={`${actionLabel}：${actionIntent}`}
-                        title={actionIntent}
-                      >
-                        <Icon size={16} aria-hidden="true" />
-                        <span className="manualActionButtonText">
-                          <strong>{actionLabel}</strong>
-                          <span>{compactIntent}</span>
-                        </span>
-                      </button>
-                    );
-                  })}
+                  {renderManualActionButton(recommendedManualActionType)}
                 </div>
+                {secondaryManualActionTypes.length > 0 && (
+                  <details className="manualActionSecondaryActions" aria-label="其他人工动作入口">
+                    <summary>展开其他 {secondaryManualActionTypes.length} 个人工动作</summary>
+                    <div className="manualActionGrid manualActionGridSecondary" aria-label="其他人工动作按钮">
+                      {secondaryManualActionTypes.map(renderManualActionButton)}
+                    </div>
+                  </details>
+                )}
                 <div className="manualActionReadbackStatusGroup">
                   <div className="manualActionPostWriteSummary" aria-label="人工动作写后默认摘要">
                     <div>

@@ -448,8 +448,10 @@ const manualActionPreflightDetailsIndex = workbenchSource.indexOf('aria-label="�
 const manualActionPreflightEvidenceGapIndex = workbenchSource.indexOf('aria-label="优先查看的边界与证据缺口"');
 const manualActionPostWriteContractIndex = workbenchSource.indexOf('aria-label="点击后验收合同"');
 const manualActionChoiceRecommendationIndex = workbenchSource.indexOf('aria-label="本次建议人工动作"');
+const manualActionChoiceGuideDetailsIndex = workbenchSource.indexOf('aria-label="人工动作选择依据"');
 const manualActionChoiceGuideIndex = workbenchSource.indexOf('className="manualActionChoiceGuide"');
 const manualActionGridIndex = workbenchSource.indexOf('<div className="manualActionGrid" aria-label="人工动作按钮">');
+const manualActionSecondaryActionsIndex = workbenchSource.indexOf('aria-label="其他人工动作入口"');
 const manualActionPostWriteSummaryIndex = workbenchSource.indexOf('aria-label="人工动作写后默认摘要"');
 const manualActionPostWriteKeyEvidenceIndex = workbenchSource.indexOf('aria-label="写后关键证据快照"');
 const manualActionPostWriteDetailsIndex = workbenchSource.indexOf('aria-label="人工动作写后完整审计材料"');
@@ -642,6 +644,14 @@ assertIncludes(workbenchSource, "diagnosisEvidence: selectedDiagnosisEvidenceSum
 assertIncludes(workbenchSource, "selectedManualActionChoiceRecommendation.evidenceLink");
 assertIncludes(workbenchSource, "selectedManualActionChoiceRecommendation.evidenceBoundary");
 assertIncludes(workbenchSource, "selectedManualActionChoiceGates");
+assertIncludes(workbenchSource, "const recommendedManualActionType = selectedManualActionChoiceRecommendation.actionType;");
+assertIncludes(workbenchSource, "manualActionOrder.filter((actionType) => actionType !== recommendedManualActionType)");
+assertIncludes(workbenchSource, "renderManualActionButton(recommendedManualActionType)");
+assertIncludes(workbenchSource, "secondaryManualActionTypes.map(renderManualActionButton)");
+assertIncludes(workbenchSource, 'className="manualActionChoiceGuideDetails"');
+assertIncludes(workbenchSource, "展开 4 个人工动作选择依据");
+assertIncludes(workbenchSource, 'className="manualActionSecondaryActions"');
+assertIncludes(workbenchSource, "展开其他 {secondaryManualActionTypes.length} 个人工动作");
 assertIncludes(workbenchSource, "manualActionChoiceGuides.map");
 assertIncludes(workbenchSource, "guideGate.disabled ? guideGate.compactReason");
 assertIncludes(workbenchSource, "guideGate.reason ?? guide.boundary");
@@ -649,6 +659,9 @@ assertIncludes(reviewUiSource, "manualActionChoiceEvidenceLink");
 assertIncludes(reviewUiSource, "证据回链：");
 assertIncludes(reviewUiSource, "边界回链：");
 assertIncludes(stylesSource, ".manualActionChoiceRecommendation");
+assertIncludes(stylesSource, ".manualActionChoiceGuideDetails");
+assertIncludes(stylesSource, ".manualActionSecondaryActions");
+assertIncludes(stylesSource, ".manualActionGrid:has(> .manualActionButton:only-child)");
 assertNotIncludes(workbenchSource, "<b>聚合标签</b>");
 assertIncludes(signalUiSource, "以后端预检确认的 SearchTerm 稳定对象为准");
 assertNotIncludes(signalUiSource, "右侧人工动作也必须落到这条 SearchTerm 的稳定对象");
@@ -700,10 +713,12 @@ assert(
   "点击后验收合同必须进入完整预检折叠区，按钮前默认层只保留执行摘要。",
 );
 assert(manualActionChoiceRecommendationIndex > manualActionSectionIndex, "本次建议人工动作必须渲染在人工确认区内");
-assert(manualActionChoiceRecommendationIndex < manualActionChoiceGuideIndex, "本次建议人工动作必须先于四个动作选择依据展示");
+assert(manualActionChoiceRecommendationIndex < manualActionChoiceGuideDetailsIndex, "本次建议人工动作必须先于折叠的动作选择依据展示");
 assert(manualActionChoiceRecommendationIndex < manualActionGridIndex, "本次建议人工动作必须先于人工动作按钮展示");
-assert(manualActionChoiceGuideIndex > manualActionSectionIndex, "人工动作选择依据必须渲染在人工确认区内");
-assert(manualActionChoiceGuideIndex < manualActionGridIndex, "人工动作选择依据必须先于人工动作按钮展示");
+assert(manualActionChoiceGuideDetailsIndex > manualActionSectionIndex, "人工动作选择依据必须渲染在人工确认区内");
+assert(manualActionChoiceGuideDetailsIndex < manualActionGridIndex, "动作选择依据必须折叠在推荐按钮之前，避免默认铺开四个动作解释");
+assert(manualActionChoiceGuideIndex > manualActionChoiceGuideDetailsIndex, "四个动作选择依据必须保留在折叠区内");
+assert(manualActionSecondaryActionsIndex > manualActionGridIndex, "其他人工动作必须保留在推荐动作按钮之后的折叠入口");
 assert(manualActionPostWriteSummaryIndex > manualActionGridIndex, "人工动作写后摘要必须跟在按钮之后，服务点击后读回");
 assert(
   manualActionPostWriteSummaryIndex < manualActionPostWriteKeyEvidenceIndex,
