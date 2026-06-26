@@ -2743,7 +2743,7 @@ export function reviewMetricComparisonRows(effect: ReviewEffectForUi | null): Re
 }
 
 export function reviewRecordStatusText(record: ReviewRecordForUi | null) {
-  if (!record) return "暂无复盘记录";
+  if (!record) return "暂无复盘记录：只有 7/14 天窗口到期、处理前后指标完整并由人工保存后，才会生成 ReviewRecord。";
   const evidenceReadback = reviewRecordEvidenceSnapshotReadbackText([record]);
   return `最近复盘：${record.result} / ${record.review_note || "未填写备注"}；${evidenceReadback ?? "复盘证据快照待核对"}`;
 }
