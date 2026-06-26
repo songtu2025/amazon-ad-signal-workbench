@@ -700,17 +700,17 @@ REVIEW_SIGNAL_TYPE_ORDER = ("opportunity", "anomaly", "unknown")
 REVIEW_RESULT_FEEDBACK = {
     "improved": "处理有效，同类信号可保留当前解释口径",
     "no_change": "处理后无明显变化，下次同类信号应复核证据来源或建议动作",
-    "worse": "处理后效果变差，下次同类信号应复核阈值、证据来源和建议动作",
+    "worse": "处理后指标变差，下次同类信号应复核阈值、证据来源和建议动作",
     "unclear": "复盘证据不足，不调整规则，先补复盘样本和指标",
 }
 REVIEW_SAMPLE_SORT_REASON = (
-    "样本按业务风险排序：worse 优先，因为处理后效果变差；"
+    "样本按业务风险排序：worse 优先，因为处理后指标变差；"
     "no_change 其次，因为建议可能无效；"
     "unclear 排在 improved 前，因为证据不足需要先补样本；"
     "improved 只作为保留口径参考。"
 )
 REVIEW_SAMPLE_RECORD_REASON = {
-    "worse": "排序依据：worse 优先，因为处理后效果变差，先复核阈值、证据来源和建议动作。",
+    "worse": "排序依据：worse 优先，因为处理后指标变差，先复核阈值、证据来源和建议动作。",
     "no_change": "排序依据：no_change 排在 unclear 前，因为建议可能无效，先复核证据来源或建议动作。",
     "unclear": "排序依据：unclear 排在 improved 前，因为证据不足，先补复盘样本和指标。",
     "improved": "排序依据：improved 放在最后，因为处理有效时主要作为保留口径参考。",
@@ -968,7 +968,7 @@ def _next_action(
     if not manual_actions:
         return "先记录人工动作，再等待 7 天 / 14 天完整复盘窗口。"
     if ready_count:
-        return "存在 ready 复盘效果，可以保存复盘记录；保存前仍需人工确认。"
+        return "存在处理前后指标可复核待办，可以保存复盘记录；保存前仍需人工确认。"
     if not effects:
         return "当前没有可复盘待办；先确认最新人工动作是否属于观察、已处理或加入复盘。"
     wait_message = _not_due_review_wait_message(effects)
@@ -976,7 +976,7 @@ def _next_action(
         return wait_message
     actionable_effects = _actionable_review_effects(effects)
     messages = _prioritized_review_messages(actionable_effects)
-    return "当前没有 ready 复盘效果；优先处理数据缺口：" + "；".join(messages[:3]) + _snapshot_gap_next_step(actionable_effects)
+    return "当前没有处理前后指标可复核待办；优先处理数据缺口：" + "；".join(messages[:3]) + _snapshot_gap_next_step(actionable_effects)
 
 
 def rule_improvement_readiness(
@@ -1025,7 +1025,7 @@ def rule_improvement_readiness(
             **base,
             "status": "ready_for_manual_review_record",
             "title": "规则改进待人工复盘",
-            "reason": "已存在 ready 复盘效果，但需要人工保存复盘记录后才能沉淀为规则反馈。",
+            "reason": "已存在处理前后指标可复核待办，但需要人工保存复盘记录后才能沉淀为规则反馈。",
             "next_step": "先保存复盘记录，再进入规则反馈解释层；不自动调整广告动作或规则。",
         }
     if not effects:
@@ -1051,7 +1051,7 @@ def rule_improvement_readiness(
         **base,
         "status": "blocked_by_data_gap",
         "title": "规则改进缺少复盘证据",
-        "reason": "当前没有 ready 复盘效果；" + "；".join(messages[:3]),
+        "reason": "当前没有处理前后指标可复核待办；" + "；".join(messages[:3]),
         "next_step": "先补齐复盘所需数据。" + _snapshot_gap_next_step(actionable_effects),
     }
 
@@ -1118,7 +1118,7 @@ def review_wait_summary_from_effects(effects: list[dict[str, Any]], ready_count:
         gap_message = None
         gap_next_step = None
         if status == "blocked_by_data_gap":
-            gap_message = "当前没有 ready 复盘效果；" + ("；".join(gap_reasons) if gap_reasons else "复盘证据不足。")
+            gap_message = "当前没有处理前后指标可复核待办；" + ("；".join(gap_reasons) if gap_reasons else "复盘证据不足。")
             gap_next_step = "先补齐复盘所需数据。" + _snapshot_gap_next_step(gap_effects)
         return {
             "status": status,
@@ -1293,7 +1293,7 @@ def _compact_text(value: Any, fallback: str) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="只读检查当前人工动作和快照是否具备 ready 复盘效果")
+    parser = argparse.ArgumentParser(description="只读检查当前人工动作和快照是否具备处理前后指标可复核条件")
     parser.add_argument("--market-id", type=int, default=None)
     parser.add_argument("--compact", action="store_true", help="只输出目标复盘所需的精简 JSON")
     return parser.parse_args()

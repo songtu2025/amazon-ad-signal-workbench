@@ -349,8 +349,8 @@ def _no_ready_review_message(readiness_payload: dict[str, Any]) -> str:
         seen.add(detail)
         details.append(detail)
     if not details:
-        return "已有人工处理记录，但当前没有 ready 的 7/14 天复盘结果。"
-    return f"已有人工处理记录，但当前没有 ready 的 7/14 天复盘结果。复盘阻塞：{'；'.join(details[:3])}。{_snapshot_gap_next_step(effects)}"
+        return "已有人工处理记录，但当前没有 7/14 天处理前后指标可复核待办。"
+    return f"已有人工处理记录，但当前没有 7/14 天处理前后指标可复核待办。复盘阻塞：{'；'.join(details[:3])}。{_snapshot_gap_next_step(effects)}"
 
 
 def _not_due_review_wait_message(effects: list[dict[str, Any]]) -> str | None:
@@ -532,9 +532,9 @@ def _recommended_manual_next_action(
     if not has_manual_action:
         return "推荐对象尚未人工留痕；请在右侧点击加入复盘或记录观察，真实写入只能由人工按钮触发，不要自动执行广告动作。"
     if ready_review_count > 0:
-        return "推荐对象已有 ready 复盘效果；保存复盘记录前仍需人工确认。"
+        return "推荐对象已有处理前后指标可复核待办；保存复盘记录前仍需人工确认。"
     if has_review_todo:
-        return "推荐对象已人工留痕并生成复盘待办；等待 7 天 / 14 天完整窗口后再判断效果。"
+        return "推荐对象已人工留痕并生成复盘待办；等待 7 天 / 14 天完整窗口后再人工核对处理前后指标。"
     return "推荐对象已有人工留痕，但暂未生成复盘待办；请确认动作类型是否应进入复盘。"
 
 

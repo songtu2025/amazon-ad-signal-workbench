@@ -232,7 +232,7 @@ def test_review_readiness_prioritizes_actionable_ad_product_gap(monkeypatch) -> 
                 review_window=review_window,
                 status="not_ready",
                 result="unclear",
-                message="复盘效果暂不可计算：数据质量或交叉信号不适用广告指标前后对比，请复查数据是否补齐或更新",
+                message="处理前后指标暂不可计算：数据质量或交叉信号不适用广告指标前后对比，请复查数据是否补齐或更新",
                 acted_at="2026-06-14T00:00:00+00:00",
                 due_at="2026-06-21T00:00:00+00:00",
                 object_type="cross",
@@ -242,7 +242,7 @@ def test_review_readiness_prioritizes_actionable_ad_product_gap(monkeypatch) -> 
                 after_start_date=None,
                 after_end_date=None,
             )
-        message = "复盘效果暂不可计算：缺少处理后 7 天快照" if review_window == "7d" else "复盘效果暂不可计算：处理前 14 天窗口不足"
+        message = "处理前后指标暂不可计算：缺少处理后 7 天快照" if review_window == "7d" else "处理前后指标暂不可计算：处理前 14 天窗口不足"
         return SimpleNamespace(
             signal_id=signal_id,
             action_id="manual-action-ad-product",
@@ -305,7 +305,7 @@ def test_review_readiness_cli_reports_wait_summary_when_effects_are_not_due(monk
             review_window=review_window,
             status="not_ready",
             result="unclear",
-            message=f"复盘效果暂不可计算：缺少处理后 {review_window} 快照",
+            message=f"处理前后指标暂不可计算：缺少处理后 {review_window} 快照",
             acted_at="2026-06-15T00:00:00+00:00",
             due_at="2026-06-22T00:00:00+00:00" if review_window == "7d" else "2026-06-29T00:00:00+00:00",
             object_type="advertised_product",
@@ -396,7 +396,7 @@ def test_review_readiness_reports_identity_audit_for_readback_keys(monkeypatch) 
             review_window=review_window,
             status="not_ready",
             result="unclear",
-            message=f"复盘效果暂不可计算：{review_window} 复盘窗口尚未到期",
+            message=f"处理前后指标暂不可计算：{review_window} 复盘窗口尚未到期",
             acted_at="2026-06-15T00:00:00+00:00",
             due_at="2026-06-22T00:00:00+00:00" if review_window == "7d" else "2026-06-29T00:00:00+00:00",
             object_type="advertised_product",
@@ -479,7 +479,7 @@ def test_review_readiness_script_blocks_legacy_todos_without_evidence_snapshot(m
             review_window=review_window,
             status="not_ready",
             result="unclear",
-            message=f"复盘效果暂不可计算：{review_window} 复盘窗口尚未到期",
+            message=f"处理前后指标暂不可计算：{review_window} 复盘窗口尚未到期",
             acted_at="2026-06-15T00:00:00+00:00",
             due_at="2026-06-22T00:00:00+00:00" if review_window == "7d" else "2026-06-29T00:00:00+00:00",
             object_type="advertised_product",
@@ -705,7 +705,7 @@ def test_review_wait_summary_ignores_cross_todos_for_metric_window() -> None:
             "object_type": "cross",
             "object_id": "aba_search_term_snapshot",
             "object_label": "ABA 搜索词数据",
-            "message": "复盘效果暂不可计算：数据质量或交叉信号不适用广告指标前后对比，请复查数据是否补齐或更新",
+            "message": "处理前后指标暂不可计算：数据质量或交叉信号不适用广告指标前后对比，请复查数据是否补齐或更新",
         },
         {
             "signal_id": "sig-ad-product",
@@ -716,7 +716,7 @@ def test_review_wait_summary_ignores_cross_todos_for_metric_window() -> None:
             "object_type": "advertised_product",
             "object_id": "B016EXMW02",
             "object_label": "B016EXMW02",
-            "message": "复盘效果暂不可计算：7 天复盘窗口尚未到期，预计 2026-06-22 后复盘",
+            "message": "处理前后指标暂不可计算：7 天复盘窗口尚未到期，预计 2026-06-22 后复盘",
         },
     ]
 
@@ -742,15 +742,15 @@ def test_review_wait_summary_explains_data_gap_after_due() -> None:
             "object_type": "advertised_product",
             "object_id": "B016EXMW02",
             "object_label": "B016EXMW02",
-            "message": "复盘效果暂不可计算：缺少处理后 7 天快照",
+            "message": "处理前后指标暂不可计算：缺少处理后 7 天快照",
         }
     ]
 
     wait_summary = module.review_wait_summary_from_effects(effects, ready_count=0)
 
     assert wait_summary["status"] == "blocked_by_data_gap"
-    assert wait_summary["gap_reasons"] == ["复盘效果暂不可计算：缺少处理后 7 天快照"]
-    assert "当前没有 ready 复盘效果" in wait_summary["message"]
+    assert wait_summary["gap_reasons"] == ["处理前后指标暂不可计算：缺少处理后 7 天快照"]
+    assert "当前没有处理前后指标可复核待办" in wait_summary["message"]
     assert "先查询积加 API 限流规则" in wait_summary["next_step"]
     assert "不拉取快照" not in wait_summary["forbidden_actions"]
     assert "不保存复盘结论" in wait_summary["forbidden_actions"]

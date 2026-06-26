@@ -1133,7 +1133,7 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
     assert preflight["target"]["signal_id"] == "sig-opportunity-search-term-1-beach-essentials"
     assert preflight["target"]["object_type"] == "search_term"
     assert preflight["target"]["object_id"] == "search_term:1:beach essentials"
-    assert preflight["evidence_snapshot_preview"]["item_count"] == 30
+    assert preflight["evidence_snapshot_preview"]["item_count"] == 32
     assert preflight["evidence_snapshot_preview"]["items"][0]["label"] == "排查路径"
     assert preflight["evidence_snapshot_preview"]["items"][1]["label"] == "AI 准入"
     assert preflight["evidence_snapshot_preview"]["items"][2]["label"] == "搜索词"
@@ -1228,7 +1228,7 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
     assert action["market_id"] == 1
     assert action["action_note"] == "加入复盘"
     assert action["operator_name"] == "本地运营"
-    assert len(action["evidence_snapshot"]) == 30
+    assert len(action["evidence_snapshot"]) == 32
     assert action["evidence_snapshot"][0]["label"] == "排查路径"
     assert action["evidence_snapshot"][1]["label"] == "AI 准入"
     assert action["evidence_snapshot"][2]["label"] == "搜索词"
@@ -1264,7 +1264,7 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
     assert [todo["review_window"] for todo in todos] == ["7d", "14d"]
     assert {todo["action_id"] for todo in todos} == {action["id"]}
     assert {todo["object_id"] for todo in todos} == {"search_term:1:beach essentials"}
-    assert [len(todo["evidence_snapshot"]) for todo in todos] == [30, 30]
+    assert [len(todo["evidence_snapshot"]) for todo in todos] == [32, 32]
     assert [todo["evidence_snapshot"][0]["label"] for todo in todos] == ["排查路径", "排查路径"]
     assert [todo["evidence_snapshot"][1]["label"] for todo in todos] == ["AI 准入", "AI 准入"]
     assert {todo["evidence_snapshot"][2]["label"] for todo in todos} == {"搜索词"}
@@ -1306,13 +1306,13 @@ def test_beach_essentials_manual_action_api_roundtrip_reads_back_evidence_snapsh
             "signal_id": "sig-opportunity-search-term-1-beach-essentials",
             "object_type": "search_term",
             "object_id": "search_term:1:beach essentials",
-            "evidence_snapshot_count": 30,
+            "evidence_snapshot_count": 32,
         }
     ]
     assert {
         item["review_window"]: item["evidence_snapshot_count"]
         for item in post_write["post_write_checks"]["target_review_todo_evidence_snapshot_counts"]
-    } == {"7d": 30, "14d": 30}
+    } == {"7d": 32, "14d": 32}
     assert post_write["post_write_checks"]["target_review_record_count"] == 0
     assert "不执行广告动作" in post_write["forbidden_effects"]
 
@@ -1391,7 +1391,7 @@ def test_beach_essentials_manual_action_post_write_readback_distinguishes_action
         assert action["action_type"] == action_type
         assert action["object_type"] == "search_term"
         assert action["object_id"] == "search_term:1:beach essentials"
-        assert len(action["evidence_snapshot"]) == 30
+        assert len(action["evidence_snapshot"]) == 32
         assert {item["label"] for item in action["evidence_snapshot"]}.issuperset(
             {
                 "搜索词",
@@ -1442,7 +1442,7 @@ def test_beach_essentials_manual_action_post_write_readback_distinguishes_action
             assert [todo["review_window"] for todo in todos] == ["7d", "14d"]
             assert {todo["action_type"] for todo in todos} == {action_type}
             assert {todo["action_id"] for todo in todos} == {action["id"]}
-            assert [len(todo["evidence_snapshot"]) for todo in todos] == [30, 30]
+            assert [len(todo["evidence_snapshot"]) for todo in todos] == [32, 32]
             assert {todo["evidence_snapshot"][2]["label"] for todo in todos} == {"搜索词"}
             assert {todo["evidence_snapshot"][3]["label"] for todo in todos} == {"搜索词表现分组"}
             assert {todo["evidence_snapshot"][4]["label"] for todo in todos} == {"搜索词表现判断"}
@@ -1484,7 +1484,7 @@ def test_beach_essentials_manual_action_post_write_readback_distinguishes_action
         assert [
             item["evidence_snapshot_count"]
             for item in post_write["post_write_checks"]["target_manual_action_evidence_snapshot_counts"]
-        ] == [30]
+        ] == [32]
         assert "不执行广告动作" in post_write["forbidden_effects"]
 
 
@@ -2165,7 +2165,7 @@ def test_signal_triage_route_returns_readonly_summary(monkeypatch) -> None:
                 "review_windows": ["7d", "14d"],
             },
             "review_status": {"ready_count": 0, "not_ready_count": 4},
-            "blockers": [{"code": "no_ready_review_effect", "message": "当前没有 ready 复盘结果。"}],
+            "blockers": [{"code": "no_ready_review_effect", "message": "当前没有 处理前后指标可复核待办。"}],
             "next_action": "优先让运营人工确认 B016EXMW02；不要自动执行广告动作。",
         }
 

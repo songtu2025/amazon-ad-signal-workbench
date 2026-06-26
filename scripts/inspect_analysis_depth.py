@@ -234,7 +234,7 @@ def _review_layer(review_payload: dict[str, Any]) -> dict[str, Any]:
     ready_count = int(review_payload.get("ready_count") or 0)
     gaps: list[str] = []
     if ready_count == 0:
-        gaps.append("暂无 ready 复盘结果：当前不能证明建议有效、无效或恶化。")
+        gaps.append("暂无处理前后指标可复核待办：当前不能证明建议有效、无效或恶化。")
     if int(review_payload.get("manual_action_identity_issue_count") or 0):
         gaps.append("存在人工动作对象 ID 风险：需先迁移到稳定业务对象 ID。")
     return {
@@ -353,7 +353,7 @@ def _next_action(
         wait_action = _review_wait_next_action(review_payload or {}, coverage_gaps)
         if wait_action:
             return wait_action
-        return "优先补数据覆盖和复盘窗口：扩展 14/30 天快照、增加广告商品 / 搜索词覆盖，并等待 ready 复盘结果。"
+        return "优先补数据覆盖和复盘窗口：扩展 14/30 天快照、增加广告商品 / 搜索词覆盖，并等待处理前后指标可复核。"
     if depth_score >= 80 and not coverage_gaps:
         return "当前框架覆盖较完整；下一步可以选择一个 P0 信号做规则深化。"
     return "优先补数据覆盖和证据多样性，再推进更复杂的规则。"

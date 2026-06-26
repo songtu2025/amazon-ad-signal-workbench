@@ -1215,7 +1215,7 @@ def test_review_effect_for_cross_signal_uses_data_quality_review_message(tmp_pat
 
     assert result.status == "not_ready"
     assert result.result == "unclear"
-    assert result.message == "复盘效果暂不可计算：数据质量或交叉信号不适用广告指标前后对比，请复查数据是否补齐或更新"
+    assert result.message == "处理前后指标暂不可计算：数据质量或交叉信号不适用广告指标前后对比，请复查数据是否补齐或更新"
     assert result.action_id == "manual-action-cross"
     assert result.object_type == "cross"
     assert result.before_metrics == {}
@@ -1265,7 +1265,7 @@ def test_review_effect_waits_for_after_snapshot(tmp_path: Path) -> None:
 
     assert result.status == "not_ready"
     assert result.result == "unclear"
-    assert result.message == "复盘效果暂不可计算：缺少处理后 7 天快照"
+    assert result.message == "处理前后指标暂不可计算：缺少处理后 7 天快照"
     assert result.before_metrics["cost"] == 80
     assert result.after_metrics == {}
 
@@ -1326,7 +1326,7 @@ def test_review_effect_for_advertised_product_ignores_sales_product_rows_with_sa
     )
 
     assert result.status == "not_ready"
-    assert result.message == "复盘效果暂不可计算：缺少处理后 7 天快照"
+    assert result.message == "处理前后指标暂不可计算：缺少处理后 7 天快照"
     assert result.before_metrics["cost"] == 20
     assert result.before_metrics["orders"] == 2
     assert result.before_metrics["sales"] == 100
@@ -1389,7 +1389,7 @@ def test_review_effect_uses_rows_inside_review_window_only(tmp_path: Path) -> No
     )
 
     assert result.status == "not_ready"
-    assert result.message == "复盘效果暂不可计算：缺少处理后 7 天快照"
+    assert result.message == "处理前后指标暂不可计算：缺少处理后 7 天快照"
     assert result.before_start_date == "2026-06-08"
     assert result.before_end_date == "2026-06-14"
     assert result.before_metrics["cost"] == 20
@@ -1451,7 +1451,7 @@ def test_review_effect_requires_complete_before_window(tmp_path: Path) -> None:
 
     assert result.status == "not_ready"
     assert result.result == "unclear"
-    assert result.message == "复盘效果暂不可计算：处理前 7 天窗口不足"
+    assert result.message == "处理前后指标暂不可计算：处理前 7 天窗口不足"
     assert result.before_start_date == "2026-06-07"
     assert result.before_end_date == "2026-06-07"
 
@@ -1509,7 +1509,7 @@ def test_review_effect_requires_complete_after_window_start(tmp_path: Path) -> N
 
     assert result.status == "not_ready"
     assert result.result == "unclear"
-    assert result.message == "复盘效果暂不可计算：处理后 7 天窗口不足"
+    assert result.message == "处理前后指标暂不可计算：处理后 7 天窗口不足"
     assert result.after_start_date == "2026-06-12"
     assert result.after_end_date == "2026-06-15"
 
@@ -1719,7 +1719,7 @@ def test_review_effect_waits_until_review_window_due_even_when_rows_exist(tmp_pa
     assert effect.status == "not_ready"
     assert effect.result == "unclear"
     assert effect.due_at == "2026-06-15T00:00:00+00:00"
-    assert effect.message == "复盘效果暂不可计算：7 天复盘窗口尚未到期，预计 2026-06-15 后复盘"
+    assert effect.message == "处理前后指标暂不可计算：7 天复盘窗口尚未到期，预计 2026-06-15 后复盘"
     try:
         manual_actions.save_review_record(effect, review_note="不能提前保存", reviewer_name="本地运营", review_root=tmp_path)
     except ValueError as error:
@@ -2596,7 +2596,7 @@ def test_review_record_rejects_not_ready_effect(tmp_path: Path) -> None:
     except ValueError as error:
         assert str(error) == "review_effect_not_ready"
     else:
-        raise AssertionError("not_ready 的复盘效果不能保存为复盘记录")
+        raise AssertionError("not_ready 的处理前后指标不能保存为复盘记录")
 
 
 def test_review_record_rejects_missing_preflight_expectation(tmp_path: Path) -> None:
@@ -3048,7 +3048,7 @@ def test_review_effect_route_returns_not_ready_without_after_snapshot(tmp_path: 
     payload = response.json()
     assert payload["status"] == "not_ready"
     assert payload["result"] == "unclear"
-    assert payload["message"] == "复盘效果暂不可计算：缺少处理后 7 天快照"
+    assert payload["message"] == "处理前后指标暂不可计算：缺少处理后 7 天快照"
 
 
 def test_review_record_route_saves_ready_effect_and_signal_reads_latest_result(tmp_path: Path, monkeypatch) -> None:

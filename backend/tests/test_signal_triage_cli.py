@@ -123,7 +123,7 @@ def test_signal_triage_cli_uses_service_candidate_source(monkeypatch) -> None:
             "ready_count": 0,
             "not_ready_count": 0,
             "manual_action_identity_issue_count": 0,
-            "next_action": "暂无 ready 复盘。",
+            "next_action": "暂无处理前后指标可复核待办。",
         },
     )
     monkeypatch.setattr(module, "load_manual_actions", lambda signal_id=None, market_id=None: [], raising=False)
@@ -212,7 +212,7 @@ def test_review_readiness_cli_waits_when_review_effects_are_not_due(monkeypatch)
             review_window=review_window,
             status="not_ready",
             result="unclear",
-            message="复盘效果暂不可计算：缺少处理后 7 天快照",
+            message="处理前后指标暂不可计算：缺少处理后 7 天快照",
             action_id="manual-action-fixed",
             acted_at="2026-06-15T00:00:00+00:00",
             due_at="2026-06-22T00:00:00+00:00" if review_window == "7d" else "2026-06-29T00:00:00+00:00",
@@ -259,7 +259,7 @@ def test_review_readiness_cli_points_due_snapshot_gap_to_rate_limit_check(monkey
     ]
 
     def fake_effect(signal_id, *, review_window, market_id=None, signal_rows=None):
-        message = "复盘效果暂不可计算：缺少处理后 7 天快照" if review_window == "7d" else "复盘效果暂不可计算：处理前 14 天窗口不足"
+        message = "处理前后指标暂不可计算：缺少处理后 7 天快照" if review_window == "7d" else "处理前后指标暂不可计算：处理前 14 天窗口不足"
         return SimpleNamespace(
             signal_id=signal_id,
             market_id=market_id,
@@ -373,7 +373,7 @@ def test_signal_triage_summarizes_candidates_and_review_blockers(monkeypatch) ->
         "not_ready_count": 4,
         "manual_action_identity_issue_count": 0,
         "effects": [],
-        "next_action": "当前没有 ready 复盘结果。",
+        "next_action": "当前没有 处理前后指标可复核待办。",
     }
 
     monkeypatch.setattr(module, "build_review_candidates_payload", lambda selected_market_id=None: candidates_payload)
@@ -681,7 +681,7 @@ def test_signal_triage_reports_recommended_manual_status_after_action(monkeypatc
                     "message": "处理前 14 天窗口不足",
                 },
             ],
-            "next_action": "当前没有 ready 复盘结果。",
+            "next_action": "当前没有 处理前后指标可复核待办。",
         },
     )
     monkeypatch.setattr(module, "load_manual_actions", lambda signal_id=None, market_id=None: [SimpleNamespace(id="action-1", shop_id="market:1")], raising=False)
@@ -770,7 +770,7 @@ def test_signal_triage_cli_waits_instead_of_showing_data_gap_when_review_effects
                     "review_window": "7d",
                     "status": "not_ready",
                     "object_type": "advertised_product",
-                    "message": "复盘效果暂不可计算：缺少处理后 7 天快照",
+                    "message": "处理前后指标暂不可计算：缺少处理后 7 天快照",
                     "is_due": False,
                     "due_at": "2026-06-22T00:00:00+00:00",
                 },
@@ -779,7 +779,7 @@ def test_signal_triage_cli_waits_instead_of_showing_data_gap_when_review_effects
                     "review_window": "14d",
                     "status": "not_ready",
                     "object_type": "advertised_product",
-                    "message": "复盘效果暂不可计算：缺少处理后 14 天快照",
+                    "message": "处理前后指标暂不可计算：缺少处理后 14 天快照",
                     "is_due": False,
                     "due_at": "2026-06-29T00:00:00+00:00",
                 },
@@ -926,7 +926,7 @@ def test_signal_triage_cli_matches_recommended_manual_status_by_stable_object(mo
                     "message": "缺少处理后 7 天快照",
                 }
             ],
-            "next_action": "当前没有 ready 复盘结果。",
+            "next_action": "当前没有 处理前后指标可复核待办。",
         },
     )
 
@@ -1050,7 +1050,7 @@ def test_signal_triage_cli_does_not_match_recommended_manual_status_from_wrong_s
                     "status": "ready",
                 }
             ],
-            "next_action": "当前有 ready 复盘结果。",
+            "next_action": "当前有 处理前后指标可复核待办。",
         },
     )
 

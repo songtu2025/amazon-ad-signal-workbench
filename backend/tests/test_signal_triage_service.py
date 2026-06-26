@@ -67,7 +67,7 @@ def test_review_wait_summary_ignores_cross_todos_for_metric_window() -> None:
             "object_type": "cross",
             "object_id": "aba_search_term_snapshot",
             "object_label": "ABA 搜索词数据",
-            "message": "复盘效果暂不可计算：数据质量或交叉信号不适用广告指标前后对比，请复查数据是否补齐或更新",
+            "message": "处理前后指标暂不可计算：数据质量或交叉信号不适用广告指标前后对比，请复查数据是否补齐或更新",
         },
         {
             "signal_id": "sig-ad-product",
@@ -78,7 +78,7 @@ def test_review_wait_summary_ignores_cross_todos_for_metric_window() -> None:
             "object_type": "advertised_product",
             "object_id": "B016EXMW02",
             "object_label": "B016EXMW02",
-            "message": "复盘效果暂不可计算：7 天复盘窗口尚未到期，预计 2026-06-22 后复盘",
+            "message": "处理前后指标暂不可计算：7 天复盘窗口尚未到期，预计 2026-06-22 后复盘",
         },
     ]
 
@@ -103,15 +103,15 @@ def test_review_wait_summary_explains_data_gap_after_due() -> None:
             "object_type": "advertised_product",
             "object_id": "B016EXMW02",
             "object_label": "B016EXMW02",
-            "message": "复盘效果暂不可计算：缺少处理后 7 天快照",
+            "message": "处理前后指标暂不可计算：缺少处理后 7 天快照",
         }
     ]
 
     wait_summary = signal_triage._review_wait_summary(effects, ready_count=0)
 
     assert wait_summary["status"] == "blocked_by_data_gap"
-    assert wait_summary["gap_reasons"] == ["复盘效果暂不可计算：缺少处理后 7 天快照"]
-    assert "当前没有 ready 复盘效果" in wait_summary["message"]
+    assert wait_summary["gap_reasons"] == ["处理前后指标暂不可计算：缺少处理后 7 天快照"]
+    assert "当前没有处理前后指标可复核待办" in wait_summary["message"]
     assert "先查询积加 API 限流规则" in wait_summary["next_step"]
     assert "不拉取快照" not in wait_summary["forbidden_actions"]
     assert "不保存复盘结论" in wait_summary["forbidden_actions"]
@@ -769,7 +769,7 @@ def test_signal_triage_requires_product_scope_before_actionable_recommendation(m
             "review_feedback": {},
             "rule_improvement": {},
             "review_wait_summary": {},
-            "next_action": "当前没有 ready 复盘结果。",
+            "next_action": "当前没有 处理前后指标可复核待办。",
         },
     )
 
@@ -843,7 +843,7 @@ def test_signal_triage_treats_sales_asin_as_sales_context_not_actionable_ad_scop
             "review_feedback": {},
             "rule_improvement": {},
             "review_wait_summary": {},
-            "next_action": "当前没有 ready 复盘结果。",
+            "next_action": "当前没有 处理前后指标可复核待办。",
         },
     )
 
@@ -2542,7 +2542,7 @@ def test_signal_triage_reports_recommended_manual_status_before_human_action(mon
                 "forbidden_actions": ["不拉取快照", "不保存复盘结论", "不自动执行广告动作"],
             },
             "effects": [],
-            "next_action": "当前没有 ready 复盘结果。",
+            "next_action": "当前没有 处理前后指标可复核待办。",
         },
     )
     monkeypatch.setattr(signal_triage, "load_manual_actions", lambda signal_id=None, market_id=None: [])
@@ -2627,7 +2627,7 @@ def test_signal_triage_reports_recommended_manual_status_after_human_action(monk
                     "message": "处理前 14 天窗口不足",
                 },
             ],
-            "next_action": "当前没有 ready 复盘结果。",
+            "next_action": "当前没有 处理前后指标可复核待办。",
         },
     )
     monkeypatch.setattr(signal_triage, "load_manual_actions", lambda signal_id=None, market_id=None: [SimpleNamespace(id="action-1", shop_id="market:1")])
@@ -2926,7 +2926,7 @@ def test_signal_triage_waits_instead_of_showing_data_gap_when_review_effects_are
                     "review_window": "7d",
                     "status": "not_ready",
                     "object_type": "advertised_product",
-                    "message": "复盘效果暂不可计算：缺少处理后 7 天快照",
+                    "message": "处理前后指标暂不可计算：缺少处理后 7 天快照",
                     "is_due": False,
                     "due_at": "2026-06-22T00:00:00+00:00",
                 },
@@ -2935,7 +2935,7 @@ def test_signal_triage_waits_instead_of_showing_data_gap_when_review_effects_are
                     "review_window": "14d",
                     "status": "not_ready",
                     "object_type": "advertised_product",
-                    "message": "复盘效果暂不可计算：缺少处理后 14 天快照",
+                    "message": "处理前后指标暂不可计算：缺少处理后 14 天快照",
                     "is_due": False,
                     "due_at": "2026-06-29T00:00:00+00:00",
                 },
@@ -2978,7 +2978,7 @@ def test_review_readiness_next_action_prioritizes_actionable_ad_product_gap(monk
                 review_window=review_window,
                 status="not_ready",
                 result="unclear",
-                message="复盘效果暂不可计算：数据质量或交叉信号不适用广告指标前后对比，请复查数据是否补齐或更新",
+                message="处理前后指标暂不可计算：数据质量或交叉信号不适用广告指标前后对比，请复查数据是否补齐或更新",
                 acted_at="2026-06-14T00:00:00+00:00",
                 due_at="2026-06-21T00:00:00+00:00",
                 object_type="cross",
@@ -2988,7 +2988,7 @@ def test_review_readiness_next_action_prioritizes_actionable_ad_product_gap(monk
                 after_start_date=None,
                 after_end_date=None,
             )
-        message = "复盘效果暂不可计算：缺少处理后 7 天快照" if review_window == "7d" else "复盘效果暂不可计算：处理前 14 天窗口不足"
+        message = "处理前后指标暂不可计算：缺少处理后 7 天快照" if review_window == "7d" else "处理前后指标暂不可计算：处理前 14 天窗口不足"
         return SimpleNamespace(
             signal_id=signal_id,
             action_id="manual-action-ad-product",
@@ -3057,7 +3057,7 @@ def test_review_readiness_next_action_waits_when_review_effects_are_not_due(monk
     ]
 
     def fake_effect(signal_id, *, review_window, market_id=None, signal_rows=None):
-        message = "复盘效果暂不可计算：缺少处理后 7 天快照" if review_window == "7d" else "复盘效果暂不可计算：缺少处理后 14 天快照"
+        message = "处理前后指标暂不可计算：缺少处理后 7 天快照" if review_window == "7d" else "处理前后指标暂不可计算：缺少处理后 14 天快照"
         return SimpleNamespace(
             signal_id=signal_id,
             action_id="manual-action-ad-product",
@@ -3144,7 +3144,7 @@ def test_review_readiness_blocks_legacy_todos_missing_search_term_and_placement_
             review_window=review_window,
             status="not_ready",
             result="unclear",
-            message=f"复盘效果暂不可计算：{review_window} 复盘窗口尚未到期",
+            message=f"处理前后指标暂不可计算：{review_window} 复盘窗口尚未到期",
             acted_at="2026-06-15T00:00:00+00:00",
             due_at="2026-06-22T00:00:00+00:00" if review_window == "7d" else "2026-06-29T00:00:00+00:00",
             object_type="advertised_product",
@@ -3249,7 +3249,7 @@ def test_review_readiness_blocks_object_review_chain_gaps(monkeypatch) -> None:
                 review_window=review_window,
                 status="not_ready",
                 result="unclear",
-                message="复盘效果暂不可计算：7d 复盘窗口尚未到期",
+                message="处理前后指标暂不可计算：7d 复盘窗口尚未到期",
                 acted_at="2026-06-15T00:00:00+00:00",
                 due_at="2026-06-22T00:00:00+00:00",
                 object_type="placement",
@@ -3269,7 +3269,7 @@ def test_review_readiness_blocks_object_review_chain_gaps(monkeypatch) -> None:
             review_window=review_window,
             status="not_ready",
             result="unclear",
-            message="复盘效果暂不可计算：7d 复盘窗口尚未到期",
+            message="处理前后指标暂不可计算：7d 复盘窗口尚未到期",
             acted_at="2026-06-15T00:00:00+00:00",
             due_at="2026-06-22T00:00:00+00:00",
             object_type="advertised_product",
@@ -3336,7 +3336,7 @@ def test_review_readiness_blocks_legacy_todos_without_evidence_snapshot(monkeypa
             review_window=review_window,
             status="not_ready",
             result="unclear",
-            message=f"复盘效果暂不可计算：{review_window} 复盘窗口尚未到期",
+            message=f"处理前后指标暂不可计算：{review_window} 复盘窗口尚未到期",
             acted_at="2026-06-15T00:00:00+00:00",
             due_at="2026-06-22T00:00:00+00:00" if review_window == "7d" else "2026-06-29T00:00:00+00:00",
             object_type="advertised_product",
@@ -3865,7 +3865,7 @@ def test_signal_triage_matches_recommended_manual_status_by_stable_object(monkey
                     "object_id": "B016EXMW02",
                 },
             ],
-            "next_action": "当前没有 ready 复盘结果。",
+            "next_action": "当前没有 处理前后指标可复核待办。",
         },
     )
 
@@ -3971,7 +3971,7 @@ def test_signal_triage_does_not_match_recommended_manual_status_from_wrong_shop(
                     "object_id": "B016EXMW02",
                 }
             ],
-            "next_action": "当前有 ready 复盘结果。",
+            "next_action": "当前有 处理前后指标可复核待办。",
         },
     )
 

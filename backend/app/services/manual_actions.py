@@ -569,7 +569,7 @@ def build_review_effect_result(
             signal_id=signal_id,
             review_window=review_window,
             status="not_ready",
-            message="复盘效果暂不可计算：缺少人工处理记录",
+            message="处理前后指标暂不可计算：缺少人工处理记录",
         )
 
     record = max(records, key=lambda item: item.acted_at)
@@ -599,14 +599,14 @@ def build_review_effect_result(
             **base,
             status="not_ready",
             result="unclear",
-            message="复盘效果暂不可计算：数据质量或交叉信号不适用广告指标前后对比，请复查数据是否补齐或更新",
+            message="处理前后指标暂不可计算：数据质量或交叉信号不适用广告指标前后对比，请复查数据是否补齐或更新",
         )
     if current_time < due_at:
         return ReviewEffectResult(
             **base,
             status="not_ready",
             result="unclear",
-            message=f"复盘效果暂不可计算：{window_days} 天复盘窗口尚未到期，预计 {due_at.date().isoformat()} 后复盘",
+            message=f"处理前后指标暂不可计算：{window_days} 天复盘窗口尚未到期，预计 {due_at.date().isoformat()} 后复盘",
         )
 
     before_window_start = acted_at.date() - timedelta(days=window_days)
@@ -636,28 +636,28 @@ def build_review_effect_result(
             **base,
             status="not_ready",
             result="unclear",
-            message=f"复盘效果暂不可计算：缺少处理前 {window_days} 天快照",
+            message=f"处理前后指标暂不可计算：缺少处理前 {window_days} 天快照",
         )
     if before_start > before_window_start or before_end < before_window_end:
         return ReviewEffectResult(
             **base,
             status="not_ready",
             result="unclear",
-            message=f"复盘效果暂不可计算：处理前 {window_days} 天窗口不足",
+            message=f"处理前后指标暂不可计算：处理前 {window_days} 天窗口不足",
         )
     if not after_rows or after_start is None or after_end is None:
         return ReviewEffectResult(
             **base,
             status="not_ready",
             result="unclear",
-            message=f"复盘效果暂不可计算：缺少处理后 {window_days} 天快照",
+            message=f"处理前后指标暂不可计算：缺少处理后 {window_days} 天快照",
         )
     if after_start > after_window_start or after_end < after_window_end:
         return ReviewEffectResult(
             **base,
             status="not_ready",
             result="unclear",
-            message=f"复盘效果暂不可计算：处理后 {window_days} 天窗口不足",
+            message=f"处理前后指标暂不可计算：处理后 {window_days} 天窗口不足",
         )
 
     result = _classify_review_effect(before_metrics, after_metrics)

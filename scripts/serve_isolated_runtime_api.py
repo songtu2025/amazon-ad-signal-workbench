@@ -50,7 +50,7 @@ def _fixture_signal() -> AiSignal:
         object_type=ObjectType.ADVERTISED_PRODUCT,
         severity=4,
         summary=f"{FIXTURE_ASIN} 已到期复盘样本",
-        why="用于隔离验证 ready 复盘保存后规则反馈读回，不代表真实业务结论。",
+        why="用于隔离验证处理前后指标可复核并保存复盘记录后的规则反馈读回，不代表真实业务结论。",
         evidence=EvidencePackage(
             period_days=7,
             primary_object=AdObjectRef(
@@ -174,7 +174,7 @@ def _install_ready_review_fixture(action_root: Path) -> None:
             advertised_asin_count=1,
             parent_asin_count=0,
             matched_asin_count=0,
-            boundary="隔离 ready 复盘样本；只用于浏览器验收，不代表真实业务数据。",
+            boundary="隔离处理前后指标可复核样本；只用于浏览器验收，不代表真实业务数据。",
         ),
     )
     routes.build_product_scope_summary = lambda: product_scope
@@ -206,7 +206,7 @@ def _install_ready_review_fixture(action_root: Path) -> None:
         has_snapshot=True,
         snapshot_status="success",
         snapshot_id="fixture-ready-review",
-        reason="隔离 ready 复盘样本，不请求积加 API。",
+        reason="隔离处理前后指标可复核样本，不请求积加 API。",
     )
 
 
@@ -217,7 +217,7 @@ def main() -> None:
     parser.add_argument(
         "--ready-review-fixture",
         action="store_true",
-        help="安装隔离 ready 复盘样本，用于浏览器验证保存复盘记录后的规则反馈状态。",
+        help="安装隔离处理前后指标可复核样本，用于浏览器验证保存复盘记录后的规则反馈状态。",
     )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", default=8031, type=int)

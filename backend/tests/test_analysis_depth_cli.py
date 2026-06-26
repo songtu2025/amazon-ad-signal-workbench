@@ -113,7 +113,7 @@ def test_analysis_depth_reports_framework_gaps(monkeypatch) -> None:
     assert payload["framework_layers"][1]["problem_type_counts"]["销售承接不足"] == 2
     assert "未分类问题" not in payload["framework_layers"][1]["problem_type_counts"]
     assert any("ABA 数据过期" in gap for gap in payload["framework_layers"][2]["gaps"])
-    assert any("暂无 ready 复盘结果" in gap for gap in payload["framework_layers"][5]["gaps"])
+    assert any("暂无处理前后指标可复核待办" in gap for gap in payload["framework_layers"][5]["gaps"])
     assert "优先补数据覆盖和复盘窗口" in payload["next_action"]
 
 
