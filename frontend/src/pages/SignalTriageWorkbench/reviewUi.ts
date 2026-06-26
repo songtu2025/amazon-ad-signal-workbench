@@ -3539,17 +3539,21 @@ export function buildManualReviewClosureLedger(input: ManualReviewClosureLedgerI
 
   const summary = (() => {
     if (reviewRecordCount > 0) return "已形成可回看的人工闭环：留痕、待办和复盘结论均可读回。";
-    if (manualActionCount > 0 && reviewTodoCount > 0) return "当前已留痕并进入 7/14 天复盘待办；这只是排程，未到期不判断效果。";
+    if (manualActionCount > 0 && reviewTodoCount > 0) {
+      const dueText = nextReviewDueDate ? `下一项到期 ${nextReviewDueDate}，` : "";
+      return `当前已留痕并进入 7/14 天复盘待办；这只是排程，${dueText}未 ready 前不保存 ReviewRecord。`;
+    }
     if (manualActionCount > 0) return "当前只有人工留痕，没有进入 7/14 天复盘待办。";
     return "当前还不能落地到复盘：未产生人工留痕。";
   })();
 
+  const nextDueReviewRecordBoundary = nextReviewDueDate ? `下一项到期 ${nextReviewDueDate}；` : "";
   const reviewRecordDetail =
     reviewRecordCount > 0
       ? "结论只来自人工保存的 review_records，可用于后续规则反馈候选。"
       : input.reviewEffectStatus === "ready"
         ? "效果窗口 ready 只代表可复核，仍需人工保存 review_records 后才算形成复盘结论。"
-        : "未到完整 7/14 天窗口前不能判断改善、无变化或恶化。";
+        : `${nextDueReviewRecordBoundary}未到完整 7/14 天窗口前不能判断改善、无变化或恶化，也不能保存 ReviewRecord。`;
 
   return {
     title: "人工确认复盘闭环",

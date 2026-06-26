@@ -3276,7 +3276,8 @@ const pendingManualReviewClosureLedger = buildManualReviewClosureLedger({
   nextReviewDueAt: "2026-06-15T00:00:00+00:00",
 });
 assertIncludes(pendingManualReviewClosureLedger.summary, "已留痕并进入 7/14 天复盘");
-assertIncludes(pendingManualReviewClosureLedger.summary, "未到期不判断效果");
+assertIncludes(pendingManualReviewClosureLedger.summary, "下一项到期 2026-06-15");
+assertIncludes(pendingManualReviewClosureLedger.summary, "未 ready 前不保存 ReviewRecord");
 assertEqual(pendingManualReviewClosureLedger.rows[0].label, "人工留痕");
 assertEqual(pendingManualReviewClosureLedger.rows[0].value, "已记录 1 条");
 assertEqual(pendingManualReviewClosureLedger.rows[1].label, "复盘待办");
@@ -3285,7 +3286,9 @@ assertIncludes(pendingManualReviewClosureLedger.rows[1].detail, "下一项到期
 assertIncludes(pendingManualReviewClosureLedger.rows[1].detail, "不代表已判定改善");
 assertEqual(pendingManualReviewClosureLedger.rows[2].label, "复盘结论");
 assertEqual(pendingManualReviewClosureLedger.rows[2].value, "未保存");
+assertIncludes(pendingManualReviewClosureLedger.rows[2].detail, "下一项到期 2026-06-15");
 assertIncludes(pendingManualReviewClosureLedger.rows[2].detail, "不能判断改善");
+assertIncludes(pendingManualReviewClosureLedger.rows[2].detail, "不能保存 ReviewRecord");
 assertIncludes(pendingManualReviewClosureLedger.boundary, "manual_actions");
 assertIncludes(pendingManualReviewClosureLedger.boundary, "review_todos");
 assertIncludes(pendingManualReviewClosureLedger.boundary, "review_records");
