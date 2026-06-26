@@ -1679,6 +1679,10 @@ export function SignalTriageWorkbench() {
     () => manualActionPreflightPriorityEvidenceRows(selectedManualActionPreviewPreflight),
     [selectedManualActionPreviewPreflight],
   );
+  const selectedManualActionDefaultReviewLayer = useMemo(
+    () => selectedManualActionPreflightPriorityEvidenceRows.find((item) => item.label === "默认核对层") ?? null,
+    [selectedManualActionPreflightPriorityEvidenceRows],
+  );
   const selectedManualConfirmationEvidenceReadiness = useMemo(
     () =>
       manualConfirmationEvidenceReadinessSummary(
@@ -3627,6 +3631,14 @@ export function SignalTriageWorkbench() {
                     ))}
                   </ol>
                 </div>
+                {selectedManualActionDefaultReviewLayer && (
+                  <div className="manualActionDefaultReviewLayer" aria-label="人工确认默认核对层">
+                    <span>默认先看</span>
+                    <b>{selectedManualActionDefaultReviewLayer.value}</b>
+                    <p>{selectedManualActionDefaultReviewLayer.detail ?? "沿后端 preflight 保存的默认核对层复核，再选择人工动作。"}</p>
+                    {selectedManualActionDefaultReviewLayer.source && <small>来源：{selectedManualActionDefaultReviewLayer.source}</small>}
+                  </div>
+                )}
                 {selectedManualActionKeyEvidenceFacts.length > 0 && (
                   <div className="manualActionKeyEvidenceCheck" aria-label="点击前关键证据核对">
                     <div>

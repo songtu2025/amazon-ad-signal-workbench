@@ -463,6 +463,7 @@ const productScopeManualActionTargetAlignmentIndex = workbenchSource.indexOf(
   "<ProductScopeManualActionTargetAlignmentCard summary={selectedManualActionTargetAlignment} />",
 );
 const manualActionDiagnosisPathSummaryIndex = workbenchSource.indexOf('aria-label="人工按钮前诊断路径核对"');
+const manualActionDefaultReviewLayerIndex = workbenchSource.indexOf('aria-label="人工确认默认核对层"');
 const manualActionKeyEvidenceCheckIndex = workbenchSource.indexOf('aria-label="点击前关键证据核对"');
 const manualActionButtonCommandSummaryIndex = workbenchSource.indexOf('aria-label="人工确认前四问"');
 const manualActionPreflightDetailsIndex = workbenchSource.indexOf('aria-label="人工按钮前完整预检证据"');
@@ -724,6 +725,16 @@ assert(
   "人工按钮前必须先读回诊断路径，再核对关键证据。",
 );
 assert(manualActionDiagnosisPathSummaryIndex < manualActionGridIndex, "人工按钮前诊断路径核对必须先于人工动作按钮");
+assert(manualActionDefaultReviewLayerIndex > manualActionSectionIndex, "人工确认默认核对层必须渲染在人工确认区内");
+assert(
+  manualActionDefaultReviewLayerIndex > manualActionDiagnosisPathSummaryIndex,
+  "人工确认默认核对层必须承接诊断路径，先说明按钮前默认看哪层。",
+);
+assert(
+  manualActionDefaultReviewLayerIndex < manualActionKeyEvidenceCheckIndex,
+  "人工确认默认核对层必须先于关键证据，避免用户先扫证据再找入口。",
+);
+assert(manualActionDefaultReviewLayerIndex < manualActionGridIndex, "人工确认默认核对层必须先于人工动作按钮");
 assert(manualActionKeyEvidenceCheckIndex > manualActionSectionIndex, "点击前关键证据核对必须渲染在人工确认区内");
 assert(
   manualActionKeyEvidenceCheckIndex < manualActionButtonCommandSummaryIndex,
@@ -1797,6 +1808,11 @@ assertIncludes(workbenchSource, "selectedManualActionDiagnosisPathItems");
 assertIncludes(workbenchSource, 'aria-label="人工按钮前诊断路径核对"');
 assertIncludes(workbenchSource, "按钮前先沿同一条诊断路径核对");
 assertIncludes(workbenchSource, "不跳过证据");
+assertIncludes(workbenchSource, "selectedManualActionDefaultReviewLayer");
+assertIncludes(workbenchSource, 'item.label === "默认核对层"');
+assertIncludes(workbenchSource, 'aria-label="人工确认默认核对层"');
+assertIncludes(workbenchSource, "沿后端 preflight 保存的默认核对层复核");
+assertIncludes(stylesSource, ".manualActionDefaultReviewLayer");
 assertIncludes(workbenchSource, "1. 经营入口");
 assertIncludes(workbenchSource, "2. 广告组定位");
 assertIncludes(workbenchSource, "3. 搜索词证据");

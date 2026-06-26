@@ -10310,6 +10310,44 @@ button.reviewTodoQueueNext:focus-visible {
   line-height: 1.35;
 }
 
+.manualActionDefaultReviewLayer {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #c9dcf0;
+  border-radius: 8px;
+  padding: 8px 9px;
+  background: #f7fbff;
+  min-width: 0;
+}
+
+.manualActionDefaultReviewLayer span,
+.manualActionDefaultReviewLayer b,
+.manualActionDefaultReviewLayer p,
+.manualActionDefaultReviewLayer small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.manualActionDefaultReviewLayer span {
+  color: #58708a;
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.manualActionDefaultReviewLayer b {
+  color: #172a42;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.manualActionDefaultReviewLayer p,
+.manualActionDefaultReviewLayer small {
+  margin: 0;
+  color: #607186;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .manualActionKeyEvidenceCheck {
   display: grid;
   gap: 8px;
