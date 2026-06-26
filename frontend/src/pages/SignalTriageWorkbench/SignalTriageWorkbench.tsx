@@ -1074,6 +1074,10 @@ export function SignalTriageWorkbench() {
     () => (selectedSignal ? buildSignalDiagnosisEvidenceSummary(selectedSignal, selectedDiagnosisContractItems) : null),
     [selectedDiagnosisContractItems, selectedSignal],
   );
+  const selectedManualActionKeyEvidenceFacts = useMemo(
+    () => (selectedSignal?.evidence?.facts ? buildKeyEvidenceFacts(selectedSignal.evidence.facts, 3, selectedSignal) : []),
+    [selectedSignal],
+  );
   const selectedSearchTermOpportunityReviewChain = useMemo(
     () => buildSearchTermOpportunityReviewChain(selectedDiagnosisContractItems, selectedTriageBusinessEvidenceItems),
     [selectedDiagnosisContractItems, selectedTriageBusinessEvidenceItems],
@@ -3496,6 +3500,38 @@ export function SignalTriageWorkbench() {
                     ))}
                   </ol>
                 </div>
+                {selectedManualActionKeyEvidenceFacts.length > 0 && (
+                  <div className="manualActionKeyEvidenceCheck" aria-label="点击前关键证据核对">
+                    <div>
+                      <strong>点击前关键证据核对</strong>
+                      <span>复用中间诊断证据</span>
+                    </div>
+                    <ul>
+                      {selectedManualActionKeyEvidenceFacts.map((fact, index) => (
+                        <li key={`${fact.label}-${fact.value}-${index}`}>
+                          <span>{fact.source_type ?? `触发证据 ${index + 1}`}</span>
+                          <b>
+                            {evidenceFactDisplayLabel(fact.label)}：{fact.value}
+                          </b>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="manualActionKeyEvidenceBoundary">
+                      <span>
+                        <b>能支撑</b>
+                        {selectedDiagnosisEvidenceSummary?.proves ?? "等待诊断合同补充证明边界"}
+                      </span>
+                      <span>
+                        <b>不能支撑</b>
+                        {selectedDiagnosisEvidenceSummary?.doesNotProve ?? "不能直接推出自动广告动作"}
+                      </span>
+                      <span>
+                        <b>人工下一步</b>
+                        {selectedDiagnosisEvidenceSummary?.nextManualStep ?? "只允许人工记录、处理、加入复盘或忽略本次"}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 <div className="manualActionButtonCommandSummary" aria-label="人工确认前四问">
                   <div>
                     <strong>人工确认前四问</strong>

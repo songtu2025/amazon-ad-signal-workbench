@@ -10009,6 +10009,85 @@ button.reviewTodoQueueNext:focus-visible {
   line-height: 1.35;
 }
 
+.manualActionKeyEvidenceCheck {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #d5e4f0;
+  border-radius: 8px;
+  padding: 9px;
+  background: #ffffff;
+}
+
+.manualActionKeyEvidenceCheck > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.manualActionKeyEvidenceCheck strong {
+  color: #1f3147;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.manualActionKeyEvidenceCheck > div:first-child span {
+  border: 1px solid #d7e4ef;
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #f8fbff;
+  color: #425f7c;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.manualActionKeyEvidenceCheck ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.manualActionKeyEvidenceCheck li {
+  display: grid;
+  gap: 3px;
+  border: 1px solid #e1ebf5;
+  border-radius: 7px;
+  padding: 7px;
+  background: #fbfdff;
+}
+
+.manualActionKeyEvidenceCheck li span,
+.manualActionKeyEvidenceBoundary b {
+  color: #66758a;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.manualActionKeyEvidenceCheck li b,
+.manualActionKeyEvidenceBoundary span {
+  color: #203246;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.manualActionKeyEvidenceBoundary {
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid #e4edf5;
+  padding-top: 8px;
+}
+
+.manualActionKeyEvidenceBoundary span {
+  display: grid;
+  gap: 2px;
+}
+
 .manualActionButtonCommandSummary {
   display: grid;
   gap: 8px;
