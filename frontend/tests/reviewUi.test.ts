@@ -2464,6 +2464,113 @@ assertEqual(
   ),
   "已记录：标记已处理；点击后读回一致：标记已处理已读回留痕 + 7d / 14d，待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘待办只表示进入排程，未到期不判断效果，尚未保存复盘结论；B06VW5SQ97 写后读回：证据快照 1 条，复盘排程 7 天 / 14 天（只表示进入排程，未到期不判断效果），待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘结论 0 条，不执行广告动作；写后读回通过：B06VW5SQ97 已有 1 条人工留痕、2 条复盘排程；复盘待办只表示进入排程，未到期不判断效果；证据读回：留痕 8 条，复盘排程 7 天 8 条 / 14 天 8 条；不执行广告动作，不保存复盘结论。",
 );
+const searchTermEvidenceSnapshotForReadback = [
+  { label: "对象引用", value: "search_term / search_term:1:b01fay0yl0", source: "manual_action" },
+  { label: "排查路径", value: "搜索词 -> 广告活动 / 广告组 -> 投放词结构", source: "business_rule" },
+  { label: "AI 准入", value: "可进入人工确认 / ready_for_manual_confirmation", source: "actionability_status" },
+  { label: "搜索词边界", value: "b01fay0yl0 不能自动归因到单个广告 ASIN", source: "business_rule" },
+  { label: "广告位边界", value: "同广告活动广告位只能作为背景", source: "business_rule" },
+  ...Array.from({ length: 26 }, (_, index) => ({
+    label: `证据快照 ${index + 1}`,
+    value: `证据 ${index + 1}`,
+    source: "diagnosis_contract",
+  })),
+];
+const searchTermActionForPostWriteReadback: ManualActionForUi = {
+  action_type: "add_to_review",
+  shop_id: "market:1",
+  market_id: 1,
+  object_type: "search_term",
+  object_id: "search_term:1:b01fay0yl0",
+  object_label: "b01fay0yl0",
+  evidence_snapshot: searchTermEvidenceSnapshotForReadback,
+};
+const searchTermPostWriteTodos: ReviewTodoForUi[] = [
+  {
+    review_window: "7d",
+    due_at: "2026-07-03T00:00:00+00:00",
+    is_due: false,
+    object_type: "search_term",
+    object_id: "search_term:1:b01fay0yl0",
+    object_label: "b01fay0yl0",
+    evidence_snapshot: searchTermEvidenceSnapshotForReadback,
+  },
+  {
+    review_window: "14d",
+    due_at: "2026-07-10T00:00:00+00:00",
+    is_due: false,
+    object_type: "search_term",
+    object_id: "search_term:1:b01fay0yl0",
+    object_label: "b01fay0yl0",
+    evidence_snapshot: searchTermEvidenceSnapshotForReadback,
+  },
+];
+const searchTermPostWriteReadbackMessage = manualActionPostWriteReadbackMessage(
+  searchTermActionForPostWriteReadback,
+  searchTermPostWriteTodos,
+  [],
+  {
+    status: "post_write_verified",
+    mode: "post_write",
+    will_write: false,
+    requires_explicit_authorization: false,
+    target: {
+      action_type: "add_to_review",
+      object_type: "search_term",
+      object_id: "search_term:1:b01fay0yl0",
+      object_label: "b01fay0yl0",
+      review_windows: ["7d", "14d"],
+    },
+    current_counts: {
+      target_manual_action_count: 1,
+      target_review_todo_count: 2,
+      target_review_record_count: 0,
+    },
+    expected_after_write: {
+      target_manual_action_count: 1,
+      target_review_todo_count: 2,
+    },
+    blockers: [],
+    forbidden_effects: ["不执行广告动作", "不保存 review_records"],
+    post_write_checks: {
+      target_manual_action_evidence_snapshot_counts: [
+        {
+          signal_id: "sig-long-tail-opportunity-gerpgo_market_1_20260616_120443:507938343",
+          object_type: "search_term",
+          object_id: "search_term:1:b01fay0yl0",
+          evidence_snapshot_count: 31,
+        },
+      ],
+      target_review_todo_evidence_snapshot_counts: [
+        {
+          signal_id: "sig-long-tail-opportunity-gerpgo_market_1_20260616_120443:507938343",
+          object_type: "search_term",
+          object_id: "search_term:1:b01fay0yl0",
+          review_window: "7d",
+          evidence_snapshot_count: 31,
+        },
+        {
+          signal_id: "sig-long-tail-opportunity-gerpgo_market_1_20260616_120443:507938343",
+          object_type: "search_term",
+          object_id: "search_term:1:b01fay0yl0",
+          review_window: "14d",
+          evidence_snapshot_count: 31,
+        },
+      ],
+    },
+  },
+);
+assertIncludes(searchTermPostWriteReadbackMessage, "b01fay0yl0");
+assertIncludes(searchTermPostWriteReadbackMessage, "search_term:1:b01fay0yl0");
+assertIncludes(searchTermPostWriteReadbackMessage, "写后读回：证据快照 31 条");
+assertIncludes(searchTermPostWriteReadbackMessage, "复盘排程 7 天 / 14 天");
+assertIncludes(searchTermPostWriteReadbackMessage, "待办证据快照待核对：7d 31 条 / 14d 31 条");
+assertIncludes(searchTermPostWriteReadbackMessage, "缺Parent ASIN 广告搜索词表现复核");
+assertIncludes(searchTermPostWriteReadbackMessage, "缺口未补齐前不能保存结论");
+assertIncludes(searchTermPostWriteReadbackMessage, "复盘结论 0 条");
+assertIncludes(searchTermPostWriteReadbackMessage, "证据读回：留痕 31 条，复盘排程 7 天 31 条 / 14 天 31 条");
+assertIncludes(searchTermPostWriteReadbackMessage, "不执行广告动作");
+assertIncludes(searchTermPostWriteReadbackMessage, "不保存复盘结论");
 assertEqual(
   manualActionPostWriteReadbackMessage(
     handledActionForReadback,
