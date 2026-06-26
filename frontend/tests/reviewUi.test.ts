@@ -1206,7 +1206,7 @@ assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "人工下一步
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "需要补证");
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "动作边界");
 assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "不自动执行广告动作");
-assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "未到期不判断效果");
+assertIncludes(JSON.stringify(readyReviewTodoDecisionReadback), "未到期只等待处理前后指标");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "复盘待办证据回读核对");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "业务判断");
 assertIncludes(JSON.stringify(readyReviewTodoEvidenceReadback), "诊断路径");
@@ -2214,7 +2214,7 @@ const postWriteVerifiedPreflight = {
 };
 assertIncludes(
   manualActionPreflightStatusText(postWriteVerifiedPreflight),
-  "写后读回通过：B06VW5SQ97 已有 1 条人工留痕、2 条复盘排程；复盘待办只表示进入排程，未到期不判断效果；证据读回：留痕 8 条，复盘排程 7 天 8 条 / 14 天 8 条；不执行广告动作，不保存复盘结论。",
+  "写后读回通过：B06VW5SQ97 已有 1 条人工留痕、2 条复盘排程；复盘待办只表示进入排程，未到期只等待处理前后指标；证据读回：留痕 8 条，复盘排程 7 天 8 条 / 14 天 8 条；不执行广告动作，不保存复盘结论。",
 );
 assertIncludes(
   manualActionPreflightStatusText(postWriteVerifiedPreflight),
@@ -2489,7 +2489,7 @@ assertEqual(
 );
 assertEqual(
   manualActionReadbackConsistencyText(handledActionForReadback, [dueTodoWithCompleteEvidence, pendingTodoWithCompleteEvidence], []),
-  "点击后读回一致：标记已处理已读回留痕 + 7d / 14d，待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘待办只表示进入排程，未到期不判断效果，尚未保存复盘结论。",
+  "点击后读回一致：标记已处理已读回留痕 + 7d / 14d，待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘待办只表示进入排程，未到期只等待处理前后指标，尚未保存复盘结论。",
 );
 assertIncludes(
   manualActionReadbackConsistencyText(handledActionForReadback, [dueTodoWithCompleteEvidence, pendingTodoWithCompleteEvidence], [savedReviewRecord], {
@@ -2511,7 +2511,7 @@ assertEqual(
     [],
     postWriteVerifiedPreflight,
   ),
-  "已记录：标记已处理；点击后读回一致：标记已处理已读回留痕 + 7d / 14d，待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘待办只表示进入排程，未到期不判断效果，尚未保存复盘结论；B06VW5SQ97 写后复盘：复盘看什么：花费、订单、销售额、ACOS、CVR 和广告位 / 搜索词边界；写后读回：证据快照 1 条，复盘排程 7 天 / 14 天（只表示进入排程，未到期不判断效果），待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘结论 0 条，不执行广告动作；写后读回通过：B06VW5SQ97 已有 1 条人工留痕、2 条复盘排程；复盘待办只表示进入排程，未到期不判断效果；证据读回：留痕 8 条，复盘排程 7 天 8 条 / 14 天 8 条；不执行广告动作，不保存复盘结论。",
+  "已记录：标记已处理；点击后读回一致：标记已处理已读回留痕 + 7d / 14d，待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘待办只表示进入排程，未到期只等待处理前后指标，尚未保存复盘结论；B06VW5SQ97 写后复盘：复盘看什么：花费、订单、销售额、ACOS、CVR 和广告位 / 搜索词边界；写后读回：证据快照 1 条，复盘排程 7 天 / 14 天（只表示进入排程，未到期只等待处理前后指标，不保存复盘结论），待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘结论 0 条，不执行广告动作；写后读回通过：B06VW5SQ97 已有 1 条人工留痕、2 条复盘排程；复盘待办只表示进入排程，未到期只等待处理前后指标；证据读回：留痕 8 条，复盘排程 7 天 8 条 / 14 天 8 条；不执行广告动作，不保存复盘结论。",
 );
 const searchTermEvidenceSnapshotForReadback = [
   { label: "对象引用", value: "search_term / search_term:1:b01fay0yl0", source: "manual_action" },
@@ -2629,7 +2629,7 @@ assertEqual(
     null,
     manualActionPostWritePreflightReadErrorText,
   ),
-  "已记录：标记已处理；点击后读回一致：标记已处理已读回留痕 + 7d / 14d，待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘待办只表示进入排程，未到期不判断效果，尚未保存复盘结论；写后读回失败，已保留人工留痕，请稍后刷新核对复盘排程。",
+  "已记录：标记已处理；点击后读回一致：标记已处理已读回留痕 + 7d / 14d，待办证据快照：7d 4 条 / 14d 4 条；可回看对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界，复盘待办只表示进入排程，未到期只等待处理前后指标，尚未保存复盘结论；写后读回失败，已保留人工留痕，请稍后刷新核对复盘排程。",
 );
 const postWritePreflightRequest = buildManualActionPostWritePreflightRequest({
   action: handledActionForReadback,

@@ -3081,7 +3081,7 @@ export function buildReviewReadinessGateSummary(
       detail: gapReasonText,
       boundary: isReviewEvidenceGateBlocked
         ? `缺 evidence_snapshot、排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证或动作边界时，不能把当前页面证据伪装成历史点击证据；当前${forbiddenActionText}。`
-        : `not_ready 只说明证据不足，不能形成改善、无变化或恶化结论；当前${forbiddenActionText}。`,
+        : `not_ready 只说明证据不足，不能保存复盘结论或形成规则反馈样本；当前${forbiddenActionText}。`,
       identityAudit,
       queueSeparation,
       items: [
@@ -7922,7 +7922,7 @@ function productScopePriorityNextStep(input: {
   hasAdEvidence: boolean;
 }): string {
   if (input.dueReviewTodoCount > 0) return "先打开这个 Parent ASIN，核对到期 ReviewTodo，再人工保存复盘记录。";
-  if (input.reviewTodoCount > 0) return "暂不判断效果，等待 ReviewTodo 到期；只补充观察，不自动改广告。";
+  if (input.reviewTodoCount > 0) return "暂不保存复盘结论，等待 ReviewTodo 到期后核对处理前后指标；只补充观察，不自动改广告。";
   if (input.highSignalCount > 0) return "打开后先看最高优先级信号，再在右侧选择记录观察、标记已处理、加入复盘或忽略本次。";
   if (input.openSignalCount > 0) return "打开后只复核当前广告证据是否足够，证据不足时记录观察或保持待确认。";
   if (input.hasAdEvidence) return "保留观察即可；没有明确异常或机会时，不需要逐层阅读全部广告数据。";
@@ -8656,7 +8656,7 @@ export function buildProductScopeFirstScreenSummary(
               statusLabel: "诊断 MVP",
               summary: `当前有真实广告证据，但 ${candidateText}；可用于定位问题，不是完整业务闭环。`,
               detail: "继续下钻广告 ASIN、广告组、搜索词和广告位，确认对象边界、证据强度和 AI 准入原因。",
-              boundary: "没有可写候选或可复核指标时，不能保存 review_records，不能形成改善、无变化或恶化结论。",
+              boundary: "没有可写候选或可复核指标时，不能保存 review_records，不能形成规则反馈样本。",
               tone: "diagnostic",
             }
           : {
@@ -8709,8 +8709,10 @@ export function buildProductScopeFirstScreenSummary(
       label: "复盘门槛",
       value: reviewGateValue,
       detail: hasTriageSummary
-        ? `已保存 review_records ${reviewRecordCount} 条；未保存复盘结论前不能形成改善、无变化或恶化判断。`
-        : "等待 /api/signal-triage 读回复盘门槛；读回前不能形成改善、无变化或恶化判断。",
+        ? reviewRecordCount > 0
+          ? `已保存 review_records ${reviewRecordCount} 条；这些是人工复盘结论，只作为规则解释反馈，不自动执行广告动作。`
+          : "尚未保存 review_records；只有处理前后指标可复核并经人工确认后，才形成复盘结论。"
+        : "等待 /api/signal-triage 读回复盘门槛；读回前只能确认是否有可复核指标，不能保存复盘结论。",
       tone: !hasTriageSummary ? "waiting" : readyReviewCount > 0 ? "ready" : manualActionCount > 0 ? "waiting" : "blocked",
     },
   ];

@@ -773,7 +773,7 @@ async function main() {
   assertIncludes(readbackText, "AI 准入");
   assertIncludes(readbackText, "搜索词边界");
   assertIncludes(readbackText, "广告位边界");
-  assertIncludes(readbackText, "未到期不判断效果");
+  assertIncludes(readbackText, "未到期只等待处理前后指标");
   const readbackConsistencyText = manualActionReadbackConsistencyText(latestManualAction, reviewTodos, []);
   assertIncludes(readbackConsistencyText, "待办证据快照");
   assertIncludes(readbackConsistencyText, "可回看对象引用");

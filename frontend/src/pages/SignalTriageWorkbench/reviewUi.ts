@@ -875,7 +875,7 @@ export function buildManualActionPathSteps(input: ManualActionPathStepInput): Ma
       label: "7/14 天复盘",
       value: input.hasReviewTodo ? "已排程" : hasManualAction ? "未读到待办" : "留痕后生成",
       detail: input.hasReviewTodo
-        ? "复盘待办只表示进入排程，未到期不判断效果。"
+        ? "复盘待办只表示进入排程，未到期只等待处理前后指标，不保存复盘结论。"
         : "没有复盘待办时不保存复盘结论。",
       tone: input.hasReviewTodo ? "done" : hasManualAction ? "blocked" : "waiting",
     },
@@ -1231,7 +1231,7 @@ export function buildReviewEffectWindowLedger(
       afterWindow: "生成 7d / 14d ReviewTodo 后再计算",
       metricCoverage: "暂无处理前 / 处理后指标窗口。",
       nextStep: "先完成明确人工动作，系统再生成 7d / 14d 复盘待办。",
-      boundary: "没有人工动作和 ReviewTodo 时，不能判断建议有效、无效或恶化。",
+      boundary: "没有人工动作和 ReviewTodo 时，不能保存复盘结论或判断人工动作影响。",
     };
   }
 
@@ -1508,7 +1508,7 @@ export function buildReviewTodoDecisionReadbackSummary(todo: ReviewTodoForUi | n
     title: isSearchTermTodo ? "复盘待办业务判断读回" : "复盘待办判断读回",
     tone,
     summary: hasCoreReadback
-      ? "已能第一眼回看当时为什么进入复盘、证据能证明什么、不能证明什么、从哪个 Parent ASIN / 广告对象展开、默认看哪个广告组、逐投放复核顺序和动作边界；待办仍只表示排程，未到期不判断效果。"
+      ? "已能第一眼回看当时为什么进入复盘、证据能证明什么、不能证明什么、从哪个 Parent ASIN / 广告对象展开、默认看哪个广告组、逐投放复核顺序和动作边界；待办仍只表示排程，未到期只等待处理前后指标，不保存复盘结论。"
       : hasSnapshot
         ? "当前待办有证据快照，但缺少业务判断、证明边界、原始诊断路径、人工下一步或动作边界；保存 ReviewRecord 前必须回到完整证据核对。"
         : "当前待办没有证据快照；只能看到排程，不能回看当时判断。",
@@ -4149,7 +4149,7 @@ const manualActionReadbackLabel: Record<ManualActionForUi["action_type"], string
 };
 
 const reviewWindowOrder: ReviewTodoForUi["review_window"][] = ["7d", "14d"];
-const reviewTodoPendingEffectBoundaryText = "复盘待办只表示进入排程，未到期不判断效果";
+const reviewTodoPendingEffectBoundaryText = "复盘待办只表示进入排程，未到期只等待处理前后指标";
 
 function hasReviewMetricWindow(record: ReviewRecordForUi) {
   return Boolean(
@@ -4587,10 +4587,10 @@ export function buildManualActionReadbackPathItems(input: ManualActionReadbackPa
           ? "忽略本次不生成 7/14 天排程，符合预期；这不代表误报或删除信号。"
           : "忽略本次应为 0 条待办，需核对对象范围。"
         : todoWindowsComplete && todoEvidenceComplete
-          ? `${todoEvidenceReadback ?? "7/14 天待办已读回"}；只表示进入排程，未到期不判断效果。`
+          ? `${todoEvidenceReadback ?? "7/14 天待办已读回"}；只表示进入排程，未到期只等待处理前后指标，不保存复盘结论。`
           : todoWindowsComplete
-            ? `${todoEvidenceReadback ?? "7/14 天待办证据待核对"}；缺口未补齐前不能保存结论，未到期不判断效果。`
-          : `${todoEvidenceReadback ?? "复盘类动作应读回 7d / 14d"}；缺口未补齐前不能保存结论，未到期不判断效果。`,
+            ? `${todoEvidenceReadback ?? "7/14 天待办证据待核对"}；缺口未补齐前不能保存结论，未到期只等待处理前后指标。`
+          : `${todoEvidenceReadback ?? "复盘类动作应读回 7d / 14d"}；缺口未补齐前不能保存结论，未到期只等待处理前后指标。`,
       tone: todoComplete ? "ready" : "blocked",
     },
     {
@@ -4599,7 +4599,7 @@ export function buildManualActionReadbackPathItems(input: ManualActionReadbackPa
       detail:
         reviewRecordCount > 0
           ? `已读回 ${reviewRecordCount} 条复盘结论；${reviewRecordEvidenceReadback ?? "复盘证据快照待核对"}；只作为规则解释反馈，不自动执行广告动作。`
-          : "未到 7/14 天完整窗口前不保存 review_records，不判断广告效果。",
+          : "未到 7/14 天完整窗口前不保存 review_records，只等待可复核的处理前后指标。",
       tone: reviewRecordCount > 0 ? "saved" : "waiting",
     },
   ];
@@ -4698,7 +4698,9 @@ function manualActionPostWriteReadbackSummary(
   const reviewRecordCount =
     postWritePreflight?.current_counts?.target_review_record_count ?? reviewRecordsForSelectedObject.length;
   const reviewTodoBoundaryText =
-    windows.length > 0 && numberOrZero(reviewRecordCount) === 0 ? "（只表示进入排程，未到期不判断效果）" : "";
+    windows.length > 0 && numberOrZero(reviewRecordCount) === 0
+      ? "（只表示进入排程，未到期只等待处理前后指标，不保存复盘结论）"
+      : "";
   const forbiddenText = postWritePreflight?.forbidden_effects?.some((effect) => effect.includes("不执行广告动作"))
     ? "不执行广告动作"
     : "禁止副作用需继续核对";

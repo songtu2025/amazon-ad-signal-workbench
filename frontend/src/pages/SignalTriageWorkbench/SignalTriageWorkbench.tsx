@@ -1373,7 +1373,7 @@ export function SignalTriageWorkbench() {
         ? `已回读 ${readyCount}/${totalCount} 个诊断路径节点；到期复盘先沿 Parent ASIN、广告组、搜索词证据回看，再判断处理后指标。`
         : selectedReviewTodoDecisionReadback.tone === "blocked"
           ? "复盘待办已有证据快照，但诊断路径不完整；到期后先补齐 Parent ASIN、广告组或搜索词证据，再保存复盘结论。"
-          : "当前还没有可回读的复盘待办证据快照；只能确认排程，不能判断效果。";
+          : "当前还没有可回读的复盘待办证据快照；只能确认排程，不能保存复盘结论。";
     return {
       title: "复盘待办诊断路径读回",
       tone: selectedReviewTodoDecisionReadback.tone,
@@ -5780,7 +5780,7 @@ function ProductScopeSingleScreenCommandCard({
         <span className={reviewGate?.tone ?? "blocked"}>
           <b>7/14 天复盘</b>
           <strong>{reviewGate?.value ?? "暂无复盘结论"}</strong>
-          <small>{reviewGate?.detail ?? "未到复盘窗口前不能判断处理有效或无效。"}</small>
+          <small>{reviewGate?.detail ?? "未到复盘窗口前只能等待处理前后指标，不保存复盘结论。"}</small>
         </span>
       </div>
       <small>{summary.boundary} 这张卡只做单屏分诊，不写入人工动作，也不执行广告操作。</small>

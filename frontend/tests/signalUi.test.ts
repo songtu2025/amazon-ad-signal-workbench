@@ -5638,7 +5638,7 @@ assertIncludes(noCandidateMvpSummary?.mvpStatus.summary ?? "", "当前有真实�
 assertIncludes(noCandidateMvpSummary?.mvpStatus.summary ?? "", "不是完整业务闭环");
 assertIncludes(noCandidateMvpSummary?.mvpStatus.detail ?? "", "继续下钻广告 ASIN、广告组、搜索词和广告位");
 assertIncludes(noCandidateMvpSummary?.mvpStatus.boundary ?? "", "不能保存 review_records");
-assertIncludes(noCandidateMvpSummary?.mvpStatus.boundary ?? "", "不能形成改善、无变化或恶化结论");
+assertIncludes(noCandidateMvpSummary?.mvpStatus.boundary ?? "", "不能形成规则反馈样本");
 
 const blockedCandidateMvpSummary = buildProductScopeFirstScreenSummary(productScopeGroupOverview, {
   signal_status: { candidate_count: 3 },
