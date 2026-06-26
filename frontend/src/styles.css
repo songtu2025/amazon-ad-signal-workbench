@@ -6165,6 +6165,20 @@ button.reviewTodoQueueNext:focus-visible {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.metricDecisionPanel {
+  display: grid;
+  gap: 9px;
+  padding: 14px 0 14px 46px;
+  border-top: 1px solid #dce9f5;
+}
+
+.metricDecisionPanel > p {
+  margin: 0;
+  color: #42556d;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
 .metricsRow .metricDecisionCell {
   align-content: start;
   min-height: 154px;
@@ -6197,7 +6211,8 @@ button.reviewTodoQueueNext:focus-visible {
 
 .detailSection.diagnosisStep,
 .diagnosisPathPanel.diagnosisStep,
-.evidenceWorkbench.diagnosisStep {
+.evidenceWorkbench.diagnosisStep,
+.metricDecisionPanel.diagnosisStep {
   border-top-color: #dce9f5;
 }
 

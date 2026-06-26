@@ -6710,11 +6710,22 @@ function SignalDiagnosis({
         <span>来源：{freshnessLabel[signal.freshness_status]}</span>
       </div>
 
-      <div className="metricsRow metricDecisionRow" aria-label="关键指标判断目的">
-        {metricDecisionItems.map((item) => (
-          <MetricDecisionCell key={item.label} item={item} />
-        ))}
-      </div>
+      {diagnosisContractItems.length > 0 && (
+        <DiagnosisContractPanel items={diagnosisContractItems} summary={diagnosisEvidenceSummary} />
+      )}
+
+      <section className="metricDecisionPanel diagnosisStep stepEvidence" aria-label="关键指标判断目的">
+        <div className="detailSectionHeader">
+          <h3>关键指标判断目的</h3>
+          <span>只服务上方业务判断</span>
+        </div>
+        <p>这些指标只用于判断证据强度、对象边界和人工复核优先级，不能直接推出自动广告动作。</p>
+        <div className="metricsRow metricDecisionRow">
+          {metricDecisionItems.map((item) => (
+            <MetricDecisionCell key={item.label} item={item} />
+          ))}
+        </div>
+      </section>
 
       <section className="detailSection diagnosisReason diagnosisStep stepReason" aria-label="原因">
         <div className="detailSectionHeader">
@@ -6728,10 +6739,6 @@ function SignalDiagnosis({
       </section>
 
       {triageDiagnosisPathItems.length > 0 && <DiagnosisPathPanel items={triageDiagnosisPathItems} />}
-
-      {diagnosisContractItems.length > 0 && (
-        <DiagnosisContractPanel items={diagnosisContractItems} summary={diagnosisEvidenceSummary} />
-      )}
 
       {searchTermOpportunityReviewChain && (
         <SearchTermOpportunityReviewChainPanel chain={searchTermOpportunityReviewChain} adContextRows={searchTermAdContextRows} />
