@@ -1633,34 +1633,41 @@ export function SignalTriageWorkbench() {
     [selectedManualActionPreviewPreflight],
   );
   const selectedManualActionButtonCommandItems = useMemo(() => {
-    const manualActionContract = selectedManualActionPostWriteContractItems.find((item) => item.label === "人工留痕");
     const reviewTodoContract = selectedManualActionPostWriteContractItems.find((item) => item.label === "复盘待办");
     return [
       {
-        label: "当前可点什么",
-        value: selectedManualActionChoiceRecommendation.label,
-        detail: selectedManualActionChoiceRecommendation.reason,
-      },
-      {
-        label: "为什么可点",
-        value: selectedManualActionChoiceRecommendation.tone === "ready" ? "准入可人工点击" : "暂不可写入",
-        detail: selectedManualActionAuthorizationReadiness?.primary ?? selectedManualActionChoiceRecommendation.evidenceBoundary,
-      },
-      {
-        label: "点后写什么",
-        value: manualActionContract?.value ?? "等待后端预检",
+        label: "1. 当前在确认什么",
+        value: selectedDiagnosisEvidenceSummary?.businessQuestion ?? "等待中间诊断业务问题",
         detail:
-          selectedManualActionAuthorizationReadiness?.authorizedResult ??
-          manualActionContract?.detail ??
-          selectedManualActionChoiceRecommendation.reviewPlan,
+          selectedDiagnosisEvidenceSummary?.objectReadback ??
+          "先确认当前人工按钮对应同一个 Parent ASIN、广告组和 SearchTerm 诊断对象。",
       },
       {
-        label: "何时复盘",
-        value: reviewTodoContract?.value ?? "7d / 14d",
-        detail: reviewTodoContract?.detail ?? selectedManualActionChoiceRecommendation.reviewPlan,
+        label: "2. 证据能证明什么",
+        value: selectedDiagnosisEvidenceSummary?.proves ?? "等待证据链读回",
+        detail: selectedManualActionChoiceRecommendation.evidenceLink,
+      },
+      {
+        label: "3. 证据不能证明什么",
+        value: selectedDiagnosisEvidenceSummary?.doesNotProve ?? "不能替代人工判断",
+        detail:
+          selectedDiagnosisEvidenceSummary?.evidenceGap ??
+          selectedManualActionChoiceRecommendation.evidenceBoundary,
+      },
+      {
+        label: "4. 现在人工做什么",
+        value: selectedManualActionChoiceRecommendation.label,
+        detail: [
+          selectedDiagnosisEvidenceSummary?.nextManualStep,
+          selectedManualActionAuthorizationReadiness?.primary ?? selectedManualActionChoiceRecommendation.reason,
+          reviewTodoContract?.detail ?? selectedManualActionChoiceRecommendation.reviewPlan,
+        ]
+          .filter((item): item is string => Boolean(item))
+          .join(" "),
       },
     ];
   }, [
+    selectedDiagnosisEvidenceSummary,
     selectedManualActionAuthorizationReadiness,
     selectedManualActionChoiceRecommendation,
     selectedManualActionPostWriteContractItems,
@@ -3483,10 +3490,10 @@ export function SignalTriageWorkbench() {
                     ))}
                   </ol>
                 </div>
-                <div className="manualActionButtonCommandSummary" aria-label="人工按钮执行摘要">
+                <div className="manualActionButtonCommandSummary" aria-label="人工确认前四问">
                   <div>
-                    <strong>按钮前先看这四件事</strong>
-                    <span>默认决策层</span>
+                    <strong>人工确认前四问</strong>
+                    <span>先判断再点击</span>
                   </div>
                   <ul>
                     {selectedManualActionButtonCommandItems.map((item) => (

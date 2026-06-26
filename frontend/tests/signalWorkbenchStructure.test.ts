@@ -433,7 +433,7 @@ const productScopeManualActionTargetAlignmentIndex = workbenchSource.indexOf(
   "<ProductScopeManualActionTargetAlignmentCard summary={selectedManualActionTargetAlignment} />",
 );
 const manualActionDiagnosisPathSummaryIndex = workbenchSource.indexOf('aria-label="人工按钮前诊断路径核对"');
-const manualActionButtonCommandSummaryIndex = workbenchSource.indexOf('aria-label="人工按钮执行摘要"');
+const manualActionButtonCommandSummaryIndex = workbenchSource.indexOf('aria-label="人工确认前四问"');
 const manualActionPreflightDetailsIndex = workbenchSource.indexOf('aria-label="人工按钮前完整预检证据"');
 const manualActionPreflightEvidenceGapIndex = workbenchSource.indexOf('aria-label="优先查看的边界与证据缺口"');
 const manualActionPostWriteContractIndex = workbenchSource.indexOf('aria-label="点击后验收合同"');
@@ -662,15 +662,15 @@ assert(productScopeManualActionTargetAlignmentIndex < manualActionGridIndex, "�
 assert(manualActionDiagnosisPathSummaryIndex > manualActionSectionIndex, "人工按钮前诊断路径核对必须渲染在人工确认区内");
 assert(
   manualActionDiagnosisPathSummaryIndex < manualActionButtonCommandSummaryIndex,
-  "人工按钮前必须先读回诊断路径，再看按钮执行摘要。",
+  "人工按钮前必须先读回诊断路径，再看人工确认前四问。",
 );
 assert(manualActionDiagnosisPathSummaryIndex < manualActionGridIndex, "人工按钮前诊断路径核对必须先于人工动作按钮");
-assert(manualActionButtonCommandSummaryIndex > manualActionSectionIndex, "人工按钮执行摘要必须渲染在人工确认区内");
+assert(manualActionButtonCommandSummaryIndex > manualActionSectionIndex, "人工确认前四问必须渲染在人工确认区内");
 assert(
   manualActionButtonCommandSummaryIndex < manualActionPreflightDetailsIndex,
-  "人工确认默认层必须先回答按钮怎么点，再展开完整预检证据。",
+  "人工确认默认层必须先回答业务判断，再展开完整预检证据。",
 );
-assert(manualActionButtonCommandSummaryIndex < manualActionGridIndex, "人工按钮执行摘要必须先于人工动作按钮");
+assert(manualActionButtonCommandSummaryIndex < manualActionGridIndex, "人工确认前四问必须先于人工动作按钮");
 assert(manualActionPreflightDetailsIndex < manualActionGridIndex, "完整预检证据必须保留在按钮前的折叠审计区");
 assert(
   manualActionPreflightDetailsIndex < manualActionPreflightEvidenceGapIndex &&
@@ -1617,12 +1617,17 @@ assertIncludes(workbenchSource, "1. 经营入口");
 assertIncludes(workbenchSource, "2. 广告组定位");
 assertIncludes(workbenchSource, "3. 搜索词证据");
 assertIncludes(workbenchSource, "4. 按钮前核对");
-assertIncludes(workbenchSource, 'aria-label="人工按钮执行摘要"');
-assertIncludes(workbenchSource, "按钮前先看这四件事");
-assertIncludes(workbenchSource, "当前可点什么");
-assertIncludes(workbenchSource, "为什么可点");
-assertIncludes(workbenchSource, "点后写什么");
-assertIncludes(workbenchSource, "何时复盘");
+assertIncludes(workbenchSource, 'aria-label="人工确认前四问"');
+assertIncludes(workbenchSource, "人工确认前四问");
+assertIncludes(workbenchSource, "先判断再点击");
+assertIncludes(workbenchSource, "1. 当前在确认什么");
+assertIncludes(workbenchSource, "2. 证据能证明什么");
+assertIncludes(workbenchSource, "3. 证据不能证明什么");
+assertIncludes(workbenchSource, "4. 现在人工做什么");
+assertIncludes(workbenchSource, "selectedDiagnosisEvidenceSummary?.businessQuestion");
+assertIncludes(workbenchSource, "selectedDiagnosisEvidenceSummary?.proves");
+assertIncludes(workbenchSource, "selectedDiagnosisEvidenceSummary?.doesNotProve");
+assertIncludes(workbenchSource, "selectedDiagnosisEvidenceSummary?.nextManualStep");
 assertIncludes(workbenchSource, '<details className="manualActionPreflightDetails" aria-label="人工按钮前完整预检证据">');
 assertIncludes(workbenchSource, "展开完整预检、证据快照和写后合同");
 assertIncludes(workbenchSource, "selectedManualActionPostWriteDecisionItems");
