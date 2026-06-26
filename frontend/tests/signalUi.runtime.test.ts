@@ -289,6 +289,9 @@ async function main() {
   assertIncludes(diagnosisBriefRuntimeText, "不逐个读完整报表");
   assertIncludes(diagnosisBriefRuntimeText, "整体销售盘和广告承接占比");
   assertIncludes(diagnosisBriefRuntimeText, "今天应该先看哪个广告组");
+  assertIncludes(diagnosisBriefRuntimeText, "优先原因");
+  assertIncludes(diagnosisBriefRuntimeText, "证据合流");
+  assertIncludes(diagnosisBriefRuntimeText, "不是扫完整广告组列表");
   assertIncludes(diagnosisBriefRuntimeText, "投放商品、投放词、搜索词，还是广告位");
   assertIncludes(diagnosisBriefRuntimeText, "只能做哪一种人工动作");
   assertIncludes(diagnosisBriefRuntimeText, "只做人工留痕");

@@ -5302,7 +5302,7 @@ export function buildProductScopeDiagnosisBrief(
     ? `${routeGuide.steps.length} 层证据：${routeGuide.summary}`
     : firstScreenSummary.pathSummary;
   const adGroupJudgement = primaryAdGroup
-    ? `${primaryAdGroup.title}：${primaryAdGroup.statusLabel}；${primaryAdGroup.metrics}`
+    ? `优先看 ${primaryAdGroup.title}：${primaryAdGroup.problemType}；${primaryAdGroup.statusLabel}。优先原因：${primaryAdGroup.problemLocator.problemLocation}；证据合流：${primaryAdGroup.evidenceSynthesis.statusLabel}；${primaryAdGroup.metrics}。不是扫完整广告组列表。`
     : hasRecommendedAdGroupEvidence
       ? `当前没有独立广告组异常排序；${recommendedAdGroupLabel} 关联 ${recommendedAdGroupNames.length} 个广告组：${recommendedAdGroupNameText}。这些广告组只作为搜索词证据下钻入口，不代表广告组本身异常。`
     : "暂无可排序广告组；先确认广告商品、搜索词和广告位证据是否可下钻。";
@@ -5340,7 +5340,7 @@ export function buildProductScopeDiagnosisBrief(
     ? {
         title: "Parent ASIN 决策导览",
         primaryDecision: primaryAdGroup
-          ? `先展开 ${primaryAdGroup.title}：${primaryAdGroup.problemType}；${primaryAdGroup.statusLabel}。`
+          ? `先展开 ${primaryAdGroup.title}：${primaryAdGroup.problemType}；${primaryAdGroup.statusLabel}。优先原因：${primaryAdGroup.problemLocator.problemLocation}`
           : hasRecommendedAdGroupEvidence
             ? `可以进入广告诊断；先沿 ${recommendedAdGroupLabel} 关联的 ${recommendedAdGroupNames.length} 个广告组下钻证据，不把它包装成广告组异常。`
           : "可以进入广告诊断，但暂无可排序广告组；先确认广告组、投放商品、投放词、搜索词和广告位证据是否齐全。",
@@ -5376,7 +5376,7 @@ export function buildProductScopeDiagnosisBrief(
       label: "今日焦点",
       value: primaryAdGroup ? primaryAdGroup.title : hasRecommendedAdGroupEvidence ? `${recommendedAdGroupLabel} 关联广告组` : "等待广告组证据",
       detail: primaryAdGroup
-        ? `${primaryAdGroup.problemType}；${primaryAdGroup.problemLocator.problemLocation}`
+        ? `${primaryAdGroup.problemType}；${primaryAdGroup.problemLocator.problemLocation}；${primaryAdGroup.evidenceSynthesis.statusLabel}`
         : hasRecommendedAdGroupEvidence
           ? `${recommendedAdGroupNames.length} 个广告组可作为证据下钻入口：${recommendedAdGroupNameText}；不代表广告组异常结论。`
         : "缺少可排序广告组时，不展开广告组明细，也不生成广告动作。",
@@ -5434,7 +5434,7 @@ export function buildProductScopeDiagnosisBrief(
         label: "2",
         title: "广告组优先排序",
         businessQuestion: "进入广告诊断后，今天应该先看哪个广告组，而不是扫完整广告组列表？",
-        purpose: "在进入广告诊断后，先找最值得人工复核的广告组，避免运营逐个广告组读报表。",
+        purpose: "在进入广告诊断后，按问题落点、证据合流和人工可执行性先找最值得人工复核的广告组，避免运营逐个广告组读报表。",
         currentJudgement: adGroupJudgement,
         proves: adGroupProves,
         doesNotProve: adGroupDoesNotProve,

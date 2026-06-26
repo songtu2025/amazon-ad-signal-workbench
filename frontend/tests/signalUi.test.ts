@@ -5489,6 +5489,7 @@ assertIncludes(productScopeDiagnosisBrief.summary, "只输出可人工确认的�
 assertEqual(productScopeDiagnosisBrief.statusLabel, "人工留痕 MVP");
 assertEqual(productScopeDiagnosisBrief.decisionGuide.title, "Parent ASIN 决策导览");
 assertIncludes(productScopeDiagnosisBrief.decisionGuide.primaryDecision, "先展开");
+assertIncludes(productScopeDiagnosisBrief.decisionGuide.primaryDecision, "优先原因");
 assertIncludes(productScopeDiagnosisBrief.decisionGuide.readPath, "不逐个读完整报表");
 assertIncludes(productScopeDiagnosisBrief.decisionGuide.expandFocus, "投放商品 -> 投放词 -> 搜索词 -> 广告位");
 assertIncludes(productScopeDiagnosisBrief.decisionGuide.notToDo, "不要把销售子 ASIN 全量");
@@ -5523,8 +5524,13 @@ assertIncludes(productScopeDiagnosisBrief.sections[1].doesNotProve, "所有子 A
 assertIncludes(productScopeDiagnosisBrief.sections[1].nextManualStep, "下一步进入广告组排序");
 assertEqual(productScopeDiagnosisBrief.sections[2].title, "广告组优先排序");
 assertIncludes(productScopeDiagnosisBrief.sections[2].businessQuestion, "先看哪个广告组");
+assertIncludes(productScopeDiagnosisBrief.sections[2].purpose, "问题落点、证据合流和人工可执行性");
 assertIncludes(productScopeDiagnosisBrief.sections[2].purpose, "避免运营逐个广告组读报表");
+assertIncludes(productScopeDiagnosisBrief.sections[2].currentJudgement, "优先看");
+assertIncludes(productScopeDiagnosisBrief.sections[2].currentJudgement, "优先原因");
+assertIncludes(productScopeDiagnosisBrief.sections[2].currentJudgement, "证据合流");
 assertIncludes(productScopeDiagnosisBrief.sections[2].currentJudgement, "花费");
+assertIncludes(productScopeDiagnosisBrief.sections[2].currentJudgement, "不是扫完整广告组列表");
 assertEqual(productScopeDiagnosisBrief.sections[3].title, "广告组下具体数据");
 assertIncludes(productScopeDiagnosisBrief.sections[3].businessQuestion, "问题落在哪一层具体数据");
 assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "先确认问题落点、证据缺口和人工下一步");
