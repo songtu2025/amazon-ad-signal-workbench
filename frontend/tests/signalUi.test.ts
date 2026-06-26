@@ -5533,9 +5533,16 @@ assertIncludes(productScopeDiagnosisBrief.sections[2].currentJudgement, "花费"
 assertIncludes(productScopeDiagnosisBrief.sections[2].currentJudgement, "不是扫完整广告组列表");
 assertEqual(productScopeDiagnosisBrief.sections[3].title, "广告组下具体数据");
 assertIncludes(productScopeDiagnosisBrief.sections[3].businessQuestion, "问题落在哪一层具体数据");
-assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "先确认问题落点、证据缺口和人工下一步");
+assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "先给默认核对层");
 assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "投放商品、投放词、搜索词和广告位");
+assertIncludes(productScopeDiagnosisBrief.sections[3].purpose, "避免用户从四类明细里重新找入口");
+assertIncludes(productScopeDiagnosisBrief.sections[3].currentJudgement, "默认先查");
+assertIncludes(productScopeDiagnosisBrief.sections[3].currentJudgement, "搜索词");
+assertIncludes(productScopeDiagnosisBrief.sections[3].currentJudgement, "证据路径仍保留");
 assertIncludes(productScopeDiagnosisBrief.sections[3].currentJudgement, "7 层证据");
+assertIncludes(productScopeDiagnosisBrief.sections[3].proves, "默认复核层");
+assertIncludes(productScopeDiagnosisBrief.sections[3].doesNotProve, "其他三层没有问题");
+assertIncludes(productScopeDiagnosisBrief.sections[3].nextManualStep, "先按 3. 搜索词 核对");
 assertEqual(productScopeDiagnosisBrief.sections[4].title, "AI 人工动作判断");
 assertIncludes(productScopeDiagnosisBrief.sections[4].businessQuestion, "只能做哪一种人工动作");
 assertIncludes(productScopeDiagnosisBrief.sections[4].purpose, "在筛选口径、销售入口、广告组排序和广告组下具体数据都读完后");

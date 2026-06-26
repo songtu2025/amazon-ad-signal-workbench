@@ -5283,6 +5283,20 @@ export function productScopeAdGroupDiagnosisRows(summary: SignalTriageSummaryFor
     }));
 }
 
+function productScopeAdGroupDetailFocusLayer(row: ProductScopeAdGroupDiagnosisRow): string {
+  const focusText = `${row.problemLocator.problemLocation} ${row.evidenceSynthesis.statusLabel} ${row.evidenceSynthesis.evidenceGap} ${row.nextReviewFocus}`;
+  if (focusText.includes("搜索词") || focusText.includes("无订单") || focusText.includes("有效词")) {
+    return "3. 搜索词";
+  }
+  if (focusText.includes("广告位")) {
+    return "4. 广告位";
+  }
+  if (focusText.includes("投放词")) {
+    return "2. 投放词";
+  }
+  return "1. 投放商品";
+}
+
 export function buildProductScopeDiagnosisBrief(
   firstScreenSummary: ProductScopeFirstScreenSummary | null,
   routeGuide: ProductScopeEvidenceRouteGuide | null,
@@ -5301,6 +5315,7 @@ export function buildProductScopeDiagnosisBrief(
   const routeStepText = routeGuide
     ? `${routeGuide.steps.length} 层证据：${routeGuide.summary}`
     : firstScreenSummary.pathSummary;
+  const adGroupDetailFocusLayer = primaryAdGroup ? productScopeAdGroupDetailFocusLayer(primaryAdGroup) : "等待具体证据";
   const adGroupJudgement = primaryAdGroup
     ? `优先看 ${primaryAdGroup.title}：${primaryAdGroup.problemType}；${primaryAdGroup.statusLabel}。优先原因：${primaryAdGroup.problemLocator.problemLocation}；证据合流：${primaryAdGroup.evidenceSynthesis.statusLabel}；${primaryAdGroup.metrics}。不是扫完整广告组列表。`
     : hasRecommendedAdGroupEvidence
@@ -5321,6 +5336,18 @@ export function buildProductScopeDiagnosisBrief(
     : hasRecommendedAdGroupEvidence
       ? `先打开 ${recommendedAdGroupNameText} 核对同组投放商品、投放词、搜索词和广告位证据，再决定是否记录观察、加入复盘或忽略本次。`
     : "先补齐广告组、投放商品、投放词、搜索词和广告位证据，再进入人工复核。";
+  const adGroupDetailCurrentJudgement = primaryAdGroup
+    ? `默认先查 ${adGroupDetailFocusLayer}：${primaryAdGroup.problemLocator.problemLocation}；${primaryAdGroup.evidenceSynthesis.statusLabel}。证据路径仍保留 ${routeStepText}。`
+    : routeStepText;
+  const adGroupDetailProves = primaryAdGroup
+    ? `能证明当前广告组下默认复核层应先落到 ${adGroupDetailFocusLayer}；${primaryAdGroup.evidenceSynthesis.proves}`
+    : routeDecision?.proves ?? "能证明当前页面已经给出广告证据下钻路径。";
+  const adGroupDetailDoesNotProve = primaryAdGroup
+    ? `不能证明其他三层没有问题，也不能用 ${adGroupDetailFocusLayer} 直接生成自动广告动作；${primaryAdGroup.evidenceSynthesis.doesNotProve}`
+    : routeDecision?.doesNotProve ?? "不能证明搜索词、广告位或广告组表现已经归因到单个广告 ASIN。";
+  const adGroupDetailNextManualStep = primaryAdGroup
+    ? `先按 ${adGroupDetailFocusLayer} 核对；${primaryAdGroup.problemLocator.nextManualStep}`
+    : routeDecision?.nextManualStep ?? "按证据链逐层核对后，再进入右侧人工确认。";
   const adEvidenceGate = firstScreenSummary.landingGates.find((gate) => gate.label === "广告证据");
   const scopeGate = firstScreenSummary.landingGates.find((gate) => gate.label === "经营口径");
   const hasAdvertisedAsin = firstScreenSummary.adAsinRows.length > 0;
@@ -5446,12 +5473,11 @@ export function buildProductScopeDiagnosisBrief(
         label: "3",
         title: "广告组下具体数据",
         businessQuestion: "当前广告组下的问题落在哪一层具体数据：投放商品、投放词、搜索词，还是广告位？",
-        purpose: "先确认问题落点、证据缺口和人工下一步，再把广告组下具体数据拆成投放商品、投放词、搜索词和广告位四类证据。",
-        currentJudgement: routeStepText,
-        proves: routeDecision?.proves ?? "能证明当前页面已经给出广告证据下钻路径。",
-        doesNotProve:
-          routeDecision?.doesNotProve ?? "不能证明搜索词、广告位或广告组表现已经归因到单个广告 ASIN。",
-        nextManualStep: routeDecision?.nextManualStep ?? "按证据链逐层核对后，再进入右侧人工确认。",
+        purpose: "先给默认核对层，再把广告组下具体数据拆成投放商品、投放词、搜索词和广告位四类证据，避免用户从四类明细里重新找入口。",
+        currentJudgement: adGroupDetailCurrentJudgement,
+        proves: adGroupDetailProves,
+        doesNotProve: adGroupDetailDoesNotProve,
+        nextManualStep: adGroupDetailNextManualStep,
         tone: routeGuide ? "context" : "blocked",
       },
       {

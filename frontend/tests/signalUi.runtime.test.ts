@@ -293,6 +293,9 @@ async function main() {
   assertIncludes(diagnosisBriefRuntimeText, "证据合流");
   assertIncludes(diagnosisBriefRuntimeText, "不是扫完整广告组列表");
   assertIncludes(diagnosisBriefRuntimeText, "投放商品、投放词、搜索词，还是广告位");
+  assertIncludes(diagnosisBriefRuntimeText, "默认先查");
+  assertIncludes(diagnosisBriefRuntimeText, "证据路径仍保留");
+  assertIncludes(diagnosisBriefRuntimeText, "避免用户从四类明细里重新找入口");
   assertIncludes(diagnosisBriefRuntimeText, "只能做哪一种人工动作");
   assertIncludes(diagnosisBriefRuntimeText, "只做人工留痕");
   assertIncludes(diagnosisBriefRuntimeText, "记录观察");
