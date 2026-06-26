@@ -412,6 +412,34 @@ function recommendedSearchTermCarryEvidence(
     recommendedEvidenceBlock(drilldown, "search_term_boundary")?.detail ??
     candidate?.attribution_boundary ??
     "搜索词只能说明广告活动和广告组上下文，不能自动归因到单个广告 ASIN，也不能自动执行广告动作。";
+  const businessQuestionItems = [
+    {
+      label: "是否值得复核",
+      answer: metric
+        ? `${searchTerm} 有广告表现样本，先判断是否存在可人工复核的扩量机会。`
+        : `${searchTerm} 缺广告表现汇总，不能进入扩量判断。`,
+      detail: metricText,
+    },
+    {
+      label: "从哪里下钻",
+      answer: recommendedGroups.length
+        ? `先打开 ${recommendedGroups.slice(0, 2).join("、")}，核对同组投放词和搜索词样本。`
+        : "先补广告组上下文，否则无法定位投放容器。",
+      detail: `${adGroupText} ${targetingText} ${searchTermSampleText}`,
+    },
+    {
+      label: "能否落到 ASIN",
+      answer: adGroup?.advertisedAsins.length
+        ? "只能看到广告 ASIN 承接范围，不能把搜索词自动归因到单个 ASIN。"
+        : "当前没有直接广告 ASIN 承接样本，不能做 ASIN 归因。",
+      detail: `${asinText} ${boundaryText}`,
+    },
+    {
+      label: "广告位能否判断",
+      answer: placementCount > 0 && !placementBlock ? "可人工查看广告位上下文，但仍不能自动调整广告位。" : "当前不能判断广告位影响。",
+      detail: placementText,
+    },
+  ];
 
   return {
     metricText,
@@ -421,6 +449,7 @@ function recommendedSearchTermCarryEvidence(
     placementText,
     searchTermSampleText,
     boundaryText,
+    businessQuestionItems,
   };
 }
 
@@ -5254,34 +5283,15 @@ function ProductScopeSingleScreenCommandCard({
           {recommendedSearchTermStepDetail && <small>{recommendedSearchTermStepDetail}</small>}
           {recommendedCarryEvidence && (
             <ul className="productScopeSingleScreenEvidenceStack" aria-label="推荐搜索词承接证据">
-              <li>
-                <b>表现</b>
-                <span>{recommendedCarryEvidence.metricText}</span>
-              </li>
-              <li>
-                <b>承接</b>
-                <span>{recommendedCarryEvidence.adGroupText}</span>
-              </li>
-              <li>
-                <b>广告 ASIN</b>
-                <span>{recommendedCarryEvidence.asinText}</span>
-              </li>
-              <li>
-                <b>投放词</b>
-                <span>{recommendedCarryEvidence.targetingText}</span>
-              </li>
-              <li>
-                <b>广告位</b>
-                <span>{recommendedCarryEvidence.placementText}</span>
-              </li>
-              <li>
-                <b>样本</b>
-                <span>{recommendedCarryEvidence.searchTermSampleText}</span>
-              </li>
-              <li>
-                <b>边界</b>
-                <span>{recommendedCarryEvidence.boundaryText}</span>
-              </li>
+              {recommendedCarryEvidence.businessQuestionItems.map((item) => (
+                <li key={item.label}>
+                  <b>{item.label}</b>
+                  <span>
+                    <strong>{item.answer}</strong>
+                    <small>{item.detail}</small>
+                  </span>
+                </li>
+              ))}
             </ul>
           )}
           {searchIntentSummary && (

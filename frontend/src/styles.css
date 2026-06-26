@@ -893,6 +893,24 @@ h3 {
   color: #33465e;
 }
 
+.productScopeSingleScreenEvidenceStack span strong,
+.productScopeSingleScreenEvidenceStack span small {
+  display: block;
+}
+
+.productScopeSingleScreenEvidenceStack span strong {
+  margin-bottom: 2px;
+  color: #0f2544;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.productScopeSingleScreenEvidenceStack span small {
+  color: #607186;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .productScopePriorityDecisionShortcuts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
