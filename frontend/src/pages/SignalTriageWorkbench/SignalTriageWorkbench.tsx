@@ -4886,6 +4886,9 @@ function SearchIntentSelectedTermReasonPanel({ summary }: { summary: SearchInten
 }
 
 function SearchIntentReviewDecisionSummaryPanel({ summary }: { summary: SearchIntentReviewDecisionSummary }) {
+  const topPriorityPathItem = summary.priorityPathItems[0] ?? null;
+  const remainingPriorityPathItems = summary.priorityPathItems.slice(1);
+
   return (
     <div className="searchIntentReviewDecisionSummary" aria-label="广告搜索词表现复核判断摘要">
       <div className="searchIntentReviewDecisionHeader">
@@ -4921,15 +4924,28 @@ function SearchIntentReviewDecisionSummaryPanel({ summary }: { summary: SearchIn
           </div>
         ))}
       </dl>
-      <ol className="searchIntentReviewPriorityPath" aria-label="搜索词复核优先顺序">
-        {summary.priorityPathItems.map((item) => (
-          <li className={item.tone} key={item.label}>
-            <b>{item.label}</b>
-            <span>{item.value}</span>
-            <small>{item.detail}</small>
-          </li>
-        ))}
-      </ol>
+      {topPriorityPathItem && (
+        <div className={`searchIntentReviewTopPath ${topPriorityPathItem.tone}`} aria-label="搜索词复核默认路径">
+          <b>本次只先看</b>
+          <strong>{topPriorityPathItem.label}</strong>
+          <span>{topPriorityPathItem.value}</span>
+          <small>{topPriorityPathItem.detail}</small>
+        </div>
+      )}
+      {remainingPriorityPathItems.length > 0 && (
+        <details className="searchIntentReviewPriorityPathDetails" aria-label="搜索词复核完整顺序">
+          <summary>展开其他搜索词复核组</summary>
+          <ol className="searchIntentReviewPriorityPath">
+            {remainingPriorityPathItems.map((item) => (
+              <li className={item.tone} key={item.label}>
+                <b>{item.label}</b>
+                <span>{item.value}</span>
+                <small>{item.detail}</small>
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
       <div className="searchIntentReviewDecisionNext" aria-label="搜索词复核下一步">
         <span>
           <b>优先对象</b>
@@ -5509,15 +5525,32 @@ function ProductScopeSingleScreenCommandCard({
             </ul>
           )}
           {searchIntentSummary && (
-            <ol className="productScopeSingleScreenSearchIntentPath" aria-label="单屏搜索词复核顺序">
-              {searchIntentSummary.priorityPathItems.map((item) => (
-                <li className={item.tone} key={item.label}>
-                  <b>{item.label}</b>
-                  <strong>{item.value}</strong>
-                  <small>{item.detail}</small>
-                </li>
-              ))}
-            </ol>
+            <>
+              {searchIntentSummary.priorityPathItems[0] && (
+                <div
+                  className={`productScopeSingleScreenSearchIntentPath focus ${searchIntentSummary.priorityPathItems[0].tone}`}
+                  aria-label="单屏搜索词默认路径"
+                >
+                  <b>{searchIntentSummary.priorityPathItems[0].label}</b>
+                  <strong>{searchIntentSummary.priorityPathItems[0].value}</strong>
+                  <small>{searchIntentSummary.priorityPathItems[0].detail}</small>
+                </div>
+              )}
+              {searchIntentSummary.priorityPathItems.length > 1 && (
+                <details className="productScopeSingleScreenSearchIntentPathDetails" aria-label="单屏搜索词完整复核顺序">
+                  <summary>展开其他搜索词组</summary>
+                  <ol className="productScopeSingleScreenSearchIntentPath">
+                    {searchIntentSummary.priorityPathItems.slice(1).map((item) => (
+                      <li className={item.tone} key={item.label}>
+                        <b>{item.label}</b>
+                        <strong>{item.value}</strong>
+                        <small>{item.detail}</small>
+                      </li>
+                    ))}
+                  </ol>
+                </details>
+              )}
+            </>
           )}
           <small>{searchIntentSummary?.nextManualStep ?? "搜索词复核只聚合当前 Parent ASIN 广告上下文，不改变经营诊断入口。"}</small>
         </span>
@@ -5696,13 +5729,14 @@ function ProductScopeAdGroupDiagnosisPanel({
   onSelect: (id: string) => void;
   priorityGateRef?: RefObject<HTMLDivElement | null>;
 }) {
-  const priorityRow = rows[0];
+  const priorityRow = rows.find((row) => row.id === selectedId) ?? rows[0];
+  const otherRows = priorityRow ? rows.filter((row) => row.id !== priorityRow.id) : rows;
 
   return (
     <section className="productScopeAdGroupDiagnosis diagnosisStep stepEvidence" aria-label="广告组问题定位">
       <div className="detailSectionHeader">
         <h3>广告组问题定位</h3>
-        <span>{rows.length} 个广告组，点击聚焦</span>
+        <span>{rows.length} 个广告组，默认只看当前聚焦</span>
       </div>
       {priorityRow && (
         <div className="productScopeAdGroupPriorityGate" ref={priorityGateRef} tabIndex={-1} aria-label="广告组优先判断">
@@ -5757,58 +5791,60 @@ function ProductScopeAdGroupDiagnosisPanel({
           </ul>
         </div>
       )}
-      <div className="productScopeAdGroupDiagnosisRows">
-        {rows.map((row) => {
-          const isSelected = row.id === selectedId;
-          return (
-            <button
-              className={`productScopeAdGroupDiagnosisRow ${row.statusTone} ${isSelected ? "active" : ""}`}
-              key={row.id}
-              type="button"
-              onClick={() => onSelect(row.id)}
-              aria-pressed={isSelected}
-            >
-              <div className="productScopeAdGroupDiagnosisHeader">
-                <div>
-                  <span>{row.problemType}</span>
-                  <strong>{row.title}</strong>
+      {otherRows.length > 0 && (
+        <details className="productScopeAdGroupDiagnosisRows" aria-label="其他广告组完整候选">
+          <summary>展开其他 {otherRows.length} 个广告组候选</summary>
+          <div>
+            {otherRows.map((row) => (
+              <button
+                className={`productScopeAdGroupDiagnosisRow ${row.statusTone}`}
+                key={row.id}
+                type="button"
+                onClick={() => onSelect(row.id)}
+                aria-pressed={false}
+              >
+                <div className="productScopeAdGroupDiagnosisHeader">
+                  <div>
+                    <span>{row.problemType}</span>
+                    <strong>{row.title}</strong>
+                  </div>
+                  <b>{row.statusLabel}</b>
                 </div>
-                <b>{row.statusLabel}</b>
-              </div>
-              <div className={`productScopeAdGroupWorkflowStatus ${row.diagnosisStatus.tone}`} aria-label="广告组闭环状态">
-                <strong>{row.diagnosisStatus.label}</strong>
-                <span>{row.diagnosisStatus.reason}</span>
-                <small>下一步：{row.diagnosisStatus.nextStep}</small>
-              </div>
-              <ProductScopePlacementEvidenceStatusCard
-                decision={row.placementDecision}
-                ariaLabel="广告组广告位证据状态"
-              />
-              <div className="productScopeAdGroupDiagnosisDecision" aria-label="广告组业务判断">
-                <span>
-                  <b>问题类型</b>
-                  <small>{row.problemType}：{row.problemLocator.problemLocation}</small>
-                </span>
-                <span>
-                  <b>证据强度</b>
-                  <small>{row.evidenceSynthesis.statusLabel}</small>
-                </span>
-                <span>
-                  <b>人工下一步</b>
-                  <small>{row.problemLocator.nextManualStep}</small>
-                </span>
-              </div>
-              <div className="productScopeAdGroupDiagnosisMetrics" aria-label="广告组证据摘要">
-                <span>{row.metrics}</span>
-                <span>{row.trafficContext}</span>
-              </div>
-              <small>证据缺口：{row.evidenceSynthesis.evidenceGap}</small>
-              <small>{row.trafficContextBoundary}</small>
-              <small>{row.nextReviewFocus}</small>
-            </button>
-          );
-        })}
-      </div>
+                <div className={`productScopeAdGroupWorkflowStatus ${row.diagnosisStatus.tone}`} aria-label="广告组闭环状态">
+                  <strong>{row.diagnosisStatus.label}</strong>
+                  <span>{row.diagnosisStatus.reason}</span>
+                  <small>下一步：{row.diagnosisStatus.nextStep}</small>
+                </div>
+                <ProductScopePlacementEvidenceStatusCard
+                  decision={row.placementDecision}
+                  ariaLabel="广告组广告位证据状态"
+                />
+                <div className="productScopeAdGroupDiagnosisDecision" aria-label="广告组业务判断">
+                  <span>
+                    <b>问题类型</b>
+                    <small>{row.problemType}：{row.problemLocator.problemLocation}</small>
+                  </span>
+                  <span>
+                    <b>证据强度</b>
+                    <small>{row.evidenceSynthesis.statusLabel}</small>
+                  </span>
+                  <span>
+                    <b>人工下一步</b>
+                    <small>{row.problemLocator.nextManualStep}</small>
+                  </span>
+                </div>
+                <div className="productScopeAdGroupDiagnosisMetrics" aria-label="广告组证据摘要">
+                  <span>{row.metrics}</span>
+                  <span>{row.trafficContext}</span>
+                </div>
+                <small>证据缺口：{row.evidenceSynthesis.evidenceGap}</small>
+                <small>{row.trafficContextBoundary}</small>
+                <small>{row.nextReviewFocus}</small>
+              </button>
+            ))}
+          </div>
+        </details>
+      )}
     </section>
   );
 }
