@@ -8830,7 +8830,7 @@ export function buildSearchIntentFocusContext(
   const decisionCard = searchIntentReviewCard?.intentLabel === focusLabel ? searchIntentReviewCard : null;
   const pathItems = [
     { label: "经营诊断入口", value: scopeLabel },
-    { label: "广告搜索词表现聚合", value: `${focusLabel}：当前 Parent ASIN 关联广告中的用户搜索词表现行` },
+    { label: "二级搜索词证据聚焦", value: `${focusLabel}：当前 Parent ASIN 关联广告中的用户搜索词表现行` },
     { label: "当前诊断对象", value: signalObject },
   ];
   if (decisionCard) {
@@ -8854,7 +8854,7 @@ export function buildSearchIntentFocusContext(
     focusLabel,
     signalObject,
     pathItems,
-    relation: `这个广告搜索词表现聚合用于从 ${scopeLabel} 视角聚合广告中实际产生表现的用户搜索词行；左侧只用它缩小同类 SearchTerm 信号队列；中间仍诊断 ${signalObject}；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。${decisionText}`,
+    relation: `这个广告搜索词表现聚合用于从 ${scopeLabel} 视角聚合广告中实际产生表现的用户搜索词行；左侧只用它临时聚焦同类 SearchTerm 信号，中间仍诊断 ${signalObject}，并沿广告组、投放词、同组广告 ASIN、广告位逐层核对证据；若进入人工动作，右侧必须以后端预检确认的 SearchTerm 稳定对象为准。${decisionText}`,
     boundary: `Parent ASIN 广告搜索词表现复核「${focusLabel}」只是从 Parent ASIN 视角聚合广告搜索词表现的分析视角，不是经营商品、广告组或人工动作对象；扩量 / 止损 / 观察判断只服务人工复核优先级；ABA 只作站点级背景，实际写入以后端 preflight evidence_snapshot_preview 为准。`,
     tone: "container",
   };
@@ -8955,12 +8955,22 @@ export function buildSearchIntentSelectedTermReasonSummary(
           : "先确认当前选中 SearchTerm 是否就是本次要复核的具体搜索词。",
       },
       {
-        label: "3. 核对广告承接",
-        value: "广告 ASIN / 广告组 / 投放词 / 广告位",
-        detail: "按中间诊断链逐层核对承接关系和证据缺口，不能把搜索词自动归因到单个 ASIN。",
+        label: "3. 核对广告组 / 投放词",
+        value: "广告活动 / 广告组 / 投放词",
+        detail: "先确认这个 SearchTerm 来自哪个广告活动、广告组和投放词；广告组是容器，不是商品。",
       },
       {
-        label: "4. 选择人工动作",
+        label: "4. 核对同组广告 ASIN",
+        value: "同广告组 advertised products",
+        detail: "再查看同广告组下有哪些广告 ASIN 承接；如果同组有多个广告 ASIN，只能作为候选承接，不能直接归因到单个 ASIN。",
+      },
+      {
+        label: "5. 核对广告位",
+        value: "Top of Search / Product Pages / Rest of Search",
+        detail: "最后核对流量位置是否影响花费和转化；广告位只能说明流量分布，不能单独证明商品承接问题。",
+      },
+      {
+        label: "6. 选择人工动作",
         value: decisionCard?.nextManualStep ?? "记录观察或加入复盘前，先等待后端预检确认稳定对象。",
         detail: "右侧只能记录观察、标记已处理、加入复盘或忽略本次；7/14 天后再读指标复盘。",
       },
