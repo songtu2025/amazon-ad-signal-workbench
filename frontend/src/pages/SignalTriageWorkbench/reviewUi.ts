@@ -609,6 +609,8 @@ export interface ReviewRecordPreflightCheck {
     | "ai_admission_missing"
     | "search_term_performance_decision"
     | "search_term_performance_decision_missing"
+    | "default_review_layer"
+    | "default_review_layer_missing"
     | "search_term_boundary"
     | "search_term_boundary_missing"
     | "placement_boundary"
@@ -710,6 +712,8 @@ const requiredReviewRecordPreflightCheckLabels: Record<ReviewRecordPreflightChec
   ai_admission_missing: "AI 准入理由缺失",
   search_term_performance_decision: "搜索词表现判断",
   search_term_performance_decision_missing: "搜索词表现判断缺失",
+  default_review_layer: "默认核对层",
+  default_review_layer_missing: "默认核对层缺失",
   search_term_boundary: "搜索词边界",
   search_term_boundary_missing: "搜索词边界缺失",
   placement_boundary: "广告位边界",
@@ -1834,6 +1838,7 @@ function requiredReviewRecordPreflightCheckIdsForEffect(effect: ReviewEffectForU
       "diagnosis_path",
       "ai_admission",
       "search_term_performance_decision",
+      "default_review_layer",
       "ad_group_synthesis",
       "ad_group_product_performance",
       "ad_context_rows",
@@ -1966,7 +1971,7 @@ function reviewRecordSearchTermReviewChainPreflightText(
   const item = snapshot.find((evidenceItem) => labels.includes(String(evidenceItem.label ?? "").trim()));
   const itemText = item ? reviewRecordEvidenceItemText(item) : null;
   if (!itemText) {
-    return `${missingText}；保存前只能核对处理前后指标，不能证明当时人工判断已经看过搜索词机会的广告组合流、同组投放商品、逐投放上下文、投放词、搜索词边界、广告位边界、ABA、证据缺口或动作边界。`;
+    return `${missingText}；保存前只能核对处理前后指标，不能证明当时人工判断已经看过默认核对层、搜索词机会的广告组合流、同组投放商品、逐投放上下文、投放词、搜索词边界、广告位边界、ABA、证据缺口或动作边界。`;
   }
   return `${readyPrefix}：${itemText}。保存复盘前必须确认它只作为人工复盘依据，不自动加词、否词、调价或暂停广告。`;
 }
@@ -2106,6 +2111,15 @@ function reviewRecordAdGroupSynthesisPreflightText(todo: ReviewTodoForUi | null)
     reviewRecordAdGroupSynthesisLabels,
     "当前待办缺少广告组合流判断",
     "广告组合流判断回看",
+  );
+}
+
+function reviewRecordDefaultReviewLayerPreflightText(todo: ReviewTodoForUi | null) {
+  return reviewRecordSearchTermReviewChainPreflightText(
+    todo,
+    reviewRecordDefaultReviewLayerLabels,
+    "当前待办缺少默认核对层",
+    "默认核对层回看",
   );
 }
 
@@ -2334,6 +2348,7 @@ export function buildReviewRecordPreflightChecklist(
   const hasAdProductCoverage = reviewTodoHasSnapshotLabel(todo, "广告商品覆盖");
   const hasPlacementPerformance = reviewTodoHasSnapshotLabel(todo, "广告位表现");
   const hasSearchTermPerformanceDecision = reviewTodoHasSearchTermPerformanceDecision(todo);
+  const hasDefaultReviewLayer = reviewTodoHasSnapshotLabel(todo, "默认核对层");
   const hasTargetingEvidence = reviewTodoHasSnapshotLabel(todo, "投放词证据");
   const hasAdGroupSynthesis = reviewTodoHasSnapshotLabel(todo, "广告组合流判断");
   const hasAdGroupProductPerformance = reviewTodoHasSnapshotLabel(todo, "同组投放商品表现");
@@ -2391,6 +2406,11 @@ export function buildReviewRecordPreflightChecklist(
         id: hasSearchTermPerformanceDecision ? "search_term_performance_decision" : "search_term_performance_decision_missing",
         title: "回看搜索词表现判断",
         description: reviewRecordSearchTermPerformanceDecisionPreflightText(todo),
+      },
+      {
+        id: hasDefaultReviewLayer ? "default_review_layer" : "default_review_layer_missing",
+        title: "回看默认核对层",
+        description: reviewRecordDefaultReviewLayerPreflightText(todo),
       },
       {
         id: hasAdGroupSynthesis ? "ad_group_synthesis" : "ad_group_synthesis_missing",
