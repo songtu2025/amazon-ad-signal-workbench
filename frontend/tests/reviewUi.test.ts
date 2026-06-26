@@ -619,6 +619,7 @@ const savedSearchTermReviewRecord: ReviewRecordForUi = {
       source: "ad_search_term_daily_metrics",
     },
     { label: "广告组合流判断", value: "beach essentials 已串联广告组、投放词、搜索词和广告位边界。", source: "diagnosis_contract" },
+    { label: "默认核对层", value: "默认先查 3. 搜索词：beach essentials", source: "diagnosis_contract" },
     { label: "同组投放商品表现", value: "B016EXMVZS 花费 22.78 / 订单 11", source: "ad_product_daily_metrics" },
     {
       label: "逐投放上下文",
@@ -647,6 +648,8 @@ const searchTermReviewRecordReadback = reviewRecordReadbackStatus([savedSearchTe
   reviewWindow: "7d",
 });
 assertIncludes(searchTermReviewRecordReadback, "Parent ASIN 广告搜索词表现复核");
+assertIncludes(searchTermReviewRecordReadback, "默认核对层");
+assertIncludes(searchTermReviewRecordReadback, "默认先查 3. 搜索词");
 assertIncludes(searchTermReviewRecordReadback, "复盘上下文：Parent ASIN 广告搜索词表现复核：规则语义：海滩出行用品");
 assertIncludes(searchTermReviewRecordReadback, "具体 SearchTerm：beach essentials");
 assertIncludes(searchTermReviewRecordReadback, "人工复盘下一步：按同类广告搜索词表现核对规则口径");
@@ -1371,7 +1374,7 @@ const searchTermSavedReviewRecord: ReviewRecordForUi = {
   },
 };
 assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘证据快照：7d 21 条");
-assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "Parent ASIN 广告搜索词表现复核 / 搜索词表现判断 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景");
+assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "Parent ASIN 广告搜索词表现复核 / 搜索词表现判断 / 默认核对层 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景");
 assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "复盘上下文：Parent ASIN 广告搜索词表现复核：规则语义：海滩出行用品");
 assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "具体 SearchTerm：beach essentials");
 assertIncludes(reviewRecordStatusText(searchTermSavedReviewRecord), "人工复盘下一步：按同类广告搜索词表现核对规则口径");
@@ -1382,7 +1385,24 @@ assertIncludes(
     objectId: "search_term:1:beach essentials",
     reviewWindow: "7d",
   }),
-  "可回看对象引用 / 排查路径 / AI 准入 / Parent ASIN 广告搜索词表现复核 / 搜索词表现判断 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景",
+  "可回看对象引用 / 排查路径 / AI 准入 / Parent ASIN 广告搜索词表现复核 / 搜索词表现判断 / 默认核对层 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景",
+);
+assertIncludes(
+  reviewRecordReadbackStatus(
+    [
+      {
+        ...searchTermSavedReviewRecord,
+        evidence_snapshot: searchTermSavedReviewRecord.evidence_snapshot?.filter((item) => item.label !== "默认核对层"),
+      },
+    ],
+    {
+      actionId: "manual-action-search-term",
+      objectType: "search_term",
+      objectId: "search_term:1:beach essentials",
+      reviewWindow: "7d",
+    },
+  ),
+  "7d 缺默认核对层",
 );
 assertIncludes(
   reviewRecordReadbackStatus(

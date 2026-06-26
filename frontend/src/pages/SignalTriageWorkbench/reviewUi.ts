@@ -4102,11 +4102,13 @@ function hasReviewMetricWindow(record: ReviewRecordForUi) {
 }
 
 function hasReviewRecordEvidenceSnapshot(record: ReviewRecordForUi) {
+  const isSearchTermRecord = normalizedPreflightTargetValue(record.object_type) === "search_term";
   return (
     reviewRecordHasEvidenceSnapshot(record) &&
     reviewRecordHasObjectReference(record) &&
     reviewRecordHasSnapshotLabel(record, "排查路径") &&
     reviewRecordHasSnapshotLabel(record, "AI 准入") &&
+    (!isSearchTermRecord || reviewRecordHasSnapshotLabel(record, "默认核对层")) &&
     reviewRecordHasSnapshotLabel(record, "搜索词边界") &&
     reviewRecordHasSnapshotLabel(record, "广告位边界")
   );
@@ -4232,6 +4234,7 @@ function reviewRecordEvidenceSnapshotReadbackText(records: ReviewRecordForUi[]) 
             "AI 准入",
             "Parent ASIN 广告搜索词表现复核",
             "搜索词表现判断",
+            "默认核对层",
             "广告组合流判断",
             "同组投放商品表现",
             "逐投放上下文",
@@ -4262,11 +4265,17 @@ function reviewRecordEvidenceSnapshotReadbackText(records: ReviewRecordForUi[]) 
   }
   const readbackLabels =
     records.length === 1 && normalizedPreflightTargetValue(records[0]?.object_type) === "search_term"
-      ? "对象引用 / 排查路径 / AI 准入 / Parent ASIN 广告搜索词表现复核 / 搜索词表现判断 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
+      ? "对象引用 / 排查路径 / AI 准入 / Parent ASIN 广告搜索词表现复核 / 搜索词表现判断 / 默认核对层 / 广告组合流判断 / 同组投放商品表现 / 逐投放上下文 / 投放词证据 / 搜索词边界 / 广告位边界 / ABA 背景"
       : "对象引用 / 排查路径 / AI 准入 / 搜索词边界 / 广告位边界";
+  const defaultReviewLayerItem =
+    records.length === 1 && normalizedPreflightTargetValue(records[0]?.object_type) === "search_term"
+      ? records[0]?.evidence_snapshot?.find((item) => reviewRecordDefaultReviewLayerLabels.includes(String(item.label ?? "").trim()))
+      : null;
+  const defaultReviewLayerText = defaultReviewLayerItem ? reviewRecordEvidenceItemText(defaultReviewLayerItem) : null;
   const contextText = records.length === 1 ? reviewContextText(records[0]) : null;
+  const defaultReviewLayerSuffix = defaultReviewLayerText ? `；${defaultReviewLayerText}` : "";
   const contextSuffix = contextText ? `；复盘上下文：${contextText}` : "";
-  return `复盘证据快照：${countText}；可回看${readbackLabels}${contextSuffix}`;
+  return `复盘证据快照：${countText}；可回看${readbackLabels}${defaultReviewLayerSuffix}${contextSuffix}`;
 }
 
 function reviewTodoEvidenceSnapshotCount(todo: ReviewTodoForUi | null | undefined) {
