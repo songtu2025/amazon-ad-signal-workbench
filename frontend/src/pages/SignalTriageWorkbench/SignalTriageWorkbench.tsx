@@ -1548,16 +1548,30 @@ export function SignalTriageWorkbench() {
       }),
     [latestManualAction, selectedReviewRecords, selectedReviewTodos],
   );
-  const selectedManualActionPostWriteKeyEvidenceItems = useMemo(() => {
-    const snapshot =
+  const selectedManualActionPostWriteSnapshot = useMemo(
+    () =>
       nextReviewTodo?.evidence_snapshot?.length
         ? nextReviewTodo.evidence_snapshot
-        : latestManualAction?.evidence_snapshot ?? [];
+        : latestManualAction?.evidence_snapshot?.length
+          ? latestManualAction.evidence_snapshot
+          : selectedManualActionPreviewPreflight?.evidence_snapshot_preview?.items ?? [],
+    [latestManualAction?.evidence_snapshot, nextReviewTodo?.evidence_snapshot, selectedManualActionPreviewPreflight],
+  );
+  const selectedManualActionPostWriteReviewMetric = useMemo(
+    () =>
+      selectedManualActionPostWriteSnapshot.find(
+        (item) => evidenceFactDisplayLabel(item.label) === "复盘指标" && String(item.value ?? "").trim(),
+      ) ?? null,
+    [selectedManualActionPostWriteSnapshot],
+  );
+  const selectedManualActionPostWriteKeyEvidenceItems = useMemo(() => {
+    const snapshot = selectedManualActionPostWriteSnapshot;
     const priorityLabels = [
       "搜索词表现分组",
       "投放上下文数",
       "合并边界",
       "人工确认判断依据",
+      "复盘指标",
       "能证明的事实",
       "不能证明的边界",
       "人工下一步",
@@ -1581,10 +1595,16 @@ export function SignalTriageWorkbench() {
       })
       .slice(0, 3)
       .map(({ item }) => item);
-  }, [latestManualAction, nextReviewTodo]);
+  }, [selectedManualActionPostWriteSnapshot]);
   const selectedManualActionPostWriteDecisionItems = useMemo(() => {
     const manualActionEvidenceRow = selectedManualReviewEvidencePathReadback.rows[0];
     const reviewTodoEvidenceRow = selectedManualReviewEvidencePathReadback.rows[1];
+    const reviewMetricText = selectedManualActionPostWriteReviewMetric?.value
+      ? String(selectedManualActionPostWriteReviewMetric.value)
+      : "7/14 天到期后对比花费、订单、销售额、ACOS、CVR 和广告位 / 搜索词边界";
+    const reviewMetricDetail = selectedManualActionPostWriteReviewMetric?.detail
+      ? `${selectedManualActionPostWriteReviewMetric.detail} 未到完整窗口前不保存复盘结论。`
+      : "到期后只做处理前后指标对比和证据回看；未到完整窗口前不判断改善、无变化或恶化。";
     const nextStepValue =
       selectedManualReviewEvidencePathReadback.tone === "blocked"
         ? "先补齐证据路径"
@@ -1608,9 +1628,11 @@ export function SignalTriageWorkbench() {
         detail: manualActionEvidenceRow?.detail ?? manualActionPostWriteExpectationSummaryText(),
       },
       {
-        label: "复盘待办生成了吗",
-        value: reviewTodoEvidenceRow?.value ?? "等待复盘待办",
-        detail: reviewTodoEvidenceRow?.detail ?? "只有人工动作进入复盘路径后，才会生成 7d / 14d 待办。",
+        label: "复盘看什么",
+        value: reviewMetricText,
+        detail: reviewTodoEvidenceRow?.detail
+          ? `${reviewTodoEvidenceRow.detail} ${reviewMetricDetail}`
+          : `只有人工动作进入复盘路径后，才会生成 7d / 14d 待办；${reviewMetricDetail}`,
       },
       {
         label: "下一步做什么",
@@ -1622,6 +1644,7 @@ export function SignalTriageWorkbench() {
     latestManualAction,
     selectedManualActionReadbackCompact,
     selectedManualActionReadbackConsistency,
+    selectedManualActionPostWriteReviewMetric,
     selectedManualReviewEvidencePathReadback,
     selectedReviewTodos.length,
   ]);
