@@ -685,10 +685,13 @@ assertIncludes(workbenchSource, "manualActionOrder.filter((actionType) => action
 assertIncludes(workbenchSource, "renderManualActionButton(recommendedManualActionType)");
 assertIncludes(workbenchSource, "secondaryManualActionTypes.map(renderManualActionButton)");
 assertIncludes(workbenchSource, 'className="manualActionChoiceGuideDetails"');
-assertIncludes(workbenchSource, "展开 4 个人工动作选择依据");
+assertIncludes(workbenchSource, "建议优先");
+assertIncludes(workbenchSource, "先点本次建议，其他动作仅作备选");
+assertIncludes(workbenchSource, "其他动作仅在人工判断不一致时展开");
 assertIncludes(workbenchSource, 'className="manualActionSecondaryActions"');
 assertIncludes(workbenchSource, "展开其他 {secondaryManualActionTypes.length} 个人工动作");
 assertIncludes(workbenchSource, "manualActionChoiceGuides.map");
+assertIncludes(workbenchSource, "isRecommendedGuide ? \"本次建议\" : \"备选动作\"");
 assertIncludes(workbenchSource, "guideGate.disabled ? guideGate.compactReason");
 assertIncludes(workbenchSource, "guideGate.reason ?? guide.boundary");
 assertIncludes(reviewUiSource, "manualActionChoiceEvidenceLink");

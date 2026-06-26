@@ -3661,12 +3661,12 @@ export function SignalTriageWorkbench() {
                     <h3>人工确认</h3>
                     <span>只记录运营判断，不自动执行广告动作</span>
                   </div>
-                  <span className="manualActionsCount">4 项</span>
+                  <span className="manualActionsCount">建议优先</span>
                 </div>
                 <div className="manualActionGuardRail" aria-label="人工确认边界">
                   <span>
                     <ShieldCheck size={14} aria-hidden="true" />
-                    需要人工点击才会留痕
+                    先点本次建议，其他动作仅作备选
                   </span>
                   <span>{selectedManualActionTargetSummary}</span>
                 </div>
@@ -3894,7 +3894,7 @@ export function SignalTriageWorkbench() {
                   <small>{selectedManualActionChoiceRecommendation.boundary}</small>
                 </div>
                 <details className="manualActionChoiceGuideDetails" aria-label="人工动作选择依据">
-                  <summary>展开 4 个人工动作选择依据</summary>
+                  <summary>其他动作仅在人工判断不一致时展开</summary>
                   <div className="manualActionChoiceGuide">
                     {manualActionChoiceGuides.map((guide) => {
                       const guideGate = selectedManualActionChoiceGates[guide.actionType] ?? {
@@ -3902,10 +3902,11 @@ export function SignalTriageWorkbench() {
                         reason: "当前准入预检尚未完成。",
                         compactReason: "等待预检",
                       };
+                      const isRecommendedGuide = guide.actionType === selectedManualActionChoiceRecommendation.actionType;
                       return (
                         <div key={guide.actionType} className={`manualActionChoiceGuideItem ${guideGate.disabled ? "blocked" : "ready"}`}>
                           <span>{guide.label}</span>
-                          <b>{guideGate.disabled ? guideGate.compactReason ?? "暂不可用" : "可人工点击"}</b>
+                          <b>{guideGate.disabled ? guideGate.compactReason ?? "暂不可用" : isRecommendedGuide ? "本次建议" : "备选动作"}</b>
                           <p>{guide.whenToUse}</p>
                           <small>{guide.writes}</small>
                           <small>{guideGate.reason ?? guide.boundary}</small>
