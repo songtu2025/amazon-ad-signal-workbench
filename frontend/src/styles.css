@@ -1762,6 +1762,50 @@ h3 {
   white-space: nowrap;
 }
 
+.productScopePriorityPrimaryCommand {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #b8d6f2;
+  border-radius: 8px;
+  padding: 9px;
+  background: #ffffff;
+  box-shadow: inset 3px 0 0 rgba(31, 111, 235, 0.26);
+}
+
+.productScopePriorityPrimaryCommand span,
+.productScopePriorityPrimaryCommand strong,
+.productScopePriorityPrimaryCommand p,
+.productScopePriorityPrimaryCommand small {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.productScopePriorityPrimaryCommand span {
+  color: #526985;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.productScopePriorityPrimaryCommand strong {
+  color: #10243f;
+  font-size: 14px;
+  font-weight: 880;
+  line-height: 1.35;
+}
+
+.productScopePriorityPrimaryCommand p {
+  color: #29415c;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.productScopePriorityPrimaryCommand small {
+  color: #60748b;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .productScopePriorityDecisionSummary p,
 .productScopePriorityDecisionSummary small {
   margin: 0;

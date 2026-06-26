@@ -939,11 +939,16 @@ assertIncludes(workbenchSource, 'aria-label="Parent ASIN 首页分诊摘要"');
 assertIncludes(workbenchSource, "今日先看什么");
 assertIncludes(workbenchSource, "decisionShortcuts");
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 扫一眼决策卡"');
+assertIncludes(workbenchSource, 'aria-label="Parent ASIN 本轮默认动作"');
+assertIncludes(workbenchSource, "本轮默认动作");
+assertIncludes(workbenchSource, "只打开 {summary.topLabel}");
+assertIncludes(workbenchSource, "{summary.nextManualStep}");
+assertIncludes(workbenchSource, "{summary.readingStrategy}");
 assertIncludes(workbenchSource, "先看谁");
 assertIncludes(workbenchSource, "打开后看哪层");
 assertIncludes(workbenchSource, "不要逐个打开所有 Parent ASIN 报表");
 assertIncludes(workbenchSource, "readingStrategy");
-assertIncludes(workbenchSource, "阅读策略：{summary.readingStrategy}");
+assertNotIncludes(workbenchSource, "阅读策略：{summary.readingStrategy}");
 assertIncludes(workbenchSource, "不逐个打开完整报表");
 assertIncludes(workbenchSource, "buildProductScopePriorityDecisionBuckets(items)");
 assertIncludes(workbenchSource, 'aria-label="Parent ASIN 分诊桶"');
@@ -992,10 +997,16 @@ assertIncludes(workbenchSource, "handleSelectProductScopePriority(item.scopeId)"
 const productScopePriorityDecisionSummaryRenderIndex = workbenchSource.indexOf(
   "<ProductScopePriorityDecisionSummaryPanel",
 );
+const productScopePriorityPrimaryCommandIndex = workbenchSource.indexOf('aria-label="Parent ASIN 本轮默认动作"');
 const productScopePriorityShortcutIndex = workbenchSource.indexOf('aria-label="Parent ASIN 扫一眼决策卡"');
 const productScopePriorityBucketIndex = workbenchSource.indexOf('aria-label="Parent ASIN 分诊桶"');
 const productScopePriorityQueueIndex = workbenchSource.indexOf('className="productScopePriorityQueue"');
 assert(productScopePriorityDecisionSummaryRenderIndex > 0, "左侧必须有 Parent ASIN 首页分诊摘要");
+assert(
+  productScopePriorityPrimaryCommandIndex > productScopePriorityDecisionSummaryRenderIndex &&
+    productScopePriorityPrimaryCommandIndex < productScopePriorityShortcutIndex,
+  "Parent ASIN 首页分诊摘要必须先给本轮默认动作，再给扫一眼决策卡。",
+);
 assert(
   productScopePriorityShortcutIndex > productScopePriorityDecisionSummaryRenderIndex &&
     productScopePriorityShortcutIndex < productScopePriorityBucketIndex,
@@ -1050,6 +1061,7 @@ assertIncludes(stylesSource, ".productScopePriorityDecisionBucket.urgent");
 assertIncludes(stylesSource, ".productScopePriorityDecisionBucket.all");
 assertIncludes(stylesSource, ".productScopePriorityDecisionBucket.active");
 assertIncludes(stylesSource, ".productScopePriorityDecisionBucket:disabled");
+assertIncludes(stylesSource, ".productScopePriorityPrimaryCommand");
 assertIncludes(stylesSource, ".productScopePriorityDecisionShortcuts");
 assertIncludes(stylesSource, "repeat(auto-fit, minmax(min(170px, 100%), 1fr))");
 assertIncludes(stylesSource, ".productScopePriorityQueueEmpty");

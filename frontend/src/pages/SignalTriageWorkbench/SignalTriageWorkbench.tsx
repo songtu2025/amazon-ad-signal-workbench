@@ -5069,6 +5069,12 @@ function ProductScopePriorityDecisionSummaryPanel({
       </div>
       <b>{summary.headline}</b>
       <p>{summary.scaleText}</p>
+      <div className="productScopePriorityPrimaryCommand" aria-label="Parent ASIN 本轮默认动作">
+        <span>本轮默认动作</span>
+        <strong>只打开 {summary.topLabel}</strong>
+        <p>{summary.nextManualStep}</p>
+        <small>{summary.readingStrategy}</small>
+      </div>
       <div className="productScopePriorityDecisionShortcuts" aria-label="Parent ASIN 扫一眼决策卡">
         {summary.decisionShortcuts.map((item) => (
           <span key={item.label}>
@@ -5111,9 +5117,7 @@ function ProductScopePriorityDecisionSummaryPanel({
           </button>
         ))}
       </div>
-      <p>阅读策略：{summary.readingStrategy}</p>
       <p>排序依据：{summary.rankReason}</p>
-      <p>人工下一步：{summary.nextManualStep}</p>
       <small>{summary.boundary}</small>
       <button type="button" onClick={() => onOpenTop(summary.topScopeId)} aria-label={`打开今日优先 Parent ASIN ${summary.topLabel}`}>
         打开今日优先 Parent ASIN
