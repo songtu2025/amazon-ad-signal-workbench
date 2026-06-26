@@ -324,6 +324,38 @@ function recommendedSearchTermLabel(candidate?: SignalTriageSummary["recommended
   return candidate.object_label || candidate.stable_object_id || candidate.object_id || null;
 }
 
+function recommendedAdGroupNames(drilldown?: SignalTriageSummary["recommended_evidence_drilldown"] | null) {
+  return (drilldown?.ad_groups ?? []).map((name) => name.trim()).filter(Boolean);
+}
+
+function normalizedAdGroupName(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function adGroupNameMatches(row: ProductScopeAdGroupDiagnosisRow, names: string[]) {
+  const candidates = [row.title].map(normalizedAdGroupName);
+  return names.some((name) => {
+    const normalizedName = normalizedAdGroupName(name);
+    return candidates.some((candidate) => candidate === normalizedName || candidate.includes(normalizedName) || normalizedName.includes(candidate));
+  });
+}
+
+function recommendedAdGroupDiagnosis(
+  rows: ProductScopeAdGroupDiagnosisRow[],
+  names: string[],
+): ProductScopeAdGroupDiagnosisRow | null {
+  if (!rows.length || !names.length) return null;
+  return rows.find((row) => adGroupNameMatches(row, names)) ?? null;
+}
+
+function prioritizeAdGroupDiagnosisRows(
+  rows: ProductScopeAdGroupDiagnosisRow[],
+  primary: ProductScopeAdGroupDiagnosisRow | null,
+) {
+  if (!primary) return rows;
+  return [primary, ...rows.filter((row) => row.id !== primary.id)];
+}
+
 function ProductScopePlacementEvidenceStatusCard({
   decision,
   ariaLabel,
@@ -670,12 +702,40 @@ export function SignalTriageWorkbench() {
   const nextUnhandledTriageBusinessEvidenceItems = useMemo(() => signalTriageBusinessEvidenceItems(signalTriageSummary, "next_unhandled"), [signalTriageSummary]);
   const productScopeDrilldownEvidence = useMemo(() => productScopeDrilldownEvidenceItems(signalTriageSummary), [signalTriageSummary]);
   const productScopeAdGroupDiagnosis = useMemo(() => productScopeAdGroupDiagnosisRows(signalTriageSummary), [signalTriageSummary]);
+  const recommendedAdGroupNamesForCurrentScope = useMemo(
+    () => recommendedAdGroupNames(signalTriageSummary?.recommended_evidence_drilldown),
+    [signalTriageSummary?.recommended_evidence_drilldown],
+  );
+  const recommendedAdGroupDiagnosisForCurrentScope = useMemo(
+    () => recommendedAdGroupDiagnosis(productScopeAdGroupDiagnosis, recommendedAdGroupNamesForCurrentScope),
+    [productScopeAdGroupDiagnosis, recommendedAdGroupNamesForCurrentScope],
+  );
   const selectedAdGroupDiagnosis = useMemo(
     () =>
       productScopeAdGroupDiagnosis.find((row) => row.id === selectedAdGroupDiagnosisId) ??
+      recommendedAdGroupDiagnosisForCurrentScope ??
       productScopeAdGroupDiagnosis[0] ??
       null,
-    [productScopeAdGroupDiagnosis, selectedAdGroupDiagnosisId],
+    [productScopeAdGroupDiagnosis, recommendedAdGroupDiagnosisForCurrentScope, selectedAdGroupDiagnosisId],
+  );
+  const selectedAdGroupRecommendedContext = useMemo(() => {
+    if (!selectedAdGroupDiagnosis || selectedAdGroupDiagnosis.id !== recommendedAdGroupDiagnosisForCurrentScope?.id) return null;
+    const searchTerm = recommendedSearchTermLabel(signalTriageSummary?.recommended_candidate);
+    const relatedGroupsText = recommendedAdGroupNamesForCurrentScope.length
+      ? `后端证据列出 ${recommendedAdGroupNamesForCurrentScope.length} 个关联广告组`
+      : "后端证据已关联该广告组";
+    return searchTerm
+      ? `推荐 SearchTerm ${searchTerm} 的承接广告组；${relatedGroupsText}，先核对该广告组的投放商品、投放词、搜索词和广告位。`
+      : `${relatedGroupsText}，先核对该广告组的投放商品、投放词、搜索词和广告位。`;
+  }, [
+    recommendedAdGroupDiagnosisForCurrentScope?.id,
+    recommendedAdGroupNamesForCurrentScope,
+    selectedAdGroupDiagnosis,
+    signalTriageSummary?.recommended_candidate,
+  ]);
+  const productScopeAdGroupDiagnosisForCurrentFocus = useMemo(
+    () => prioritizeAdGroupDiagnosisRows(productScopeAdGroupDiagnosis, selectedAdGroupDiagnosis),
+    [productScopeAdGroupDiagnosis, selectedAdGroupDiagnosis],
   );
   const productScopeAdmissionCard = useMemo(() => buildProductScopeAdmissionCard(signalTriageSummary), [signalTriageSummary]);
   const noActionableManualGate = useMemo(() => buildNoActionableManualGate(signalTriageSummary), [signalTriageSummary]);
@@ -751,8 +811,8 @@ export function SignalTriageWorkbench() {
     [productScopeGroupOverview, signalTriageSummary],
   );
   const productScopeDiagnosisBrief = useMemo(
-    () => buildProductScopeDiagnosisBrief(productScopeFirstScreenSummary, productScopeEvidenceRouteGuide, productScopeAdGroupDiagnosis),
-    [productScopeAdGroupDiagnosis, productScopeEvidenceRouteGuide, productScopeFirstScreenSummary],
+    () => buildProductScopeDiagnosisBrief(productScopeFirstScreenSummary, productScopeEvidenceRouteGuide, productScopeAdGroupDiagnosisForCurrentFocus),
+    [productScopeAdGroupDiagnosisForCurrentFocus, productScopeEvidenceRouteGuide, productScopeFirstScreenSummary],
   );
   const productScopeSelectionSummary = useMemo(
     () => buildProductScopeSelectionSummary(selectedProductScopeOption),
@@ -918,8 +978,8 @@ export function SignalTriageWorkbench() {
     [selectedSignal?.id, signalTriageSummary],
   );
   const selectedManualActionAdGroupBridge = useMemo(
-    () => buildManualActionCandidateAdGroupBridge(selectedBackendManualActionPreview, productScopeAdGroupDiagnosis),
-    [productScopeAdGroupDiagnosis, selectedBackendManualActionPreview],
+    () => buildManualActionCandidateAdGroupBridge(selectedBackendManualActionPreview, productScopeAdGroupDiagnosisForCurrentFocus),
+    [productScopeAdGroupDiagnosisForCurrentFocus, selectedBackendManualActionPreview],
   );
   const selectedMarketOption = marketOptions.find((option) => option.market_id === selectedMarketId) ?? null;
   const selectedSignalStateKey = selectedSignal ? signalScopedStateKey(selectedSignal.id, selectedSignal.market_id ?? selectedMarketId) : null;
@@ -1471,7 +1531,10 @@ export function SignalTriageWorkbench() {
       {
         label: "2. 广告组定位",
         value: selectedAdGroupDiagnosis ? `${selectedAdGroupDiagnosis.title} / ${selectedAdGroupDiagnosis.statusLabel}` : "等待广告组证据",
-        detail: selectedAdGroupDiagnosis?.problemLocator.problemLocation ?? "广告组是投放容器；缺证据时不能包装成商品或搜索词问题。",
+        detail:
+          selectedAdGroupRecommendedContext ??
+          selectedAdGroupDiagnosis?.problemLocator.problemLocation ??
+          "广告组是投放容器；缺证据时不能包装成商品或搜索词问题。",
         tone: selectedAdGroupDiagnosis?.statusTone ?? "blocked",
       },
       {
@@ -1500,6 +1563,7 @@ export function SignalTriageWorkbench() {
       recommendedSearchTermForCurrentScope,
       searchIntentReviewDecisionSummary,
       selectedAdGroupDiagnosis,
+      selectedAdGroupRecommendedContext,
       selectedManualActionAuthorizationReadiness,
       selectedManualActionChoiceRecommendation,
       selectedProductScopeOption?.label,
@@ -2156,6 +2220,7 @@ export function SignalTriageWorkbench() {
               summary={productScopeFirstScreenSummary}
               priorityItem={activeProductScopePriorityItem}
               adGroup={selectedAdGroupDiagnosis}
+              adGroupRecommendedContext={selectedAdGroupRecommendedContext}
               recommendedCandidate={signalTriageSummary?.recommended_candidate ?? null}
               searchIntentSummary={searchIntentReviewDecisionSummary}
               onOpenEvidence={handleOpenProductScopeEvidenceDrilldown}
@@ -2438,7 +2503,8 @@ export function SignalTriageWorkbench() {
             <strong>{selectedAdGroupDiagnosis ? "已定位默认广告组证据" : "已进入广告诊断工作台"}</strong>
             <span>
               {selectedAdGroupDiagnosis
-                ? `先看 ${selectedAdGroupDiagnosis.title} 的广告组优先判断，再核对投放商品、投放词、搜索词和广告位边界；右侧仍只允许人工确认，不执行广告调整。`
+                ? selectedAdGroupRecommendedContext ??
+                  `先看 ${selectedAdGroupDiagnosis.title} 的广告组优先判断，再核对投放商品、投放词、搜索词和广告位边界；右侧仍只允许人工确认，不执行广告调整。`
                 : "当前没有可聚焦广告组，先补广告组、投放商品、投放词、搜索词和广告位证据；右侧仍只允许人工确认，不执行广告调整。"}
             </span>
           </div>
@@ -4965,6 +5031,7 @@ function ProductScopeSingleScreenCommandCard({
   summary,
   priorityItem,
   adGroup,
+  adGroupRecommendedContext,
   recommendedCandidate,
   searchIntentSummary,
   onOpenEvidence,
@@ -4972,6 +5039,7 @@ function ProductScopeSingleScreenCommandCard({
   summary: ProductScopeFirstScreenSummary;
   priorityItem: ProductScopePriorityQueueItem | null;
   adGroup: ProductScopeAdGroupDiagnosisRow | null;
+  adGroupRecommendedContext: string | null;
   recommendedCandidate: SignalTriageSummary["recommended_candidate"] | null;
   searchIntentSummary: SearchIntentReviewDecisionSummary | null;
   onOpenEvidence: () => void;
@@ -5000,7 +5068,7 @@ function ProductScopeSingleScreenCommandCard({
     {
       label: "2. 广告组定位",
       value: adGroup ? adGroup.title : "等待广告组证据",
-      detail: adGroup?.problemLocator.problemLocation ?? "广告组是投放容器，缺证据时不能包装成商品问题。",
+      detail: adGroupRecommendedContext ?? adGroup?.problemLocator.problemLocation ?? "广告组是投放容器，缺证据时不能包装成商品问题。",
       tone: adGroup ? adGroup.statusTone : "blocked",
     },
     {
@@ -5055,7 +5123,7 @@ function ProductScopeSingleScreenCommandCard({
         <span className="ready">
           <b>默认聚焦广告组</b>
           <strong>{adGroupText}</strong>
-          <small>{adGroup?.nextReviewFocus ?? "没有广告组证据时，只能停留在经营背景，不能生成广告动作。"}</small>
+          <small>{adGroupRecommendedContext ?? adGroup?.nextReviewFocus ?? "没有广告组证据时，只能停留在经营背景，不能生成广告动作。"}</small>
         </span>
         <span className="scope">
           <b>搜索词复核</b>
