@@ -854,6 +854,45 @@ h3 {
   line-height: 1.35;
 }
 
+.productScopeSingleScreenEvidenceStack {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.productScopeSingleScreenEvidenceStack li {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: 6px;
+  align-items: start;
+  min-width: 0;
+  padding-top: 5px;
+  border-top: 1px solid #e5edf5;
+}
+
+.productScopeSingleScreenEvidenceStack li:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.productScopeSingleScreenEvidenceStack b,
+.productScopeSingleScreenEvidenceStack span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.productScopeSingleScreenEvidenceStack b {
+  color: #52647a;
+}
+
+.productScopeSingleScreenEvidenceStack span {
+  color: #33465e;
+}
+
 .productScopePriorityDecisionShortcuts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));

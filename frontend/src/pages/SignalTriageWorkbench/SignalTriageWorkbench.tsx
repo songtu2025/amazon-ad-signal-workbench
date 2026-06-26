@@ -356,6 +356,66 @@ function prioritizeAdGroupDiagnosisRows(
   return [primary, ...rows.filter((row) => row.id !== primary.id)];
 }
 
+function recommendedEvidenceBlock(
+  drilldown: SignalTriageSummary["recommended_evidence_drilldown"] | null | undefined,
+  blockId: string,
+) {
+  return drilldown?.business_evidence_blocks?.find((block) => block.block_id === blockId) ?? null;
+}
+
+function recommendedSearchTermCarryEvidence(
+  candidate: SignalTriageSummary["recommended_candidate"] | null | undefined,
+  drilldown: SignalTriageSummary["recommended_evidence_drilldown"] | null | undefined,
+  adGroup: ProductScopeAdGroupDiagnosisRow | null,
+) {
+  const searchTerm = recommendedSearchTermLabel(candidate);
+  if (!searchTerm) return null;
+
+  const metric = drilldown?.metric_summary;
+  const metricText = metric
+    ? `搜索词表现 ${metric.row_count ?? "-"} 行：花费 ${formatMoney(metric.spend ?? 0)} / 点击 ${Math.round(metric.clicks ?? 0)} / 订单 ${Math.round(
+        metric.orders ?? 0,
+      )} / ACOS ${formatPercent(metric.acos ?? null)} / CVR ${formatPercent(metric.cvr ?? null)}；用于判断是否值得人工扩量复核。`
+    : `${searchTerm} 暂无可读搜索词表现汇总，不能只凭名称判断机会。`;
+  const recommendedGroups = recommendedAdGroupNames(drilldown);
+  const adGroupText = recommendedGroups.length
+    ? `推荐证据关联 ${recommendedGroups.length} 个广告组：${recommendedGroups.slice(0, 2).join("、")}；当前默认展开 ${adGroup?.title ?? "待选择广告组"}。`
+    : `当前推荐证据未列出广告组，先补广告组上下文再复核 ${searchTerm}。`;
+  const asinText = adGroup?.advertisedAsins.length
+    ? `当前广告组投放 ${adGroup.advertisedAsins.length} 个广告 ASIN：${adGroup.advertisedAsins.slice(0, 4).join("、")}；这里只说明承接范围，不证明单个 ASIN 归因。`
+    : recommendedEvidenceBlock(drilldown, "ad_group_product_performance")?.value ??
+      "当前单屏没有广告 ASIN 承接样本，不能把搜索词表现归到某个子 ASIN。";
+  const targetingBlock = recommendedEvidenceBlock(drilldown, "targeting_context");
+  const targetingText = targetingBlock
+    ? `${targetingBlock.value}；${targetingBlock.detail ?? "先人工核对投放词，不自动加词、调价或否词。"}`
+    : "投放词证据不足：先核对搜索词来自关键词、商品定向还是自动投放上下文。";
+  const normalizedSearchTerm = searchTerm.toLowerCase().trim();
+  const matchingEffectiveTerms =
+    adGroup?.searchTermDiagnosis?.effectiveTerms.filter((term) => term.label.toLowerCase().includes(normalizedSearchTerm)) ?? [];
+  const matchingZeroOrderTerms =
+    adGroup?.searchTermDiagnosis?.zeroOrderTerms.filter((term) => term.label.toLowerCase().includes(normalizedSearchTerm)) ?? [];
+  const sampleItems = [
+    ...matchingEffectiveTerms.map((term) => `有效 ${term.label}：${term.metrics}`),
+    ...matchingZeroOrderTerms.map((term) => `无订单 ${term.label}：${term.metrics}`),
+  ].slice(0, 3);
+  const searchTermSampleText = sampleItems.length
+    ? `同广告组样本：${sampleItems.join("；")}。`
+    : `当前默认广告组未直接列出 ${searchTerm} 样本，进入下钻后按广告组逐条核对。`;
+  const boundaryText =
+    recommendedEvidenceBlock(drilldown, "search_term_boundary")?.detail ??
+    candidate?.attribution_boundary ??
+    "搜索词只能说明广告活动和广告组上下文，不能自动归因到单个广告 ASIN，也不能自动执行广告动作。";
+
+  return {
+    metricText,
+    adGroupText,
+    asinText,
+    targetingText,
+    searchTermSampleText,
+    boundaryText,
+  };
+}
+
 function ProductScopePlacementEvidenceStatusCard({
   decision,
   ariaLabel,
@@ -557,7 +617,9 @@ export function SignalTriageWorkbench() {
       setSignalTriageSummary(nextSignalTriageSummary);
       setReviewEvidenceRepair(nextReviewEvidenceRepair);
       setReviewTodos(nextReviewTodos);
-      setSelectedProductScopeId(nextActiveProductScopeId);
+      setSelectedProductScopeId((current) =>
+        current && hasProductScopeId(current, nextProductScopeOptions) ? current : nextActiveProductScopeId,
+      );
       setSelectedId((current) => resolveSignalSelectionId(current, nextDisplayProductScopedSignals, nextSignalTriageSummary));
       if (nextMarketOptions.length > 0 && !nextMarketOptions.some((option) => option.market_id === selectedMarketId)) {
         setSelectedMarketId(nextMarketOptions[0].market_id);
@@ -2222,6 +2284,7 @@ export function SignalTriageWorkbench() {
               adGroup={selectedAdGroupDiagnosis}
               adGroupRecommendedContext={selectedAdGroupRecommendedContext}
               recommendedCandidate={signalTriageSummary?.recommended_candidate ?? null}
+              recommendedDrilldown={signalTriageSummary?.recommended_evidence_drilldown ?? null}
               searchIntentSummary={searchIntentReviewDecisionSummary}
               onOpenEvidence={handleOpenProductScopeEvidenceDrilldown}
             />
@@ -5033,6 +5096,7 @@ function ProductScopeSingleScreenCommandCard({
   adGroup,
   adGroupRecommendedContext,
   recommendedCandidate,
+  recommendedDrilldown,
   searchIntentSummary,
   onOpenEvidence,
 }: {
@@ -5041,6 +5105,7 @@ function ProductScopeSingleScreenCommandCard({
   adGroup: ProductScopeAdGroupDiagnosisRow | null;
   adGroupRecommendedContext: string | null;
   recommendedCandidate: SignalTriageSummary["recommended_candidate"] | null;
+  recommendedDrilldown: SignalTriageSummary["recommended_evidence_drilldown"] | null;
   searchIntentSummary: SearchIntentReviewDecisionSummary | null;
   onOpenEvidence: () => void;
 }) {
@@ -5055,6 +5120,7 @@ function ProductScopeSingleScreenCommandCard({
   const recommendedSearchTermStepDetail = recommendedSearchTerm
     ? `先打开 ${recommendedSearchTerm} 的具体 SearchTerm 诊断；搜索词聚合只做 Parent ASIN 视角参考，不替代右侧人工动作对象。`
     : null;
+  const recommendedCarryEvidence = recommendedSearchTermCarryEvidence(recommendedCandidate, recommendedDrilldown, adGroup);
   const searchIntentText = searchIntentSummary
     ? `${searchIntentSummary.topIntentLabel} / ${searchIntentSummary.topDecisionLabel} / ${searchIntentSummary.topSearchTermLabel}`
     : "暂无广告搜索词表现聚合，不能从搜索词层判断扩量或止损。";
@@ -5129,6 +5195,34 @@ function ProductScopeSingleScreenCommandCard({
           <b>搜索词复核</b>
           <strong>{recommendedSearchTermText ?? searchIntentText}</strong>
           {recommendedSearchTermStepDetail && <small>{recommendedSearchTermStepDetail}</small>}
+          {recommendedCarryEvidence && (
+            <ul className="productScopeSingleScreenEvidenceStack" aria-label="推荐搜索词承接证据">
+              <li>
+                <b>表现</b>
+                <span>{recommendedCarryEvidence.metricText}</span>
+              </li>
+              <li>
+                <b>承接</b>
+                <span>{recommendedCarryEvidence.adGroupText}</span>
+              </li>
+              <li>
+                <b>广告 ASIN</b>
+                <span>{recommendedCarryEvidence.asinText}</span>
+              </li>
+              <li>
+                <b>投放词</b>
+                <span>{recommendedCarryEvidence.targetingText}</span>
+              </li>
+              <li>
+                <b>样本</b>
+                <span>{recommendedCarryEvidence.searchTermSampleText}</span>
+              </li>
+              <li>
+                <b>边界</b>
+                <span>{recommendedCarryEvidence.boundaryText}</span>
+              </li>
+            </ul>
+          )}
           {searchIntentSummary && (
             <ol className="productScopeSingleScreenSearchIntentPath" aria-label="单屏搜索词复核顺序">
               {searchIntentSummary.priorityPathItems.map((item) => (
