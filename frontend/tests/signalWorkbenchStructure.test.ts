@@ -1443,6 +1443,10 @@ assertIncludes(workbenchSource, 'aria-label="优先广告组证据读取顺序"'
 assertIncludes(workbenchSource, "<span>先读哪层</span>");
 assertIncludes(workbenchSource, "buildProductScopeAdGroupChecklistItems(row)");
 assertIncludes(workbenchSource, "buildProductScopeAdGroupReviewPriority(row, items)");
+assertIncludes(workbenchSource, "投放词口径：{targetingItem?.nextStep");
+assertIncludes(workbenchSource, "只读 keyword_text / target_id 上下文，不能当作完整关键词库。");
+assertIncludes(workbenchSource, '投放词缺口：未带 keyword_text / target_id');
+assertNotIncludes(workbenchSource, '"未标记投放词"');
 assertIncludes(stylesSource, ".productScopeAdGroupPriorityEvidencePath");
 assertIncludes(stylesSource, ".productScopeAdGroupPriorityEvidencePath ol");
 assertIncludes(workbenchSource, "brief.verdictItems.map");

@@ -6029,6 +6029,7 @@ function ProductScopeAdGroupDiagnosisPanel({
 function ProductScopeAdGroupPriorityEvidencePath({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
   const items = buildProductScopeAdGroupChecklistItems(row);
   const priority = buildProductScopeAdGroupReviewPriority(row, items);
+  const targetingItem = items.find((item) => item.key === "targeting");
 
   return (
     <div className="productScopeAdGroupPriorityEvidencePath" aria-label="优先广告组证据读取顺序">
@@ -6045,6 +6046,7 @@ function ProductScopeAdGroupPriorityEvidencePath({ row }: { row: ProductScopeAdG
           </li>
         ))}
       </ol>
+      <small>投放词口径：{targetingItem?.nextStep ?? "只读 keyword_text / target_id 上下文，不能当作完整关键词库。"}</small>
       <small>{priority.boundary}</small>
     </div>
   );
@@ -6090,7 +6092,7 @@ function buildProductScopeTargetingEvidenceRows(row: ProductScopeAdGroupDiagnosi
 
   for (const term of terms) {
     const rawTargetingText = term.targetingText?.trim();
-    const targetingText = rawTargetingText || "未标记投放词";
+    const targetingText = rawTargetingText || "投放词缺口：未带 keyword_text / target_id";
     const key = targetingText.toLowerCase();
     const group =
       groups.get(key) ??
