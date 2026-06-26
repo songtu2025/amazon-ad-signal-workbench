@@ -548,6 +548,7 @@ export function SignalTriageWorkbench() {
   const [isEvidenceDrilldownFocused, setIsEvidenceDrilldownFocused] = useState(false);
   const workbenchGridRef = useRef<HTMLElement | null>(null);
   const adGroupPriorityGateRef = useRef<HTMLDivElement | null>(null);
+  const productScopeRequestSeq = useRef(0);
 
   async function loadSignals() {
     setLoading(true);
@@ -713,12 +714,15 @@ export function SignalTriageWorkbench() {
 
   useEffect(() => {
     if (loading) return;
+    const requestSeq = productScopeRequestSeq.current + 1;
+    productScopeRequestSeq.current = requestSeq;
     void Promise.all([
       fetchSignalTriageSummary(selectedMarketId, 5, activeProductScopeId),
       fetchReviewEvidenceRepair(selectedMarketId, 5, activeProductScopeId),
       fetchSearchIntents(selectedMarketId, activeProductScopeId),
     ])
       .then(([nextSignalTriageSummary, nextReviewEvidenceRepair, nextSearchIntents]) => {
+        if (productScopeRequestSeq.current !== requestSeq) return;
         setSignalTriageSummary(nextSignalTriageSummary);
         setReviewEvidenceRepair(nextReviewEvidenceRepair);
         setSearchIntents(nextSearchIntents);
@@ -733,7 +737,10 @@ export function SignalTriageWorkbench() {
         );
         setSelectedId((current) => resolveSignalSelectionId(current, nextDisplayProductScopedSignals, nextSignalTriageSummary));
       })
-      .catch(() => setError("后端服务未连接"));
+      .catch(() => {
+        if (productScopeRequestSeq.current !== requestSeq) return;
+        setError("后端服务未连接");
+      });
   }, [activeProductScopeId, loading, normalizedSignals, productScopedSignals, selectedMarketId]);
   useEffect(() => {
     if (!selectedSearchIntentLabel) return;
@@ -1061,10 +1068,35 @@ export function SignalTriageWorkbench() {
     setFilter(nextFilter);
   }
 
-  function handleSelectProductScopePriority(scopeId: string) {
+  function clearProductScopeTransientState() {
     clearSearchIntentFocus();
-    setFilter("all");
+    setSelectedId(null);
+    setSelectedAdGroupDiagnosisId(null);
+    setSignalTriageSummary(null);
+    setReviewEvidenceRepair(null);
+    setSearchIntents([]);
+    setManualActionPreflight(null);
+    setManualActionPreflightError(null);
+    setManualActionPreflightsByAction({});
+    setManualActionPreflightErrorsByAction({});
+    setManualActionPreviewActionType(null);
+    setManualActionMessage(null);
+    setReviewTodoMessage(null);
+    setIsEvidenceDrilldownFocused(false);
+  }
+
+  function handleSelectProductScope(scopeId: string, options?: { resetFilter?: boolean }) {
+    if (options?.resetFilter) {
+      setFilter("all");
+    }
+    if (!scopeId || scopeId === activeProductScopeId) return;
+    productScopeRequestSeq.current += 1;
+    clearProductScopeTransientState();
     setSelectedProductScopeId(scopeId);
+  }
+
+  function handleSelectProductScopePriority(scopeId: string) {
+    handleSelectProductScope(scopeId, { resetFilter: true });
   }
 
   function clearSearchIntentFocus() {
@@ -2194,7 +2226,7 @@ export function SignalTriageWorkbench() {
             aria-label="经营诊断入口筛选器"
             value={activeProductScopeId}
             disabled={productScope === null || loading}
-            onChange={(event) => setSelectedProductScopeId(event.target.value)}
+            onChange={(event) => handleSelectProductScope(event.target.value)}
           >
             {productScopeOptionGroups.map((group) => (
               <optgroup key={group.label} label={group.label}>
@@ -2381,7 +2413,7 @@ export function SignalTriageWorkbench() {
                             <button
                               className="asinScopeButton"
                               type="button"
-                              onClick={() => setSelectedProductScopeId(row.scopeId)}
+                              onClick={() => handleSelectProductScope(row.scopeId)}
                               aria-label={`查看广告 ASIN ${row.asin} 的信号`}
                             >
                               {row.asin}
@@ -2507,7 +2539,7 @@ export function SignalTriageWorkbench() {
                                 <button
                                   className="asinScopeButton"
                                   type="button"
-                                  onClick={() => setSelectedProductScopeId(row.scopeId)}
+                                  onClick={() => handleSelectProductScope(row.scopeId)}
                                   aria-label={`查看广告 ASIN ${row.asin} 的信号`}
                                 >
                                   {row.asin}
@@ -2744,7 +2776,7 @@ export function SignalTriageWorkbench() {
                 <button
                   className="reviewTodoQueueGlobalHint"
                   type="button"
-                  onClick={() => setSelectedProductScopeId(reviewTodoScopeHint.actionScopeId)}
+                  onClick={() => handleSelectProductScope(reviewTodoScopeHint.actionScopeId)}
                   aria-label="切到全量排查查看范围外复盘待办"
                   title={reviewTodoScopeHint.actionLabel}
                 >
