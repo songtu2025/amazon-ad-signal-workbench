@@ -1514,6 +1514,10 @@ assertIncludes(workbenchSource, "这是 ReviewTodo 继承的点击时证据快�
 assertIncludes(workbenchSource, "selectedReviewRecordSaveDecisionPreview");
 assertIncludes(workbenchSource, 'aria-label="复盘保存业务判断"');
 assertIncludes(workbenchSource, "能不能保存");
+assertIncludes(workbenchSource, "对象一致性");
+assertIncludes(workbenchSource, "todo_object_reference");
+assertIncludes(workbenchSource, "todo_evidence_signature");
+assertIncludes(workbenchSource, "不能用其他对象或当前页面缓存保存复盘");
 assertIncludes(workbenchSource, "保存依据");
 assertIncludes(workbenchSource, "下一步人工动作");
 assertIncludes(workbenchSource, "ReviewRecord 只保存人工复盘结论");

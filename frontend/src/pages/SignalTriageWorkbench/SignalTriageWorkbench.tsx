@@ -1416,6 +1416,27 @@ export function SignalTriageWorkbench() {
       : selectedReviewRecordSaveGate.tone === "saved"
         ? "已保存记录可回读"
         : selectedReviewEffectWindowLedger.metricCoverage;
+    const objectReferenceCheck = selectedReviewRecordPreflightChecklist.find((check) =>
+      ["todo_object_reference", "todo_object_reference_missing"].includes(check.id),
+    );
+    const evidenceSignatureCheck = selectedReviewRecordPreflightChecklist.find((check) =>
+      ["todo_evidence_signature", "todo_evidence_signature_missing"].includes(check.id),
+    );
+    const hasObjectGateIssue = [objectReferenceCheck, evidenceSignatureCheck].some((check) => check?.id.endsWith("_missing"));
+    const objectGateValue =
+      selectedReviewRecordSaveGate.tone === "saved"
+        ? "已保存同一对象"
+        : objectReferenceCheck || evidenceSignatureCheck
+          ? hasObjectGateIssue
+            ? "未通过"
+            : "已核对"
+          : "等待 ready 后核对";
+    const objectGateTone =
+      selectedReviewRecordSaveGate.tone === "saved" ? "ready" : hasObjectGateIssue ? "blocked" : objectReferenceCheck || evidenceSignatureCheck ? "ready" : tone;
+    const objectGateDetail =
+      objectReferenceCheck?.description ??
+      evidenceSignatureCheck?.description ??
+      "必须确认 ReviewTodo 的点击时 evidence_snapshot 能回看当前 object_id / object_label，不能用其他对象或当前页面缓存保存复盘。";
     const manualStepValue = selectedReviewRecordSaveGate.canSave
       ? "保存 ReviewRecord"
       : selectedReviewRecordSaveGate.tone === "saved"
@@ -1438,6 +1459,12 @@ export function SignalTriageWorkbench() {
           tone,
         },
         {
+          label: "对象一致性",
+          value: objectGateValue,
+          detail: objectGateDetail,
+          tone: objectGateTone,
+        },
+        {
           label: "保存依据",
           value: evidenceValue,
           detail:
@@ -1457,7 +1484,7 @@ export function SignalTriageWorkbench() {
   }, [
     selectedReviewEffectWindowLedger,
     selectedReviewMetricRows.length,
-    selectedReviewRecordPreflightChecklist.length,
+    selectedReviewRecordPreflightChecklist,
     selectedReviewRecordSaveGate,
     selectedReviewRecordSavePath,
   ]);
