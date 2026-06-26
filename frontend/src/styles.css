@@ -2095,6 +2095,36 @@ h3 {
   color: #607085;
 }
 
+.productScopePriorityQueueFirstRead {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #bad8ee;
+  border-radius: 7px;
+  padding: 7px 8px;
+  background: #f0f8ff;
+}
+
+.productScopePriorityQueueFirstRead b {
+  color: #275783;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.productScopePriorityQueueFirstRead strong {
+  color: #1f3047;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
+.productScopePriorityQueueFirstRead small {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .productScopePriorityQueueDigest {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr);

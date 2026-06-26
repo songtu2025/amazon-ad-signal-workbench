@@ -999,13 +999,36 @@ assertIncludes(workbenchSource, "避免 10 个 Parent ASIN 像看 10 张报纸")
 assertIncludes(workbenchSource, "productScopePriorityWorkflowStatus");
 assertIncludes(workbenchSource, "productScopePriorityActionCue");
 assertIncludes(workbenchSource, "{item.actionCue}");
+assertIncludes(workbenchSource, 'aria-label="Parent ASIN 行先读结论"');
+assertIncludes(workbenchSource, "productScopePriorityQueueFirstRead");
+assertIncludes(workbenchSource, "只看这一句");
+assertIncludes(workbenchSource, "点击后再读广告组 / 搜索词 / 广告位证据");
 assertIncludes(workbenchSource, "{item.workflowStatus.label}");
 assertIncludes(workbenchSource, "{item.workflowStatus.reason}");
 assertIncludes(workbenchSource, "{item.workflowStatus.nextStep}");
+assertIncludes(workbenchSource, "{item.nextManualStep}");
 assertNotIncludes(productScopePriorityQueueRenderSource, "排序依据：{item.rankReason}");
 assertNotIncludes(productScopePriorityQueueRenderSource, "<small>{item.decisionBadge}</small>");
 assertNotIncludes(productScopePriorityQueueRenderSource, "<small>{item.boundary}</small>");
 assertIncludes(workbenchSource, "handleSelectProductScopePriority(item.scopeId)");
+const productScopePriorityQueueFirstReadIndex = productScopePriorityQueueRenderSource.indexOf(
+  'className="productScopePriorityQueueFirstRead"',
+);
+const productScopePriorityWorkflowStatusIndex = productScopePriorityQueueRenderSource.indexOf(
+  "productScopePriorityWorkflowStatus",
+);
+const productScopePriorityQueueDigestIndex = productScopePriorityQueueRenderSource.indexOf(
+  'className="productScopePriorityQueueDigest"',
+);
+assert(productScopePriorityQueueFirstReadIndex > 0, "每条 Parent ASIN 行必须先给可读结论");
+assert(
+  productScopePriorityQueueFirstReadIndex < productScopePriorityWorkflowStatusIndex,
+  "Parent ASIN 行内必须先读结论，再读状态原因",
+);
+assert(
+  productScopePriorityQueueFirstReadIndex < productScopePriorityQueueDigestIndex,
+  "Parent ASIN 行内必须先读一句结论，再读判断和证据摘要",
+);
 const productScopePriorityDecisionSummaryRenderIndex = workbenchSource.indexOf(
   "<ProductScopePriorityDecisionSummaryPanel",
 );
@@ -1077,6 +1100,7 @@ assertIncludes(stylesSource, ".productScopePriorityPrimaryCommand");
 assertIncludes(stylesSource, ".productScopePriorityDecisionShortcuts");
 assertIncludes(stylesSource, "repeat(auto-fit, minmax(min(170px, 100%), 1fr))");
 assertIncludes(stylesSource, ".productScopePriorityQueueEmpty");
+assertIncludes(stylesSource, ".productScopePriorityQueueFirstRead");
 assertIncludes(stylesSource, ".productScopePriorityQueueDigest");
 assertIncludes(stylesSource, "-webkit-line-clamp: 2");
 assertIncludes(stylesSource, ".productScopePriorityWorkflowStatus");

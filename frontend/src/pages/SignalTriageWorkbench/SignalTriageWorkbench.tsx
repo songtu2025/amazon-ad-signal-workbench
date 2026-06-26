@@ -2754,6 +2754,11 @@ export function SignalTriageWorkbench() {
                             <strong>{item.label}</strong>
                             <b>{item.priorityLabel}</b>
                           </span>
+                          <span className="productScopePriorityQueueFirstRead" aria-label="Parent ASIN 行先读结论">
+                            <b>只看这一句</b>
+                            <strong>{item.workflowStatus.nextStep}</strong>
+                            <small>点击后再读广告组 / 搜索词 / 广告位证据；未打开前不跨 Parent ASIN 套用当前广告组结论。</small>
+                          </span>
                           <span className={`productScopePriorityWorkflowStatus ${item.workflowStatus.tone}`}>
                             <b>{item.workflowStatus.label}</b>
                             <small>{item.workflowStatus.reason}</small>
@@ -2767,8 +2772,8 @@ export function SignalTriageWorkbench() {
                             <small>{item.evidenceSummary}</small>
                           </span>
                           <span className="productScopePriorityQueueDigest action">
-                            <b>下一步</b>
-                            <small>{item.workflowStatus.nextStep}</small>
+                            <b>人工</b>
+                            <small>{item.nextManualStep}</small>
                           </span>
                           <span className={`productScopePriorityEvidencePreview ${adGroupEvidencePreview.tone}`}>
                             <b>{adGroupEvidencePreview.label}</b>
