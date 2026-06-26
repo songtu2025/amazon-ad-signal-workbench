@@ -319,6 +319,11 @@ function manualActionPreviewObjectTypeLabel(preview: RecommendedManualActionPrev
   return objectTypeLabel[preview.objectType] ?? preview.objectType ?? "复盘对象";
 }
 
+function recommendedSearchTermLabel(candidate?: SignalTriageSummary["recommended_candidate"] | null) {
+  if (candidate?.object_type !== "search_term") return null;
+  return candidate.object_label || candidate.stable_object_id || candidate.object_id || null;
+}
+
 function ProductScopePlacementEvidenceStatusCard({
   decision,
   ariaLabel,
@@ -682,6 +687,10 @@ export function SignalTriageWorkbench() {
   const searchIntentReviewDecisionSummary = useMemo(
     () => buildSearchIntentReviewDecisionSummary(searchIntentReviewCards),
     [searchIntentReviewCards],
+  );
+  const recommendedSearchTermForCurrentScope = useMemo(
+    () => recommendedSearchTermLabel(signalTriageSummary?.recommended_candidate),
+    [signalTriageSummary?.recommended_candidate],
   );
   const activeSearchIntentReviewCard = useMemo(
     () => (activeSearchIntentLabel ? searchIntentReviewCards.find((card) => card.intentLabel === activeSearchIntentLabel) ?? null : null),
@@ -1467,11 +1476,15 @@ export function SignalTriageWorkbench() {
       },
       {
         label: "3. 搜索词证据",
-        value: searchIntentReviewDecisionSummary
-          ? `${searchIntentReviewDecisionSummary.topSearchTermLabel} / ${searchIntentReviewDecisionSummary.topDecisionLabel}`
-          : "等待搜索词复核",
-        detail: searchIntentReviewDecisionSummary?.nextManualStep ?? "搜索词只说明当前广告上下文，不能自动归因到单个广告 ASIN。",
-        tone: searchIntentReviewDecisionSummary ? "ready" : "blocked",
+        value: recommendedSearchTermForCurrentScope
+          ? `后端推荐候选：${recommendedSearchTermForCurrentScope}`
+          : searchIntentReviewDecisionSummary
+            ? `${searchIntentReviewDecisionSummary.topSearchTermLabel} / ${searchIntentReviewDecisionSummary.topDecisionLabel}`
+            : "等待搜索词复核",
+        detail: recommendedSearchTermForCurrentScope
+          ? `先打开 ${recommendedSearchTermForCurrentScope} 的具体 SearchTerm 诊断；搜索词聚合只做 Parent ASIN 视角参考。`
+          : searchIntentReviewDecisionSummary?.nextManualStep ?? "搜索词只说明当前广告上下文，不能自动归因到单个广告 ASIN。",
+        tone: recommendedSearchTermForCurrentScope || searchIntentReviewDecisionSummary ? "ready" : "blocked",
       },
       {
         label: "4. 按钮前核对",
@@ -1484,6 +1497,7 @@ export function SignalTriageWorkbench() {
     ],
     [
       activeProductScopePriorityItem,
+      recommendedSearchTermForCurrentScope,
       searchIntentReviewDecisionSummary,
       selectedAdGroupDiagnosis,
       selectedManualActionAuthorizationReadiness,
@@ -2142,6 +2156,7 @@ export function SignalTriageWorkbench() {
               summary={productScopeFirstScreenSummary}
               priorityItem={activeProductScopePriorityItem}
               adGroup={selectedAdGroupDiagnosis}
+              recommendedCandidate={signalTriageSummary?.recommended_candidate ?? null}
               searchIntentSummary={searchIntentReviewDecisionSummary}
               onOpenEvidence={handleOpenProductScopeEvidenceDrilldown}
             />
@@ -4950,12 +4965,14 @@ function ProductScopeSingleScreenCommandCard({
   summary,
   priorityItem,
   adGroup,
+  recommendedCandidate,
   searchIntentSummary,
   onOpenEvidence,
 }: {
   summary: ProductScopeFirstScreenSummary;
   priorityItem: ProductScopePriorityQueueItem | null;
   adGroup: ProductScopeAdGroupDiagnosisRow | null;
+  recommendedCandidate: SignalTriageSummary["recommended_candidate"] | null;
   searchIntentSummary: SearchIntentReviewDecisionSummary | null;
   onOpenEvidence: () => void;
 }) {
@@ -4965,6 +4982,11 @@ function ProductScopeSingleScreenCommandCard({
   const adGroupText = adGroup
     ? `${adGroup.title}：${adGroup.problemType} / ${adGroup.statusLabel}`
     : "暂无可聚焦广告组，先补广告组、投放商品、投放词、搜索词和广告位证据。";
+  const recommendedSearchTerm = recommendedSearchTermLabel(recommendedCandidate);
+  const recommendedSearchTermText = recommendedSearchTerm ? `后端推荐候选：${recommendedSearchTerm}` : null;
+  const recommendedSearchTermStepDetail = recommendedSearchTerm
+    ? `先打开 ${recommendedSearchTerm} 的具体 SearchTerm 诊断；搜索词聚合只做 Parent ASIN 视角参考，不替代右侧人工动作对象。`
+    : null;
   const searchIntentText = searchIntentSummary
     ? `${searchIntentSummary.topIntentLabel} / ${searchIntentSummary.topDecisionLabel} / ${searchIntentSummary.topSearchTermLabel}`
     : "暂无广告搜索词表现聚合，不能从搜索词层判断扩量或止损。";
@@ -4983,9 +5005,12 @@ function ProductScopeSingleScreenCommandCard({
     },
     {
       label: "3. 搜索词证据",
-      value: searchIntentSummary ? searchIntentSummary.topSearchTermLabel : "等待搜索词聚合",
-      detail: searchIntentSummary?.nextManualStep ?? "搜索词只说明当前广告上下文，不能自动归因到单个广告 ASIN。",
-      tone: searchIntentSummary ? "ready" : "blocked",
+      value: recommendedSearchTermText ?? (searchIntentSummary ? searchIntentSummary.topSearchTermLabel : "等待搜索词聚合"),
+      detail:
+        recommendedSearchTermStepDetail ??
+        searchIntentSummary?.nextManualStep ??
+        "搜索词只说明当前广告上下文，不能自动归因到单个广告 ASIN。",
+      tone: recommendedSearchTerm ? "ready" : searchIntentSummary ? "ready" : "blocked",
     },
     {
       label: "4. 人工动作 / 复盘",
@@ -5034,7 +5059,8 @@ function ProductScopeSingleScreenCommandCard({
         </span>
         <span className="scope">
           <b>搜索词复核</b>
-          <strong>{searchIntentText}</strong>
+          <strong>{recommendedSearchTermText ?? searchIntentText}</strong>
+          {recommendedSearchTermStepDetail && <small>{recommendedSearchTermStepDetail}</small>}
           {searchIntentSummary && (
             <ol className="productScopeSingleScreenSearchIntentPath" aria-label="单屏搜索词复核顺序">
               {searchIntentSummary.priorityPathItems.map((item) => (
