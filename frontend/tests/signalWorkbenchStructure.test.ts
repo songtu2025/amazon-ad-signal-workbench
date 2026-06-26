@@ -1396,6 +1396,10 @@ const adGroupTrafficBoundaryIndex = workbenchSource.indexOf("{row.trafficContext
 const adGroupEvidenceSummaryIndex = workbenchSource.indexOf('aria-label="广告组证据摘要"');
 const adGroupPriorityGateIndex = workbenchSource.indexOf('aria-label="广告组优先判断"');
 const adGroupPriorityWorkflowStatusIndex = workbenchSource.indexOf('aria-label="优先广告组闭环状态"');
+const adGroupPriorityEvidencePathIndex = workbenchSource.indexOf(
+  "<ProductScopeAdGroupPriorityEvidencePath",
+  adGroupPriorityWorkflowStatusIndex,
+);
 const adGroupPriorityPlacementStatusIndex = workbenchSource.indexOf('ariaLabel="优先广告组广告位证据状态"');
 const adGroupPriorityTriageIndex = workbenchSource.indexOf('aria-label="优先广告组三段判断"');
 const adGroupRowsIndex = workbenchSource.indexOf('className="productScopeAdGroupDiagnosisRows"');
@@ -1433,6 +1437,14 @@ assert(
     diagnosisBriefNextStepIndex < diagnosisBriefEvidenceDisclosureIndex,
   "Parent ASIN 完整诊断框架展开后必须先给当前判断和人工下一步，再把证明边界收进可展开区。",
 );
+assertIncludes(workbenchSource, "function ProductScopeAdGroupPriorityEvidencePath");
+assertIncludes(workbenchSource, 'className="productScopeAdGroupPriorityEvidencePath"');
+assertIncludes(workbenchSource, 'aria-label="优先广告组证据读取顺序"');
+assertIncludes(workbenchSource, "<span>先读哪层</span>");
+assertIncludes(workbenchSource, "buildProductScopeAdGroupChecklistItems(row)");
+assertIncludes(workbenchSource, "buildProductScopeAdGroupReviewPriority(row, items)");
+assertIncludes(stylesSource, ".productScopeAdGroupPriorityEvidencePath");
+assertIncludes(stylesSource, ".productScopeAdGroupPriorityEvidencePath ol");
 assertIncludes(workbenchSource, "brief.verdictItems.map");
 assertIncludes(stylesSource, ".productScopeDiagnosisVerdict");
 assertIncludes(stylesSource, ".productScopeDiagnosisVerdictItem");
@@ -1448,10 +1460,11 @@ assert(
 );
 assert(
   adGroupPriorityGateIndex < adGroupPriorityWorkflowStatusIndex &&
-    adGroupPriorityWorkflowStatusIndex < adGroupPriorityPlacementStatusIndex &&
+    adGroupPriorityWorkflowStatusIndex < adGroupPriorityEvidencePathIndex &&
+    adGroupPriorityEvidencePathIndex < adGroupPriorityPlacementStatusIndex &&
     adGroupPriorityPlacementStatusIndex < adGroupPriorityTriageIndex &&
     adGroupPriorityTriageIndex < adGroupRowsIndex,
-  "广告组优先判断必须先给闭环状态和广告位证据状态，再给三段判断：问题类型、证据强度、人工下一步。",
+  "广告组优先判断必须先给闭环状态和证据读取顺序，再给广告位证据状态和三段判断。",
 );
 assertIncludes(stylesSource, ".productScopeAdGroupPriorityTriage");
 assertIncludes(stylesSource, ".productScopeAdGroupWorkflowStatus");

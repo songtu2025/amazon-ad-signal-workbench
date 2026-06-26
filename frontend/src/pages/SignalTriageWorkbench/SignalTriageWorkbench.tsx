@@ -5928,6 +5928,7 @@ function ProductScopeAdGroupDiagnosisPanel({
             <span>{priorityRow.diagnosisStatus.reason}</span>
             <small>下一步：{priorityRow.diagnosisStatus.nextStep}</small>
           </div>
+          <ProductScopeAdGroupPriorityEvidencePath row={priorityRow} />
           <ProductScopePlacementEvidenceStatusCard
             decision={priorityRow.placementDecision}
             ariaLabel="优先广告组广告位证据状态"
@@ -6022,6 +6023,30 @@ function ProductScopeAdGroupDiagnosisPanel({
         </details>
       )}
     </section>
+  );
+}
+
+function ProductScopeAdGroupPriorityEvidencePath({ row }: { row: ProductScopeAdGroupDiagnosisRow }) {
+  const items = buildProductScopeAdGroupChecklistItems(row);
+  const priority = buildProductScopeAdGroupReviewPriority(row, items);
+
+  return (
+    <div className="productScopeAdGroupPriorityEvidencePath" aria-label="优先广告组证据读取顺序">
+      <div>
+        <span>先读哪层</span>
+        <strong>{priority.focusLayer}</strong>
+        <small>{priority.reason}</small>
+      </div>
+      <ol>
+        {items.map((item) => (
+          <li key={`${row.id}-${item.key}-priority-path`}>
+            <span>{item.label}</span>
+            <b>{item.title}</b>
+          </li>
+        ))}
+      </ol>
+      <small>{priority.boundary}</small>
+    </div>
   );
 }
 
