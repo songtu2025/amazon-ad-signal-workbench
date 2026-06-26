@@ -486,7 +486,7 @@ const reviewFlowStatusDetailsIndex = workbenchSource.indexOf('aria-label="复盘
 const reviewTodoDecisionReadbackIndex = workbenchSource.indexOf('aria-label="复盘待办业务判断读回"');
 const reviewRecordSavePathIndex = workbenchSource.indexOf('aria-label="复盘保存顺序核对"');
 const reviewTodoEvidenceReadbackIndex = workbenchSource.indexOf('aria-label="复盘待办证据回读核对"');
-const reviewEffectWindowLedgerIndex = workbenchSource.indexOf('aria-label="复盘效果窗口口径"');
+const reviewEffectWindowLedgerIndex = workbenchSource.indexOf('aria-label="处理前后指标窗口口径"');
 const reviewRecordSaveGateIndex = workbenchSource.indexOf('aria-label="复盘保存门槛"');
 const reviewMetricTableIndex = workbenchSource.indexOf('aria-label="复盘指标对比"');
 const reviewRecordPreflightChecklistIndex = workbenchSource.indexOf('aria-label="复盘保存前检查清单"');
@@ -2020,7 +2020,7 @@ assertIncludes(workbenchSource, "处理前后指标可复核和保存前检查")
 assertIncludes(reviewUiSource, "2. 指标可复核");
 assertIncludes(reviewUiSource, "3. 人工保存结论");
 assertIncludes(reviewUiSource, "ready 不等于已判断有效");
-assertIncludes(workbenchSource, 'aria-label="复盘效果窗口口径"');
+assertIncludes(workbenchSource, 'aria-label="处理前后指标窗口口径"');
 assertIncludes(workbenchSource, "reviewEffectWindowLedger");
 assertIncludes(workbenchSource, 'aria-label="复盘保存顺序核对"');
 assertIncludes(workbenchSource, "reviewRecordSavePath");

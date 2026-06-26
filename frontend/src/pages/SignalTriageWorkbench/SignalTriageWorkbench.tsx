@@ -1397,7 +1397,7 @@ export function SignalTriageWorkbench() {
       return {
         title: "人工留痕证据快照",
         source: latestManualAction?.acted_at ? new Date(latestManualAction.acted_at).toLocaleString() : "人工动作时间待补充",
-        boundary: "来自 ManualAction 的人工点击时证据快照；只有生成 ReviewTodo 并到期后，才能进入复盘效果判断。",
+        boundary: "来自 ManualAction 的人工点击时证据快照；只有生成 ReviewTodo 并到期后，才能人工核对处理前后指标。",
         items: actionSnapshot,
       };
     }
@@ -2216,7 +2216,7 @@ export function SignalTriageWorkbench() {
         setReviewTodoMessage(null);
       })
       .catch(() => {
-        setReviewTodoMessage("复盘效果读取失败");
+        setReviewTodoMessage("处理前后指标读取失败");
       });
   }, [
     nextReviewTodo?.due_at,
@@ -4366,7 +4366,7 @@ export function SignalTriageWorkbench() {
                       {selectedReviewEffect?.status === "ready" && <span>{reviewEffectSummaryText(selectedReviewEffect)}</span>}
                       <div
                         className={`reviewEffectWindowLedger ${selectedReviewEffectWindowLedger.tone}`}
-                        aria-label="复盘效果窗口口径"
+                        aria-label="处理前后指标窗口口径"
                       >
                         <strong>{selectedReviewEffectWindowLedger.title}</strong>
                         <p>{selectedReviewEffectWindowLedger.status}</p>

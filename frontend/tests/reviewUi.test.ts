@@ -2069,6 +2069,7 @@ assertIncludes(manualActionChoiceGuide[0]?.whenToUse ?? "", "7/14 天后回看")
 assertIncludes(manualActionChoiceGuide[0]?.writes ?? "", "生成 7d / 14d 复盘待办");
 assertIncludes(manualActionChoiceGuide[0]?.boundary ?? "", "不自动执行广告动作");
 assertIncludes(manualActionChoiceGuide[1]?.whenToUse ?? "", "还不承诺已经处理");
+assertIncludes(manualActionChoiceGuide[1]?.whenToUse ?? "", "不保存复盘结论");
 assertIncludes(manualActionChoiceGuide[2]?.whenToUse ?? "", "在线下完成处理动作");
 assertIncludes(manualActionChoiceGuide[3]?.writes ?? "", "不生成当前 7/14 天复盘待办");
 assertIncludes(manualActionChoiceGuide[3]?.boundary ?? "", "信号和证据保留");
@@ -2419,6 +2420,7 @@ assertEqual(
 );
 assertEqual(manualActionButtonGate("add_to_review", readyManualActionPreflight, null, true).disabled, true);
 assertIncludes(manualActionButtonGate("add_to_review", readyManualActionPreflight, null, true).reason ?? "", "已有 7 天 / 14 天复盘排程");
+assertIncludes(manualActionButtonGate("add_to_review", readyManualActionPreflight, null, true).reason ?? "", "再人工核对处理前后指标");
 assertEqual(
   manualActionWriteGuardMessage("加入复盘", manualActionButtonGate("add_to_review", null, null, false)),
   "未保存：加入复盘；正在核对人工留痕对象和证据；读取完成前不写入人工动作。",
@@ -3350,7 +3352,7 @@ assertEqual(
     object_type: "search_term",
     signal_category: "search_term_opportunity",
   }),
-  "该对象可进入广告指标复盘：记录人工动作后，等待处理前后完整 7/14 天快照再判断效果。",
+  "该对象可进入广告指标复盘：记录人工动作后，等待处理前后完整 7/14 天快照，再由人工保存复盘结论。",
 );
 assertEqual(
   reviewApplicabilityBoundaryText({

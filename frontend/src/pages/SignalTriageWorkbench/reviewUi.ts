@@ -3372,7 +3372,7 @@ export function manualActionChoiceGuideItems(): ManualActionChoiceGuideItem[] {
     {
       actionType: "observe",
       label: "记录观察",
-      whenToUse: "证据值得保留，但现在还不承诺已经处理或需要判断效果。",
+      whenToUse: "证据值得保留，但现在还不承诺已经处理，也不保存复盘结论。",
       writes: "写入人工观察，并生成 7d / 14d 复盘待办。",
       boundary: manualActionIntentText("observe"),
     },
@@ -4074,7 +4074,7 @@ export function manualActionButtonGate(
   if (actionType === "add_to_review" && hasReviewTodoForSelectedObject) {
     return {
       disabled: true,
-      reason: "已有 7 天 / 14 天复盘排程；等待完整窗口后再判断效果。",
+      reason: "已有 7 天 / 14 天复盘排程；等待完整窗口后再人工核对处理前后指标。",
       compactReason: "等待复盘窗口",
     };
   }
@@ -4741,7 +4741,7 @@ export function reviewApplicabilityBoundaryText(signal: ReviewApplicabilityForUi
     return "该信号属于数据质量或交叉对象，只适合留痕或复查数据是否补齐，不进入广告指标前后对比。";
   }
   if (["search_term", "advertised_product", "sales_product", "placement", "ad_group"].includes(signal.object_type ?? "")) {
-    return "该对象可进入广告指标复盘：记录人工动作后，等待处理前后完整 7/14 天快照再判断效果。";
+    return "该对象可进入广告指标复盘：记录人工动作后，等待处理前后完整 7/14 天快照，再由人工保存复盘结论。";
   }
   return "该对象暂不支持广告指标复盘；可先记录观察，后续补齐对象口径。";
 }

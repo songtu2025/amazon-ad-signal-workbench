@@ -1648,7 +1648,7 @@ assertEqual(
       review_windows: ["7d", "14d"],
     },
   }),
-  "B016EXMW02：已生成 2 条复盘待办，等待 7 天 / 14 天完整窗口后再判断效果。",
+  "B016EXMW02：已生成 2 条复盘待办，等待 7 天 / 14 天完整窗口后再人工核对处理前后指标。",
 );
 
 const separatedRecommendedManualStatus = recommendedManualStatusText({
@@ -1665,7 +1665,7 @@ const separatedRecommendedManualStatus = recommendedManualStatusText({
     review_todo_count: 2,
     ready_review_count: 0,
     review_windows: ["7d", "14d"],
-    next_action: "推荐对象已人工留痕并生成复盘待办；等待 7 天 / 14 天完整窗口后再判断效果。",
+    next_action: "推荐对象已人工留痕并生成复盘待办；等待 7 天 / 14 天完整窗口后再人工核对处理前后指标。",
   },
 });
 assertIncludes(separatedRecommendedManualStatus ?? "", "等待 7 天 / 14 天完整窗口");
@@ -1676,7 +1676,7 @@ const handledRecommendedCardCopy = recommendedManualActionCardCopy({
     object_label: "B016EXMW02",
     has_manual_action: true,
     has_review_todo: true,
-    next_action: "推荐对象已人工留痕并生成复盘待办；等待 7 天 / 14 天完整窗口后再判断效果。",
+    next_action: "推荐对象已人工留痕并生成复盘待办；等待 7 天 / 14 天完整窗口后再人工核对处理前后指标。",
   },
   next_unhandled_candidate: {
     object_label: "RBK004-RBK004-2 深蓝",

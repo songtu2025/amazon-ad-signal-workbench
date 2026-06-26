@@ -7311,7 +7311,7 @@ export function recommendedManualStatusText(summary: SignalTriageSummaryForUi | 
   }
   if (!nextAction && status.has_review_todo) {
     const windowText = status.review_windows?.length ? status.review_windows.map((window) => window.replace("d", " 天")).join(" / ") : "7 天 / 14 天";
-    nextAction = `已生成 ${status.review_todo_count ?? 0} 条复盘待办，等待 ${windowText}完整窗口后再判断效果。`;
+    nextAction = `已生成 ${status.review_todo_count ?? 0} 条复盘待办，等待 ${windowText}完整窗口后再人工核对处理前后指标。`;
   }
   if (!nextAction) {
     nextAction = status.has_manual_action

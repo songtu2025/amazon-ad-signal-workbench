@@ -247,7 +247,7 @@ assertEqual(snapshotCreateButtonText(false, waitingReviewStatus), "等待复盘�
 assertEqual(snapshotCreateButtonText(true, waitingReviewStatus), "拉取中");
 
 assertIncludes(snapshotActionBoundaryText(waitingReviewStatus), "复盘窗口未到期");
-assertIncludes(snapshotActionBoundaryText(waitingReviewStatus), "2026-06-22 后再只读检查 7 天广告指标复盘效果");
+assertIncludes(snapshotActionBoundaryText(waitingReviewStatus), "2026-06-22 后再只读检查 7 天处理前后广告指标");
 assertIncludes(snapshotActionBoundaryText(waitingReviewStatus), "未到期前不拉取快照、不保存复盘结论");
 
 assertBoolean(shouldPauseSnapshotPullForReview({ manual_action_count: 0, ready_count: 0 }), false);

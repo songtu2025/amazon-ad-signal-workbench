@@ -121,7 +121,7 @@ export function snapshotActionBoundaryText(reviewStatus: SnapshotReviewStatusFor
   const nextReviewWindow = reviewWindowText(waitSummary?.next_review_window);
   const forbiddenActions = cleanList(waitSummary?.forbidden_actions ?? []);
   const forbiddenText = forbiddenActions.length ? forbiddenActions.join("、") : "不拉取快照、不保存复盘结论";
-  const reviewTargetText = nextReviewWindow ? ` ${nextReviewWindow}广告指标复盘效果` : "广告指标复盘效果";
+  const reviewTargetText = nextReviewWindow ? ` ${nextReviewWindow}处理前后广告指标` : "处理前后广告指标";
   return `复盘窗口未到期：现在只刷新本地信号和查看人工留痕，${earliestDueDate} 后再只读检查${reviewTargetText}；未到期前${forbiddenText}。`;
 }
 
