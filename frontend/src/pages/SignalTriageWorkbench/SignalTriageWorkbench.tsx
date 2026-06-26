@@ -3038,14 +3038,14 @@ export function SignalTriageWorkbench() {
             <small className="searchIntentReviewBoundary">{searchIntentPanelContext.boundary}</small>
             {searchIntentReviewDecisionSummary && <SearchIntentReviewDecisionSummaryPanel summary={searchIntentReviewDecisionSummary} />}
             {activeSearchIntentLabel && (
-              <div className="searchIntentActiveFilter" aria-label="当前广告搜索词表现复核筛选">
+              <div className="searchIntentActiveFilter" aria-label="当前广告搜索词证据聚焦">
                 <span>
-                  当前 Parent ASIN 广告搜索词表现复核：{activeSearchIntentLabel}
-                  <small>诊断入口保持不变，这里只是从 Parent ASIN 视角聚合广告用户搜索词表现，并筛出同类 SearchTerm 信号；不做商品归因；ABA 只作站点级背景。</small>
+                  当前 Parent ASIN 广告搜索词证据聚焦：{activeSearchIntentLabel}
+                  <small>经营诊断入口未切换；这里只临时聚焦同类 SearchTerm 信号，帮助打开具体搜索词证据链；不做商品归因；ABA 只作站点级背景。</small>
                   <small>绑定诊断入口：{selectedProductScopeOption?.label ?? activeProductScopeId}</small>
                 </span>
                 <button type="button" onClick={clearSearchIntentFocus}>
-                  清除
+                  退出聚焦
                 </button>
               </div>
             )}
@@ -3078,7 +3078,7 @@ export function SignalTriageWorkbench() {
                       className="searchIntentReviewCardPrimary"
                       onClick={() => handleSelectSearchIntent(card.intentLabel, card.primarySearchTerm)}
                       aria-pressed={activeSearchIntentLabel === card.intentLabel}
-                      aria-label={`打开 ${card.title} 聚合下的优先 SearchTerm 诊断`}
+                      aria-label={`打开 ${card.primarySearchTerm ?? card.title} 的 SearchTerm 证据链`}
                     >
                       <div className="searchIntentReviewCardHeader">
                         <strong>{card.title}</strong>
@@ -3095,11 +3095,11 @@ export function SignalTriageWorkbench() {
                       </div>
                       <div className="searchIntentReviewCardSnapshot" aria-label="搜索词复核默认摘要">
                         <span>
-                          <b>核心指标</b>
+                          <b>判断依据</b>
                           <small>{card.summary}</small>
                         </span>
                         <span>
-                          <b>优先 SearchTerm</b>
+                          <b>先看 SearchTerm</b>
                           <small>{card.primarySearchTerm ?? "待补齐"}；{card.primarySearchTermReason}</small>
                         </span>
                         <span>

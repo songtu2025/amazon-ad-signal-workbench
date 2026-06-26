@@ -6305,7 +6305,7 @@ const searchIntentReviewCards = buildSearchIntentReviewCards([
 
 assertEqual(searchIntentReviewCards.length, 1);
 assertEqual(searchIntentReviewCards[0].title, "规则语义：儿童太阳镜");
-assertEqual(searchIntentReviewCards[0].summary, "4 单 / 花费 9 / ACOS 12.86% / ABA 命中 1");
+assertEqual(searchIntentReviewCards[0].summary, "广告表现判断依据：订单 4 / 花费 9 / ACOS 12.86% / ABA 命中 1");
 assertEqual(searchIntentReviewCards[0].sourceLabel, "规则语义");
 assertEqual(searchIntentReviewCards[0].operationDecisionLabel, "扩量复核");
 assertEqual(searchIntentReviewCards[0].operationDecisionTone, "scale");
@@ -6369,7 +6369,8 @@ assertIncludes(searchIntentPanelContext.purpose, "聚合广告中实际产生表
 assertIncludes(searchIntentPanelContext.purpose, "Parent ASIN");
 assertIncludes(searchIntentPanelContext.dataGrain, "当前 Parent ASIN 相关广告上下文");
 assertIncludes(searchIntentPanelContext.dataGrain, "按标准化用户搜索词及规则归类聚合");
-assertIncludes(searchIntentPanelContext.interactionBoundary, "只改变左侧信号队列筛选");
+assertIncludes(searchIntentPanelContext.interactionBoundary, "只临时聚焦左侧同类 SearchTerm 信号");
+assertIncludes(searchIntentPanelContext.interactionBoundary, "打开优先 SearchTerm 证据链");
 assertIncludes(searchIntentPanelContext.interactionBoundary, "不改变顶部诊断入口筛选器");
 assertIncludes(searchIntentPanelContext.proves, "同类广告搜索词");
 assertIncludes(searchIntentPanelContext.doesNotProve, "不能证明 Parent ASIN 下全部自然搜索或市场搜索表现");
@@ -6786,14 +6787,15 @@ const searchIntentEntryLockSummary = buildSearchIntentEntryLockSummary(
   },
 );
 
-assertEqual(searchIntentEntryLockSummary?.title, "诊断入口锁定核对");
+assertEqual(searchIntentEntryLockSummary?.title, "经营入口未切换");
 assertEqual(searchIntentEntryLockSummary?.rows[0]?.label, "经营诊断入口");
 assertEqual(searchIntentEntryLockSummary?.rows[0]?.value, "Parent ASIN B00K4W4AAA");
 assertIncludes(searchIntentEntryLockSummary?.rows[0]?.detail ?? "", "不把 Parent ASIN 广告搜索词表现复核写回 ProductScope");
-assertEqual(searchIntentEntryLockSummary?.rows[1]?.label, "Parent ASIN 广告搜索词表现复核");
+assertEqual(searchIntentEntryLockSummary?.rows[1]?.label, "二级搜索词聚焦");
 assertIncludes(searchIntentEntryLockSummary?.rows[1]?.detail ?? "", "从当前 Parent ASIN 视角聚合广告中的用户搜索词表现行");
 assertEqual(searchIntentEntryLockSummary?.rows[1]?.value, "规则语义：海滩出行用品");
-assertIncludes(searchIntentEntryLockSummary?.rows[1]?.detail ?? "", "二级队列筛选");
+assertIncludes(searchIntentEntryLockSummary?.rows[1]?.detail ?? "", "二级证据聚焦");
+assertIncludes(searchIntentEntryLockSummary?.rows[1]?.detail ?? "", "打开同类 SearchTerm 证据链");
 assertEqual(searchIntentEntryLockSummary?.rows[2]?.value, "SearchTerm：beach essentials");
 assertIncludes(searchIntentEntryLockSummary?.rows[2]?.detail ?? "", "扩量复核先看");
 assertIncludes(searchIntentEntryLockSummary?.boundary ?? "", "不会切换经营诊断入口");

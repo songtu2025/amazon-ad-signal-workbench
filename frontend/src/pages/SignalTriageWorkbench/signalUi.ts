@@ -6958,7 +6958,7 @@ export function buildSearchIntentReviewCards(summaries: SearchIntentSummaryForUi
       return {
         intentLabel: summary.intent_label,
         title: summary.intent_label,
-        summary: `${metrics.orders} 单 / 花费 ${formatReviewNumber(metrics.cost)} / ACOS ${formatReviewPercent(metrics.acos)} / ABA 命中 ${abaMatchCount}`,
+        summary: `广告表现判断依据：订单 ${metrics.orders} / 花费 ${formatReviewNumber(metrics.cost)} / ACOS ${formatReviewPercent(metrics.acos)} / ABA 命中 ${abaMatchCount}`,
         sourceLabel: summary.semantic_source || "未知来源",
         ...operationDecision,
         reviewStatus,
@@ -7027,7 +7027,7 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
       "用途：从当前 Parent ASIN 视角聚合广告中实际产生表现的用户搜索词，帮助运营复核同类 SearchTerm 表现；它不是经营商品入口、广告组入口或人工动作对象。",
     dataGrain: firstCard?.dataGrain ?? "当前 Parent ASIN 关联广告上下文中的 ad_search_term_daily_metrics 用户搜索词表现行，按标准化用户搜索词及规则归类聚合。",
     interactionBoundary:
-      "点击后只改变左侧信号队列筛选和中间选中 SearchTerm，不改变顶部诊断入口筛选器，也不切换 Parent ASIN / 广告 ASIN / 广告组。",
+      "点击后只临时聚焦左侧同类 SearchTerm 信号，并打开优先 SearchTerm 证据链；不改变顶部诊断入口筛选器，也不切换 Parent ASIN / 广告 ASIN / 广告组。",
     proves: firstCard?.proves ?? "能证明当前诊断入口内按标准化用户搜索词及规则归类聚合后的同类广告搜索词花费、点击、订单、ACOS 和 ABA 站点级背景。",
     doesNotProve:
       firstCard?.doesNotProve ??
@@ -7043,7 +7043,7 @@ export function buildSearchIntentPanelContext(cards: SearchIntentReviewCard[]): 
       "边界：只复核广告用户搜索词表现；不改变诊断入口，不把搜索词表现分组当作人工动作对象，不证明单个 ASIN 归因，ABA 仅作站点级背景。",
     emptyText:
       cards.length > 0
-        ? `当前展示 ${cards.length} 组 Parent ASIN 广告搜索词表现复核，点击后只筛选当前诊断入口内的同类 SearchTerm 信号。`
+        ? `当前展示 ${cards.length} 组 Parent ASIN 广告搜索词表现复核，点击后只聚焦当前诊断入口内的同类 SearchTerm 信号。`
         : "当前诊断入口下没有可关联的广告用户搜索词表现行；这不是系统故障，也不代表 Parent ASIN 没有自然搜索词，只代表当前广告上下文没有可复核的 SearchTerm 表现。",
   };
 }
@@ -7116,7 +7116,7 @@ export function buildSearchIntentEntryLockSummary(
   const scopeLabel = diagnosisScopeLabel(selectedScope);
   const primarySearchTerm = activeCard?.primarySearchTerm?.trim();
   return {
-    title: "诊断入口锁定核对",
+    title: "经营入口未切换",
     rows: [
       {
         label: "经营诊断入口",
@@ -7124,9 +7124,9 @@ export function buildSearchIntentEntryLockSummary(
         detail: "保持当前顶部 / 经营诊断入口筛选器，不把 Parent ASIN 广告搜索词表现复核写回 ProductScope。",
       },
       {
-        label: "Parent ASIN 广告搜索词表现复核",
+        label: "二级搜索词聚焦",
         value: intentLabel,
-        detail: "从当前 Parent ASIN 视角聚合广告中的用户搜索词表现行，只作为二级队列筛选，用于缩小同类 SearchTerm 信号。",
+        detail: "从当前 Parent ASIN 视角聚合广告中的用户搜索词表现行，只作为二级证据聚焦，用于打开同类 SearchTerm 证据链。",
       },
       {
         label: "优先诊断对象",
@@ -7135,7 +7135,7 @@ export function buildSearchIntentEntryLockSummary(
       },
     ],
     boundary:
-      "点击 Parent ASIN 广告搜索词表现复核卡片不会切换经营诊断入口；如需切换 Parent ASIN、ASIN 或广告对象，必须使用诊断入口筛选器或明确入口按钮。",
+      "点击 Parent ASIN 广告搜索词表现复核卡片不会切换经营诊断入口；它只打开当前入口下的具体 SearchTerm 证据链。如需切换 Parent ASIN、ASIN 或广告对象，必须使用诊断入口筛选器或明确入口按钮。",
   };
 }
 
