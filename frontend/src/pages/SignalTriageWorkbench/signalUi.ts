@@ -4135,9 +4135,17 @@ export interface ProductScopeDiagnosisBriefSection {
   tone: "scope" | "ready" | "context" | "manual" | "blocked";
 }
 
+export interface ProductScopeDecisionGuideQuickItem {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "ready" | "waiting" | "blocked" | "manual";
+}
+
 export interface ProductScopeDecisionGuide {
   title: string;
   primaryDecision: string;
+  quickTriage: ProductScopeDecisionGuideQuickItem[];
   readPath: string;
   expandFocus: string;
   notToDo: string;
@@ -5363,6 +5371,63 @@ export function buildProductScopeDiagnosisBrief(
   const salesEntryNextManualStep = hasAdvertisedAsin
     ? `${adFact?.value ?? "只把有 advertised_products 证据的广告 ASIN 带入后续诊断。"} 下一步进入广告组排序和具体广告证据，不把未投放子 ASIN 拉入广告分析。`
     : `${firstScreenSummary.adCoverageDecision.nextManualStep} 暂不看广告组排序，先补广告对象证据。`;
+  const quickTriage: ProductScopeDecisionGuideQuickItem[] = hasAdvertisedAsin
+    ? [
+        {
+          label: "先看",
+          value: primaryAdGroup
+            ? primaryAdGroup.title
+            : hasRecommendedAdGroupEvidence
+              ? `${recommendedAdGroupLabel} 关联广告组`
+              : "广告证据完整性",
+          detail: primaryAdGroup
+            ? primaryAdGroup.problemType
+            : hasRecommendedAdGroupEvidence
+              ? `${recommendedAdGroupNames.length} 个广告组只作为证据入口`
+              : "暂无可排序广告组，先确认证据是否齐全",
+          tone: primaryAdGroup || hasRecommendedAdGroupEvidence ? "ready" : "waiting",
+        },
+        {
+          label: "为什么",
+          value: primaryAdGroup
+            ? primaryAdGroup.problemLocator.problemLocation
+            : hasRecommendedAdGroupEvidence
+              ? "搜索词证据可回到广告组"
+              : "广告组排序证据不足",
+          detail: primaryAdGroup
+            ? primaryAdGroup.evidenceSynthesis.statusLabel
+            : hasRecommendedAdGroupEvidence
+              ? "不代表广告组异常，也不做单 ASIN 自动归因"
+              : "补齐投放商品、投放词、搜索词和广告位后再排序",
+          tone: primaryAdGroup ? "ready" : "waiting",
+        },
+        {
+          label: "现在做",
+          value: primaryAdGroup || hasRecommendedAdGroupEvidence ? "人工复核" : "先补证据",
+          detail: primaryAdGroup ? primaryAdGroup.problemLocator.nextManualStep : hasRecommendedAdGroupEvidence ? adGroupNextManualStep : salesEntryNextManualStep,
+          tone: primaryAdGroup || hasRecommendedAdGroupEvidence ? "manual" : "waiting",
+        },
+      ]
+    : [
+        {
+          label: "先看",
+          value: "广告 ASIN 证据缺口",
+          detail: adEvidenceGate?.value ?? "缺少广告 ASIN，不能进入广告诊断",
+          tone: "blocked",
+        },
+        {
+          label: "为什么",
+          value: "销售盘只是经营背景",
+          detail: "未投放子 ASIN 不能被拉入广告分析",
+          tone: "blocked",
+        },
+        {
+          label: "现在做",
+          value: "补广告对象证据",
+          detail: salesEntryNextManualStep,
+          tone: "manual",
+        },
+      ];
   const decisionGuide: ProductScopeDecisionGuide = hasAdvertisedAsin
     ? {
         title: "Parent ASIN 决策导览",
@@ -5371,6 +5436,7 @@ export function buildProductScopeDiagnosisBrief(
           : hasRecommendedAdGroupEvidence
             ? `可以进入广告诊断；先沿 ${recommendedAdGroupLabel} 关联的 ${recommendedAdGroupNames.length} 个广告组下钻证据，不把它包装成广告组异常。`
           : "可以进入广告诊断，但暂无可排序广告组；先确认广告组、投放商品、投放词、搜索词和广告位证据是否齐全。",
+        quickTriage,
         readPath: "先判断 Parent ASIN 是否有广告证据，再看广告 ASIN 覆盖，接着只展开问题广告组，不逐个读完整报表。",
         expandFocus: primaryAdGroup
           ? `${primaryAdGroup.problemLocator.problemLocation}；下钻顺序为投放商品 -> 投放词 -> 搜索词 -> 广告位。`
@@ -5385,6 +5451,7 @@ export function buildProductScopeDiagnosisBrief(
     : {
         title: "Parent ASIN 决策导览",
         primaryDecision: "暂不展开广告组：当前缺少可进入广告诊断的广告 ASIN。",
+        quickTriage,
         readPath: "先补 advertised_products、广告组、投放词、搜索词或广告位证据，再进入广告诊断路径。",
         expandFocus: "没有广告对象证据时，只能把 Parent ASIN 当经营背景，不能生成广告问题归因。",
         notToDo:

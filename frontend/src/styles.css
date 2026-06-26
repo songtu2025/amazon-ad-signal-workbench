@@ -2884,6 +2884,61 @@ h3 {
   line-height: 1.45;
 }
 
+.productScopeQuickTriage {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.productScopeQuickTriage article {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #d6e2ef;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  overflow-wrap: anywhere;
+}
+
+.productScopeQuickTriage article.ready {
+  border-color: #bddcc9;
+  background: #f7fbf8;
+}
+
+.productScopeQuickTriage article.waiting {
+  border-color: #d9d4b7;
+  background: #fffdf5;
+}
+
+.productScopeQuickTriage article.blocked {
+  border-color: #efc8bd;
+  background: #fff8f6;
+}
+
+.productScopeQuickTriage article.manual {
+  border-color: #c9ddef;
+  background: #f7fbff;
+}
+
+.productScopeQuickTriage article span {
+  color: #607186;
+  font-size: 11px;
+  font-weight: 780;
+}
+
+.productScopeQuickTriage article strong {
+  color: #182e44;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.productScopeQuickTriage article small {
+  color: #607186;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .productScopeDecisionGuide ul {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -11849,6 +11904,10 @@ button.reviewTodoQueueNext:focus-visible {
   }
 
   .productScopeDecisionGuide ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .productScopeQuickTriage {
     grid-template-columns: minmax(0, 1fr);
   }
 

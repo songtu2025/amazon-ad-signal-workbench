@@ -5800,6 +5800,15 @@ function ProductScopeDiagnosisBriefPanel({ brief }: { brief: ProductScopeDiagnos
           <span>{brief.decisionGuide.title}</span>
           <strong>{brief.decisionGuide.primaryDecision}</strong>
         </div>
+        <div className="productScopeQuickTriage" aria-label="Parent ASIN 快速决策摘要">
+          {brief.decisionGuide.quickTriage.map((item) => (
+            <article className={item.tone} key={item.label}>
+              <span>{item.label}</span>
+              <strong>{item.value}</strong>
+              <small>{item.detail}</small>
+            </article>
+          ))}
+        </div>
         <ul>
           <li>
             <b>读法</b>
