@@ -2485,6 +2485,12 @@ export function SignalTriageWorkbench() {
               <p>{productScopeSelectionSummary.scopeSyncNotice.manualBoundary}</p>
             </div>
           )}
+          {productScopePriorityDecisionSummary && (
+            <ProductScopePriorityFirstScreenStrip
+              summary={productScopePriorityDecisionSummary}
+              onOpenTop={handleSelectProductScopePriority}
+            />
+          )}
           {diagnosisContextSummary && <DiagnosisContextStrip summary={diagnosisContextSummary} />}
           <p className="productScopeCompactHint">
             先看 Parent ASIN / ASIN 经营盘子，再下钻广告 ASIN、广告组、投放词、搜索词和广告位；数据质量独立进入队列筛选。
@@ -5214,6 +5220,56 @@ function buildProductScopePriorityDecisionSummary(items: ProductScopePriorityQue
     boundary:
       "本摘要只做首页分诊排序，不替代销售表现、广告 ASIN、广告组、投放词、搜索词和广告位证据；点击后进入单个 Parent ASIN 诊断链路。",
   };
+}
+
+function ProductScopePriorityFirstScreenStrip({
+  summary,
+  onOpenTop,
+}: {
+  summary: ProductScopePriorityDecisionSummary;
+  onOpenTop: (scopeId: string) => void;
+}) {
+  const reasonShortcut = summary.decisionShortcuts.find((item) => item.label === "为什么");
+  const drilldownShortcut = summary.decisionShortcuts.find((item) => item.label === "打开后看哪层");
+  const boundaryShortcut = summary.decisionShortcuts.find((item) => item.label === "不要做什么");
+  const compactReadingStrategy = `只展开 ${summary.topLabel} 的诊断链路；其他 Parent ASIN 先按分诊桶观察。`;
+  const compactRankReason = reasonShortcut?.detail ?? "按复盘到期、高优先信号、广告花费和搜索词复核排序。";
+  const compactBoundary = "完整证据仍进入单个 Parent ASIN 下钻；不自动加词、否词、调价或暂停广告。";
+
+  return (
+    <section className="productScopePriorityFirstScreenStrip" aria-label="Parent ASIN 第一屏分诊指令">
+      <div className="productScopePriorityFirstScreenHeadline">
+        <span>今日分诊</span>
+        <strong>{summary.headline}</strong>
+        <p>{summary.scaleText}</p>
+      </div>
+      <div className="productScopePriorityFirstScreenCells">
+        <span>
+          <b>默认动作</b>
+          <strong>只打开 {summary.topLabel}</strong>
+          <small>{compactReadingStrategy}</small>
+        </span>
+        <span>
+          <b>为什么</b>
+          <strong>{compactRankReason}</strong>
+          <small>完整排序依据在左侧 Parent ASIN 分诊面板。</small>
+        </span>
+        <span>
+          <b>打开后看哪层</b>
+          <strong>{drilldownShortcut?.value ?? summary.nextManualStep}</strong>
+          <small>{drilldownShortcut?.detail ?? summary.nextManualStep}</small>
+        </span>
+        <span>
+          <b>边界</b>
+          <strong>{boundaryShortcut?.value ?? "不要逐个打开所有 Parent ASIN 报表"}</strong>
+          <small>{compactBoundary}</small>
+        </span>
+      </div>
+      <button type="button" className="secondaryButton" onClick={() => onOpenTop(summary.topScopeId)}>
+        打开今日优先 Parent ASIN
+      </button>
+    </section>
+  );
 }
 
 function productScopePriorityDefaultDrilldown(item: ProductScopePriorityQueueItem): { value: string; detail: string } {

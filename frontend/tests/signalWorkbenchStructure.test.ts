@@ -1117,16 +1117,37 @@ assert(
 const productScopePriorityDecisionSummaryRenderIndex = workbenchSource.indexOf(
   "<ProductScopePriorityDecisionSummaryPanel",
 );
+const productScopePriorityFirstScreenStripRenderIndex = workbenchSource.indexOf(
+  "<ProductScopePriorityFirstScreenStrip",
+);
+const productScopeSingleScreenCommandCardRenderIndex = workbenchSource.indexOf(
+  "<ProductScopeSingleScreenCommandCard",
+);
 const productScopePriorityPrimaryCommandIndex = workbenchSource.indexOf('aria-label="Parent ASIN 本轮默认动作"');
 const productScopePriorityShortcutIndex = workbenchSource.indexOf('aria-label="Parent ASIN 扫一眼决策卡"');
 const productScopePriorityBucketIndex = workbenchSource.indexOf('aria-label="Parent ASIN 分诊桶"');
 const productScopePriorityQueueIndex = workbenchSource.indexOf('className="productScopePriorityQueue"');
+assertIncludes(workbenchSource, "function ProductScopePriorityFirstScreenStrip");
+assertIncludes(workbenchSource, 'aria-label="Parent ASIN 第一屏分诊指令"');
+assertIncludes(workbenchSource, "今日分诊");
+assertIncludes(workbenchSource, "只打开 {summary.topLabel}");
+assertIncludes(stylesSource, ".productScopePriorityFirstScreenStrip");
+assertIncludes(stylesSource, ".productScopePriorityFirstScreenCells");
 assertIncludes(workbenchSource, 'useState<ProductScopePriorityBucketFilter>("focus")');
 assertIncludes(workbenchSource, 'bucketFilter === "focus"');
 assertIncludes(workbenchSource, "默认只看今日优先");
 assertIncludes(workbenchSource, 'aria-label="只看今日优先 Parent ASIN"');
 assertIncludes(workbenchSource, "其他 Parent ASIN 先按分诊桶观察");
 assertIncludes(workbenchSource, "只在横向核对时打开");
+assert(productScopePriorityFirstScreenStripRenderIndex > 0, "第一屏必须有 Parent ASIN 分诊指令条");
+assert(
+  productScopePriorityFirstScreenStripRenderIndex < productScopeSingleScreenCommandCardRenderIndex,
+  "Parent ASIN 分诊指令条必须先于单屏作战卡，先回答 10 个 Parent ASIN 先看谁。",
+);
+assert(
+  productScopePriorityFirstScreenStripRenderIndex < productScopePriorityDecisionSummaryRenderIndex,
+  "紧凑分诊指令必须早于左侧完整分诊面板，避免用户滚动到队列后才知道先看谁。",
+);
 assert(productScopePriorityDecisionSummaryRenderIndex > 0, "左侧必须有 Parent ASIN 首页分诊摘要");
 assert(
   productScopePriorityPrimaryCommandIndex > productScopePriorityDecisionSummaryRenderIndex &&

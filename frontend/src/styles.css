@@ -616,6 +616,99 @@ h3 {
   line-height: 1.45;
 }
 
+.productScopePriorityFirstScreenStrip {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(0, 2.2fr);
+  align-items: stretch;
+  gap: 10px;
+  border: 1px solid #c9ddcf;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fbfdf9;
+  box-shadow: inset 4px 0 0 #4f8f62;
+}
+
+.productScopePriorityFirstScreenHeadline {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.productScopePriorityFirstScreenHeadline span {
+  color: #47715a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.productScopePriorityFirstScreenHeadline > * {
+  min-width: 0;
+  white-space: normal !important;
+}
+
+.productScopePriorityFirstScreenHeadline strong {
+  color: #10243b;
+  font-size: 15px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.productScopePriorityFirstScreenHeadline p {
+  color: #4d6176 !important;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.productScopePriorityFirstScreenCells {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.productScopePriorityFirstScreenCells span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid #d8e5d7;
+  border-radius: 8px;
+  padding: 8px;
+  background: #ffffff;
+}
+
+.productScopePriorityFirstScreenCells b,
+.productScopePriorityFirstScreenCells strong,
+.productScopePriorityFirstScreenCells small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal !important;
+}
+
+.productScopePriorityFirstScreenCells b {
+  color: #52687d;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.productScopePriorityFirstScreenCells strong {
+  color: #10243b;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.productScopePriorityFirstScreenCells small {
+  color: #5d7084;
+  line-height: 1.35;
+}
+
+.productScopePriorityFirstScreenStrip > button {
+  grid-column: 2;
+  justify-self: end;
+  align-self: center;
+  white-space: nowrap;
+}
+
 .productScopeSingleScreenCommandCard {
   grid-column: 1 / -1;
   display: grid;
@@ -11832,6 +11925,19 @@ button.reviewTodoQueueNext:focus-visible {
 @media (max-width: 640px) {
   .appShell {
     padding: 16px;
+  }
+
+  .productScopePriorityFirstScreenStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .productScopePriorityFirstScreenCells {
+    grid-template-columns: 1fr;
+  }
+
+  .productScopePriorityFirstScreenStrip > button {
+    grid-column: 1;
+    justify-self: stretch;
   }
 
   .diagnosisContextItems {
