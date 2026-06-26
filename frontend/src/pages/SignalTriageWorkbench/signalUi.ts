@@ -1480,6 +1480,7 @@ export interface ProductScopePriorityQueueItem {
   priorityLabel: string;
   tone: ProductScopePriorityQueueTone;
   workflowStatus: ProductScopePriorityWorkflowStatus;
+  actionCue: string;
   mainQuestion: string;
   evidenceSummary: string;
   rankReason: string;
@@ -7507,6 +7508,14 @@ export function buildProductScopePriorityQueueItems(
           openSignalCount,
           hasAdEvidence,
         }),
+        actionCue: productScopePriorityActionCue({
+          strongestKind,
+          dueReviewTodoCount,
+          reviewTodoCount: scopeReviewTodos.length,
+          highSignalCount,
+          openSignalCount,
+          hasAdEvidence,
+        }),
         mainQuestion: productScopePriorityQuestion({
           strongestKind,
           dueReviewTodoCount,
@@ -7580,6 +7589,7 @@ export function mergeActiveProductScopePriorityTriageHint(
             reason: `已选 Parent 返回 ${candidateCount} 个可复核候选，先核对推荐候选是否需要人工留痕。`,
             nextStep: `打开 ${recommendedLabel} 的诊断证据，再决定记录观察、标记已处理、加入复盘或忽略本次。`,
           },
+      actionCue: shouldKeepReviewPriority ? item.actionCue : productScopePriorityTriageActionCue(summary, item.actionCue),
       mainQuestion: shouldKeepReviewPriority
         ? item.mainQuestion
         : `已选 Parent 有 ${candidateCount} 个可人工复核候选，先看 ${recommendedLabel} 是否需要留痕或加入复盘。`,
@@ -7592,6 +7602,23 @@ export function mergeActiveProductScopePriorityTriageHint(
       boundary: `${item.boundary} 当前候选来自已选 Parent 的 signal-triage 结果，只代表可人工复核线索，不代表自动加词、否词、调价或暂停广告。`,
     } satisfies ProductScopePriorityQueueItem;
   });
+}
+
+function productScopePriorityTriageActionCue(
+  summary: SignalTriageSummaryForUi | null | undefined,
+  fallback: string,
+): string {
+  const candidate = summary?.recommended_candidate;
+  const signalType = String(candidate?.signal_type ?? "").toLowerCase();
+  const category = String(candidate?.signal_category ?? "").toLowerCase();
+  const objectType = String(candidate?.object_type ?? "").toLowerCase();
+  if (category.includes("data_quality")) return "先补证";
+  if (category.includes("review")) return "先复盘";
+  if (category.includes("ad_group") || category.includes("structure") || category.includes("placement")) return "先查结构";
+  if (objectType === "ad_group" || objectType === "placement") return "先查结构";
+  if (signalType === "opportunity" || category.includes("opportunity") || category.includes("aba")) return "先扩量";
+  if (signalType === "anomaly") return "先止损";
+  return fallback === "暂不展开" || fallback === "只观察" ? "先确认" : fallback;
 }
 
 export function mergeProductScopePrioritySearchIntentHints(
@@ -7640,6 +7667,13 @@ export function mergeProductScopePrioritySearchIntentHints(
                   reason: `${topCard.title} 已形成${topCard.operationDecisionLabel}线索，需要下钻具体 SearchTerm 后再人工判断。`,
                   nextStep: `打开 ${primarySearchTerm} 的具体 SearchTerm 诊断，再决定记录观察、标记已处理、加入复盘或忽略本次。`,
                 },
+          actionCue: shouldKeepReviewPriority
+            ? item.actionCue
+            : topCard.operationDecisionTone === "scale"
+              ? "先扩量"
+              : topCard.operationDecisionTone === "waste"
+                ? "先止损"
+                : item.actionCue,
           mainQuestion: shouldKeepReviewPriority
             ? item.mainQuestion
             : `当前 Parent 有 ${searchIntentCards.length} 组广告搜索词复核线索，先看 ${topCard.title} 是否需要进入具体 SearchTerm 人工复核。`,
@@ -7785,6 +7819,28 @@ function productScopePriorityWorkflowStatus(input: {
     reason: "当前没有投放广告证据，不能进入广告诊断动作。",
     nextStep: "先补 advertised_products、搜索词或广告位证据，再判断是否进入分析。",
   };
+}
+
+function productScopePriorityActionCue(input: {
+  strongestKind: SignalQueueKind | null;
+  dueReviewTodoCount: number;
+  reviewTodoCount: number;
+  highSignalCount: number;
+  openSignalCount: number;
+  hasAdEvidence: boolean;
+}): string {
+  if (input.dueReviewTodoCount > 0) return "先复盘";
+  if (input.reviewTodoCount > 0) return "等复盘";
+  if (!input.hasAdEvidence) return "暂不展开";
+  if (input.highSignalCount > 0 || input.openSignalCount > 0 || input.strongestKind) {
+    if (input.strongestKind === "opportunity_expansion") return "先扩量";
+    if (input.strongestKind === "spend_waste") return "先止损";
+    if (input.strongestKind === "structure_boundary") return "先查结构";
+    if (input.strongestKind === "data_quality") return "先补证";
+    if (input.strongestKind === "review") return "先复盘";
+    return "先确认";
+  }
+  return "只观察";
 }
 
 function productScopePriorityQuestion(input: {

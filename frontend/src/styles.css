@@ -1894,6 +1894,7 @@ h3 {
 }
 
 .productScopePriorityTopline strong {
+  flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
   color: #1f3047;
@@ -1954,6 +1955,43 @@ h3 {
   color: #52657b;
   font-size: 11px;
   line-height: 1.4;
+}
+
+.productScopePriorityActionCue {
+  flex: 0 0 auto;
+  border: 1px solid #cfe0ef;
+  border-radius: 7px;
+  padding: 2px 6px;
+  background: #eef6ff;
+  color: #275783;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.productScopePriorityActionCue.urgent {
+  border-color: #f4b5aa;
+  background: #fff3f1;
+  color: #a74434;
+}
+
+.productScopePriorityActionCue.review {
+  border-color: #e2c7f4;
+  background: #fbf6ff;
+  color: #6a47a2;
+}
+
+.productScopePriorityActionCue.watch {
+  border-color: #b9dccf;
+  background: #f0fbf6;
+  color: #237052;
+}
+
+.productScopePriorityActionCue.quiet {
+  border-color: #d4dbe5;
+  background: #f6f8fb;
+  color: #607085;
 }
 
 .productScopePriorityQueueDigest {

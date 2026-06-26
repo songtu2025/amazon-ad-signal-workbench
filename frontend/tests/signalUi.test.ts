@@ -665,12 +665,14 @@ const productScopePriorityQueueItems = buildProductScopePriorityQueueItems(
 assertEqual(productScopePriorityQueueItems.map((item) => item.scopeId).join(","), "parent_asin:B0REVIEW,parent_asin:B0URGENT,parent_asin:B0WATCH,parent_asin:B0QUIET");
 assertEqual(productScopePriorityQueueItems[0].priorityLabel, "先复盘");
 assertEqual(productScopePriorityQueueItems[0].tone, "review");
+assertEqual(productScopePriorityQueueItems[0].actionCue, "先复盘");
 assertEqual(productScopePriorityQueueItems[0].workflowStatus.label, "到期复盘");
 assertIncludes(productScopePriorityQueueItems[0].workflowStatus.nextStep, "复盘效果 ready");
 assertIncludes(productScopePriorityQueueItems[0].mainQuestion, "已到期复盘");
 assertIncludes(productScopePriorityQueueItems[0].decisionBadge, "人工动作：先复盘");
 assertIncludes(productScopePriorityQueueItems[0].decisionBadge, "复盘状态：到期 1 项");
 assertIncludes(productScopePriorityQueueItems[1].mainQuestion, "高优先级广告信号");
+assertEqual(productScopePriorityQueueItems[1].actionCue, "先止损");
 assertEqual(productScopePriorityQueueItems[1].workflowStatus.label, "待人工确认");
 assertIncludes(productScopePriorityQueueItems[1].workflowStatus.reason, "高优先广告信号");
 assertIncludes(productScopePriorityQueueItems[1].decisionBadge, "人工动作：右侧人工确认");
@@ -678,11 +680,13 @@ assertIncludes(productScopePriorityQueueItems[1].decisionBadge, "复盘状态：
 assertIncludes(productScopePriorityQueueItems[1].nextManualStep, "右侧选择记录观察、标记已处理、加入复盘或忽略本次");
 assertIncludes(productScopePriorityQueueItems[1].boundary, "未投放子 ASIN 不进入广告动作对象");
 assertEqual(productScopePriorityQueueItems[2].priorityLabel, "观察");
+assertEqual(productScopePriorityQueueItems[2].actionCue, "只观察");
 assertEqual(productScopePriorityQueueItems[2].workflowStatus.label, "仅观察");
 assertIncludes(productScopePriorityQueueItems[2].workflowStatus.nextStep, "不逐层阅读完整报表");
 assertIncludes(productScopePriorityQueueItems[2].decisionBadge, "人工动作：保持观察");
 assertIncludes(productScopePriorityQueueItems[2].decisionBadge, "按需加入复盘");
 assertEqual(productScopePriorityQueueItems[3].priorityLabel, "暂不展开");
+assertEqual(productScopePriorityQueueItems[3].actionCue, "暂不展开");
 assertEqual(productScopePriorityQueueItems[3].workflowStatus.label, "证据缺口");
 assertIncludes(productScopePriorityQueueItems[3].workflowStatus.reason, "没有投放广告证据");
 assertIncludes(productScopePriorityQueueItems[3].decisionBadge, "人工动作：暂不展开");
@@ -709,6 +713,7 @@ assertEqual(triagedProductScopePriorityQueueItems[0].scopeId, "parent_asin:B0REV
 const triagedWatchPriorityItem = triagedProductScopePriorityQueueItems.find((item) => item.scopeId === "parent_asin:B0WATCH");
 assertEqual(triagedWatchPriorityItem?.priorityLabel, "人工确认");
 assertEqual(triagedWatchPriorityItem?.tone, "urgent");
+assertEqual(triagedWatchPriorityItem?.actionCue, "先确认");
 assertEqual(triagedWatchPriorityItem?.workflowStatus.label, "待人工确认");
 assertIncludes(triagedWatchPriorityItem?.workflowStatus.reason ?? "", "可复核候选");
 assertIncludes(triagedWatchPriorityItem?.mainQuestion ?? "", "可人工复核候选");
@@ -768,6 +773,7 @@ assertEqual(searchIntentEnhancedPriorityQueueItems[0].scopeId, "parent_asin:B0RE
 const searchIntentEnhancedWatchPriorityItem = searchIntentEnhancedPriorityQueueItems.find((item) => item.scopeId === "parent_asin:B0WATCH");
 assertEqual(searchIntentEnhancedWatchPriorityItem?.priorityLabel, "搜索词扩量");
 assertEqual(searchIntentEnhancedWatchPriorityItem?.tone, "urgent");
+assertEqual(searchIntentEnhancedWatchPriorityItem?.actionCue, "先扩量");
 assertEqual(searchIntentEnhancedWatchPriorityItem?.workflowStatus.label, "待人工确认");
 assertIncludes(searchIntentEnhancedWatchPriorityItem?.workflowStatus.reason ?? "", "具体 SearchTerm");
 assertIncludes(searchIntentEnhancedWatchPriorityItem?.mainQuestion ?? "", "广告搜索词复核线索");

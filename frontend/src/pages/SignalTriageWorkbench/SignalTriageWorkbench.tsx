@@ -2470,6 +2470,7 @@ export function SignalTriageWorkbench() {
                         <span className="productScopePriorityRank">{index + 1}</span>
                         <span className="productScopePriorityBody">
                           <span className="productScopePriorityTopline">
+                            <span className={`productScopePriorityActionCue ${item.tone}`}>{item.actionCue}</span>
                             <strong>{item.label}</strong>
                             <b>{item.priorityLabel}</b>
                           </span>
@@ -4769,6 +4770,7 @@ function productScopePriorityBucketFilterText(
 function productScopePriorityQueueAriaLabel(item: ProductScopePriorityQueueItem): string {
   return [
     `打开 ${item.label} 的 Parent ASIN 广告诊断`,
+    item.actionCue,
     item.priorityLabel,
     item.workflowStatus.label,
     item.workflowStatus.nextStep,
