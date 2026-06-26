@@ -555,7 +555,7 @@ export function SignalTriageWorkbench() {
   const [selectedAdGroupDiagnosisId, setSelectedAdGroupDiagnosisId] = useState<string | null>(null);
   const [filter, setFilter] = useState<QueueFilter>("all");
   const [productScopePriorityBucketFilter, setProductScopePriorityBucketFilter] =
-    useState<ProductScopePriorityBucketFilter>("all");
+    useState<ProductScopePriorityBucketFilter>("focus");
   const [loading, setLoading] = useState(true);
   const [creatingSnapshot, setCreatingSnapshot] = useState(false);
   const [probingSnapshot, setProbingSnapshot] = useState(false);
@@ -5095,7 +5095,7 @@ interface ProductScopePriorityDecisionSummary {
   boundary: string;
 }
 
-type ProductScopePriorityBucketFilter = ProductScopePriorityDecisionBucket["id"] | "all";
+type ProductScopePriorityBucketFilter = ProductScopePriorityDecisionBucket["id"] | "all" | "focus";
 
 interface ProductScopePriorityAdGroupEvidencePreview {
   label: string;
@@ -5160,6 +5160,7 @@ function filterProductScopePriorityQueueItems(
   items: ProductScopePriorityQueueItem[],
   bucketFilter: ProductScopePriorityBucketFilter,
 ): ProductScopePriorityQueueItem[] {
+  if (bucketFilter === "focus") return items.slice(0, 1);
   if (bucketFilter === "all") return items;
   return items.filter((item) => productScopePriorityBucketMatches(item, bucketFilter));
 }
@@ -5178,8 +5179,14 @@ function productScopePriorityBucketFilterText(
   bucketFilter: ProductScopePriorityBucketFilter,
   summary: ProductScopePriorityDecisionSummary | null,
 ): string {
-  if (!summary || bucketFilter === "all") {
-    return "先排序，再下钻；显示全部 Parent ASIN，避免 10 个 Parent ASIN 像看 10 张报纸。";
+  if (!summary) {
+    return "先排序，再下钻；默认只打开今日优先 Parent ASIN。";
+  }
+  if (bucketFilter === "focus") {
+    return `默认只看今日优先：${summary.topLabel}；其余 Parent ASIN 先留在分诊桶里，避免像看报纸一样逐个展开。`;
+  }
+  if (bucketFilter === "all") {
+    return "查看完整排序队列；只在需要横向核对时打开全部 Parent ASIN。";
   }
   const bucket = summary.triageBuckets.find((item) => item.id === bucketFilter);
   if (!bucket) return "先排序，再下钻；当前分诊桶暂无可读对象。";
@@ -5263,6 +5270,20 @@ function ProductScopePriorityDecisionSummaryPanel({
       <div className="productScopePriorityDecisionBuckets" aria-label="Parent ASIN 分诊桶">
         <button
           type="button"
+          className={`productScopePriorityDecisionBucket ${summary.triageBuckets[0]?.tone ?? "review"} ${activeBucketFilter === "focus" ? "active" : ""}`}
+          onClick={() => onBucketFilterChange("focus")}
+          aria-pressed={activeBucketFilter === "focus"}
+          aria-label="只看今日优先 Parent ASIN"
+        >
+          <div>
+            <strong>今日优先</strong>
+            <b>1 个</b>
+          </div>
+          <p>{summary.topLabel}</p>
+          <small>默认只打开这一条；其他 Parent ASIN 先按分诊桶观察。</small>
+        </button>
+        <button
+          type="button"
           className={`productScopePriorityDecisionBucket all ${activeBucketFilter === "all" ? "active" : ""}`}
           onClick={() => onBucketFilterChange("all")}
           aria-pressed={activeBucketFilter === "all"}
@@ -5271,8 +5292,8 @@ function ProductScopePriorityDecisionSummaryPanel({
             <strong>全部</strong>
             <b>{totalCount} 个</b>
           </div>
-          <p>先看排序后的全量 Parent ASIN</p>
-          <small>用于恢复完整队列，不展开全部明细。</small>
+          <p>查看完整排序后的 Parent ASIN</p>
+          <small>只在横向核对时打开，不作为默认阅读路径。</small>
         </button>
         {summary.triageBuckets.map((bucket) => (
           <button

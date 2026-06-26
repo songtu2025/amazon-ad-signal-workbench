@@ -995,7 +995,7 @@ assertIncludes(workbenchSource, "handleSelectProductScopePriority");
 assertIncludes(workbenchSource, 'aria-label="今日 Parent ASIN 优先处理清单"');
 assertIncludes(workbenchSource, "今日 Parent ASIN 优先处理清单");
 assertIncludes(workbenchSource, "先排序，再下钻");
-assertIncludes(workbenchSource, "避免 10 个 Parent ASIN 像看 10 张报纸");
+assertIncludes(workbenchSource, "避免像看报纸一样逐个展开");
 assertIncludes(workbenchSource, "productScopePriorityWorkflowStatus");
 assertIncludes(workbenchSource, "productScopePriorityActionCue");
 assertIncludes(workbenchSource, "{item.actionCue}");
@@ -1036,6 +1036,12 @@ const productScopePriorityPrimaryCommandIndex = workbenchSource.indexOf('aria-la
 const productScopePriorityShortcutIndex = workbenchSource.indexOf('aria-label="Parent ASIN 扫一眼决策卡"');
 const productScopePriorityBucketIndex = workbenchSource.indexOf('aria-label="Parent ASIN 分诊桶"');
 const productScopePriorityQueueIndex = workbenchSource.indexOf('className="productScopePriorityQueue"');
+assertIncludes(workbenchSource, 'useState<ProductScopePriorityBucketFilter>("focus")');
+assertIncludes(workbenchSource, 'bucketFilter === "focus"');
+assertIncludes(workbenchSource, "默认只看今日优先");
+assertIncludes(workbenchSource, 'aria-label="只看今日优先 Parent ASIN"');
+assertIncludes(workbenchSource, "其他 Parent ASIN 先按分诊桶观察");
+assertIncludes(workbenchSource, "只在横向核对时打开");
 assert(productScopePriorityDecisionSummaryRenderIndex > 0, "左侧必须有 Parent ASIN 首页分诊摘要");
 assert(
   productScopePriorityPrimaryCommandIndex > productScopePriorityDecisionSummaryRenderIndex &&
