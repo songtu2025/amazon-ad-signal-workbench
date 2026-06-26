@@ -350,7 +350,7 @@ assertIncludes(signalUiSource, "哪些广告对象真的有广告数据");
 assertIncludes(signalUiSource, "先看经营入口，再看广告 ASIN、广告组、投放词/搜索词/广告位");
 assertIncludes(signalUiSource, "AI 信号诊断、人工确认和 7/14 天复盘");
 assertIncludes(signalUiSource, "AI 准入 -> 人工确认 -> 7/14 天复盘");
-assertIncludes(signalUiSource, "未完成人工留痕和 ready 复盘前，不能保存 ReviewRecord");
+assertIncludes(signalUiSource, "未完成人工留痕和处理前后指标可复核前，不能保存 ReviewRecord");
 assertIncludes(signalUiSource, 'layerId: "ai_signal"');
 assertIncludes(signalUiSource, 'layerId: "manual_confirmation"');
 assertIncludes(signalUiSource, 'layerId: "review"');

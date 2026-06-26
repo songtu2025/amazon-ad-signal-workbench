@@ -2615,7 +2615,7 @@ export function signalTriageSummaryText(summary: SignalTriageSummaryForUi | null
   const recommended =
     summary.recommended_candidate?.stable_object_id || summary.recommended_candidate?.object_label || "暂无推荐对象";
   const readyCount = summary.review_status?.ready_count ?? 0;
-  const reviewText = readyCount > 0 ? `${readyCount} 个 ready 复盘` : "暂无 ready 复盘";
+  const reviewText = readyCount > 0 ? `${readyCount} 个指标可复核待办` : "暂无可复核指标";
   const feedback = summary.review_status?.review_feedback;
   const feedbackSummary = (feedback?.total ?? 0) > 0 ? feedback?.summary?.trim().replace(/[。；;.\s]+$/, "") : "";
   const feedbackText = feedbackSummary ? `${reviewText}；复盘反馈：${feedbackSummary}` : reviewText;
@@ -2688,11 +2688,11 @@ function buildReviewIdentityAuditSummary(
   const isBlocked = issueCount > 0 || missingKeyCount > 0 || missingEvidenceGateCount > 0 || unstableObjectIdCount > 0 || audit.status === "blocked";
   const statusText = isBlocked ? "读回身份存在阻塞" : "读回身份可审计";
   const saveText = audit.can_save_review_records_now
-    ? "当前存在 ready 复盘，保存前仍需人工确认"
+    ? "当前存在处理前后指标可复核待办，保存前仍需人工确认"
     : "当前不能保存复盘记录";
   const boundaryParts = [
     saveText,
-    "ready_for_readback 只表示可按原动作读回对象，不表示复盘效果 ready",
+    "ready_for_readback 只表示可按原动作读回对象，不表示处理前后指标已可复核",
     dateBoundary,
   ].filter(Boolean);
 
@@ -2702,8 +2702,8 @@ function buildReviewIdentityAuditSummary(
     summary: `${statusText}；缺失 action_id / object_id / review_window：${missingActionIdCount} / ${missingObjectIdCount} / ${missingReviewWindowCount}；证据快照缺口：${missingEvidenceSnapshotCount} / 排查路径 ${missingDiagnosisPathCount} / AI 准入 ${missingAiAdmissionCount} / 搜索词边界 ${missingSearchTermBoundaryCount} / 广告位边界 ${missingPlacementBoundaryCount} / 对象复核链 ${missingObjectReviewChainCount}（广告商品覆盖 ${missingAdProductCoverageCount} / 广告位表现 ${missingPlacementPerformanceCount} / 投放词 ${missingTargetingEvidenceCount} / 广告组合流判断 ${missingAdGroupSynthesisCount} / 同组投放商品表现 ${missingAdGroupProductPerformanceCount} / ABA ${missingAbaContextCount} / 证据缺口 ${missingEvidenceGapCount} / 需要补证 ${missingRequiredEvidenceCount} / 动作边界 ${missingActionBoundaryCount}）/ 对象引用 ${missingObjectReferenceCount}；广告指标最早复盘：${earliestMetricDueDate}。`,
     boundary: `${boundaryParts.join("；")}。`,
     items: [
-      { label: "待读回效果", value: `${effectCount}`, tone: effectCount > 0 ? "ready" : "neutral" },
-      { label: "ready 复盘", value: `${readyReviewCount}`, tone: readyReviewCount > 0 ? "ready" : "waiting" },
+      { label: "待读回指标", value: `${effectCount}`, tone: effectCount > 0 ? "ready" : "neutral" },
+      { label: "指标可复核", value: `${readyReviewCount}`, tone: readyReviewCount > 0 ? "ready" : "waiting" },
       { label: "历史对象 ID 风险", value: `${unstableObjectIdCount}`, tone: unstableObjectIdCount > 0 ? "blocked" : "ready" },
       { label: "缺失键", value: `${missingKeyCount}`, tone: missingKeyCount > 0 ? "blocked" : "ready" },
       { label: "证据快照缺口", value: `${missingEvidenceGateCount}`, tone: missingEvidenceGateCount > 0 ? "blocked" : "ready" },
@@ -3024,24 +3024,24 @@ export function buildReviewReadinessGateSummary(
   const forbiddenActionText = forbiddenActions.join("、");
 
   if (readyCount > 0) {
-    const nextStep = status.rule_improvement?.next_step?.trim() || "先人工确认 ready 复盘，再保存 review_records。";
+    const nextStep = status.rule_improvement?.next_step?.trim() || "先人工核对可复核指标，再保存 review_records。";
     return {
       title: "复盘可保存门槛",
       status: "ready",
-      primary: `已有 ${readyCount} 个 ready 复盘，保存前仍需人工确认。`,
+      primary: `已有 ${readyCount} 个处理前后指标可复核待办，保存前仍需人工确认。`,
       detail: nextStep,
-      boundary: "ready 只表示窗口数据满足预检，仍需人工确认并手动保存 review_records；不自动改规则，不自动执行广告动作。",
+      boundary: "ready 只表示窗口数据可人工复核，仍需人工确认并手动保存 review_records；不自动改规则，不自动执行广告动作。",
       identityAudit,
       queueSeparation,
       items: [
         { label: "人工留痕", value: `${manualActionCount} 条`, tone: manualActionCount > 0 ? "ready" : "neutral" },
         { label: "已存复盘", value: `${reviewRecordCount} 条`, tone: reviewRecordCount > 0 ? "ready" : "waiting" },
-        { label: "ready 复盘", value: `${readyCount} 个`, tone: "ready" },
+        { label: "指标可复核", value: `${readyCount} 个`, tone: "ready" },
         { label: "未就绪", value: `${notReadyCount} 个`, tone: notReadyCount > 0 ? "waiting" : "neutral" },
       ],
       nextSteps: [
-        { label: "现在", detail: "先人工核对 ready 复盘的对象、窗口、指标和证据，不自动执行广告动作。" },
-        { label: "保存", detail: "确认无误后手动保存 review_records，才形成处理有效、无变化或恶化的复盘结论。" },
+        { label: "现在", detail: "先人工核对处理前后指标的对象、窗口、指标和证据，不自动执行广告动作。" },
+        { label: "保存", detail: "确认无误后手动保存 review_records，才形成人工保存的改善、无变化或恶化结论。" },
         { label: "沉淀", detail: "保存后的样本仅进入人工规则复核和解释口径优化，不自动改规则。" },
       ],
     };
@@ -3054,7 +3054,7 @@ export function buildReviewReadinessGateSummary(
       waitSummary?.message?.trim() ||
       status.rule_improvement?.reason?.trim() ||
       identityAudit?.summary?.trim() ||
-      "当前没有 ready 复盘效果，处理前后指标证据仍不足。";
+      "当前没有可复核的处理前后指标，复盘输入证据仍不足。";
     const rawNextStep =
       waitSummary?.next_step?.trim() ||
       status.rule_improvement?.next_step?.trim() ||
@@ -3077,24 +3077,24 @@ export function buildReviewReadinessGateSummary(
       status: "blocked",
       primary: isReviewEvidenceGateBlocked
         ? `已有 ${manualActionCount} 条人工留痕，但复盘读回门禁未通过；当前不能保存复盘结论。`
-        : `已有 ${manualActionCount} 条人工留痕，但 ready 复盘 ${readyCount} 个；当前不能保存复盘结论。`,
+        : `已有 ${manualActionCount} 条人工留痕，但指标可复核待办 ${readyCount} 个；当前不能保存复盘结论。`,
       detail: gapReasonText,
       boundary: isReviewEvidenceGateBlocked
         ? `缺 evidence_snapshot、排查路径、AI 准入、搜索词边界、广告位边界、投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证或动作边界时，不能把当前页面证据伪装成历史点击证据；当前${forbiddenActionText}。`
-        : `not_ready 只说明证据不足，不能证明处理有效或无效；当前${forbiddenActionText}。`,
+        : `not_ready 只说明证据不足，不能形成改善、无变化或恶化结论；当前${forbiddenActionText}。`,
       identityAudit,
       queueSeparation,
       items: [
         { label: "人工留痕", value: `${manualActionCount} 条`, tone: "ready" },
         { label: "已存复盘", value: `${reviewRecordCount} 条`, tone: reviewRecordCount > 0 ? "ready" : "waiting" },
-        { label: "ready 复盘", value: `${readyCount} 个`, tone: "blocked" },
+        { label: "指标可复核", value: `${readyCount} 个`, tone: "blocked" },
         { label: "未就绪", value: `${notReadyCount} 个`, tone: notReadyCount > 0 ? "blocked" : "neutral" },
         { label: "缺口状态", value: gapStatusText, tone: "blocked" },
       ],
       nextSteps: [
         { label: "现在", detail: `先确认复盘缺口：${gapReasonText}` },
         { label: "补证据", detail: nextStep },
-        { label: "ready 后", detail: "只有出现 ready 复盘后，才人工核对并保存 review_records；不自动改规则或执行广告动作。" },
+        { label: "指标可复核后", detail: "只有处理前后指标可复核后，才人工核对并保存 review_records；不自动改规则或执行广告动作。" },
       ],
     };
   }
@@ -3111,7 +3111,7 @@ export function buildReviewReadinessGateSummary(
     return {
       title: "复盘等待窗口",
       status: "waiting",
-      primary: `已有 ${manualActionCount} 条人工留痕，ready 复盘 ${readyCount} 个，最早广告复盘 ${earliestDueDate} 后再复核。`,
+      primary: `已有 ${manualActionCount} 条人工留痕，指标可复核待办 ${readyCount} 个，最早广告复盘 ${earliestDueDate} 后再复核。`,
       detail: detailParts.join("；") || "人工动作已记录，等待 7/14 天窗口形成可比较的前后指标。",
       boundary: `未到期前${forbiddenActionText}。`,
       identityAudit,
@@ -3126,8 +3126,8 @@ export function buildReviewReadinessGateSummary(
       ],
       nextSteps: [
         { label: "现在", detail: `查看当前人工留痕和复盘待办，未到期前${forbiddenActionText}。` },
-        { label: "到期后", detail: `${earliestDueDate} 后只读检查${nextReviewTargetText} 的${nextWindowText}复盘效果，确认处理前后窗口是否完整。` },
-        { label: "ready 后", detail: "出现 ready 复盘后，人工确认后再保存 review_records；仍不自动改规则或执行广告动作。" },
+        { label: "到期后", detail: `${earliestDueDate} 后只读检查${nextReviewTargetText} 的${nextWindowText}处理前后指标，确认窗口是否完整。` },
+        { label: "指标可复核后", detail: "处理前后指标可复核后，人工确认后再保存 review_records；仍不自动改规则或执行广告动作。" },
       ],
     };
   }
@@ -3143,7 +3143,7 @@ export function buildReviewReadinessGateSummary(
     items: [
       { label: "人工留痕", value: "0 条", tone: "blocked" },
       { label: "已存复盘", value: `${reviewRecordCount} 条`, tone: reviewRecordCount > 0 ? "ready" : "neutral" },
-      { label: "ready 复盘", value: "0 个", tone: "blocked" },
+      { label: "指标可复核", value: "0 个", tone: "blocked" },
       { label: "未就绪", value: `${notReadyCount} 个`, tone: notReadyCount > 0 ? "waiting" : "neutral" },
     ],
     nextSteps: [
@@ -3263,7 +3263,7 @@ export function buildReviewEvidenceRepairSummary(
       nextSteps: [
         { label: "先看门禁", detail: "回到复盘证据门禁，核对缺少的是广告商品覆盖、广告位表现、投放词证据、广告组合流判断、同组投放商品表现、ABA 背景、证据缺口、需要补证还是动作边界。" },
         { label: "治理方式", detail: "当前可落地路径是 dry-run 作废旧待办，再重新人工留痕；不能静默补写历史 evidence_snapshot。" },
-        { label: "保存限制", detail: "复核链补齐并出现 ready 复盘前，不保存 ReviewRecord，不自动改规则，不执行广告动作。" },
+        { label: "保存限制", detail: "复核链补齐且处理前后指标可复核前，不保存 ReviewRecord，不自动改规则，不执行广告动作。" },
       ],
       sampleItems: forbiddenEffects,
       voidPlanItems,
@@ -3535,8 +3535,8 @@ export function buildRuleFeedbackPrioritySummary(summary: SignalTriageSummaryFor
     const readyReviewCount = summary?.review_status?.ready_count ?? 0;
     const actionBoundary =
       readyReviewCount > 0
-        ? "当前只能补齐人工动作证据、人工核对已 ready 复盘并保存复盘记录；不自动改规则，不自动执行广告动作。"
-        : "当前只能补齐人工动作证据或等待复盘窗口；没有 ready 复盘前不保存复盘记录，不自动改规则，不自动执行广告动作。";
+        ? "当前只能补齐人工动作证据、人工核对可复核指标并保存复盘记录；不自动改规则，不自动执行广告动作。"
+        : "当前只能补齐人工动作证据或等待复盘窗口；没有可复核指标前不保存复盘记录，不自动改规则，不自动执行广告动作。";
     return {
       title: "复盘样本池门槛",
       basis: "暂无已保存 ReviewRecord；这里只展示复盘输入证据和保存门槛，不形成规则反馈候选。",
@@ -3596,7 +3596,7 @@ export function signalTriageCompactItems(summary: SignalTriageSummaryForUi | nul
     { label: "信号", value: String(summary.signal_status?.signal_count ?? 0), tone: "neutral" },
     { label: "候选", value: String(summary.signal_status?.candidate_count ?? 0), tone: "strong" },
     { label: "推荐", value: recommended, tone: recommended === "暂无" ? "neutral" : "strong" },
-    { label: "ready 复盘", value: String(summary.review_status?.ready_count ?? 0), tone: "success" },
+    { label: "指标可复核", value: String(summary.review_status?.ready_count ?? 0), tone: "success" },
   ];
 }
 
@@ -5488,7 +5488,7 @@ export function buildProductScopeDiagnosisBrief(
         purpose: "在筛选口径、销售入口、广告组排序和广告组下具体数据都读完后，只把当前状态汇总为记录观察、标记已处理、加入复盘或忽略本次。",
         currentJudgement: firstScreenSummary.mvpStatus.summary,
         proves: firstScreenSummary.mvpStatus.detail,
-        doesNotProve: "不代表系统可以自动加词、否词、调价或暂停广告；也不代表没有 ready 复盘时已经证明建议有效。",
+        doesNotProve: "不代表系统可以自动加词、否词、调价或暂停广告；也不代表没有可复核指标时已经形成复盘结论。",
         nextManualStep: firstScreenSummary.pathSteps.find((step) => step.label === "人工确认")?.detail ?? "右侧只允许人工确认动作。",
         tone: firstScreenSummary.mvpStatus.tone === "blocked" ? "blocked" : "manual",
       },
@@ -6197,7 +6197,7 @@ export function buildDiagnosisPathSummary(
     canWriteManualAction && candidateCount > 0 ? "ready" : candidateCount > 0 ? "neutral" : "blocked";
   const reviewStepValue =
     readyReviewCount > 0
-      ? `${readyReviewCount} 个 ready 复盘待人工保存`
+      ? `${readyReviewCount} 个指标可复核待人工保存`
       : manualActionCount > 0
         ? `已有 ${manualActionCount} 条人工留痕，等待 7/14 天窗口`
         : "人工留痕后生成 ReviewTodo";
@@ -6243,7 +6243,7 @@ export function buildDiagnosisPathSummary(
         tone: reviewStepTone,
       },
     ],
-    boundary: `${diagnosisBoundary(summary)}${candidateCount === 0 ? " candidate_count=0，不能写人工动作。" : ""} 未完成人工留痕和 ready 复盘前，不能保存 ReviewRecord 或判断处理有效。`,
+    boundary: `${diagnosisBoundary(summary)}${candidateCount === 0 ? " candidate_count=0，不能写人工动作。" : ""} 未完成人工留痕和处理前后指标可复核前，不能保存 ReviewRecord 或判断改善、无变化或恶化。`,
   };
 }
 
@@ -7307,7 +7307,7 @@ export function recommendedManualStatusText(summary: SignalTriageSummaryForUi | 
   const label = status.object_label || status.object_id || "推荐对象";
   let nextAction = status.next_action;
   if (!nextAction && (status.ready_review_count ?? 0) > 0) {
-    nextAction = `已有 ${status.ready_review_count} 个 ready 复盘结果，保存前仍需人工确认。`;
+    nextAction = `已有 ${status.ready_review_count} 个处理前后指标可复核待办，保存前仍需人工确认。`;
   }
   if (!nextAction && status.has_review_todo) {
     const windowText = status.review_windows?.length ? status.review_windows.map((window) => window.replace("d", " 天")).join(" / ") : "7 天 / 14 天";
@@ -7461,7 +7461,7 @@ export function buildProductScopeManualActionTargetAlignment(
     title: "人工动作对象链路一致",
     primary: "当前优先入口、选中信号和后端预检对象已对齐；仍需人工点击后才保存留痕和复盘待办。",
     items,
-    boundary: "本读回只证明保存目标一致，不代表自动加词、否词、调价、暂停广告或生成复盘效果结论。",
+    boundary: "本读回只证明保存目标一致，不代表自动加词、否词、调价、暂停广告或生成改善、无变化、恶化结论。",
   };
 }
 
@@ -7836,7 +7836,7 @@ function productScopePriorityWorkflowStatus(input: {
       label: "到期复盘",
       tone: "review",
       reason: `已有 ${input.dueReviewTodoCount} 条复盘待办到期，先核对处理前后指标。`,
-      nextStep: "打开右侧复盘待办；只有复盘效果 ready 后，才人工保存复盘记录。",
+      nextStep: "打开右侧复盘待办；只有处理前后指标可人工复核后，才人工保存复盘记录。",
     };
   }
   if (input.reviewTodoCount > 0) {
@@ -8636,7 +8636,7 @@ export function buildProductScopeFirstScreenSummary(
       ? {
           title: "诊断 MVP 状态判定",
           statusLabel: "复盘闭环可验证",
-          summary: `当前已有 ${readyReviewCount} 个 ready 复盘和 ${reviewRecordCount} 条 review_records，可以进入人工复盘样本验证；仍不自动改规则或执行广告动作。`,
+          summary: `当前已有 ${readyReviewCount} 个指标可复核待办和 ${reviewRecordCount} 条 review_records，可以进入人工复盘样本验证；仍不自动改规则或执行广告动作。`,
           detail: "沿 Parent ASIN -> 广告 ASIN -> 广告组 / 投放商品 / 搜索词 / 广告位 -> AI 信号 -> 人工留痕 -> 复盘记录检查证据链。",
           boundary: "完整闭环也只代表人工保存过复盘样本，不代表系统可自动执行广告动作。",
           tone: "review",
@@ -8645,9 +8645,9 @@ export function buildProductScopeFirstScreenSummary(
         ? {
             title: "诊断 MVP 状态判定",
             statusLabel: "人工留痕 MVP",
-            summary: `当前有 ${candidateCount} 个可写人工候选，可进入人工确认和留痕；但 ready 复盘 ${readyReviewCount} 个、review_records ${reviewRecordCount} 条，不是完整复盘闭环。`,
+            summary: `当前有 ${candidateCount} 个可写人工候选，可进入人工确认和留痕；但指标可复核待办 ${readyReviewCount} 个、review_records ${reviewRecordCount} 条，不是完整复盘闭环。`,
             detail: "沿 Parent ASIN -> 广告 ASIN -> 广告组 / 投放商品 / 搜索词 / 广告位 -> AI 信号 -> 人工留痕推进，复盘窗口完整后再评价效果。",
-            boundary: "ready 复盘出现前只能记录人工动作，不能保存复盘结论，不能说建议有效或无效。",
+            boundary: "处理前后指标可复核前只能记录人工动作，不能保存复盘结论，不能说建议有效或无效。",
             tone: "manual",
           }
         : advertisedAsinCount > 0
@@ -8656,7 +8656,7 @@ export function buildProductScopeFirstScreenSummary(
               statusLabel: "诊断 MVP",
               summary: `当前有真实广告证据，但 ${candidateText}；可用于定位问题，不是完整业务闭环。`,
               detail: "继续下钻广告 ASIN、广告组、搜索词和广告位，确认对象边界、证据强度和 AI 准入原因。",
-              boundary: "没有可写候选或 ready 复盘时，不能保存 review_records，不能说处理有效或无效。",
+              boundary: "没有可写候选或可复核指标时，不能保存 review_records，不能形成改善、无变化或恶化结论。",
               tone: "diagnostic",
             }
           : {
@@ -8671,7 +8671,7 @@ export function buildProductScopeFirstScreenSummary(
     !hasTriageSummary
       ? "等待人工留痕读回，不能生成复盘结论"
       : readyReviewCount > 0
-      ? `${readyReviewCount} 个 ready 复盘待人工保存`
+      ? `${readyReviewCount} 个指标可复核待人工保存`
       : manualActionCount > 0
         ? `已有 ${manualActionCount} 条人工留痕，最早 ${earliestDueDate || "等待窗口"} 后复盘`
         : "暂无人工留痕，不能生成复盘结论";
@@ -8709,8 +8709,8 @@ export function buildProductScopeFirstScreenSummary(
       label: "复盘门槛",
       value: reviewGateValue,
       detail: hasTriageSummary
-        ? `已保存 review_records ${reviewRecordCount} 条；未保存复盘结论前不能说处理有效或无效。`
-        : "等待 /api/signal-triage 读回复盘门槛；读回前不能说处理有效或无效。",
+        ? `已保存 review_records ${reviewRecordCount} 条；未保存复盘结论前不能形成改善、无变化或恶化判断。`
+        : "等待 /api/signal-triage 读回复盘门槛；读回前不能形成改善、无变化或恶化判断。",
       tone: !hasTriageSummary ? "waiting" : readyReviewCount > 0 ? "ready" : manualActionCount > 0 ? "waiting" : "blocked",
     },
   ];
@@ -9171,7 +9171,7 @@ export function buildSignalTriageRationale(signal: SignalForUi): SignalTriageRat
       ? "进入观察中筛选：status=observing，这是人工处理状态，不改变原始信号类型。"
       : `不进入观察中筛选：status=${signal.status}，人工状态只影响处理队列视图。`;
   const reviewBoundary = signal.review_result
-    ? `复盘结果只说明处理后效果：review_result=${signal.review_result}；review_result 不参与分诊。`
+    ? `人工保存的复盘结果只说明处理前后指标变化：review_result=${signal.review_result}；review_result 不参与分诊。`
     : "review_result 不参与分诊；没有复盘结果时，也不会改变信号分诊桶。";
 
   return {
@@ -9187,10 +9187,10 @@ export function buildSignalTriageRationale(signal: SignalForUi): SignalTriageRat
 
 function reviewRuleFeedbackText(reviewResult?: string | null) {
   if (!reviewResult) return "暂无复盘结果：保留当前信号解释口径，不调整规则。";
-  if (reviewResult === "improved") return "复盘反馈：处理有效；同类信号可保留当前规则提示，但后续广告动作仍需人工确认。";
-  if (reviewResult === "no_change") return "复盘反馈：处理后无明显变化；下次同类信号应复核证据来源或建议动作，不自动改规则。";
-  if (reviewResult === "worse") return "复盘反馈：处理后效果变差；下次同类信号应复核阈值、证据来源和建议动作，不自动改规则。";
-  if (reviewResult === "unclear") return "复盘反馈：复盘证据不足或结果不清；不调整规则，先补复盘样本和指标。";
+  if (reviewResult === "improved") return "复盘反馈：人工保存为指标改善；同类信号可保留当前规则提示，但后续广告动作仍需人工确认。";
+  if (reviewResult === "no_change") return "复盘反馈：人工保存为无明显变化；下次同类信号应复核证据来源或建议动作，不自动改规则。";
+  if (reviewResult === "worse") return "复盘反馈：人工保存为指标变差；下次同类信号应复核阈值、证据来源和建议动作，不自动改规则。";
+  if (reviewResult === "unclear") return "复盘反馈：人工保存为证据不足或结果不清；不调整规则，先补复盘样本和指标。";
   return `复盘反馈：review_result=${reviewResult} 暂无明确规则反馈；不自动改规则。`;
 }
 

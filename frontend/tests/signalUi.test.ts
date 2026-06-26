@@ -667,7 +667,7 @@ assertEqual(productScopePriorityQueueItems[0].priorityLabel, "先复盘");
 assertEqual(productScopePriorityQueueItems[0].tone, "review");
 assertEqual(productScopePriorityQueueItems[0].actionCue, "先复盘");
 assertEqual(productScopePriorityQueueItems[0].workflowStatus.label, "到期复盘");
-assertIncludes(productScopePriorityQueueItems[0].workflowStatus.nextStep, "复盘效果 ready");
+assertIncludes(productScopePriorityQueueItems[0].workflowStatus.nextStep, "处理前后指标可人工复核");
 assertIncludes(productScopePriorityQueueItems[0].mainQuestion, "已到期复盘");
 assertIncludes(productScopePriorityQueueItems[0].decisionBadge, "人工动作：先复盘");
 assertIncludes(productScopePriorityQueueItems[0].decisionBadge, "复盘状态：到期 1 项");
@@ -2409,7 +2409,7 @@ assertEqual(
     recommended_candidate: { stable_object_id: "B016EXMW02", object_label: "B016EXMW02" },
     review_status: { ready_count: 0 },
   }),
-  "后端分诊：137 条信号 / 135 个候选；建议先看 B016EXMW02；暂无 ready 复盘。",
+  "后端分诊：137 条信号 / 135 个候选；建议先看 B016EXMW02；暂无可复核指标。",
 );
 
 assertIncludes(
@@ -2473,7 +2473,7 @@ const waitingReviewReadinessGate = buildReviewReadinessGateSummary({
 assertEqual(waitingReviewReadinessGate?.title, "复盘等待窗口");
 assertEqual(waitingReviewReadinessGate?.status, "waiting");
 assertIncludes(waitingReviewReadinessGate?.primary ?? "", "17 条人工留痕");
-assertIncludes(waitingReviewReadinessGate?.primary ?? "", "ready 复盘 0 个");
+assertIncludes(waitingReviewReadinessGate?.primary ?? "", "指标可复核待办 0 个");
 assertIncludes(waitingReviewReadinessGate?.primary ?? "", "最早广告复盘");
 assertIncludes(waitingReviewReadinessGate?.primary ?? "", "2026-06-22");
 assertIncludes(waitingReviewReadinessGate?.detail ?? "", "B016EXMVZS");
@@ -2493,8 +2493,8 @@ assertIncludes(waitingReviewReadinessGate?.nextSteps[0].detail ?? "", "查看当
 assertIncludes(waitingReviewReadinessGate?.nextSteps[0].detail ?? "", "不拉取快照");
 assertIncludes(waitingReviewReadinessGate?.nextSteps[0].detail ?? "", "不自动执行广告动作");
 assertEqual(waitingReviewReadinessGate?.nextSteps[1].label, "到期后");
-assertIncludes(waitingReviewReadinessGate?.nextSteps[1].detail ?? "", "2026-06-22 后只读检查 advertised_product / B016EXMVZS 的 7 天复盘效果");
-assertEqual(waitingReviewReadinessGate?.nextSteps[2].label, "ready 后");
+assertIncludes(waitingReviewReadinessGate?.nextSteps[1].detail ?? "", "2026-06-22 后只读检查 advertised_product / B016EXMVZS 的 7 天处理前后指标");
+assertEqual(waitingReviewReadinessGate?.nextSteps[2].label, "指标可复核后");
 assertIncludes(waitingReviewReadinessGate?.nextSteps[2].detail ?? "", "人工确认后再保存 review_records");
 assertEqual(waitingReviewReadinessGate?.identityAudit?.title, "复盘读回身份门禁");
 assertIncludes(waitingReviewReadinessGate?.identityAudit?.summary ?? "", "读回身份可审计");
@@ -2996,8 +2996,8 @@ const blockedReviewReadinessGate = buildReviewReadinessGateSummary({
     not_ready_count: 10,
     review_wait_summary: {
       status: "blocked_by_data_gap",
-      gap_reasons: ["复盘效果暂不可计算：缺少处理后 7 天快照"],
-      message: "当前没有 ready 复盘效果；复盘效果暂不可计算：缺少处理后 7 天快照",
+      gap_reasons: ["处理前后指标暂不可计算：缺少处理后 7 天快照"],
+      message: "当前没有可复核的处理前后指标；处理前后指标暂不可计算：缺少处理后 7 天快照",
       next_step: "先补齐复盘所需数据。下一步：先查询积加 API 限流规则，再由人工触发低频快照。",
       forbidden_actions: ["不保存复盘结论", "不自动改规则", "不自动执行广告动作"],
     },
@@ -3015,7 +3015,7 @@ assertEqual(blockedReviewReadinessGate?.items[4].label, "缺口状态");
 assertEqual(blockedReviewReadinessGate?.items[4].value, "证据不足");
 assertIncludes(blockedReviewReadinessGate?.nextSteps[0].detail ?? "", "先确认复盘缺口");
 assertIncludes(blockedReviewReadinessGate?.nextSteps[1].detail ?? "", "先查询积加 API 限流规则");
-assertIncludes(blockedReviewReadinessGate?.nextSteps[2].detail ?? "", "出现 ready 复盘后");
+assertIncludes(blockedReviewReadinessGate?.nextSteps[2].detail ?? "", "处理前后指标可复核后");
 
 const readyReviewReadinessGate = buildReviewReadinessGateSummary({
   review_status: {
@@ -3025,16 +3025,16 @@ const readyReviewReadinessGate = buildReviewReadinessGateSummary({
     not_ready_count: 8,
     rule_improvement: {
       status: "waiting_manual_review_record",
-      next_step: "先人工确认 ready 复盘，再保存 review_records。",
+      next_step: "先人工核对可复核指标，再保存 review_records。",
     },
   },
 });
 assertEqual(readyReviewReadinessGate?.title, "复盘可保存门槛");
 assertEqual(readyReviewReadinessGate?.status, "ready");
-assertIncludes(readyReviewReadinessGate?.primary ?? "", "2 个 ready 复盘");
+assertIncludes(readyReviewReadinessGate?.primary ?? "", "2 个处理前后指标可复核待办");
 assertIncludes(readyReviewReadinessGate?.boundary ?? "", "仍需人工确认");
 assertIncludes(readyReviewReadinessGate?.boundary ?? "", "不自动执行广告动作");
-assertIncludes(readyReviewReadinessGate?.nextSteps[0].detail ?? "", "先人工核对 ready 复盘");
+assertIncludes(readyReviewReadinessGate?.nextSteps[0].detail ?? "", "先人工核对处理前后指标");
 assertIncludes(readyReviewReadinessGate?.nextSteps[1].detail ?? "", "手动保存 review_records");
 assertIncludes(readyReviewReadinessGate?.nextSteps[2].detail ?? "", "仅进入人工规则复核");
 
@@ -3049,7 +3049,7 @@ const triageReviewFeedbackSummary = {
       by_signal_type: { opportunity: 1, anomaly: 1 },
       sample_sort: {
         order: ["worse", "no_change", "unclear", "improved"],
-        reason: "样本按业务风险排序：worse 优先，因为处理后效果变差；no_change 其次，因为建议可能无效；unclear 需要补证据；improved 只作为保留口径参考。",
+        reason: "样本按业务风险排序：worse 优先，因为处理前后指标变差；no_change 其次，因为建议可能无效；unclear 需要补证据；improved 只作为保留口径参考。",
       },
       action_boundaries: {
         worse: {
@@ -3122,7 +3122,7 @@ const triageReviewFeedbackSummary = {
             detail: "准入只证明允许人工留痕，不代表系统会自动执行广告动作。",
             source: "actionability_status",
           },
-          sort_reason: "排序依据：worse 优先，因为处理后效果变差，先复核阈值、证据来源和建议动作。",
+          sort_reason: "排序依据：worse 优先，因为处理前后指标变差，先复核阈值、证据来源和建议动作。",
           action_boundary: {
             result: "worse",
             allowed_reviews: ["复核阈值", "复核证据来源", "复核建议动作"],
@@ -3175,7 +3175,7 @@ const triageReviewFeedbackSummary = {
           object_id: "B016EXMW02",
           object_label: "B016EXMW02",
           review_window: "14d",
-          review_note: "处理有效",
+          review_note: "指标改善",
         },
       ],
       candidate_groups: [
@@ -3205,7 +3205,7 @@ const triageReviewFeedbackSummary = {
         },
       ],
       summary: "已保存 2 条复盘记录：improved 1 / worse 1。",
-      rule_feedback: "处理有效，同类信号可保留当前解释口径；处理后效果变差，下次同类信号应复核阈值、证据来源和建议动作；该反馈只进入解释层，不自动调整广告动作或规则。",
+      rule_feedback: "指标改善，同类信号可保留当前解释口径；处理前后指标变差，下次同类信号应复核阈值、证据来源和建议动作；该反馈只进入解释层，不自动调整广告动作或规则。",
     },
   },
 };
@@ -3348,8 +3348,8 @@ assertIncludes(blockedRuleFeedbackPrioritySummary?.basis ?? "", "不形成规则
 assertIncludes(blockedRuleFeedbackPrioritySummary?.priority ?? "", "未保存复盘结论前");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.priority ?? "", "不能判断规则有效");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.sampleSort ?? "", "保存 ReviewRecord 后启用");
-assertIncludes(blockedRuleFeedbackPrioritySummary?.actionBoundary ?? "", "没有 ready 复盘前不保存复盘记录");
-assertNotIncludes(blockedRuleFeedbackPrioritySummary?.actionBoundary ?? "", "保存 ready 复盘记录");
+assertIncludes(blockedRuleFeedbackPrioritySummary?.actionBoundary ?? "", "没有可复核指标前不保存复盘记录");
+assertNotIncludes(blockedRuleFeedbackPrioritySummary?.actionBoundary ?? "", "保存可复核指标记录");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.actionBoundary ?? "", "不自动执行广告动作");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[0] ?? "", "复盘结果分布 blocked");
 assertIncludes(blockedRuleFeedbackPrioritySummary?.closureChecklist[2] ?? "", "复盘输入证据 partial");
@@ -3381,7 +3381,7 @@ assertEqual(triageCompactItems[1].label, "候选");
 assertEqual(triageCompactItems[1].value, "135");
 assertEqual(triageCompactItems[2].label, "推荐");
 assertEqual(triageCompactItems[2].value, "B016EXMW02");
-assertEqual(triageCompactItems[3].label, "ready 复盘");
+assertEqual(triageCompactItems[3].label, "指标可复核");
 assertEqual(triageCompactItems[3].value, "2");
 
 const compactQueueMeta = buildSignalQueueMeta({
@@ -5448,7 +5448,7 @@ assertEqual(productScopeFirstScreenSummary.mvpStatus.statusLabel, "人工留痕 
 assertIncludes(productScopeFirstScreenSummary.mvpStatus.summary, "当前有 3 个可写人工候选");
 assertIncludes(productScopeFirstScreenSummary.mvpStatus.summary, "不是完整复盘闭环");
 assertIncludes(productScopeFirstScreenSummary.mvpStatus.detail, "Parent ASIN -> 广告 ASIN -> 广告组 / 投放商品 / 搜索词 / 广告位");
-assertIncludes(productScopeFirstScreenSummary.mvpStatus.boundary, "ready 复盘");
+assertIncludes(productScopeFirstScreenSummary.mvpStatus.boundary, "处理前后指标可复核");
 assertIncludes(productScopeFirstScreenSummary.pathSummary, "Parent ASIN 经营销售入口 -> 广告 ASIN -> 广告组");
 assertIncludes(productScopeFirstScreenSummary.pathSummary, "投放商品 / 投放词 / 搜索词 / 广告位");
 assertIncludes(productScopeFirstScreenSummary.pathSummary, "AI 信号诊断 -> 人工确认 -> 7/14 天复盘");
@@ -5638,7 +5638,7 @@ assertIncludes(noCandidateMvpSummary?.mvpStatus.summary ?? "", "当前有真实�
 assertIncludes(noCandidateMvpSummary?.mvpStatus.summary ?? "", "不是完整业务闭环");
 assertIncludes(noCandidateMvpSummary?.mvpStatus.detail ?? "", "继续下钻广告 ASIN、广告组、搜索词和广告位");
 assertIncludes(noCandidateMvpSummary?.mvpStatus.boundary ?? "", "不能保存 review_records");
-assertIncludes(noCandidateMvpSummary?.mvpStatus.boundary ?? "", "不能说处理有效或无效");
+assertIncludes(noCandidateMvpSummary?.mvpStatus.boundary ?? "", "不能形成改善、无变化或恶化结论");
 
 const blockedCandidateMvpSummary = buildProductScopeFirstScreenSummary(productScopeGroupOverview, {
   signal_status: { candidate_count: 3 },
@@ -5937,8 +5937,8 @@ assertEqual(opportunityTriage.queueLabel, "机会扩量");
 assertIncludes(opportunityTriage.queueReason, "经营问题=机会扩量");
 assertIncludes(opportunityTriage.queueReason, "signal_type=opportunity");
 assertIncludes(opportunityTriage.statusReason, "status=observing");
-assertIncludes(opportunityTriage.reviewBoundary, "复盘结果只说明处理后效果");
-assertIncludes(opportunityTriage.reviewRuleFeedback, "处理有效");
+assertIncludes(opportunityTriage.reviewBoundary, "人工保存的复盘结果只说明处理前后指标变化");
+assertIncludes(opportunityTriage.reviewRuleFeedback, "指标改善");
 assertIncludes(opportunityTriage.reviewRuleFeedback, "仍需人工确认");
 
 const worseReviewTriage = buildSignalTriageRationale({
@@ -5946,7 +5946,7 @@ const worseReviewTriage = buildSignalTriageRationale({
   review_result: "worse",
 });
 
-assertIncludes(worseReviewTriage.reviewRuleFeedback, "效果变差");
+assertIncludes(worseReviewTriage.reviewRuleFeedback, "指标变差");
 assertIncludes(worseReviewTriage.reviewRuleFeedback, "复核阈值");
 assertIncludes(worseReviewTriage.reviewRuleFeedback, "不自动改规则");
 

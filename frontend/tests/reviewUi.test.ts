@@ -405,7 +405,7 @@ const notReadyEffect: ReviewEffectForUi = {
   review_window: "7d",
   status: "not_ready",
   result: "unclear",
-  message: "复盘效果暂不可计算：缺少处理后 7 天快照",
+  message: "处理前后指标暂不可计算：缺少处理后 7 天快照",
   before_start_date: "2026-06-08",
   before_end_date: "2026-06-14",
   after_start_date: null,
@@ -429,7 +429,7 @@ const improvedEffect: ReviewEffectForUi = {
   after_end_date: "2026-06-15",
 };
 
-assertEqual(reviewEffectSummaryText(notReadyEffect), "复盘效果暂不可计算：缺少处理后 7 天快照");
+assertEqual(reviewEffectSummaryText(notReadyEffect), "处理前后指标暂不可计算：缺少处理后 7 天快照");
 assertEqual(reviewEffectSummaryText(improvedEffect), "处理后 7 天订单改善，ACOS 下降");
 const notReadyRuleImprovement = buildRuleImprovementReadiness(notReadyEffect, null);
 assertEqual(notReadyRuleImprovement.title, "规则改进暂未满足条件");
@@ -442,9 +442,9 @@ assertEqual(pendingRuleImprovement.title, "规则改进暂未开始");
 assertIncludes(pendingRuleImprovement.nextStep, "到 2026-06-15 后再复核");
 assertIncludes(pendingRuleImprovement.nextStep, "未到期前不保存复盘结论");
 const dueWithoutEffectRuleImprovement = buildRuleImprovementReadiness(null, null, dueTodo);
-assertEqual(dueWithoutEffectRuleImprovement.title, "规则改进等待复盘效果");
+assertEqual(dueWithoutEffectRuleImprovement.title, "规则改进等待处理前后指标");
 assertIncludes(dueWithoutEffectRuleImprovement.description, "7 天复盘已到期");
-assertIncludes(dueWithoutEffectRuleImprovement.nextStep, "先读取复盘效果");
+assertIncludes(dueWithoutEffectRuleImprovement.nextStep, "先读取处理前后指标");
 assertIncludes(dueWithoutEffectRuleImprovement.nextStep, "先查询积加 API 限流规则");
 const readyRuleImprovement = buildRuleImprovementReadiness(improvedEffect, null, dueTodo);
 assertEqual(readyRuleImprovement.title, "规则改进待人工复盘");
@@ -1559,9 +1559,9 @@ const reviewRecordRequestPayload = buildReviewRecordRequestPayload(
     review_window: "7d",
   },
   { ...reviewTodoWithDiagnosisPath, action_id: "manual-action-ad-product" },
-  "确认处理有效",
+  "确认指标改善",
 );
-assertEqual(reviewRecordRequestPayload.review_note, "确认处理有效");
+assertEqual(reviewRecordRequestPayload.review_note, "确认指标改善");
 assertEqual(reviewRecordRequestPayload.expected_action_id, "manual-action-ad-product");
 assertEqual(reviewRecordRequestPayload.expected_object_type, "advertised_product");
 assertEqual(reviewRecordRequestPayload.expected_object_id, "B016EXMW02");
@@ -1579,12 +1579,12 @@ assertEqual(
 );
 assertEqual(
   reviewCheckpointText(pendingTodo, notReadyEffect),
-  "14 天复盘未到期：到 2026-06-15 后再判断处理前后指标；当前复盘效果仅说明窗口尚未完整，未到期前不保存复盘记录。",
+  "14 天复盘未到期：到 2026-06-15 后再判断处理前后指标；当前复盘指标只说明窗口尚未完整，未到期前不保存复盘记录。",
 );
 assertNotIncludes(reviewCheckpointText(pendingTodo, notReadyEffect), "可以保存复盘记录");
 assertEqual(
   reviewCheckpointText(dueTodo, notReadyEffect),
-  "7 天复盘已到期：复盘效果暂不可计算：缺少处理后 7 天快照",
+  "7 天复盘已到期：处理前后指标暂不可计算：缺少处理后 7 天快照",
 );
 assertEqual(
   reviewCheckpointText(dueTodo, improvedEffect),
@@ -2031,8 +2031,8 @@ assertEqual(metricRows[3].after, "30.0%");
 assertEqual(reviewRecordStatusText(null), "暂无复盘记录：只有 7/14 天窗口到期、处理前后指标完整并由人工保存后，才会生成 ReviewRecord。");
 assertIncludes(reviewRecordStatusText(null), "窗口到期");
 assertIncludes(reviewRecordStatusText(null), "人工保存");
-assertIncludes(reviewRecordStatusText({ result: "improved", review_note: "确认处理有效" }), "最近复盘：improved / 确认处理有效");
-assertIncludes(reviewRecordStatusText({ result: "improved", review_note: "确认处理有效" }), "复盘证据快照待核对");
+assertIncludes(reviewRecordStatusText({ result: "improved", review_note: "确认指标改善" }), "最近复盘：improved / 确认指标改善");
+assertIncludes(reviewRecordStatusText({ result: "improved", review_note: "确认指标改善" }), "复盘证据快照待核对");
 assertIncludes(reviewRecordStatusText(savedReviewRecord), "复盘证据快照：7d 4 条");
 assertEqual(
   manualActionBoundaryText({ action_type: "ignore" }),
@@ -2040,7 +2040,7 @@ assertEqual(
 );
 assertEqual(
   manualActionBoundaryText({ action_type: "handled" }),
-  "标记已处理只表示已记录人工处理动作；是否改善需要等复盘效果计算或人工复盘确认。",
+  "标记已处理只表示已记录人工处理动作；是否改善需要等处理前后指标可复核后由人工确认。",
 );
 assertEqual(
   manualActionBoundaryText({ action_type: "add_to_review" }),
@@ -2053,7 +2053,7 @@ assertEqual(
 );
 assertEqual(
   manualActionIntentText("handled"),
-  "人工标记已处理，生成 7/14 天复盘待办；不自动执行广告动作，效果要等 ready 复盘。",
+  "人工标记已处理，生成 7/14 天复盘待办；不自动执行广告动作，处理前后指标可复核后再人工保存结论。",
 );
 assertEqual(
   manualActionIntentText("observe"),

@@ -808,11 +808,11 @@ export function reviewCheckpointText(todo: ReviewTodoForUi | null, effect: Revie
   if (!todo) return "暂无复盘待办：记录观察、标记已处理或加入复盘后才会生成 7/14 天复盘。";
   const statusText = reviewTodoStatusText(todo);
   if (!todo.is_due && effect?.status !== "ready") {
-    const suffix = effect ? "；当前复盘效果仅说明窗口尚未完整，未到期前不保存复盘记录。" : "，未到期前不保存复盘记录。";
+    const suffix = effect ? "；当前复盘指标只说明窗口尚未完整，未到期前不保存复盘记录。" : "，未到期前不保存复盘记录。";
     return `${statusText}：到 ${String(todo.due_at).slice(0, 10)} 后再判断处理前后指标${suffix}`;
   }
   if (!effect) {
-    return `${statusText}：正在读取复盘效果。`;
+    return `${statusText}：正在读取处理前后指标。`;
   }
   if (effect.status === "ready") return `${statusText}：已具备处理前后指标，可以保存复盘记录。`;
   if (effect.status === "not_ready") return `${statusText}：${effect.message}`;
@@ -1239,13 +1239,13 @@ export function buildReviewEffectWindowLedger(
     const dueText = todo.due_at ? String(todo.due_at).slice(0, 10) : "到期日待补充";
     return {
       tone: todo.is_due ? "blocked" : "waiting",
-      title: todo.is_due ? "等待读取复盘效果" : "等待复盘窗口到期",
+      title: todo.is_due ? "等待读取处理前后指标" : "等待复盘窗口到期",
       status: reviewTodoStatusText(todo),
       beforeWindow: "待读取处理前窗口",
       afterWindow: `到 ${dueText} 后读取处理后窗口`,
       metricCoverage: "还没有拿到 review-effect，不能保存 ReviewRecord。",
       nextStep: todo.is_due
-        ? "读取复盘效果；若缺处理后快照，先查询积加 API 限流规则，再人工触发低频快照。"
+        ? "读取处理前后指标；若缺处理后快照，先查询积加 API 限流规则，再人工触发低频快照。"
         : `等待到 ${dueText} 后再复核处理后指标，未到期前不保存复盘结论。`,
       boundary: "ReviewTodo 只代表进入复盘队列，不代表处理已经改善。",
     };
@@ -2620,9 +2620,9 @@ export function buildRuleImprovementReadiness(
   }
   if (!effect && todo?.is_due) {
     return {
-      title: "规则改进等待复盘效果",
-      description: `${reviewTodoStatusText(todo)}，但还没有读取到复盘效果；未取得 ready 前不能调整规则或输出效果结论。`,
-      nextStep: "先读取复盘效果；如果提示缺少处理后快照，先查询积加 API 限流规则，再人工触发低频快照。",
+      title: "规则改进等待处理前后指标",
+      description: `${reviewTodoStatusText(todo)}，但还没有读取到处理前后指标；指标可复核前不能调整规则或输出结论。`,
+      nextStep: "先读取处理前后指标；如果提示缺少处理后快照，先查询积加 API 限流规则，再人工触发低频快照。",
       tone: "blocked",
     };
   }
@@ -2753,9 +2753,9 @@ export function reviewRecordStatusText(record: ReviewRecordForUi | null) {
 
 function reviewRuleFeedbackText(result: ReviewRecordForUi["result"]) {
   const feedbackText: Record<ReviewRecordForUi["result"], string> = {
-    improved: "处理有效，同类信号可保留当前规则提示",
-    no_change: "处理后无明显变化，下次同类信号应复核证据来源或建议动作",
-    worse: "处理后效果变差，下次同类信号应复核阈值、证据来源和建议动作",
+    improved: "人工复盘标记为指标改善，同类信号可保留当前规则提示",
+    no_change: "人工复盘标记为无明显变化，下次同类信号应复核证据来源或建议动作",
+    worse: "人工复盘标记为指标变差，下次同类信号应复核阈值、证据来源和建议动作",
     unclear: "复盘证据不足，不调整规则，先补复盘样本和指标",
   };
   return feedbackText[result];
@@ -2764,7 +2764,7 @@ function reviewRuleFeedbackText(result: ReviewRecordForUi["result"]) {
 export function manualActionBoundaryText(action: ManualActionForUi | null) {
   if (!action) return null;
   const boundaryText: Partial<Record<ManualActionForUi["action_type"], string>> = {
-    handled: "标记已处理只表示已记录人工处理动作；是否改善需要等复盘效果计算或人工复盘确认。",
+    handled: "标记已处理只表示已记录人工处理动作；是否改善需要等处理前后指标可复核后由人工确认。",
     add_to_review: "加入复盘只表示进入后续复盘待办；不代表已经产生改善、无变化或恶化结论。",
     ignore: "忽略本次只表示当前不进入复盘待办；信号和证据仍保留，不代表误报或已删除。",
   };
@@ -3353,7 +3353,7 @@ function reviewContextDisplayText(text: string) {
 export function manualActionIntentText(actionType: ManualActionForUi["action_type"]) {
   const intentText: Record<ManualActionForUi["action_type"], string> = {
     add_to_review: "人工加入复盘，生成 7/14 天复盘待办；不自动执行广告动作，也不代表已有改善结论。",
-    handled: "人工标记已处理，生成 7/14 天复盘待办；不自动执行广告动作，效果要等 ready 复盘。",
+    handled: "人工标记已处理，生成 7/14 天复盘待办；不自动执行广告动作，处理前后指标可复核后再人工保存结论。",
     observe: "人工记录当前观察，生成 7/14 天复盘待办；不自动执行广告动作，暂不判断处理效果。",
     ignore: "人工忽略本次，不进入当前 7/14 天复盘待办；不自动执行广告动作，信号和证据保留。",
   };

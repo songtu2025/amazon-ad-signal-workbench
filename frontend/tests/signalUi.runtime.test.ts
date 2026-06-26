@@ -620,7 +620,7 @@ async function main() {
   assertIncludes(readinessSummary?.boundary ?? "", "不保存复盘结论");
   assertIncludes(readinessSummary?.boundary ?? "", "不自动执行广告动作");
   assertIncludes(asText(readinessSummary?.nextSteps), "2026-06-30");
-  assertIncludes(asText(readinessSummary?.nextSteps), "ready 复盘");
+  assertIncludes(asText(readinessSummary?.nextSteps), "指标可复核");
   assertIncludes(readinessSummary?.queueSeparation?.primary ?? "", reviewObjectLabel);
   assertIncludes(readinessSummary?.queueSeparation?.primary ?? "", nextLabel);
   assertIncludes(readinessSummary?.queueSeparation?.items[2]?.value ?? "", "条证据");
@@ -860,10 +860,10 @@ async function main() {
   );
   assert(realReviewEffect7d.status === "not_ready", "真实 7 天复盘窗口未到期时必须保持 not_ready。");
   assert(realReviewEffect14d.status === "not_ready", "真实 14 天复盘窗口未到期时必须保持 not_ready。");
-  assert(realReviewEffect7d.review_window === "7d", "真实 7 天复盘效果必须绑定 7d 窗口。");
-  assert(realReviewEffect14d.review_window === "14d", "真实 14 天复盘效果必须绑定 14d 窗口。");
-  assert(realReviewEffect7d.object_id === benchmarkExpectedObjectId, "真实 7 天复盘效果必须绑定 beach essentials。");
-  assert(realReviewEffect14d.object_id === benchmarkExpectedObjectId, "真实 14 天复盘效果必须绑定 beach essentials。");
+  assert(realReviewEffect7d.review_window === "7d", "真实 7 天复盘窗口必须绑定 7d。");
+  assert(realReviewEffect14d.review_window === "14d", "真实 14 天复盘窗口必须绑定 14d。");
+  assert(realReviewEffect7d.object_id === benchmarkExpectedObjectId, "真实 7 天复盘窗口必须绑定 beach essentials。");
+  assert(realReviewEffect14d.object_id === benchmarkExpectedObjectId, "真实 14 天复盘窗口必须绑定 beach essentials。");
   assertIncludes(JSON.stringify(realReviewEffect7d), "2026-06-30");
   assertIncludes(JSON.stringify(realReviewEffect14d), "2026-07-07");
   assert(Array.isArray(reviewRecordsForBenchmark), "ReviewRecord 读回应返回数组。");
@@ -909,7 +909,7 @@ async function main() {
   assertIncludes(reviewEffectWindowLedger.beforeWindow, "2026-06-01");
   assertIncludes(reviewEffectWindowLedger.afterWindow, "2026-06-15");
   assertIncludes(reviewEffectWindowLedger.metricCoverage, "花费、订单、销售额、ACOS");
-  assertIncludes(reviewEffectWindowLedger.nextStep, "只保存 ReviewRecord");
+  assertIncludes(reviewEffectWindowLedger.nextStep, "才保存 ReviewRecord");
   assertIncludes(reviewEffectWindowLedger.boundary, "不证明所有业务变化");
   const reviewRecordPreflight = buildReviewRecordPreflightChecklist(reviewTodoForObjectGate, simulatedReadyEffect, {
     requestSignalId: reviewTodoForObjectGate.signal_id,
