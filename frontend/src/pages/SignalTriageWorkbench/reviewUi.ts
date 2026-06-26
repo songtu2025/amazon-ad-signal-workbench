@@ -1274,13 +1274,13 @@ export function buildReviewEffectWindowLedger(
 
   return {
     tone: "ready",
-    title: "复盘效果可人工保存",
+    title: "处理前后指标可人工复核",
     status: effect.message,
     beforeWindow,
     afterWindow,
-    metricCoverage: `${metricCoverage}保存前仍需核对对象、证据快照和动作边界。`,
-    nextStep: "人工核对保存前检查后，只保存 ReviewRecord。",
-    boundary: "复盘结论只说明当前对象和当前窗口的指标变化，不证明所有业务变化都由本次人工处理导致。",
+    metricCoverage: `${metricCoverage}ready 只表示处理前后窗口可对比；保存前仍需核对对象、证据快照和动作边界。`,
+    nextStep: "人工核对保存前检查后，才保存 ReviewRecord。",
+    boundary: "指标改善、无变化或恶化只在人工保存后成为复盘结论；不证明所有业务变化都由本次人工处理导致。",
   };
 }
 
@@ -1322,8 +1322,8 @@ export function buildReviewRecordSaveGateSummary(
   if (!effect) {
     return {
       tone: "blocked",
-      title: "等待复盘效果",
-      detail: "已存在复盘待办，但还没有读取到 ready 复盘效果；先补齐处理前后指标窗口，再由人工保存 ReviewRecord。",
+      title: "等待处理后指标",
+      detail: "已存在复盘待办，但还没有读取到可复核的处理前后指标；先补齐处理前后窗口，再由人工保存 ReviewRecord。",
       canSave: false,
     };
   }
@@ -1331,7 +1331,7 @@ export function buildReviewRecordSaveGateSummary(
     return {
       tone: "blocked",
       title: "暂不能保存复盘记录",
-      detail: `${effect.message}；未到 ready 前不保存 ReviewRecord，也不判断改善、无变化或恶化。`,
+      detail: `${effect.message}；指标窗口未 ready 前不保存 ReviewRecord，也不判断改善、无变化或恶化。`,
       canSave: false,
     };
   }
@@ -1348,7 +1348,7 @@ export function buildReviewRecordSaveGateSummary(
     return {
       tone: "blocked",
       title: "保存前检查未通过",
-      detail: `复盘效果已 ready，但保存前检查缺少：${missingLabels.join("、")}；不能用当前页面缓存或其他对象证据保存 ReviewRecord。${todoEvidenceGateText}`,
+      detail: `处理前后指标已可复核，但保存前检查缺少：${missingLabels.join("、")}；不能用当前页面缓存或其他对象证据保存 ReviewRecord。${todoEvidenceGateText}`,
       canSave: false,
     };
   }
@@ -1356,7 +1356,7 @@ export function buildReviewRecordSaveGateSummary(
   return {
     tone: "ready",
     title: "可人工保存复盘记录",
-    detail: `已满足 ready 复盘效果和 ${checklist?.length ?? 0} 项保存前检查；点击只保存 ReviewRecord，不自动改规则或执行广告动作。`,
+    detail: `已满足处理前后指标可复核和 ${checklist?.length ?? 0} 项保存前检查；点击后由人工保存 ReviewRecord，才形成本窗口复盘结论，不自动改规则或执行广告动作。`,
     canSave: true,
   };
 }
@@ -1386,20 +1386,20 @@ export function buildReviewRecordSavePathSummary(
         tone: (decisionReady ? "ready" : decisionReadback?.tone === "blocked" ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
       },
       {
-        label: "2. 指标窗口",
-        value: windowReady ? "已 ready" : windowLedger.tone === "blocked" ? "未完整" : "等待到期",
-        detail: `${windowLedger.status}；${windowLedger.metricCoverage}`,
+        label: "2. 指标可复核",
+        value: windowReady ? "可人工复核" : windowLedger.tone === "blocked" ? "未完整" : "等待到期",
+        detail: `${windowLedger.status}；${windowLedger.metricCoverage} ready 只表示处理前后窗口可对比，不是系统自动判断有效。`,
         tone: (windowReady ? "ready" : windowLedger.tone === "blocked" ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
       },
       {
-        label: "3. 保存结论",
+        label: "3. 人工保存结论",
         value: saveGate.canSave ? "可人工保存" : saveGate.tone === "saved" ? "已保存" : "不可保存",
         detail: saveGate.detail,
         tone: (saveReady ? "ready" : saveGate.tone === "blocked" ? "blocked" : "waiting") as ReviewTodoEvidenceReadbackRow["tone"],
       },
     ],
     boundary:
-      "保存 ReviewRecord 前必须按顺序先读回当时判断，再核对处理前后指标窗口，最后只保存人工复盘结论；不自动改规则或执行广告动作。",
+      "保存 ReviewRecord 前必须按顺序先读回当时判断，再核对处理前后指标窗口，最后由人工保存复盘结论；ready 不等于已判断有效，不自动改规则或执行广告动作。",
   };
 }
 

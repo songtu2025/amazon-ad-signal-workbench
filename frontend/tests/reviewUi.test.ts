@@ -730,12 +730,13 @@ const readyReviewEffectWindowLedger = buildReviewEffectWindowLedger(dueTodo, {
   after_metrics: { cost: 60, orders: 5, sales: 200, acos: 0.3 },
 });
 assertEqual(readyReviewEffectWindowLedger.tone, "ready");
-assertEqual(readyReviewEffectWindowLedger.title, "复盘效果可人工保存");
+assertEqual(readyReviewEffectWindowLedger.title, "处理前后指标可人工复核");
 assertEqual(readyReviewEffectWindowLedger.beforeWindow, "2026-06-01 至 2026-06-07");
 assertEqual(readyReviewEffectWindowLedger.afterWindow, "2026-06-09 至 2026-06-15");
 assertIncludes(readyReviewEffectWindowLedger.metricCoverage, "花费、订单、销售额、ACOS");
-assertIncludes(readyReviewEffectWindowLedger.nextStep, "只保存 ReviewRecord");
-assertIncludes(readyReviewEffectWindowLedger.boundary, "不证明所有业务变化");
+assertIncludes(readyReviewEffectWindowLedger.metricCoverage, "ready 只表示处理前后窗口可对比");
+assertIncludes(readyReviewEffectWindowLedger.nextStep, "才保存 ReviewRecord");
+assertIncludes(readyReviewEffectWindowLedger.boundary, "人工保存后成为复盘结论");
 assertEqual(canSaveReviewEffect(notReadyEffect), false);
 assertEqual(canSaveReviewEffect(improvedEffect), true);
 const reviewTodoWithDiagnosisPath: ReviewTodoForUi = {
@@ -939,7 +940,7 @@ assertEqual(
 );
 assertIncludes(
   buildReviewRecordSaveGateSummary(dueTodo, notReadyEffect, reviewRecordPreflightChecklist).detail,
-  "未到 ready 前不保存 ReviewRecord",
+  "指标窗口未 ready 前不保存 ReviewRecord",
 );
 assertEqual(
   buildReviewRecordSaveGateSummary(dueTodo, improvedEffect, reviewRecordPreflightChecklist.slice(0, 7)).title,
@@ -956,7 +957,8 @@ assertIncludes(
 const readyReviewRecordSaveGate = buildReviewRecordSaveGateSummary(dueTodo, improvedEffect, reviewRecordPreflightChecklist);
 assertEqual(readyReviewRecordSaveGate.title, "可人工保存复盘记录");
 assertEqual(readyReviewRecordSaveGate.canSave, true);
-assertIncludes(readyReviewRecordSaveGate.detail, "点击只保存 ReviewRecord");
+assertIncludes(readyReviewRecordSaveGate.detail, "处理前后指标可复核");
+assertIncludes(readyReviewRecordSaveGate.detail, "点击后由人工保存 ReviewRecord");
 assertIncludes(readyReviewRecordSaveGate.detail, "不自动改规则或执行广告动作");
 const readyReviewRecordSavePath = buildReviewRecordSavePathSummary(
   buildReviewTodoDecisionReadbackSummary(reviewTodoWithDiagnosisPath),
@@ -966,9 +968,12 @@ const readyReviewRecordSavePath = buildReviewRecordSavePathSummary(
 assertEqual(readyReviewRecordSavePath?.tone, "ready");
 assertIncludes(JSON.stringify(readyReviewRecordSavePath), "复盘保存顺序核对");
 assertIncludes(JSON.stringify(readyReviewRecordSavePath), "1. 当时判断");
-assertIncludes(JSON.stringify(readyReviewRecordSavePath), "2. 指标窗口");
-assertIncludes(JSON.stringify(readyReviewRecordSavePath), "3. 保存结论");
+assertIncludes(JSON.stringify(readyReviewRecordSavePath), "2. 指标可复核");
+assertIncludes(JSON.stringify(readyReviewRecordSavePath), "可人工复核");
+assertIncludes(JSON.stringify(readyReviewRecordSavePath), "ready 只表示处理前后窗口可对比，不是系统自动判断有效");
+assertIncludes(JSON.stringify(readyReviewRecordSavePath), "3. 人工保存结论");
 assertIncludes(JSON.stringify(readyReviewRecordSavePath), "保存 ReviewRecord 前必须按顺序");
+assertIncludes(JSON.stringify(readyReviewRecordSavePath), "ready 不等于已判断有效");
 assertIncludes(JSON.stringify(readyReviewRecordSavePath), "不自动改规则或执行广告动作");
 const blockedReviewRecordSavePath = buildReviewRecordSavePathSummary(
   buildReviewTodoDecisionReadbackSummary(reviewTodoWithDiagnosisPath),
@@ -1358,7 +1363,7 @@ const readySearchTermReviewRecordSaveGate = buildReviewRecordSaveGateSummary(
   searchTermReviewRecordPreflightChecklist,
 );
 assertEqual(readySearchTermReviewRecordSaveGate.title, "可人工保存复盘记录");
-assertIncludes(readySearchTermReviewRecordSaveGate.detail, "点击只保存 ReviewRecord");
+assertIncludes(readySearchTermReviewRecordSaveGate.detail, "点击后由人工保存 ReviewRecord");
 assertIncludes(readySearchTermReviewRecordSaveGate.detail, "不自动改规则或执行广告动作");
 const searchTermSavedReviewRecord: ReviewRecordForUi = {
   ...searchTermReviewEffect,

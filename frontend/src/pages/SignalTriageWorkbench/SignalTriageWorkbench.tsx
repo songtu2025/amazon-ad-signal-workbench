@@ -1465,7 +1465,7 @@ export function SignalTriageWorkbench() {
           ? hasObjectGateIssue
             ? "未通过"
             : "已核对"
-          : "等待 ready 后核对";
+          : "等待指标可复核";
     const objectGateTone =
       selectedReviewRecordSaveGate.tone === "saved" ? "ready" : hasObjectGateIssue ? "blocked" : objectReferenceCheck || evidenceSignatureCheck ? "ready" : tone;
     const objectGateDetail =
@@ -1482,7 +1482,7 @@ export function SignalTriageWorkbench() {
       title: "复盘保存业务判断",
       tone,
       summary: selectedReviewRecordSaveGate.canSave
-        ? "已具备 ready 指标窗口和保存前检查；保存前仍要确认结论只作用于当前复盘对象。"
+        ? "处理前后指标已可人工复核，保存前仍要确认结论只作用于当前复盘对象。"
         : selectedReviewRecordSaveGate.tone === "saved"
           ? "已保存匹配复盘记录；后续只能作为人工规则反馈样本，不自动改规则。"
           : "当前还不能保存复盘结论；先回看缺口，不要用处理后指标反推当时原因。",
@@ -1504,7 +1504,7 @@ export function SignalTriageWorkbench() {
           value: evidenceValue,
           detail:
             selectedReviewRecordSavePath?.boundary ??
-            "必须先有 ReviewTodo 证据快照、ready 复盘效果和保存前检查，才能人工保存 ReviewRecord。",
+            "必须先有 ReviewTodo 证据快照、处理前后指标可复核和保存前检查，才能人工保存 ReviewRecord。",
           tone,
         },
         {
